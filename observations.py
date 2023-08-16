@@ -1,0 +1,642 @@
+################
+# by A. Faulkner
+# for python version 3.0 and up
+################
+
+#global
+import sys, os, re
+import glob
+import os.path
+from os import path
+from os.path import isfile, join
+
+#argument parser
+import argparse
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser  # ver. < 3.0                                                 
+
+#math tools 
+import numpy as np
+import math
+from scipy.linalg import block_diag
+
+#plotting tools
+import matplotlib.pyplot as plt
+
+#timing tools
+import timeit
+import datetime
+
+#data handling tools
+import pandas as pd
+import xarray as xr
+import netCDF4 as nc
+from functools import partial
+
+
+
+
+
+
+
+def _preprocess(x, time_bnds):
+    return x.sel(date=slice(*time_bnds))
+
+
+def yearly_processing(obs_path, lon_bnds, lat_bnds, year=False):
+    if year:
+        yearly_df = pd.DataFrame()
+        for month in list(range(1,13)):
+            print(month)
+            month_path = str(obs_path) + str(year) + '-' + str(month).zfill(2) + '.nc' 
+            monthly_df = get_dataframe(month_path, lon_bnds, lat_bnds, year=False)
+            if month == 1:
+                yearly_df = monthly_df
+            else:
+                yearly_df = yearly_df.append(monthly_df, ignore_index = True)
+        print(yearly_df)
+    
+    return yearly_df
+
+
+def get_dataframe(obs_file, lon_bnds, lat_bnds, year=False):
+    #path = str(obs_file) + str(year) + '-' + str(month).zfill(2) + '*.nc' 
+    #'/noc/mpoc/surface_data/ICOADS_NETCDF_R3_ALL/ICOADS_R3.0.0_' + str(year) + '*.nc'
+    #open all .nc files in the directory and concatenate against time and subselect region based on lats and lons provided
+    #adding a pre-processing function to subselect only that time period when extracting the data from the path
+    #partial_func = partial(_preprocess, time_bnds=time_bounds)
+    
+    #ds = xr.open_mfdataset(str(path), combine='nested', concat_dim='time', engine="netcdf4")
+    
+    #else:
+    #obs_file = filename 
+    ds = xr.open_dataset(obs_file)
+    
+    
+    df = pd.DataFrame()
+    print(ds)
+    
+    #extract relevant variables
+    df['lon'] = ds.lon
+    df['lon'] = [x - 360. if x > 180. else x for x in df['lon']] 
+    df['lat'] = ds.lat
+    df['sst'] = ds["SST"][:]
+    #those extras will be used later
+    #df['id'] = ds["ID"][:]
+    #df['ii'] = ds["II"][:]
+    #df['uind'] = ds["UID"][:]
+    #df['deck'] = ds["DCK"][:]
+    #df['obs_type'] = ds["PT"][:]
+    #df['obs_sid'] = ds["SID"][:]
+    #df['measurement_method'] = ds["SI"][:]
+    
+    #extract date
+    ds_date = ds['date'].values
+    
+    #[datetime.strptime(line, '%Y%m%d').strftime('%m/%d/%Y') for line in date]
+    date = [line.tostring().decode('UTF-8') for line in ds_date]
+    #print(date)
+    date = pd.to_datetime(date, errors='coerce')
+    print(date)
+    df['date'] = date
+    #keep only valid dates (in older obs sometimes dates are messed up)
+    df = df[df.date.notnull()]
+    #print(df)
+    #set year, month and day for obs (extracted from date)
+    df['year'] = [this.year for this in df['date']]
+    df['month'] = [this.month for this in df['date']]
+    df['day'] = [this.day for this in df['date']]
+    
+    #df['fake_non_leap_year'] = 2010
+    #df['fake_non_leap_date'] = pd.to_datetime(dict(year=df.fake_non_leap_year, month=df.month, day=df.day))
+    #print(df)
+    
+    
+    #sort data according to date
+    df = df.sort_values(by='date', ascending=True)
+
+    #remove obs that are outside the chosen domain
+    df = df.loc[(df['lon'] >= lon_bnds[0]) & (df['lon'] < lon_bnds[1]) & (df['lat'] >= lat_bnds[0]) & (df['lat'] < lat_bnds[1])]
+    print(df)
+    return df
+
+
+def find_values(ds_masked_xr, lat, lon, obs_time):
+    '''
+    Parameters:
+    cci (array) - array of cci  vaules for each point in the whole domain
+    lat (array) - array of latitudes of the observations
+    lon (array) - array of longitudes of the observations
+    df (dataframe) - dataframe containing all information for a given day (such as location, measurement values)
+
+    Returns:
+    Dataframe with added anomalies for each observation point
+    '''
+
+    cci_lat_idx = find_nearest(ds_masked_xr.lat, lat)    
+    cci_lon_idx = find_nearest(ds_masked_xr.lon, lon)  
+    
+    cci_time_idx = find_nearest(ds_masked_xr.time, obs_time)
+    print(obs_time)
+    print(ds_masked_xr.time.values[cci_time_idx])
+    
+    cci_vals = [] #fake ship obs
+    for i in range(len(cci_lat_idx)):
+        #cci_ = cci[str(ds_var)].values[timestep,cci_lat_idx[i],cci_lon_idx[i]] #was cci.sst_anomaly
+        cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
+        cci_vals.append(cci_)
+    cci_vals = np.hstack(cci_vals)
+    return cci_vals, cci_lat_idx, cci_lon_idx, cci_time_idx
+
+
+
+def find_nearest(array, values):
+    array = np.asarray(array)
+    idx_list = [(np.abs(array - value)).argmin() for value in values]
+    return idx_list
+
+
+
+def add_esa_anomalies_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
+    obs_data = df
+    #remove ship obs that are outside the chosen domain
+    cond_df = obs_data.loc[(obs_data['lon'] >= lon_bnds[0]) & (obs_data['lon'] < lon_bnds[1]) & (obs_data['lat'] >= lat_bnds[0]) & (obs_data['lat'] < lat_bnds[1])]
+    
+    #create an array of lats and lons for the remaining ship obs
+    obs_lat = np.array(cond_df['lat'])
+    obs_lon = np.array(cond_df['lon'])
+    obs_date = np.array(cond_df['date'])
+    print(obs_date)
+    
+    #extract the CCI SST anomaly values corresponding to the obs lat/lon coordinate points
+    #print(ds_masked_xr)
+    ESA_anomalies_for_obs, lat_idx, lon_idx, ESA_date_idx = find_values(ds_masked_xr, obs_lat, obs_lon, obs_date)
+    cond_df['cci_anomalies'] = ESA_anomalies_for_obs
+    cond_df['ESA_pentad_index'] = ESA_date_idx
+    
+    #find the indices for lats and lons of the observations
+    idx_tuple = np.array([lat_idx, lon_idx])
+    
+    #below 0 is set as the first timestep, it can be any number as the scenes have the same land/ice mask over all time steps, but it has to be set to extract the 2D field
+    output_size = (ds_masked_xr.values[:,:,0]).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
+    
+    #transform location indices into a flattened 1D index
+    flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
+    #print('flattened idx', flattened_idx.shape)
+    
+    #add information about the 1D obs index to the dataframe
+    cond_df['flattened_idx'] = flattened_idx
+
+    """
+    #### if lats and lons indices index into a SST anomaly field without a value / with NaN
+    #### see: https://stackoverflow.com/questions/40592630/get-coordinates-of-non-nan-values-of-xarray-dataset
+    to_remove = np.argwhere(np.isnan(cci_vals))
+    cci_vals = np.delete(cci_vals, to_remove)    #if we remove them now there will be a length mismatch between the cond_df and cci_vals and we cannot append a column of a different length so it has to be removed later on, but the lats and lons as used indexes can be deleted now or later, together with the df nans
+    cci_lat_idx = np.delete(cci_lat_idx, to_remove)
+    cci_lon_idx = np.delete(cci_lon_idx, to_remove)
+    """
+    #in case some of the anomaly values are Nan (because covered by ice)
+    cond_df = cond_df[cond_df['cci_anomalies'].notna()]  #cond_df.dropna()
+    obs_flat_idx = cond_df['flattened_idx'].values
+    print(cond_df)
+    year_str = str(cond_df['year'].iloc[0])
+    filename = 'dataframe_%s' % year_str
+    print(filename)
+    #cond_df.to_csv(filename, encoding='utf-8', index=False)
+    return cond_df, obs_flat_idx
+
+
+
+def measurements_covariance(df, sig_ms=1.27, sig_mb=0.23): 
+    '''
+    Calculates the covariance matrix of the measurements (obervations)
+    
+    Parameters:
+    n_ship (int) - number of ship observations
+    nbuoy (int) - number pf buoy observations
+    sig_ms (float) - sigma parameter for the ship observations
+    sig_mb (float) - sigma parameter for the buoy observations
+
+    Returns:
+    A single covariance matrix of measurements for ship observations and buoy observations
+    '''
+    n_ship = df[df.obs_type <= 5].shape[0]
+    print('n_ship', n_ship)
+    n_buoy = df[(df.obs_type == 6) | (df.obs_type == 7)].shape[0]
+    print('n_buoy', n_buoy)
+    #Create covariance matrix for the measurements
+    a1 = np.multiply(np.eye(n_ship), (sig_ms **2))
+    a2 = np.multiply(np.eye(n_buoy),(sig_mb ** 2))
+    covx = block_diag(a1,a2) #scipy.linalg.block_diag
+    #print('covx', covx)
+    return covx
+
+
+
+def radial_dist(lat1, lon1, lat2, lon2):
+    '''
+     Computes a distance matrix of the coordinates using a spherical metric.
+
+    Parameters:
+    lat1 (float) - latitude of point A
+    lon1 (float) - longitude of point A
+    lat2 (float) - latitude of point B
+    lon2 (float) - longitude of point B
+
+    Returns:
+    Radial distance between point A and point B
+    '''
+    # approximate radius of earth in km
+    R = 6371.0
+    lat1r = math.radians(lat1)
+    lon1r = math.radians(lon1)
+    lat2r = math.radians(lat2)
+    lon2r = math.radians(lon2)
+    
+    dlon = lon2r - lon1r
+    dlat = lat2r - lat1r
+    
+    a = np.sin(dlat / 2)**2 + np.cos(lat1r) * np.cos(lat2r) * np.sin(dlon / 2)**2
+    c = 2 * math.atan2(np.sqrt(a), np.sqrt(1 - a))
+    distance = R * c
+    return distance
+
+
+
+def sampling_uncertainty(flattened_idx, covx, df):
+    '''
+    Returns an updated measurement covariance matrix by adding sampling uncertainty of the observations
+
+    Parameters:
+    uind (list) - list of unique (i.e. not repeated) locations of the observations for a given date
+    iid (list) - list of all locations of the observations for a given date
+    clim (array) - 1-D array of climatology for the whole map grid
+    scale_clim (array) - scaling climatology parameters (based on the scale from the variogram)
+    mr (array) - range parameters from the variogram file
+    covx (array) - ship and buoy measurement covariance matrix
+    lat (array) - array of latitudes for observation points
+    lon (array) - array of longitudes for observation points
+ 
+    Returns:
+    Covariance matrix of the ship and buoy measurements including sampling uncertainty
+    Matrix C of the counts of observations based on the radial distance and range and scale parameters
+    Matrix W of weight of each observation on the grid cell
+    '''
+    lat = df['lat'].to_numpy()
+    lon = df['lon'].to_numpy()
+
+    obs_idx = flattened_idx
+    #print(obs_idx, obs_idx.shape)
+    unique_obs_idx = np.unique(obs_idx)
+    #print(unique_obs_idx, unique_obs_idx.shape)
+    W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
+    for k in range(max(unique_obs_idx.shape)):
+        range_ = 40. #set_number for now
+        scale = 0.6 #set_number for now
+        q = [i for i, x in enumerate(obs_idx) if x == unique_obs_idx[k]]
+        
+        #print('obs_idx', obs_idx)
+        #print('unique obs idx', unique_obs_idx)
+        #print('q', q)
+        for i in range(len(q)):
+            qq = q[i]
+            W[k,qq] = np.divide(1, len(q))   
+        
+        C = np.zeros((len(q),len(q)))
+        
+        
+        for jj in range(len(q)):
+            for kk in range(len(q)):  
+                idx1 = q[jj]
+                idx2 = q[kk]
+                C[jj,kk] = radial_dist(lat[idx1],lon[idx1],lat[idx2],lon[idx2])
+
+        C = np.exp(-C ** 2 / range_ ** 2)
+        C = scale / 2 * C
+        #print('C', C)
+        for jj in range(len(q)): 
+            for kk in range(len(q)):
+                #print(q[jj], q[kk])
+                covx[q[jj],q[kk]] = covx[q[jj],q[kk]] + C[jj,kk]
+    #print('covx', covx)
+    return covx, W
+
+
+
+def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
+    '''
+    Returns measurements covariance matrix updated by adding bias uncertainty to the measurements
+
+    Parameters:
+    vessel_ii (int) - information on the measuring vessel
+    vessel_id (int) - ID of the measuring vessel (for ship and buoys)
+    type_id (int) - 
+    sig_bs (array) - sigma related to the bias for ship measurements
+    sig_bb (array) - sigma related to the bias for the buoy measurements
+    covx (array) - measurement covariance matrix
+
+    Returns:
+    Measurement covariance matrix updated by including bias uncertainty of the measurements
+    '''
+    type_id = np.array(df['type_id'])
+    vessel_id = np.array(df['id']) 
+    vessel_ii = np.array(df['ii'])
+    print('type id', type_id)
+    print('vessel id', vessel_id)
+    print('vessel ii', vessel_ii)
+    #Finally the hard bit, the bias uncertainty, mainly because the ID's are quite bad! 
+    #Okay those with ii == 2 just add the bias uncertainty to the diagonal 
+  
+    p = [i for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id)) if vessel == 2 and id_ == 0]
+    for k in range(len(p)): 
+        covx[p[k],p[k]] = covx[p[k],p[k]] + sig_bs ** 2
+
+    p = [i for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id)) if vessel == 2 and id_ == 1]
+    for k in range(len(p)): 
+        covx[p[k],p[k]] = covx[p[k],p[k]] + sig_bb ** 2
+    
+    #Just a quick check on the buoy data that allmeasurement_covariance(sig_ms, sig_mb, sig_bs, sig_bb, cond_df, flattened_idx, lat, lon) the ii's are 3 
+    p = [i for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id)) if id_ == 1 and vessel != 3]
+    if len(p) > 0 :
+        print('Warning there are %d BUOY measurements that are not classed as 3\n', len(p)); 
+    
+
+    I = [i for i, id_ in enumerate(type_id) if id_ == 1]
+    UVID = np.unique(vessel_id[I]) 
+    #print('UVID', UVID)
+    for u in range(len(UVID)):
+        p = [i for i, (id_, vid_) in enumerate(zip(type_id, vessel_id)) if id_ == 1 and vid_ == UVID[u]]
+        row_idx = p
+        col_idx = p
+        #covx[p,p] = covx[p,p] + sig_bb ** 2
+        covx[np.ix_(row_idx, col_idx)] = covx[np.ix_(row_idx, col_idx)] + sig_bb ** 2
+    
+    II = [i for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id)) if id_ == 0 and vessel != 2]
+    UVID = np.unique(vessel_id[II])
+    #print('UVID', UVID)
+    for u in range(len(UVID)):
+        q = [i for i, (id_, vid_) in enumerate(zip(type_id, vessel_id)) if id_ == 0 and vid_ == UVID[u]]
+        #covx[p[k],p[k]] = covx[p[k],p[k]] + sig_bb ** 2
+        row_idx = q
+        col_idx = q
+        covx[np.ix_(row_idx, col_idx)] = covx[np.ix_(row_idx, col_idx)] + sig_bs ** 2
+    #print('covx', covx)
+    return covx
+
+
+
+def correlated_uncertainty(df):
+    type_id = np.array(df['type_id'])
+    vessel_id = np.array(df['id']) 
+    vessel_ii = np.array(df['ii'])
+    flattened_idx = np.array(df['flattened_idx'])
+    unique_idx = np.unique(flattened_idx).tolist()
+    for i in unique_idx:
+        print(i)
+        print(df.loc[df['flattened_idx'] == i])
+        all_vessels_for_this_grid = sum(df.loc[df['flattened_idx'] == i,'id'].values)
+        print(all_vessels_for_this_grid)
+        unique_vessels = sum(np.unique(all_vessels_for_this_grid))
+        print(unique_vessels)
+        vessel_ratio_per_obs_grid = unique_vessels / all_vessels_for_this_grid
+        print(vessel_ratio_per_obs_grid)
+
+
+
+def measurement_covariance(df, flattened_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38):
+    #covx = correlated_uncertainty(df)
+    covx1 = measurements_covariance(df, sig_ms, sig_mb) #just the basic covariance for number of ship and buoy
+    #print(covx1, covx1.shape)
+    covx2, W = sampling_uncertainty(flattened_idx, covx1, df) #adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
+    #print(covx2, covx2.shape)
+    #covx3 = bias_uncertainty(df, covx2, sig_bs, sig_bb)
+    return covx2, W #covx3, W
+
+
+
+
+def esa_cci_monthly_climatology(climatology_path):
+    path = climatology_path #'/noc/mpoc/surface_data/ESA_CCIv2.1clim/*.nc'
+    climatology = xr.open_mfdataset(str(path), combine='nested', concat_dim='time', engine="netcdf4").chunk({'time': 365})
+    climatology_365  = climatology['analysed_sst']
+    #print(climatology_365)
+    # dimensions as read in:
+    # analysed_sst(time, lat, lon)
+    climatology_365 = climatology_365.transpose("lat", "lon", "time")
+    climatology_365['time'] = np.arange(1,366)
+    ##climatology_365 = climatology_365.assign_coords(doy=('time', np.arange(1,366)))
+    ##climatology_365.swap_dims({'time': 'doy'})
+    #print(climatology_365)
+    return climatology_365
+
+
+
+
+def match_climatology_to_obs(climatology_365, obs_df):
+    """
+    obs_year = obs_df.fake_non_leap_year
+    obs_month = obs_df.month
+    obs_day = obs_df.day
+    obs_doy = int(datetime.date(obs_year,obs_month, obs_day).strftime('%j'))
+    #obs_doy = datetime.date(obs_year, obs_month, obs_day).timetiuple().tm_yday
+    
+    for 
+    if obs_doy == np.nan:
+        #if the DOY is nan then it means it is leap year and the date is 29 Feb
+        #in this case we need to get an average between 28 Feb (DOY 59, Python index 58) and 1 Mar (DOY 60, Python index 59)
+        clim_val =np.mean(climatology_365[obs_df.clim_lat_idx, obs_df.clim_lon_idx,58],climatology_365[obs_df.clim_lat_idx, obs_df.clim_lon_idx, 59]) 
+    else:
+        #Python does indexing from zero, sowhen indexing into a timestep, we need to substract 1 from DOY
+        clim_val = climatology_365[obs_df.clim_lat_idx, obs_df.clim_lon_idx, obs_doy-1]
+        
+    
+    clim_doy_idx.append(clim_doy)
+    """
+    obs_lat = obs_df.lat
+    obs_lon = obs_df.lon
+    obs_df['lat_idx'], obs_df['lon_idx'] = find_latlon_idx(climatology_365, obs_lat, obs_lon)
+    cci_clim = [] #ESA CCI climatology values                                                             
+    
+
+    mask = (obs_df['date'].dt.is_leap_year == 1) & (obs_df['date'].dt.dayofyear == 60)
+    #print(obs_df['date'])
+    #print(mask)
+    non_leap_df = obs_df[~mask]
+    leap_df = obs_df[mask]
+
+    print(non_leap_df)
+    print(leap_df)
+    
+    non_leap_df['fake_non_leap_year'] = 2010
+    non_leap_df['fake_non_leap_date'] = pd.to_datetime(dict(year=non_leap_df.fake_non_leap_year, month=non_leap_df.month, day=non_leap_df.day))
+    non_leap_df['doy'] = [int(i.strftime('%j')) for i in non_leap_df['fake_non_leap_date']]
+    print(non_leap_df.doy)
+    non_leap_df['doy_idx'] = non_leap_df.doy - 1
+    print(non_leap_df.doy_idx)
+    
+    #print(climatology_365, climatology_365.time)
+    c = climatology_365.values
+    #print(c.shape)
+    
+    selected = c[np.array(non_leap_df.lat_idx), np.array(non_leap_df.lon_idx), np.array(non_leap_df.doy_idx)]
+    selected = selected - 273.15 #from Kelvin to Celsius
+    #print(selected)
+    
+    #print(len(non_leap_df.lat_idx), len(non_leap_df.lon_idx), len(non_leap_df.doy_idx), len(selected))
+    
+    #climatology_365.sel(lat=obs_lat, lon=obs_lon, method="nearest") #climatology_365.lat.values[lat_idx]
+    end_feb = c[np.array(leap_df.lat_idx), np.array(leap_df.lon_idx), np.repeat(np.array([58]), len(leap_df.lat_idx))]
+    #climatology_365[tuple((leap_df.lat_idx, leap_df.lon_idx, np.repeat(np.array([58]), len(leap_df.lat_idx))))] - cannot use tuple!
+    
+    beg_mar = c[np.array(leap_df.lat_idx), np.array(leap_df.lon_idx), np.repeat(np.array([59]), len(leap_df.lat_idx))]
+    #climatology_365[tuple((leap_df.lat_idx, leap_df.lon_idx, np.repeat(np.array([59]), len(leap_df.lat_idx))))] - cannot use tuple!
+    
+    selected2 = [(g + h) / 2 for g, h in zip(end_feb, beg_mar)]
+    selected2 = [ i - 273.15 for i in selected2] #from Kelvin to Celsius
+    #print(selected2)
+    
+    
+    non_leap_df['climatology'] = selected
+    leap_df['climatology'] = selected2
+    obs_df = pd.concat([non_leap_df, leap_df])
+    #print('joint leap and non-leap observations', obs_df)
+    obs_df['obs_anomalies'] = obs_df['sst'] - obs_df['climatology']
+    #df1 = obs_df[['lat', 'lon', 'sst', 'climatology', 'cci_anomalies', 'obs_anomalies']]
+    #print(df1)
+    #STOP
+    """
+    #in case some of the values are Nan (because covered by ice)                                                                     
+    obs_df = obs_df.dropna()
+    """
+    return obs_df
+    
+
+
+
+def find_latlon_idx(nc_xr, lat, lon):
+    '''
+    Parameters:
+    cci (array) - array of cci  vaules for each point in the whole domain
+    lat (array) - array of latitudes of the observations
+    lon (array) - array of longitudes of the observations
+    df (dataframe) - dataframe containing all information for a given day (such as location, measurement values)
+
+    Returns:
+    Dataframe with added anomalies for each observation point
+    '''
+
+    lat_idx = find_nearest(nc_xr.lat, lat)    
+    #print(nc_xr.lat, lat_idx)  
+    lon_idx = find_nearest(nc_xr.lon, lon)  
+    #print(nc_xr.lon, lon_idx)
+    return lat_idx, lon_idx
+
+
+
+
+def find_anomaly_values(cci_lat_idx, cci_lon_idx, ds_masked_xr):
+    cci_vals = [] #fake ship obs
+    for i in range(len(cci_lat_idx)):
+        #cci_ = cci[str(ds_var)].values[timestep,cci_lat_idx[i],cci_lon_idx[i]] #was cci.sst_anomaly
+        cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],0]
+        #was - ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],timestep] 
+        #was cci.sst_anomaly
+        cci_vals.append(cci_)
+    cci_vals = np.hstack(cci_vals)
+    #### if lats and lons indices index into a SST anomaly field without a value / with NaN
+    #### see: https://stackoverflow.com/questions/40592630/get-coordinates-of-non-nan-values-of-xarray-dataset
+    to_remove = np.argwhere(np.isnan(cci_vals))
+    cci_vals = np.delete(cci_vals, to_remove)
+    cci_lat_idx = np.delete(cci_lat_idx, to_remove)
+    cci_lon_idx = np.delete(cci_lon_idx, to_remove)
+    return cci_vals, cci_lat_idx, cci_lon_idx
+
+
+
+
+def find_obs_latlon_idx_on_output_grid(lat_idx, lon_idx, ds_masked_xr, cond_df):
+    #find the indices for lats and lons of the observations
+    idx_tuple = np.array([lat_idx, lon_idx])
+    output_size = (ds_masked_xr.values[:,:,0]).shape
+    #was - (ds_masked_xr.values[:,:,timestep]).shape
+    #transform location indices into a flattened 1D index
+    flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
+    #add information about the 1D obs index to the dataframe
+    cond_df['flattened_idx'] = flattened_idx
+    #print(cond_df)
+    #print('flattened idx', flattened_idx)
+    return cond_df, flattened_idx
+
+
+
+
+
+
+
+def counts_for_esa(flattened_idx):
+    obs_idx = flattened_idx
+    #print(obs_idx, obs_idx.shape)
+    unique_obs_idx = np.unique(obs_idx)
+    #print(unique_obs_idx, unique_obs_idx.shape)
+    W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
+    for k in range(max(unique_obs_idx.shape)):
+        q = [i for i, x in enumerate(obs_idx) if x == unique_obs_idx[k]]
+        for i in range(len(q)):
+            qq = q[i]
+            W[k,qq] = np.divide(1, len(q))   
+    return W
+
+
+
+
+
+
+
+
+def obs_main(obs_path, lon_bnds, lat_bnds, ds_masked_xr, climatology_path, year=False):
+#    obs_filename, lon_bnds, lat_bnds, ds_masked_xr, timestep):
+    #df = get_dataframe(obs_path, lon_bnds, lat_bnds, year)
+    df = yearly_processing(obs_path, lon_bnds, lat_bnds, year)
+    df_anomaly, flattened_idx1 = add_esa_anomalies_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df)
+    #print('DF')
+    #print(df)
+
+    #print('DF ANOMALY')
+    #print(df_anomaly)
+    """
+    climatology_365 = esa_cci_monthly_climatology(climatology_path)
+    #cond_df = add_esa_climatology_at_obs_locations(lon_bnds, lat_bnds, climatology_365, df)
+    cond_df = match_climatology_to_obs(climatology_365, df_anomaly)
+    
+    obs_lat = np.array(cond_df['lat'])
+    obs_lon = np.array(cond_df['lon'])
+    lat_idx, lon_idx = find_latlon_idx(ds_masked_xr, obs_lat, obs_lon)
+    cond_df, flattened_idx2 = find_obs_latlon_idx_on_output_grid(lat_idx, lon_idx, ds_masked_xr, cond_df)
+    print('COND DF')
+    print(cond_df)
+    
+    
+    #separate obs dataframes based on observation type
+    ship_df = df[df['obs_type'] <= 5]
+    buoy_df = df[df['obs_type'] == 6]
+    drifters_df = df[df['obs_type'] == 7]
+    #create covariance matrix for observations and weights matrix (i.e. how many observations fall into the same gridbox)
+    #remove obs_type that are not ship (<= 5) or buoy (6 or 7) for the purpose of measurement covariance matrix 
+    cond_df_ship_buoy = cond_df[cond_df.obs_type <= 7]
+    #add a for loop to loop over days in month
+    flattened_idx = cond_df_ship_buoy['flattened_idx'][:]
+    
+    print('DF SHIP BUOY')
+    print(cond_df_ship_buoy)
+    print(flattened_idx, len(flattened_idx))
+    #oops = cond_df_ship_buoy['obs_anomalies'].isnull().sum() #oops 20772
+    #oops = cond_df_ship_buoy['sst'].isnull().sum() #oops 18985
+    #oops = cond_df_ship_buoy['climatology'].isnull().sum() #oops 3275
+    #print('oops', oops)
+    cond_df_ship_buoy = cond_df_ship_buoy.dropna()
+    """
+    #obs_covariance, W_matrix = measurement_covariance(cond_df_ship_buoy, flattened_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
+    return df_anomaly, flattened_idx1
+    #return cond_df_ship_buoy, flattened_idx #obs_covariance, W_matrix, cond_df, flattened_idx
