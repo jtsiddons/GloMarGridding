@@ -15,8 +15,6 @@ from scipy.stats import binned_statistic
 
 from scipy.linalg import solve
 
-import cartopy.crs as ccrs
-
 from tqdm import tqdm
 
 from math import radians, cos, sin, asin, sqrt

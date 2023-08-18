@@ -4,7 +4,6 @@ import numpy.polynomial.polynomial as poly
 from netCDF4 import Dataset
 import xarray as xr
 
-from eofs.standard import Eof
 from sklearn.decomposition import PCA
 
 import sys, os
