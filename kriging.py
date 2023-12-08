@@ -169,6 +169,9 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     Returns:
     Krigged result over water areas on a 2-D domain grid with masked land areas
     '''
+    result_1d = result_1d.astype('float')
+    grid_2d = grid_2d.astype('float')
+    
     if grid_2d.ndim > 1:
         grid_2d_flat = grid_2d.flatten()
 
@@ -179,8 +182,11 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     indexes = iid
 
     landmask = np.copy(to_modify)
+    print(landmask)
+    
     if(~np.isnan(landmask).any()):
-        landmask[landmask == 0.0] = np.nan
+        landmask = landmask.astype('float')
+        landmask[landmask == 0] = np.nan
 
     replacements = result_1d
     for (index, replacement) in zip(indexes, replacements):
@@ -191,33 +197,25 @@ def result_reshape_2d(result_1d, iid, grid_2d):
 
 
 
-def watermask(ds_masked, timestep=0):
-    water_mask = np.copy(ds_masked.values[:,:,timestep])
-    """
-    plt.imshow(water_mask)
-    plt.title('this')
-    plt.show()
+def watermask(ds_masked):
+    water_mask = np.copy(ds_masked.landmask[:,:])
     """
     water_mask[~np.isnan(water_mask)] = 1
     water_mask[np.isnan(water_mask)] = 0
+    """
     print(np.shape(water_mask))
     water_idx = np.asarray(np.where(water_mask.flatten() == 1)) #this idx is returned as a row-major
     #water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1)) #this idx is returned as a column-major
     print(water_idx)
-    """
-    plt.imshow(water_mask)
-    plt.title('water mask')
-    plt.show()
-    """
     return water_mask, water_idx
 
 
 
-def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, timestep):
-    obs = cond_df['obs_anomalies'].values #cond_df['cci_anomalies'].values
+def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
+    obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     print('1 - DONE')
     #water_mask, water_idx = watermask(ds, ds_var, timestep)
-    water_mask, water_idx = watermask(ds_masked, timestep)
+    water_mask, water_idx = watermask(ds_masked)
     obs_idx = flattened_idx
     unique_obs_idx = np.unique(obs_idx)
     print('2 - DONE')
@@ -351,12 +349,12 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
 
 
 
-def kriging_main(covariance, ds_masked, cond_df, flattened_idx, W):
+def kriging_main(covariance, ds_masked, cond_df, flattened_idx, obs_cov, W):
     #obs_cov removed as argument for now
-    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, timestep)
+    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W)
     
-    
-    obs = cond_df['obs_anomalies'].values #cond_df['cci_anomalies'].values
+    """
+    obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     print('1 - DONE')
     water_mask, water_idx = watermask(ds_masked, 0)
     obs_idx = flattened_idx
@@ -372,6 +370,6 @@ def kriging_main(covariance, ds_masked, cond_df, flattened_idx, W):
     print('6 - DONE')
     dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
     print('7 - DONE')
-    
+    """
     
     return obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d

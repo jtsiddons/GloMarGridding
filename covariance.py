@@ -120,6 +120,9 @@ def time_average_ds(ds, ds_varname, time_resolution=False):
     print('time', ds.time)
     #extract variable of interest - SST anomaliesfrom functools import partial                           
     cci_pentad_files = ds[str(ds_varname)]
+    ds_avg = ds.groupby("time.month") #.mean(dim="time")
+    print(ds_avg[1].time.values)
+    
     print(cci_pentad_files.values)
     if time_resolution:
         cci_pentad_files = time_average(cci_pentad_files, str(time_resolution))
@@ -282,15 +285,48 @@ def calculate_covariance(pentad_1d_time, lat_1d, lon_1d, cov_choice, ipc):
 #######################################################################################
 def covariance_main(path, ds_varname, Wlon, Elon, Slat, Nlat, cov_choice, ipc=False, time_resolution=False):
     ds = read_in_dataset(Wlon, Elon, Slat, Nlat, path)
-    cci_pentad_files = time_average_ds(ds, ds_varname, time_resolution=False)
+    cci_files = time_average_ds(ds, ds_varname, time_resolution=False)
     lat_1d, lon_1d = latlon_to_1d(ds)
-    data_2d, cci_pentad_files = data_to_2d(cci_pentad_files, time_resolution=False)
-    pentad_1d_no_nans, ds_masked = mask_ice_land(data_2d, cci_pentad_files)
+    data_2d, cci_files = data_to_2d(cci_files, time_resolution=False)
+    data_1d_no_nans, ds_masked = mask_ice_land(data_2d, cci_files)
     covariance = calculate_covariance(data_2d, lat_1d, lon_1d, cov_choice, ipc)
     return covariance, ds_masked
 
 
 
 
+
+
+def read_in_covarance_file(thedirectory, month):
+    monthDict={1:'january', 2:'february', 3:'march', 4:'april', 5:'may', 6:'june', 7:'july', 8:'august', 9:'september', 10:'october', 11:'november', 12:'december'}
+    long_filelist = []
+    
+    filelist = os.listdir(thedirectory) #os.path.join(thedirectory, thefile)
+    print(filelist)
+
+    mon_str = monthDict[int(month)]
+    print('Matching global covariance for %s' % mon_str)
+    r = re.compile('world_' +str(mon_str) + '\w+.nc')
+    filtered_list = list(filter(r.match, filelist))
+    fullpath_list = [os.path.join(thedirectory,f) for f in filtered_list]
+    print(filtered_list)
+    print(fullpath_list)
+    #long_filelist.extend(fullpath_list)
+    #print(long_filelist)
+        
+    ds = xr.open_dataset(fullpath_list[0], engine="netcdf4")
+    print(ds)
+    #for a single file covariance
+    #ds = xr.open_dataset(str(path), engine="netcdf4")
+    #print(ds)
+    covariance =ds.variables['covariance'].values
+    print(covariance)
+    return covariance
+
+
+
+
+"""
 if __name__ == "__main__":
     covariance_main(path, ds_varname, Wlon, Elon, Slat, Nlat, cov_choice, ipc=False, time_resolution=False)
+"""

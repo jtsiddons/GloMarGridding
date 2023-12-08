@@ -41,6 +41,60 @@ from functools import partial
 
 
 
+
+
+
+def landmask_from_cci(filepath):
+    #extract land sea mask for the domain
+    mask_ds = xr.open_dataset(str(filepath), engine="netcdf4")
+    print(mask_ds)
+    #esa_cci_mask has the same amount of water points as the covariance created from ESA data
+    esa_cci_mask = mask_ds.variables['landmask'].values
+    #water is 1, land is 0
+    esa_cci_lat = mask_ds.lat.values
+    esa_cci_lon = mask_ds.lon.values
+    #gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
+    return mask_ds, esa_cci_lat, esa_cci_lon
+
+
+def read_climatology(clim_path, doy):
+    ds_dir = [x[0] for x in os.walk(clim_path)]
+    ds_dir = (ds_dir[0])
+    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
+    #print(filelist)
+    r = re.compile('D'+str(doy).zfill(3)+'\S+.nc')
+    filtered_list = list(filter(r.match, filelist))
+    print(filtered_list)
+    
+    fullpath_list = [os.path.join(ds_dir,f) for f in filtered_list]
+    clim_file = xr.open_dataset(fullpath_list[0], engine='netcdf4')
+    print(clim_file)
+    return clim_file
+
+
+def extract_clim_anom(clim_file, df):
+    
+    obs_lat = np.array(df['lat'])
+    obs_lon = np.array(df['lon'])
+    
+    cci_lat_idx = find_nearest(clim_file.lat, obs_lat)    
+    cci_lon_idx = find_nearest(clim_file.lon, obs_lon)
+    
+    esa_cci_clim = clim_file.variables['analysed_sst'].values
+    
+    climatology = [] #fake ship obs
+    for i in range(len(cci_lat_idx)):
+        c = esa_cci_clim[0,cci_lat_idx[i],cci_lon_idx[i]]
+        climatology.append(c)
+    climatology = np.hstack(climatology)
+    climatology = climatology - 273.15
+    print(climatology)
+    updated_df = df.copy()
+    updated_df['climatology_sst'] = climatology
+    updated_df['sst_anomaly'] = updated_df['sst'] - updated_df['climatology_sst']
+    return updated_df
+    
+
 def _preprocess(x, time_bnds):
     return x.sel(date=slice(*time_bnds))
 
@@ -123,7 +177,7 @@ def get_dataframe(obs_file, lon_bnds, lat_bnds, year=False):
     return df
 
 
-def find_values(ds_masked_xr, lat, lon, obs_time):
+def find_values(ds_masked_xr, lat, lon):
     '''
     Parameters:
     cci (array) - array of cci  vaules for each point in the whole domain
@@ -136,19 +190,17 @@ def find_values(ds_masked_xr, lat, lon, obs_time):
     '''
 
     cci_lat_idx = find_nearest(ds_masked_xr.lat, lat)    
-    cci_lon_idx = find_nearest(ds_masked_xr.lon, lon)  
+    cci_lon_idx = find_nearest(ds_masked_xr.lon, lon)
     
-    cci_time_idx = find_nearest(ds_masked_xr.time, obs_time)
-    print(obs_time)
-    print(ds_masked_xr.time.values[cci_time_idx])
+    esa_cci_mask = ds_masked_xr.variables['landmask'].values
     
-    cci_vals = [] #fake ship obs
+    water_point = [] #fake ship obs
     for i in range(len(cci_lat_idx)):
-        #cci_ = cci[str(ds_var)].values[timestep,cci_lat_idx[i],cci_lon_idx[i]] #was cci.sst_anomaly
-        cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
-        cci_vals.append(cci_)
-    cci_vals = np.hstack(cci_vals)
-    return cci_vals, cci_lat_idx, cci_lon_idx, cci_time_idx
+        wp = esa_cci_mask[cci_lat_idx[i],cci_lon_idx[i]]
+        #cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
+        water_point.append(wp)
+    water_point = np.hstack(water_point)
+    return water_point, cci_lat_idx, cci_lon_idx
 
 
 
@@ -159,7 +211,7 @@ def find_nearest(array, values):
 
 
 
-def add_esa_anomalies_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
+def add_esa_watermask_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
     obs_data = df
     #remove ship obs that are outside the chosen domain
     cond_df = obs_data.loc[(obs_data['lon'] >= lon_bnds[0]) & (obs_data['lon'] < lon_bnds[1]) & (obs_data['lat'] >= lat_bnds[0]) & (obs_data['lat'] < lat_bnds[1])]
@@ -167,20 +219,19 @@ def add_esa_anomalies_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
     #create an array of lats and lons for the remaining ship obs
     obs_lat = np.array(cond_df['lat'])
     obs_lon = np.array(cond_df['lon'])
-    obs_date = np.array(cond_df['date'])
-    print(obs_date)
+    
     
     #extract the CCI SST anomaly values corresponding to the obs lat/lon coordinate points
     #print(ds_masked_xr)
-    ESA_anomalies_for_obs, lat_idx, lon_idx, ESA_date_idx = find_values(ds_masked_xr, obs_lat, obs_lon, obs_date)
-    cond_df['cci_anomalies'] = ESA_anomalies_for_obs
-    cond_df['ESA_pentad_index'] = ESA_date_idx
+    ESA_waterpoint_for_obs, lat_idx, lon_idx = find_values(ds_masked_xr, obs_lat, obs_lon)
+    cond_df['cci_waterpoint'] = ESA_waterpoint_for_obs
     
     #find the indices for lats and lons of the observations
     idx_tuple = np.array([lat_idx, lon_idx])
     
     #below 0 is set as the first timestep, it can be any number as the scenes have the same land/ice mask over all time steps, but it has to be set to extract the 2D field
-    output_size = (ds_masked_xr.values[:,:,0]).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
+    esa_cci_mask = ds_masked_xr.variables['landmask']
+    output_size = (esa_cci_mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
     
     #transform location indices into a flattened 1D index
     flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
@@ -188,23 +239,10 @@ def add_esa_anomalies_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
     
     #add information about the 1D obs index to the dataframe
     cond_df['flattened_idx'] = flattened_idx
-
-    """
-    #### if lats and lons indices index into a SST anomaly field without a value / with NaN
-    #### see: https://stackoverflow.com/questions/40592630/get-coordinates-of-non-nan-values-of-xarray-dataset
-    to_remove = np.argwhere(np.isnan(cci_vals))
-    cci_vals = np.delete(cci_vals, to_remove)    #if we remove them now there will be a length mismatch between the cond_df and cci_vals and we cannot append a column of a different length so it has to be removed later on, but the lats and lons as used indexes can be deleted now or later, together with the df nans
-    cci_lat_idx = np.delete(cci_lat_idx, to_remove)
-    cci_lon_idx = np.delete(cci_lon_idx, to_remove)
-    """
+    
     #in case some of the anomaly values are Nan (because covered by ice)
-    cond_df = cond_df[cond_df['cci_anomalies'].notna()]  #cond_df.dropna()
+    cond_df = cond_df[cond_df['cci_waterpoint']==1]  #cond_df.dropna()
     obs_flat_idx = cond_df['flattened_idx'].values
-    print(cond_df)
-    year_str = str(cond_df['year'].iloc[0])
-    filename = 'dataframe_%s' % year_str
-    print(filename)
-    #cond_df.to_csv(filename, encoding='utf-8', index=False)
     return cond_df, obs_flat_idx
 
 
@@ -222,9 +260,15 @@ def measurements_covariance(df, sig_ms=1.27, sig_mb=0.23):
     Returns:
     A single covariance matrix of measurements for ship observations and buoy observations
     '''
-    n_ship = df[df.obs_type <= 5].shape[0]
+    try:
+        n_ship = df[df.obs_type <= 5].shape[0]
+    except:
+        n_ship = df[df['data.type'] == 'ship'].shape[0]
     print('n_ship', n_ship)
-    n_buoy = df[(df.obs_type == 6) | (df.obs_type == 7)].shape[0]
+    try:
+        n_buoy = df[(df.obs_type == 6) | (df.obs_type == 7)].shape[0]
+    except:
+        n_buoy = df[df['data.type'] == 'buoy'].shape[0]
     print('n_buoy', n_buoy)
     #Create covariance matrix for the measurements
     a1 = np.multiply(np.eye(n_ship), (sig_ms **2))
@@ -340,12 +384,16 @@ def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
     Returns:
     Measurement covariance matrix updated by including bias uncertainty of the measurements
     '''
-    type_id = np.array(df['type_id'])
+    try:
+        type_id = np.array(df['type_id'])
+    except:
+        type_id = np.array(df['id.type'])
     vessel_id = np.array(df['id']) 
     vessel_ii = np.array(df['ii'])
     print('type id', type_id)
     print('vessel id', vessel_id)
     print('vessel ii', vessel_ii)
+    
     #Finally the hard bit, the bias uncertainty, mainly because the ID's are quite bad! 
     #Okay those with ii == 2 just add the bias uncertainty to the diagonal 
   
@@ -408,11 +456,12 @@ def correlated_uncertainty(df):
 def measurement_covariance(df, flattened_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38):
     #covx = correlated_uncertainty(df)
     covx1 = measurements_covariance(df, sig_ms, sig_mb) #just the basic covariance for number of ship and buoy
-    #print(covx1, covx1.shape)
+    print(covx1, covx1.shape)
     covx2, W = sampling_uncertainty(flattened_idx, covx1, df) #adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
-    #print(covx2, covx2.shape)
-    #covx3 = bias_uncertainty(df, covx2, sig_bs, sig_bb)
-    return covx2, W #covx3, W
+    print(covx2, covx2.shape)
+    covx3 = bias_uncertainty(df, covx2, sig_bs, sig_bb)
+    print(covx3, covx3.shape)
+    return covx3, W
 
 
 
