@@ -36,7 +36,9 @@ import matplotlib.pyplot as plt
 import timeit
 from calendar import isleap
 from calendar import monthrange
-import datetime
+#import datetime as dt
+from datetime import datetime
+from netCDF4 import date2num, num2date
 
 #data handling tools
 import pandas as pd
@@ -196,8 +198,6 @@ def main(argv):
             lat[:] = mask_ds_lat #ds.lat.values
             lon[:] = mask_ds_lon #ds.lon.values
             
-            
-            
     
             obs_df = obs_qc_module.main(data_path, qc_path, year=current_year, month=current_month)
             print(obs_df.columns.values)
@@ -222,9 +222,9 @@ def main(argv):
             _,month_range = monthrange(current_year, current_month)
             print(month_range)
         
-            for day in range(1,month_range+1,1): #unique_days)):
+            for day in range(3,month_range+1,1): #unique_days)):
                 print(current_year, current_month, day)
-                current_date = datetime.datetime(current_year,current_month,day)
+                current_date = datetime(current_year,current_month,day)
                 print(current_date)
                 
                 #to match a 365 ESA climatology file
@@ -255,7 +255,6 @@ def main(argv):
                 print(cond_df)
                 print(cond_df.columns.values)
                 print(cond_df['sst_anomaly'])
-                
                 day_flat_idx = cond_df['flattened_idx'][:]
                 
                 #extra
@@ -273,6 +272,7 @@ def main(argv):
                 #W = obs_module.counts_for_esa(day_flat_idx)
                 print(obs_covariance)
                 print(W)
+
                 #krige obs onto gridded field
                 obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
                 #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
@@ -289,7 +289,7 @@ def main(argv):
             #pd.date_range takes month/day/year as input dates
             dates_ = pd.date_range(str(current_month)+'/1/'+str(current_year), str(current_month)+'/'+str(month_range)+'/'+str(current_year), freq='D')
             #dates_ = pd.Series(ds['time'].values) #pd.date_range('1/1/1982', '31/12/2021', freq='D')
-            #dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
+            dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
             print('dates', dates_)
             dates = dates_.dt.to_pydatetime() # Here it becomes date
             print('pydate', dates)
@@ -302,7 +302,7 @@ def main(argv):
             # close the Dataset.
             ncfile.close()
             print('Dataset is closed!')
-            STOP    
+    STOP    
 
 
 

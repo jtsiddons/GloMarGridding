@@ -73,7 +73,6 @@ def read_climatology(clim_path, doy):
 
 
 def extract_clim_anom(clim_file, df):
-    
     obs_lat = np.array(df['lat'])
     obs_lon = np.array(df['lon'])
     
@@ -92,6 +91,7 @@ def extract_clim_anom(clim_file, df):
     updated_df = df.copy()
     updated_df['climatology_sst'] = climatology
     updated_df['sst_anomaly'] = updated_df['sst'] - updated_df['climatology_sst']
+    updated_df = updated_df[updated_df['sst_anomaly'].notna()]
     return updated_df
     
 

@@ -95,6 +95,8 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     print('ia', ia)
     
     #ICOADS obs  
+    print(W)
+    print(x_obs)
     sst_obs = W @ x_obs #- clim[ia] - bias[ia] 
     print('SST OBS', sst_obs)
     
@@ -236,11 +238,12 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
     print('6 - DONE')
     dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
     print('7 - DONE')
-    """
+    
     plt.imshow(obs_sk_2d)
     plt.show()
     plt.imshow(dz_sk_2d)
     plt.show()
+    """
     plt.imshow(obs_ok_2d)
     plt.show()
     plt.imshow(dz_ok_2d)
