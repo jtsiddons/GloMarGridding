@@ -70,6 +70,8 @@ def main(argv):
     
     config_file = args.config
     print(config_file)
+
+    
     
     #load config options from ini file
     #this is done using an ini config file, which is located in the same direcotry as the python code
@@ -110,10 +112,16 @@ def main(argv):
     #location og QC flags in GROUPS subdirectories
     qc_path = config.get('observations', 'qc_flags_joe')
    
-    #start_date
-    year_start = config.getint('time_period', 'startyear')
-    #end_date
-    year_stop = config.getint('time_period', 'endyear')
+    
+    if args.year_start and args.year_stop:
+        year_start = int(args.year_start)
+        year_stop = int(args.year_stop)
+    else:
+        #start_date
+        year_start = config.getint('time_period', 'startyear')
+        #end_date
+        year_stop = config.getint('time_period', 'endyear')
+    print(year_start, year_stop)
     
     #path where the covariance(s) is/are located
     #if single covariance, then full path
@@ -222,7 +230,7 @@ def main(argv):
             _,month_range = monthrange(current_year, current_month)
             print(month_range)
         
-            for day in range(3,month_range+1,1): #unique_days)):
+            for day in range(1,month_range+1,1): #unique_days)):
                 print(current_year, current_month, day)
                 current_date = datetime(current_year,current_month,day)
                 print(current_date)
