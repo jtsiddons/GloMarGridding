@@ -238,12 +238,11 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
     print('6 - DONE')
     dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
     print('7 - DONE')
-    
+    """
     plt.imshow(obs_sk_2d)
     plt.show()
     plt.imshow(dz_sk_2d)
     plt.show()
-    """
     plt.imshow(obs_ok_2d)
     plt.show()
     plt.imshow(dz_ok_2d)

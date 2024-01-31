@@ -90,8 +90,13 @@ def extract_clim_anom(clim_file, df):
     print(climatology)
     updated_df = df.copy()
     updated_df['climatology_sst'] = climatology
+    
+    if pd.api.types.is_string_dtype(updated_df.sst.dtype) == True:
+        updated_df['sst'] = pd.to_numeric(updated_df['sst'], errors='coerce')
+    
     updated_df['sst_anomaly'] = updated_df['sst'] - updated_df['climatology_sst']
     updated_df = updated_df[updated_df['sst_anomaly'].notna()]
+    
     return updated_df
     
 

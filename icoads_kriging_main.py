@@ -111,7 +111,7 @@ def main(argv):
     data_path = config.get('observations', 'observations')
     #location og QC flags in GROUPS subdirectories
     qc_path = config.get('observations', 'qc_flags_joe')
-   
+    
     
     if args.year_start and args.year_stop:
         year_start = int(args.year_start)
