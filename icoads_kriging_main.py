@@ -183,23 +183,20 @@ def main(argv):
             time.long_name = 'time'
             
             # Define a 3D variable to hold the data
-            ok = ncfile.createVariable('SST_OK',np.float64,('time','lat','lon'))
+            ok = ncfile.createVariable('sst_anomaly',np.float64,('time','lat','lon'))
             # note: unlimited dimension is leftmost
             ok.units = 'deg C' # degrees Kelvin
-            ok.standard_name = 'SST anomalies - OK'
+            ok.standard_name = 'SST anomaly'
             # Define a 3D variable to hold the data
-            sk = ncfile.createVariable('SST_SK',np.float64,('time','lat','lon'))
+            clim = ncfile.createVariable('climatology',np.float64,('time','lat','lon'))
             # note: unlimited dimension is leftmost
-            sk.units = 'deg C' # degrees Kelvin
-            sk.standard_name = 'SST anomalies - SK' # this is a CF standard name
+            clim.units = 'deg C' # degrees Kelvin
+            clim.standard_name = 'SST climatology' # this is a CF standard name
             # Define a 3D variable to hold the data
-            dz_ok = ncfile.createVariable('SST_DZ_OK',np.float64,('time','lat','lon')) # note: unlimited dimension is leftmost
-            sk.units = 'deg C' # degrees Kelvin
-            sk.standard_name = 'SST anomalies uncertainty - OK' # this is a CF standard name
-            # Define a 3D variable to hold the data
-            dz_sk = ncfile.createVariable('SST_DZ_SK',np.float64,('time','lat','lon')) # note: unlimited dimension is leftmost
-            sk.units = 'deg C' # degrees Kelvin
-            sk.standard_name = 'SST anomalies uncertainty - SK' # this is a CF standard name
+            dz_ok = ncfile.createVariable('sst_anomaly_uncertainty',np.float64,('time','lat','lon')) # note: unlimited dimension is leftmost
+            ok.units = 'deg C' # degrees Kelvin
+            ok.standard_name = 'uncertainty' # this is a CF standard name
+            
             
             # Write latitudes, longitudes.
             # Note: the ":" is necessary in these "write" statements
@@ -289,9 +286,8 @@ def main(argv):
                 # Write the data.  
                 #This writes each time slice to the netCDF instead of the whole 3D netCDF variable all at once.
                 ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
-                sk[timestep,:,:] = obs_sk_2d #simple_kriging
                 dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
-                dz_sk[timestep,:,:] = dz_sk_2d #simple_kriging
+                clim[timestep,:,:] = esa_climatology
                 print("-- Wrote data")
             # Write time
             #pd.date_range takes month/day/year as input dates
