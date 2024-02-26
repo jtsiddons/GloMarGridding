@@ -118,7 +118,8 @@ def read_in_dataset(Wlon, Elon, Slat, Nlat, path=None):
 
 def time_average_ds(ds, ds_varname, time_resolution=False):
     print('time', ds.time)
-    #extract variable of interest - SST anomaliesfrom functools import partial                           
+    #extract variable of interest - SST anomaliesfrom functools import partial  
+    
     cci_pentad_files = ds[str(ds_varname)]
     ds_avg = ds.groupby("time.month") #.mean(dim="time")
     print(ds_avg[1].time.values)
@@ -147,8 +148,8 @@ def latlon_to_1d(ds):
 
 
 def data_to_2d(cci_pentad_files, time_resolution=False):
-#the file dimensions are (time, lat, lon)                                                            
-    #flatten the 2D (lat/lon) field into 1D                                                              
+    #the file dimensions are (time, lat, lon)          
+    #flatten the 2D (lat/lon) field into 1D
     # to do it, swap dimensions to have lats and lons first and then time dimension                      
     try:
         cci_pentad_files = cci_pentad_files.transpose("lat", "lon", "time")
@@ -171,11 +172,10 @@ def mask_ice_land(pentad_1d_time, cci_pentad_files):
     #if our set-up is space first, time last (i.e. lat, lon, time) then we essentially want to do a row-major reshape so get all lat/lons in the first row and move rows by each time step                       
     #if our set-up is time first, space last (i.e. time, lat,lon) then we essentially want to do a column-major reshape so get all time steps as all rows of first column and then expand for other spatial points                                                                          
     pentad_1d_no_nans, ds_masked = option_ice_nan(pentad_1d_time, cci_pentad_files)
-    #timestep = 25                                                                                       
-    #pentad_1d_no_nans, cci_mask = option_scene_specific(cci_pentad_files_np, timestep)                  
-
-    #calculate covariance between points in space and time                                               
-    #covariance = np.cov(pentad_1d_no_nans)                                                              
+    #timestep = 25                  
+    #pentad_1d_no_nans, cci_mask = option_scene_specific(cci_pentad_files_np, timestep)
+    #calculate covariance between points in space and time                    
+    #covariance = np.cov(pentad_1d_no_nans)                  
     return pentad_1d_no_nans, ds_masked
 
 
@@ -183,9 +183,10 @@ def mask_ice_land(pentad_1d_time, cci_pentad_files):
 def option_ice_nan(pentad_1d_time, cci_pentad_files):
     cci_pentad_files_3d_np = cci_pentad_files.to_numpy()
     print(cci_pentad_files_3d_np.shape)
-    # 1 OPTION:                                                                                         
-    #remove nans (for each 1D flattened spatial domain)                                                  
-    # Delete all rows with all NaN value                                                                 
+    # 1 OPTION:                
+    #remove nans (for each 1D flattened spatial domain)                 
+    # Delete all rows with all NaN value                  
+    
     booleanIndex = [not np.any(i) for i in np.isnan(pentad_1d_time)]
     pentad_2d_no_nans = pentad_1d_time[booleanIndex]
     #then create a mask for the observation processing with temporary ice masked out                     
@@ -297,27 +298,31 @@ def covariance_main(path, ds_varname, Wlon, Elon, Slat, Nlat, cov_choice, ipc=Fa
 
 
 
-def read_in_covarance_file(thedirectory, month):
-    monthDict={1:'january', 2:'february', 3:'march', 4:'april', 5:'may', 6:'june', 7:'july', 8:'august', 9:'september', 10:'october', 11:'november', 12:'december'}
-    long_filelist = []
-    
-    filelist = os.listdir(thedirectory) #os.path.join(thedirectory, thefile)
-    print(filelist)
-
-    mon_str = monthDict[int(month)]
-    print('Matching global covariance for %s' % mon_str)
-    r = re.compile('world_' +str(mon_str) + '\w+.nc')
-    filtered_list = list(filter(r.match, filelist))
-    fullpath_list = [os.path.join(thedirectory,f) for f in filtered_list]
-    print(filtered_list)
-    print(fullpath_list)
-    #long_filelist.extend(fullpath_list)
-    #print(long_filelist)
+def read_in_covarance_file(path, month):
+    #for a path to a directory with covariances
+    if os.path.isdir(path):
+        monthDict={1:'january', 2:'february', 3:'march', 4:'april', 5:'may', 6:'june', 7:'july', 8:'august', 9:'september', 10:'october', 11:'november', 12:'december'}
+        long_filelist = []
         
-    ds = xr.open_dataset(fullpath_list[0], engine="netcdf4")
-    print(ds)
-    #for a single file covariance
-    #ds = xr.open_dataset(str(path), engine="netcdf4")
+        filelist = os.listdir(thedirectory) #os.path.join(thedirectory, thefile)
+        print(filelist)
+        
+        mon_str = monthDict[int(month)]
+        print('Matching global covariance for %s' % mon_str)
+        r = re.compile('world_' +str(mon_str) + '\w+.nc')
+        filtered_list = list(filter(r.match, filelist))
+        fullpath_list = [os.path.join(thedirectory,f) for f in filtered_list]
+        print(filtered_list)
+        print(fullpath_list)
+        #long_filelist.extend(fullpath_list)
+        #print(long_filelist)
+        
+        ds = xr.open_dataset(fullpath_list[0], engine="netcdf4")
+        print(ds)
+    #for a path to a single covariance file
+    elif os.path.isfile(path):
+        #for a single file covariance
+        ds = xr.open_dataset(str(path), engine="netcdf4")
     #print(ds)
     covariance =ds.variables['covariance'].values
     print(covariance)
