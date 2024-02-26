@@ -26,8 +26,10 @@ import numpy as np
 
 #data handling tools
 import pandas as pd
+import polars as pl
 import xarray as xr
 
+#from pyarrow.lib import ArrowInvalid
 
 
 
@@ -74,10 +76,11 @@ def read_in_data(data_path, year=False, month=False,  subdirectories=False):
         long_filelist = []
         for dirname in sorted(ds_dir):
             filelist = sorted(os.listdir(dirname)) #_fullpath(dirname))
-            print(filelist)
+            #print(filelist)
             r = re.compile(str(year)+'_'+str(month).zfill(2) + '.feather')
             filtered_list = list(filter(r.match, filelist))
             #print(filtered_list)
+            
             fullpath_list = [os.path.join(dirname,f) for f in filtered_list]
             long_filelist.extend(fullpath_list)
         #print(long_filelist)
@@ -92,61 +95,54 @@ def main(data_path, qc_path, year, month):
     qc_dir = read_in_data(qc_path, year=year, month=month, subdirectories=True)
     qc_dir = qc_dir[:-1]
     print(qc_dir)
+    
+    # test somewhere here whether there are any files from the QC dir
+    # do the same for obs
+    # if no obs or no QC - set as empty and proceed straight to creating an empty netcdf layer
+    # if obs and QC both present - proceed with processing as normal
     data_df = pd.read_csv(data_dir[0])
     
-    qc_df = [] #create the empty dataframe
+    
+    qc_df = pd.DataFrame() #create the empty dataframe
+    key_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
+    
     for i in range (0,len(qc_dir),1):
+        if any(k not in pl.read_ipc_schema(qc_dir[i]) for k in key_columns):
+            continue
         qc_df_i = pd.read_feather(qc_dir[i], columns=['uid', 'dck', 'noval_sst', 'freez_sst', 'hardlim_sst', 'nonorm_sst', 'clim_sst', 'any_flag', 'point_dup_flag', 'track_dup_flag'])
-        print(qc_df_i.columns.values)
         
-        qc_cols = qc_df_i.columns.values[2:]
-        qc_df_i = qc_df_i[(qc_df_i['dck']<1000) & ~(qc_df_i[qc_cols].any(axis=1))]
-        qc_df_i['uid'] = qc_df_i['uid'].str.slice(-6)
+        print(qc_df_i.columns.values)
+        print(qc_df_i)
+        
+        qc_df = pd.concat([qc_df, qc_df_i])
+        del qc_df_i
+
+    if qc_df.shape[0] == 0:
+        raise ValueError("No data, or don't have the flags")
+    else:
+        qc_cols = qc_df.columns.values[2:]
+        qc_df = qc_df[(qc_df['dck']<1000) & ~(qc_df[qc_cols].any(axis=1))]
+        qc_df['uid'] = qc_df['uid'].str.slice(-6)
         #extra bit to check for duplicates in uid
-        duplicate_values = qc_df_i['uid'].duplicated()
+        duplicate_values = qc_df['uid'].duplicated()
         #print(duplicate_values[duplicate_values== True])
         # remove duplicate values in uid column
-        qc_df_i = qc_df_i.drop_duplicates(subset=['uid'], keep='first')
+        qc_df = qc_df.drop_duplicates(subset=['uid'], keep='first')
         ###
-        qc_df_i.drop(columns='dck')
+        qc_df.drop(columns='dck')
+    
+        qc_df = qc_df[(qc_df['any_flag'] == False) & (qc_df['point_dup_flag'] <= 1) &
+                          (qc_df['track_dup_flag'] == False)]
+    
+        print(qc_df.columns)
         
-        qc_df_i = qc_df_i[(qc_df_i['any_flag'] == False) & (qc_df_i['point_dup_flag'] <= 1) &
-                          (qc_df_i['track_dup_flag'] == False)]
-        print(qc_df_i)
-        # append the dfs that have data
-        if not qc_df_i.empty:
-            qc_df.append(qc_df_i)
-            #print(qc_df_i)
     
     # v-stack the qc_df here
-    qc_df_merged = pd.concat(qc_df)
+    #qc_df_merged = pd.concat(qc_df)
+    
     #add a loop over qc_df files to match with the data_df
-    joined_df = data_df.merge(qc_df_merged, how='inner', on='uid')
+    joined_df = data_df.merge(qc_df, how='inner', on='uid')
     print(joined_df)
+    
     return(joined_df)
     
-"""
-#TO DO - DEVELOP FOR LOOPING OVER EACH YEAR AND MONTH FROM 1900
-for year in range (1900,2014,1):
-    for month in range (1,13,1):
-        data_dir = read_in_data(data_path, year, month)
-        qc_dir = read_in_data(qc_path, year, month, subdirectories=True)
-"""
-
-"""
-parser = argparse.ArgumentParser()
-parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-args = parser.parse_args()
-config_file = args.config
-print(config_file)
-
-#instantiate
-config = ConfigParser()
-#parce existing config file
-config.read(config_file) #('config.ini' or 'three_step_kriging.ini')
-
-data_path = config.get('observations', 'observations')
-qc_path = config.get('observations', 'qc_flags_joe')
-
-main(data_path, qc_path, year=2000, month=1)
-"""
