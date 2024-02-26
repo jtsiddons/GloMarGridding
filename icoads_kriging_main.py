@@ -331,13 +331,13 @@ def main(argv):
                 esa_climatology = obs_module.read_climatology(cci_climatology,DOY)
                 cropped_clim = esa_climatology.sel(lat=slice(lat_south,lat_north), lon=slice(lon_west,lon_east))
                 print(cropped_clim)
+                #climatology comes at 0.05 lat/lon resolution
+                #ouput product comes at 1 degree, needs coarsening by 20
                 coarse_cropped_clim = cropped_clim.coarsen(lat=20,lon=20).mean()
                 print(coarse_cropped_clim)
                 cropped_clim = cropped_clim.variables['analysed_sst'].values.squeeze()
                 cropped_clim = cropped_clim - 273.15
                 
-                #climatology comes at 0.05 lat/lon resolution
-                #ouput product comes at 1 degree, needs coarsening by 20
                 coarse_cropped_clim = coarse_cropped_clim.variables['analysed_sst'].values.squeeze()
                 coarse_cropped_clim = coarse_cropped_clim - 273.15
                 
