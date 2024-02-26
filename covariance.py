@@ -304,14 +304,17 @@ def read_in_covarance_file(path, month):
         monthDict={1:'january', 2:'february', 3:'march', 4:'april', 5:'may', 6:'june', 7:'july', 8:'august', 9:'september', 10:'october', 11:'november', 12:'december'}
         long_filelist = []
         
-        filelist = os.listdir(thedirectory) #os.path.join(thedirectory, thefile)
+        filelist = os.listdir(path) #os.path.join(thedirectory, thefile)
         print(filelist)
         
         mon_str = monthDict[int(month)]
         print('Matching global covariance for %s' % mon_str)
         r = re.compile('world_' +str(mon_str) + '\w+.nc')
         filtered_list = list(filter(r.match, filelist))
-        fullpath_list = [os.path.join(thedirectory,f) for f in filtered_list]
+        if not filtered_list:
+            r = re.compile('covariance_' +str(month).zfill(2) + '\w+.nc')
+        filtered_list = list(filter(r.match, filelist))
+        fullpath_list = [os.path.join(path,f) for f in filtered_list]
         print(filtered_list)
         print(fullpath_list)
         #long_filelist.extend(fullpath_list)
