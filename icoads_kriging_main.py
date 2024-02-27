@@ -188,7 +188,7 @@ def main(argv):
     #for ellipse Atlatic 0, for ellipse world 1, for ESA world 2
     water_mask_file = water_mask_file[1]
     print(water_mask_file)
-    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file)
+    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
     print('----')
     print(mask_ds)
     
@@ -205,7 +205,7 @@ def main(argv):
             except: 
                 pass
             
-            ncfilename = str(output_directory) + str(current_year) + str(current_month).zfill(2) + 'pentads_kriged.nc'
+            ncfilename = 'test_pentad.nc' #str(output_directory) + str(current_year) + str(current_month).zfill(2) + 'pentads_kriged.nc'
             ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
             print(ncfile)
             
@@ -233,14 +233,14 @@ def main(argv):
             ok.units = 'deg C' # degrees Kelvin
             ok.standard_name = 'SST anomaly'
             # Define a 3D variable to hold the data
+            dz_ok = ncfile.createVariable('sst_anomaly_uncertainty',np.float64,('time','lat','lon')) # note: unlimited dimension is leftmost
+            dz_ok.units = 'deg C' # degrees Kelvin
+            dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+            # Define a 3D variable to hold the data
             clim = ncfile.createVariable('climatology',np.float64,('time','lat','lon'))
             # note: unlimited dimension is leftmost
             clim.units = 'deg C' # degrees Kelvin
             clim.standard_name = 'SST climatology' # this is a CF standard name
-            # Define a 3D variable to hold the data
-            dz_ok = ncfile.createVariable('sst_anomaly_uncertainty',np.float64,('time','lat','lon')) # note: unlimited dimension is leftmost
-            dz_ok.units = 'deg C' # degrees Kelvin
-            dz_ok.standard_name = 'uncertainty' # this is a CF standard name
             
             
             # Write latitudes, longitudes.
@@ -248,10 +248,14 @@ def main(argv):
             lat[:] = mask_ds_lat #ds.lat.values
             lon[:] = mask_ds_lon #ds.lon.values
             
-    
             obs_df = obs_qc_module.main(data_path, qc_path, year=current_year, month=current_month)
             print(obs_df.columns.values)
             
+            """
+            #save out the obs dataframe into csv to plot locations of ships?
+            unique_days = np.unique(obs_df['dy'])
+            print('unique days', unique_days)
+            """
             
             if cov_dir is not None:
                 #match covariance to the processed monthly data file
@@ -262,189 +266,260 @@ def main(argv):
                 #calculate covariance based on ESA CCI anomalies and set up a (land- and ice-) masked ESA CCI dataset
                 covariance, ds_masked = cov_module.covariance_main(cci_directory, ds_varname, lon_west, lon_east, lat_south, lat_north, cov_choice, ipc=ipc, time_resolution=False)
             print(covariance)
-            """
-            #save out the obs dataframe into csv to plot locations of ships?
-            unique_days = np.unique(obs_df['dy'])
-            print('unique days', unique_days)
-            """
+            
             # list of dates for each year 
             #current_month_range = pd.date_range(str(current_month)+'/1/'+str(current_year),str(current_month)+'/31/'+str(current_year), freq='D')
             _,month_range = monthrange(current_year, current_month)
             print(month_range)
-        
-            #for day in range(1,month_range+1,1): #unique_days)):
+
             
-            # for daily processing
-                #day_df = obs_df[obs_df['dy'] == day]
-                #timestep = int(day) - 1
-                
-            for pentad in range(1,7):
-                print(current_year, current_month, pentad) #day)
-                
-                #get a middle day of each pentad to extract climatology (for anomalies)
-                if pentad == 1:
-                    day = 3
-                    day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
-                elif pentad == 2:
-                    day = 8
-                    day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
-                elif pentad == 3:
-                    day = 13
-                    day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
-                elif pentad == 4:
-                    day = 18
-                    day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
-                elif pentad == 5:
-                    day = 23
-                    day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
-                elif pentad == 6:
-                    day = 28
-                    day_df = obs_df[day - 2 <= obs_df['dy']]
-                    
-                #for pentad processing
-                
-                timestep = int(pentad) - 1
-                print('---------')
-                print(day_df['dy'])
-                print('----------')
-                print('timestep', timestep)
-                
-                
-
-                current_date = datetime(current_year,current_month,day)
-                print(current_date)
-                
-                #to match a 365 ESA climatology file
-                #in order to calculate SST anomalies for the obs
-                if not isleap(current_year):
-                    print('year is not leap')
-                    DOY = int(current_date.strftime('%j'))
-                elif isleap(current_year):
-                    print('year is leap')
-                    DOY = int(current_date.strftime('%j'))
-                    if DOY < 29:
-                        DOY = DOY
-                    elif DOY >= 29:
-                        DOY = DOY - 1
-                print('DOY', DOY)
-                
-                esa_climatology = obs_module.read_climatology(cci_climatology,DOY)
-                cropped_clim = esa_climatology.sel(lat=slice(lat_south,lat_north), lon=slice(lon_west,lon_east))
-                print(cropped_clim)
-                #climatology comes at 0.05 lat/lon resolution
-                #ouput product comes at 1 degree, needs coarsening by 20
-                coarse_cropped_clim = cropped_clim.coarsen(lat=20,lon=20).mean()
-                print(coarse_cropped_clim)
-                cropped_clim = cropped_clim.variables['analysed_sst'].values.squeeze()
-                cropped_clim = cropped_clim - 273.15
-                
-                coarse_cropped_clim = coarse_cropped_clim.variables['analysed_sst'].values.squeeze()
-                coarse_cropped_clim = coarse_cropped_clim - 273.15
-                
-                #add climatology value and calculate the SST anomaly
-                day_df = obs_module.extract_clim_anom(esa_climatology, day_df)
-                #calculate flattened idx based on the ESA landmask file
-                #which is compatible with the ESA-derived covariance
-                mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file)
-                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
-                
-                
-                print(cond_df)
-                print(cond_df.columns.values)
-                
-                #quick temperature check
-                print(cond_df['sst'])
-                print(cond_df['climatology_sst'])
-                print(cond_df['sst_anomaly'])
-                
-                
-                """
-                plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
-                lons = plotting_df['lon']
-                lats = plotting_df['lat']
-                ssts = plotting_df['sst']
-                clims = plotting_df['climatology_sst']
-                anoms = plotting_df['sst_anomaly']
-                
-                skwargs = {'s': 5, 'c': 'red'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad)+' pentad')
-                plt.show()
-                
-                skwargs = {'s': 5, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="ICOADS measured SST - "+str(pentad)+ ' pentad', land_col='darkolivegreen')
-                plt.show()
-                
-                skwargs = {'s': 5, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="ESA CCI climatology - "+str(pentad)+' pentad', land_col='darkolivegreen')
-                plt.show()
-                
-                skwargs = {'s': 5, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="SST anomalies", land_col='darkolivegreen')
-                plt.show()
-                """
-                
-                
-                day_flat_idx = cond_df['flattened_idx'][:]
-                
-
-                
-                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
-                #W = obs_module.counts_for_esa(day_flat_idx)
-                print(obs_covariance)
-                print(W)
-                
-                #krige obs onto gridded field
-                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
-                #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
-                print('Kriging done, saving output')
-                
-                # Write the data.  
-                #This writes each time slice to the netCDF instead of the whole 3D netCDF variable all at once.
-                ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
-                dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
-                clim[timestep,:,:] = coarse_cropped_clim #climatology
-                print("-- Wrote data")
-                print(pentad, day)
-
-                
-            
-                
-                
-                
-                
-            # Write time
-            #pd.date_range takes month/day/year as input dates
-            #for daily processing
-            #dates_ = pd.date_range(str(current_month)+'/1/'+str(current_year), str(current_month)+'/'+str(month_range)+'/'+str(current_year), freq='D')
             #for pentad processing
-            dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
+            if processing == 'pentad':    
+                for pentad in range(1,7):
+                    print(current_year, current_month, pentad)
+                    #get a middle day of each pentad to extract climatology (for anomalies)
+                    if pentad == 1:
+                        day = 3
+                        day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
+                    elif pentad == 2:
+                        day = 8
+                        day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
+                    elif pentad == 3:
+                        day = 13
+                        day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
+                    elif pentad == 4:
+                        day = 18
+                        day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
+                    elif pentad == 5:
+                        day = 23
+                        day_df = obs_df[(day - 2 <= obs_df['dy']) & (obs_df['dy'] < day+3)]
+                    elif pentad == 6:
+                        day = 28
+                        day_df = obs_df[day - 2 <= obs_df['dy']]
+                    
+                    timestep = int(pentad) - 1
+                    print('---------')
+                    print(day_df['dy'])
+                    print('----------')
+                    print('timestep', timestep)
+                
+                    current_date = datetime(current_year,current_month,day)
+                    print(current_date)
+                
+                    #to match a 365 ESA climatology file
+                    #in order to calculate SST anomalies for the obs
+                    if not isleap(current_year):
+                        print('year is not leap')
+                        DOY = int(current_date.strftime('%j'))
+                    elif isleap(current_year):
+                        print('year is leap')
+                        DOY = int(current_date.strftime('%j'))
+                        if DOY < 29:
+                            DOY = DOY
+                        elif DOY >= 29:
+                            DOY = DOY - 1
+                    print('DOY', DOY)
+                
+                    esa_climatology = obs_module.read_climatology(cci_climatology,DOY)
+                    cropped_clim = esa_climatology.sel(lat=slice(lat_south,lat_north), lon=slice(lon_west,lon_east))
+                    print(cropped_clim)
+                    #climatology comes at 0.05 lat/lon resolution
+                    #ouput product comes at 1 degree, needs coarsening by 20
+                    coarse_cropped_clim = cropped_clim.coarsen(lat=20,lon=20).mean()
+                    print(coarse_cropped_clim)
+                    cropped_clim = cropped_clim.variables['analysed_sst'].values.squeeze()
+                    cropped_clim = cropped_clim - 273.15
+                
+                    coarse_cropped_clim = coarse_cropped_clim.variables['analysed_sst'].values.squeeze()
+                    coarse_cropped_clim = coarse_cropped_clim - 273.15
+                    
+                    #add climatology value and calculate the SST anomaly
+                    day_df = obs_module.extract_clim_anom(esa_climatology, day_df)
+                    #calculate flattened idx based on the ESA landmask file
+                    #which is compatible with the ESA-derived covariance
+                    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+                    cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                    
+                    print(cond_df.columns.values)
+                    print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
+                    #quick temperature check
+                    print(cond_df['sst'])
+                    print(cond_df['climatology_sst'])
+                    print(cond_df['sst_anomaly'])
+                
+                    """
+                    plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
+                    lons = plotting_df['lon']
+                    lats = plotting_df['lat']
+                    ssts = plotting_df['sst']
+                    clims = plotting_df['climatology_sst']
+                    anoms = plotting_df['sst_anomaly']
+                    
+                    skwargs = {'s': 5, 'c': 'red'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad)+' pentad')
+                    plt.show()
+                    
+                    skwargs = {'s': 5, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="ICOADS measured SST - "+str(pentad)+ ' pentad', land_col='darkolivegreen')
+                    plt.show()
+                    
+                    skwargs = {'s': 5, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="ESA CCI climatology - "+str(pentad)+' pentad', land_col='darkolivegreen')
+                    plt.show()
+                    
+                    skwargs = {'s': 5, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title="SST anomalies", land_col='darkolivegreen')
+                    plt.show()
+                    """
+                
+                
+                    day_flat_idx = cond_df['flattened_idx'][:]
+                
+                    obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
+                    #W = obs_module.counts_for_esa(day_flat_idx)
+                    print(obs_covariance)
+                    print(W)
+                    
+                    #krige obs onto gridded field
+                    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                    #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
+                    print('Kriging done, saving output')
+                
+                    # Write the data.  
+                    #This writes each time slice to the netCDF
+                    ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
+                    dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+                    clim[timestep,:,:] = coarse_cropped_clim #climatology
+                    print("-- Wrote data")
+                    print(pentad, day)
+
+                # Write time
+                #pd.date_range takes month/day/year as input dates
+                dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
             
-            dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
-            print('dates', dates_)
-            dates = dates_.dt.to_pydatetime() # Here it becomes date
-            print('pydate', dates)
-            times = date2num(dates, time.units)
-            print(times)
-            time[:] = times
-            print(time)    
-            # first print the Dataset object to see what we've got
-            print(ncfile)
-            # close the Dataset.
-            ncfile.close()
-            print('Dataset is closed!')
-            STOP
-    STOP    
+                dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
+                print('dates', dates_)
+                dates = dates_.dt.to_pydatetime() # Here it becomes date
+                print('pydate', dates)
+                times = date2num(dates, time.units)
+                print(times)
+                time[:] = times
+                print(time)    
+                # first print the Dataset object to see what we've got
+                print(ncfile)
+                # close the Dataset.
+                ncfile.close()
+                print('Dataset is closed!')
+                STOP
+
+
+            #for daily processing
+            elif processing == 'daily':
+                for day in range(1,month_range+1,1): #unique_days)):
+                    print(current_year, current_month, day)
+                    day_df = obs_df[obs_df['dy'] == day]
+                    timestep = int(day) - 1
+                    print('---------')
+                    print(day_df['dy'])
+                    print('----------')
+                    print('timestep', timestep)
+                    
+                    current_date = datetime(current_year,current_month,day)
+                    print(current_date)
+                
+                    #to match a 365 ESA climatology file
+                    #in order to calculate SST anomalies for the obs
+                    if not isleap(current_year):
+                        print('year is not leap')
+                        DOY = int(current_date.strftime('%j'))
+                    elif isleap(current_year):
+                        print('year is leap')
+                        DOY = int(current_date.strftime('%j'))
+                        if DOY < 29:
+                            DOY = DOY
+                        elif DOY >= 29:
+                            DOY = DOY - 1
+                    print('DOY', DOY)
+                    
+                    esa_climatology = obs_module.read_climatology(cci_climatology,DOY)
+                    cropped_clim = esa_climatology.sel(lat=slice(lat_south,lat_north), lon=slice(lon_west,lon_east))
+                    print(cropped_clim)
+                    #climatology comes at 0.05 lat/lon resolution
+                    #ouput product comes at 1 degree, needs coarsening by 20
+                    coarse_cropped_clim = cropped_clim.coarsen(lat=20,lon=20).mean()
+                    print(coarse_cropped_clim)
+                    cropped_clim = cropped_clim.variables['analysed_sst'].values.squeeze()
+                    cropped_clim = cropped_clim - 273.15
+                
+                    coarse_cropped_clim = coarse_cropped_clim.variables['analysed_sst'].values.squeeze()
+                    coarse_cropped_clim = coarse_cropped_clim - 273.15
+                    
+                    #add climatology value and calculate the SST anomaly
+                    day_df = obs_module.extract_clim_anom(esa_climatology, day_df)
+                    #calculate flattened idx based on the ESA landmask file
+                    #which is compatible with the ESA-derived covariance
+                    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+                    cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                
+                    print(cond_df)
+                    print(cond_df.columns.values)
+                    
+                    #quick temperature check
+                    print(cond_df['sst'])
+                    print(cond_df['climatology_sst'])
+                    print(cond_df['sst_anomaly'])
+                    
+                    day_flat_idx = cond_df['flattened_idx'][:]
+                
+                    obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
+                    #W = obs_module.counts_for_esa(day_flat_idx)
+                    print(obs_covariance)
+                    print(W)
+                    
+                    #krige obs onto gridded field
+                    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                    #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
+                    print('Kriging done, saving output')
+                
+                    # Write the data.  
+                    #This writes each time slice to the netCDF
+                    ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
+                    dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+                    clim[timestep,:,:] = coarse_cropped_clim #climatology
+                    print("-- Wrote data")
+                    print(day)
+                # Write time
+                #pd.date_range takes month/day/year as input dates
+                dates_ = pd.date_range(str(current_month)+'/1/'+str(current_year), str(current_month)+'/'+str(month_range)+'/'+str(current_year), freq='D')
+            
+                dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
+                print('dates', dates_)
+                dates = dates_.dt.to_pydatetime() # Here it becomes date
+                print('pydate', dates)
+                times = date2num(dates, time.units)
+                print(times)
+                time[:] = times
+                print(time)    
+                # first print the Dataset object to see what we've got
+                print(ncfile)
+                # close the Dataset.
+                ncfile.close()
+                print('Dataset is closed!')
+                STOP
+    
+    print('Processing for chosen date range successfully finished')
+    print('%s to %s') % (year_start, year_stop)
 
 
 
