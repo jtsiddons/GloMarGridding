@@ -184,7 +184,7 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     indexes = iid
 
     landmask = np.copy(to_modify)
-    print(landmask)
+    #print(landmask)
     
     if(~np.isnan(landmask).any()):
         landmask = landmask.astype('float')
@@ -200,7 +200,10 @@ def result_reshape_2d(result_1d, iid, grid_2d):
 
 
 def watermask(ds_masked):
-    water_mask = np.copy(ds_masked.landmask[:,:])
+    try:
+        water_mask = np.copy(ds_masked.variables['landmask'][:,:])
+    except KeyError:
+        water_mask = np.copy(ds_masked.variables['land_sea_mask'][:,:])
     """
     water_mask[~np.isnan(water_mask)] = 1
     water_mask[np.isnan(water_mask)] = 0
@@ -243,6 +246,7 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
     plt.show()
     plt.imshow(dz_sk_2d)
     plt.show()
+    
     plt.imshow(obs_ok_2d)
     plt.show()
     plt.imshow(dz_ok_2d)

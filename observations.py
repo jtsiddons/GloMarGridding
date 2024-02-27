@@ -44,17 +44,25 @@ from functools import partial
 
 
 
-def landmask_from_cci(filepath):
+def landmask(filepath, min_lat, max_lat, min_lon, max_lon):
     #extract land sea mask for the domain
     mask_ds = xr.open_dataset(str(filepath), engine="netcdf4")
     print(mask_ds)
+    mask_ds = mask_ds.sel(latitude=slice(min_lat,max_lat), longitude=slice(min_lon,max_lon))
     #esa_cci_mask has the same amount of water points as the covariance created from ESA data
-    esa_cci_mask = mask_ds.variables['landmask'].values
+    try:
+        mask = mask_ds.variables['landmask'].values
+        lat = mask_ds.lat.values
+        lon = mask_ds.lon.values
+    except KeyError:
+        mask = mask_ds.variables['land_sea_mask'].values
+        lat = mask_ds.latitude.values
+        lon = mask_ds.longitude.values
+        lon = ((lon + 540.) % 360.) - 180.
     #water is 1, land is 0
-    esa_cci_lat = mask_ds.lat.values
-    esa_cci_lon = mask_ds.lon.values
+    
     #gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
-    return mask_ds, esa_cci_lat, esa_cci_lon
+    return mask_ds, lat, lon
 
 
 def read_climatology(clim_path, doy):
@@ -69,6 +77,7 @@ def read_climatology(clim_path, doy):
     fullpath_list = [os.path.join(ds_dir,f) for f in filtered_list]
     clim_file = xr.open_dataset(fullpath_list[0], engine='netcdf4')
     print(clim_file)
+    
     return clim_file
 
 
@@ -80,6 +89,7 @@ def extract_clim_anom(clim_file, df):
     cci_lon_idx = find_nearest(clim_file.lon, obs_lon)
     
     esa_cci_clim = clim_file.variables['analysed_sst'].values
+    #print(esa_cci_clim)
     
     climatology = [] #fake ship obs
     for i in range(len(cci_lat_idx)):
@@ -103,7 +113,7 @@ def extract_clim_anom(clim_file, df):
 def _preprocess(x, time_bnds):
     return x.sel(date=slice(*time_bnds))
 
-
+"""
 def yearly_processing(obs_path, lon_bnds, lat_bnds, year=False):
     if year:
         yearly_df = pd.DataFrame()
@@ -118,8 +128,10 @@ def yearly_processing(obs_path, lon_bnds, lat_bnds, year=False):
         print(yearly_df)
     
     return yearly_df
+"""
 
 
+"""
 def get_dataframe(obs_file, lon_bnds, lat_bnds, year=False):
     #path = str(obs_file) + str(year) + '-' + str(month).zfill(2) + '*.nc' 
     #'/noc/mpoc/surface_data/ICOADS_NETCDF_R3_ALL/ICOADS_R3.0.0_' + str(year) + '*.nc'
@@ -180,9 +192,9 @@ def get_dataframe(obs_file, lon_bnds, lat_bnds, year=False):
     df = df.loc[(df['lon'] >= lon_bnds[0]) & (df['lon'] < lon_bnds[1]) & (df['lat'] >= lat_bnds[0]) & (df['lat'] < lat_bnds[1])]
     print(df)
     return df
+"""
 
-
-def find_values(ds_masked_xr, lat, lon):
+def find_values(mask_ds, lat, lon):
     '''
     Parameters:
     cci (array) - array of cci  vaules for each point in the whole domain
@@ -193,20 +205,35 @@ def find_values(ds_masked_xr, lat, lon):
     Returns:
     Dataframe with added anomalies for each observation point
     '''
-
-    cci_lat_idx = find_nearest(ds_masked_xr.lat, lat)    
-    cci_lon_idx = find_nearest(ds_masked_xr.lon, lon)
+    try:
+        mask = mask_ds.variables['landmask'].values
+        print(mask)
+        mask_lat = mask_ds.lat.values
+        print(mask_lat)
+        mask_lon = mask_ds.lon.values
+        mask_lon = ((mask_lon + 540) % 360) - 180
+        print(mask_lon)
+    except KeyError:
+        mask = mask_ds.variables['land_sea_mask'].values
+        print(mask)
+        mask_lat = mask_ds.latitude.values
+        print(mask_lat)
+        mask_lon = mask_ds.longitude.values
+        mask_lon = ((mask_lon + 540) % 360) - 180
+        print(mask_lon)
+    cci_lat_idx = find_nearest(mask_lat, lat)    
+    cci_lon_idx = find_nearest(mask_lon, lon)
     
-    esa_cci_mask = ds_masked_xr.variables['landmask'].values
-    
-    water_point = [] #fake ship obs
+    esa_cci_mask = mask
+    water_point = []
     for i in range(len(cci_lat_idx)):
         wp = esa_cci_mask[cci_lat_idx[i],cci_lon_idx[i]]
+        #print(wp)
         #cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
         water_point.append(wp)
     water_point = np.hstack(water_point)
+    
     return water_point, cci_lat_idx, cci_lon_idx
-
 
 
 def find_nearest(array, values):
@@ -216,7 +243,7 @@ def find_nearest(array, values):
 
 
 
-def add_esa_watermask_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
+def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mask_ds_lon):
     obs_data = df
     #remove ship obs that are outside the chosen domain
     cond_df = obs_data.loc[(obs_data['lon'] >= lon_bnds[0]) & (obs_data['lon'] < lon_bnds[1]) & (obs_data['lat'] >= lat_bnds[0]) & (obs_data['lat'] < lat_bnds[1])]
@@ -228,15 +255,18 @@ def add_esa_watermask_at_obs_locations(lon_bnds, lat_bnds, ds_masked_xr, df):
     
     #extract the CCI SST anomaly values corresponding to the obs lat/lon coordinate points
     #print(ds_masked_xr)
-    ESA_waterpoint_for_obs, lat_idx, lon_idx = find_values(ds_masked_xr, obs_lat, obs_lon)
-    cond_df['cci_waterpoint'] = ESA_waterpoint_for_obs
+    its_waterpoint_for_obs, lat_idx, lon_idx = find_values(mask_ds, obs_lat, obs_lon)
+    cond_df['cci_waterpoint'] = its_waterpoint_for_obs
     
     #find the indices for lats and lons of the observations
     idx_tuple = np.array([lat_idx, lon_idx])
     
     #below 0 is set as the first timestep, it can be any number as the scenes have the same land/ice mask over all time steps, but it has to be set to extract the 2D field
-    esa_cci_mask = ds_masked_xr.variables['landmask']
-    output_size = (esa_cci_mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
+    try:
+        mask = mask_ds.variables['landmask'].values
+    except KeyError:
+        mask = mask_ds.variables['land_sea_mask'].values
+    output_size = (mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
     
     #transform location indices into a flattened 1D index
     flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
