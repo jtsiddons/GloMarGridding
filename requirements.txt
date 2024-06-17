@@ -1,0 +1,10 @@
+numpy<2
+pandas
+xarray
+netCDF4<1.7
+matplotlib
+Cartopy
+scipy
+scikit-learn
+tqdm
+git+ssh://git@git.noc.ac.uk/josidd/pycoads.git@deployed
