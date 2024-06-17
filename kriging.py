@@ -88,46 +88,47 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     #bias[np.isnan(bias)] = 0
     if iid.ndim > 1:
         iid = np.squeeze(iid)
-    print('iid', iid)
-    print('uind', uind)
+    print('iid', iid.shape)
+    print('uind', uind.shape)
     _,ia,_ = intersect_mtlb(iid,uind)
     ia = ia.astype(int)
-    print('ia', ia)
+    #print(f'{ia.shape = }') # ia.shape)
     
     #ICOADS obs  
-    print(W)
-    print(x_obs)
+    #print(W)
+    #print(x_obs)
     sst_obs = W @ x_obs #- clim[ia] - bias[ia] 
-    print('SST OBS', sst_obs)
+    print('SST OBS', sst_obs.shape)
     
     #R is the covariance due to the measurements i.e. measurement noise, bias noise and sampling noise 
     #takes the ICOADS points covariance and maps to grid point covariance 
     Wtrans = np.transpose(W)
     R  = W @ covx @ Wtrans
-    print('W', W)
-    print('W trans', Wtrans)
-    print('R', R)
+    #print('W', W)
+    #print('W trans', Wtrans)
+    #print('R', R)
     #S is the spatial covariance between all "measured" grid points 
     covar = np.copy(cci_covariance)
     S  = covar[ia[:,None],ia[None,:]]
-    print('S', S)
+    print('S', S.shape)
     #Ss is the covariance between to be "predicted" grid points (i.e. all) and "measured" points 
     Ss = covar[ia,:]      
-    print('Ss', Ss)
+    print('Ss', Ss.shape)
+    
     #S+R because the measurements have uncertainties as well as spatial covarince 
     #G is the weight vector for Simple Kriging 
     G = np.transpose(Ss) @ np.linalg.inv(S+R)
     z_obs_sk = G @ sst_obs
-    print('G', G)
-    print('z obs sk', z_obs_sk)
+    #print('G', G)
+    #print('z obs sk', z_obs_sk)
     CG = G @ Ss
-    print('CG', CG)
+    #print('CG', CG)
     diagonal = np.diag(covar-CG)
     #diagonal[abs(diagonal) < 1e-15] = 0.0
     dz_sk = np.sqrt(diagonal)
     dz_sk[np.isnan(dz_sk)] = 0.0
-    print('dz_sk', dz_sk)
-    print('Simple Kriging Done')
+    #print('dz_sk', dz_sk)
+    #print('Simple Kriging Done')
     
     #Now we will convert to ordinary kriging 
     S_ = np.concatenate((S+R, np.ones((len(ia),1))), axis=1)
@@ -203,27 +204,31 @@ def watermask(ds_masked):
     try:
         water_mask = np.copy(ds_masked.variables['landmask'][:,:])
     except KeyError:
-        water_mask = np.copy(ds_masked.variables['land_sea_mask'][:,:])
+        #water_mask = np.copy(ds_masked.variables['land_sea_mask'][:,:])
+        water_mask = np.copy(ds_masked.variables['landice_sea_mask'][:,:])
     """
     water_mask[~np.isnan(water_mask)] = 1
     water_mask[np.isnan(water_mask)] = 0
     """
-    print(np.shape(water_mask))
+    #print(np.shape(water_mask))
     water_idx = np.asarray(np.where(water_mask.flatten() == 1)) #this idx is returned as a row-major
     #water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1)) #this idx is returned as a column-major
-    print(water_idx)
+    #print(water_idx)
     return water_mask, water_idx
 
 
 
 def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
-    obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
-    print('1 - DONE')
+    try:
+        obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
+    except KeyError:
+        obs = cond_df['obs_anomalies_height'].values
+    #print('1 - DONE')
     #water_mask, water_idx = watermask(ds, ds_var, timestep)
     water_mask, water_idx = watermask(ds_masked)
     obs_idx = flattened_idx
     unique_obs_idx = np.unique(obs_idx)
-    print('2 - DONE')
+    #print('2 - DONE')
    # _,ia,_ = intersect_mtlb(water_idx,unique_obs_idx)
     #W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
     #for k in range(max(unique_obs_idx.shape)):
@@ -232,15 +237,15 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
             #qq = q[i]
             #W[k,qq] = np.divide(1, len(q))
     obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov)
-    print('3 - DONE')
+    #print('3 - DONE')
     obs_sk_2d = result_reshape_2d(obs_sk, water_idx, water_mask)
-    print('4 - DONE')
+    #print('4 - DONE')
     dz_sk_2d = result_reshape_2d(dz_sk, water_idx, water_mask)
-    print('5 - DONE')
+    #print('5 - DONE')
     obs_ok_2d = result_reshape_2d(obs_ok, water_idx, water_mask)
-    print('6 - DONE')
+    #print('6 - DONE')
     dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
-    print('7 - DONE')
+    #print('7 - DONE')
     """
     plt.imshow(obs_sk_2d)
     plt.show()
