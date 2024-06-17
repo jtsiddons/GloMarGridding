@@ -115,9 +115,9 @@ def main(argv):
     
     #location of ESA CCI files for the covariance creation and output grid
     cci_directory = config.get('observations', 'esa_cci')
-    cci_climatology = config.get('observations', 'esa_climatology')
-    cci_daily_climatology = config.get('observations', 'esa_daily_climatology')
-    metoffice_climatology = config.get('observations', 'metoffice_climatology')
+    cci_climatology = config.get('SST', 'esa_climatology')
+    cci_daily_climatology = config.get('SST', 'esa_daily_climatology')
+    metoffice_climatology = config.get('SST', 'metoffice_climatology')
 
     #what are we processing - variable in the files from cci_directory
     ds_varname = config.getlist('variable_name', 'variable')
@@ -125,67 +125,35 @@ def main(argv):
     ds_varname = ds_varname[1]
     
     #set boundaries for the domain
-    lon_west  = config.getfloat('domain', 'lon_west') #-180. 
-    lon_east  = config.getfloat('domain', 'lon_east') #180. 
-    lat_south = config.getfloat('domain', 'lat_south') #-90.
-    lat_north = config.getfloat('domain', 'lat_north') #90. 
+    lon_west  = config.getfloat('SST', 'lon_west') #-180. 
+    lon_east  = config.getfloat('SST', 'lon_east') #180. 
+    lat_south = config.getfloat('SST', 'lat_south') #-90.
+    lat_north = config.getfloat('SST', 'lat_north') #90. 
     
     #location of the ICOADS observation files
     data_path = config.get('observations', 'observations')
     #location og QC flags in GROUPS subdirectories
-    qc_path = config.get('observations', 'qc_flags_joe')
-    qc_path_2 = config.get('observations', 'qc_flags_joe_tracked')
+    qc_path = config.get('SST', 'qc_flags_joe')
+    qc_path_2 = config.get('SST', 'qc_flags_joe_tracked')
     
     if args.year_start and args.year_stop:
         year_start = int(args.year_start)
         year_stop = int(args.year_stop)
     else:
         #start_date
-        year_start = config.getint('time_period', 'startyear')
+        year_start = config.getint('SST', 'startyear')
         #end_date
-        year_stop = config.getint('time_period', 'endyear')
+        year_stop = config.getint('SST', 'endyear')
     print(year_start, year_stop)
     
     #path where the covariance(s) is/are located
     #if single covariance, then full path
     #if several different covariances, then path to directory
-    cov_dir = config.get('covariance', 'covariance_path')
+    cov_dir = config.get('SST', 'covariance_path')
     
-    #how to calculate the covariance that's used for kriging if it's not calculated yet
-    cov_choice = config.get('covariance', 'covariance_type')
+    output_directory = config.get('SST', 'output_dir')
     
-    #check if user specified number of modes for EOF reconstruction if that option chosen
-    try:
-        ipc = config.getint('covariance', 'pc_number')
-    except ValueError:
-        ipc = ''
-    
-    #check type of precessing - daily or pentad
-    processing = []
-    if config.getboolean('time_resolution', 'daily') == True and config.getboolean('time_resolution', 'pentad') == False:
-        print('Daily processing')
-        processing = 'daily'
-    elif config.getboolean('time_resolution', 'daily') == False and config.getboolean('time_resolution', 'pentad') == True:
-        print('Pentad processing')
-        processing = 'pentad'
-    else:
-        raise KeyError('Either no or all time resolutions for processing have been selected in the .ini file')
-    
-    
-    #check type of output - yearly or monthly
-    output = []
-    if config.getboolean('output', 'yearly') == True and config.getboolean('output', 'monthly') == False:
-        print('Yearly output')
-        output = 'yearly'
-    elif config.getboolean('output', 'yearly') == False and config.getboolean('output', 'monthly') == True:
-        print('Monthly output')
-        output = 'monthly'
-    else:
-        raise KeyError('Either no or all time resolutions for output have been selected in the .ini file')
-    
-    output_directory = config.get('output', 'output_dir')
-    
-        
+     
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
