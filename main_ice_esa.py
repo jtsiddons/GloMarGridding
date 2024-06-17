@@ -54,7 +54,6 @@ import covariance as cov_module
 import observations as obs_module
 import observations_plus_qc as obs_qc_module
 import kriging as krig_module
-import output as out_module
 
 
 ####
