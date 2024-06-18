@@ -7,3 +7,4 @@ Cartopy
 scipy
 scikit-learn
 tqdm
+PyCOADS@git+ssh://git@git.noc.ac.uk/josidd/pycoads.git@deployed
