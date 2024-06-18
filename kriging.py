@@ -98,7 +98,15 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     #print(W)
     #print(x_obs)
     sst_obs = W @ x_obs #- clim[ia] - bias[ia] 
-    print('SST OBS', sst_obs.shape)
+    #print('SST OBS', sst_obs.shape)
+    print(f'{x_obs = }')
+    print(f'{x_obs.shape = }')
+    print(f'{np.isnan(x_obs).sum() = }')
+
+    print(f'{sst_obs = }')
+    print(f'{sst_obs.shape = }')
+    print(f'{np.isnan(sst_obs).sum() = }')
+    
     
     #R is the covariance due to the measurements i.e. measurement noise, bias noise and sampling noise 
     #takes the ICOADS points covariance and maps to grid point covariance 
@@ -148,7 +156,8 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
   
     diagonal = (np.diag(covar-CG)).reshape(-1,1)
     dz_ok = np.sqrt(diagonal-alpha)
-
+    print(f'{z_obs_ok = }')
+    print(f'{z_obs_ok.shape = }')
     print('Ordinary Kriging Done')
     #get rid of resulting double brackets
     a = np.squeeze(np.asarray(z_obs_sk))
@@ -210,10 +219,11 @@ def watermask(ds_masked):
     water_mask[~np.isnan(water_mask)] = 1
     water_mask[np.isnan(water_mask)] = 0
     """
+    
     #print(np.shape(water_mask))
     water_idx = np.asarray(np.where(water_mask.flatten() == 1)) #this idx is returned as a row-major
     #water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1)) #this idx is returned as a column-major
-    #print(water_idx)
+    print(f'{water_idx=}')
     return water_mask, water_idx
 
 
@@ -246,12 +256,13 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
     #print('6 - DONE')
     dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
     #print('7 - DONE')
+    print(f'{obs_ok_2d.shape = }')
+    print(f'{np.isnan(obs_ok_2d).sum() = }')
     """
     plt.imshow(obs_sk_2d)
     plt.show()
     plt.imshow(dz_sk_2d)
     plt.show()
-    
     plt.imshow(obs_ok_2d)
     plt.show()
     plt.imshow(dz_ok_2d)

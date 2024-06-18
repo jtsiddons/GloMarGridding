@@ -60,7 +60,7 @@ import kriging as krig_module
 #for plotting
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-
+import matplotlib.cm as cm
 import simple_plots as cp
 
 
@@ -373,7 +373,7 @@ def main(argv):
                 ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
                 ax.add_feature(cfeature.LAND, color='darkolivegreen')
                 ax.coastlines()
-                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
+                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=cm.get_cmap('coolwarm'))
                 fig.colorbar(m)
                 plt.clim(-4, 4)
                 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
@@ -419,6 +419,7 @@ def main(argv):
         print(time)    
         # first print the Dataset object to see what we've got
         print(ncfile)
+        
         # close the Dataset.
         ncfile.close()
         print('Dataset is closed!')

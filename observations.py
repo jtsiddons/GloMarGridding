@@ -252,6 +252,7 @@ def find_nearest(array, values):
 
 
 def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mask_ds_lon):
+    
     obs_data = df
     #remove ship obs that are outside the chosen domain
     cond_df = obs_data.loc[(obs_data['lon'] >= lon_bnds[0]) & (obs_data['lon'] < lon_bnds[1]) & (obs_data['lat'] >= lat_bnds[0]) & (obs_data['lat'] < lat_bnds[1])]
