@@ -399,10 +399,10 @@ def MAT_match_climatology_to_obs(climatology_365, obs_df):
     #df1 = obs_df[['lat', 'lon', 'sst', 'climatology', 'cci_anomalies', 'obs_anomalies']]
     #print(df1)
     #STOP
-    """
-    #in case some of the values are Nan (because covered by ice)                                                                     
+    
+    #in case some of the values are Nan (because covered by ice)        
     obs_df = obs_df.dropna()
-    """
+    
     print(obs_df)
     return obs_df
 
@@ -464,10 +464,10 @@ def SST_match_climatology_to_obs(climatology_365, obs_df):
     #df1 = obs_df[['lat', 'lon', 'sst', 'climatology', 'cci_anomalies', 'obs_anomalies']]
     #print(df1)
     #STOP
-    """
-    #in case some of the values are Nan (because covered by ice)                                                                     
+    
+    #in case some of the values are Nan (because covered by ice)                           
     obs_df = obs_df.dropna()
-    """
+    
     print(obs_df)
     return obs_df
 
