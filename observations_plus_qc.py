@@ -134,7 +134,8 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
 def main(data_path, qc_path, qc_path_2, year, month):
     data_dir = read_in_data(data_path, year=year, month=month, obs=True)
     qc_dir_1 = read_in_data(qc_path, year=year, month=month, subdirectories=True)
-    qc_dir_2 = read_in_data(qc_path_2, year=year, month=month)
+    qc_dir_2 = read_in_data(qc_path_2, year=year, month=month, subdirectories=True)
+    
     qc_dir =  qc_dir_1 + qc_dir_2
     #qc_dir = qc_dir[:-1]
     print(qc_dir_1)
