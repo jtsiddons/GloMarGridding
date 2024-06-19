@@ -204,7 +204,7 @@ def main(data_path, qc_path, qc_path_2, year, month):
 def MAT_observations(obs_path, obs_path_2, year, month):
     #obs_path is to Joe's data directories
     obs_dir_1 = read_in_data(obs_path, year=year, month=month, subdirectories=True)
-    obs_dir_2 = read_in_data(obs_path_2, year=year, month=month)
+    obs_dir_2 = read_in_data(obs_path_2, year=year, month=month, subdirectories=True)
     obs_dir =  obs_dir_1 + obs_dir_2
     
     print(obs_dir_1)
