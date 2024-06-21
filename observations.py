@@ -35,8 +35,7 @@ import xarray as xr
 import netCDF4 as nc
 from functools import partial
 
-
-
+from sklearn.metrics.pairwise import haversine_distances
 
 
 def extract_sic(sic, df):
@@ -356,65 +355,73 @@ def radial_dist(lat1, lon1, lat2, lon2):
     return distance
 
 
+def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
+                         covx: np.matrix,
+                         df: pd.DataFrame,
+                         r: float = 40.0,
+                         s: float = 0.6,
+                         R_earth: float = 6371.0
+                         ) -> Tuple[np.matrix, np.matrix]:
+    """
+    Get an updated measurement covariance matrix by adding sampling uncertainty
+    of the observations
 
-def sampling_uncertainty(flattened_idx, covx, df):
-    '''
-    Returns an updated measurement covariance matrix by adding sampling uncertainty of the observations
+    Args
+    ----
 
-    Parameters:
-    uind (list) - list of unique (i.e. not repeated) locations of the observations for a given date
-    iid (list) - list of all locations of the observations for a given date
-    clim (array) - 1-D array of climatology for the whole map grid
-    scale_clim (array) - scaling climatology parameters (based on the scale from the variogram)
-    mr (array) - range parameters from the variogram file
-    covx (array) - ship and buoy measurement covariance matrix
-    lat (array) - array of latitudes for observation points
-    lon (array) - array of longitudes for observation points
- 
-    Returns:
-    Covariance matrix of the ship and buoy measurements including sampling uncertainty
-    Matrix C of the counts of observations based on the radial distance and range and scale parameters
-    Matrix W of weight of each observation on the grid cell
-    '''
-    lat = df['lat'].to_numpy()
-    lon = df['lon'].to_numpy()
+    obs_idx : numpy.ndarray[int]
+        Grid-box index for each observation
+    covx : numpy.matrix[float]
+        The covariance matrix
+    df : pandas.DataFrame
+        The DataFrame containing the records, requires "lat" and "lon" columns
+        indicating the positions of the observations
+    r : float
+        Range parameter for distance matrix covariance effect
+    s : float
+        Scale parameter for distance matrix covariance effect
+    R_earth : float
+        Radius of earth. [km]
 
-    obs_idx = flattened_idx
-    #print(obs_idx, obs_idx.shape)
+    Return
+    ------
+
+    covx : numpy.matrix[float]
+        Updated covariance Matrix
+    W : numpy.matrix[float]
+        Weights(?)
+    """
+    # obs_idx = obs_idx.reshape(-1)  # Convert to 1d array
     unique_obs_idx = np.unique(obs_idx)
-    #print(unique_obs_idx, unique_obs_idx.shape)
-    W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
-    for k in range(max(unique_obs_idx.shape)):
-        range_ = 40. #set_number for now
-        scale = 0.6 #set_number for now
-        q = [i for i, x in enumerate(obs_idx) if x == unique_obs_idx[k]]
-        
-        #print('obs_idx', obs_idx)
-        #print('unique obs idx', unique_obs_idx)
-        #print('q', q)
-        for i in range(len(q)):
-            qq = q[i]
-            W[k,qq] = np.divide(1, len(q))   
-        
-        C = np.zeros((len(q),len(q)))
-        
-        
-        for jj in range(len(q)):
-            for kk in range(len(q)):  
-                idx1 = q[jj]
-                idx2 = q[kk]
-                C[jj,kk] = radial_dist(lat[idx1],lon[idx1],lat[idx2],lon[idx2])
+    _N = np.max(unique_obs_idx.shape)
+    _P = np.max(obs_idx.shape)
 
-        C = np.exp(-C ** 2 / range_ ** 2)
-        C = scale / 2 * C
-        #print('C', C)
-        for jj in range(len(q)): 
-            for kk in range(len(q)):
-                #print(q[jj], q[kk])
-                covx[q[jj],q[kk]] = covx[q[jj],q[kk]] + C[jj,kk]
-    #print('covx', covx)
+    # Get positional data: lat, lon as radians (required for haversine_distances)
+    pos = np.radians(df[["lat", "lon"]].to_numpy())
+
+    W = np.matrix(np.zeros((_N, _P)))
+    all_is = np.arange(_P)
+
+    for obs in unique_obs_idx:
+        # Where data match the obs id
+        q = all_is[obs_idx == obs]
+
+        W[obs, q] = 1/len(q)  # I think this works...
+
+        # Get matrix for the data subset
+        C = haversine_distances(pos[q])*R_earth
+        C = np.exp(-C ** 2 / r ** 2)
+        C = s / 2 * C
+
+        # Update covariance
+        q_idx = np.ix_(q, q)
+        covx[q_idx] = covx[q_idx] + C
+
+        del C, q, q_idx
+
+    del pos, unique_obs_idx, all_is, _N, _P
+
     return covx, W
-
 
 
 def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
