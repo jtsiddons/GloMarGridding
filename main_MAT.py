@@ -55,7 +55,6 @@ import covariance as cov_module
 import observations as obs_module
 import observations_plus_qc as obs_qc_module
 import kriging as krig_module
-import output as out_module
 
 
 ####
@@ -91,6 +90,7 @@ def main(argv):
     parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
+    parser.add_argument("-height_member", dest="height_member", required=False, help="height member")
     args = parser.parse_args()
     
     config_file = args.config
@@ -143,6 +143,12 @@ def main(argv):
         #end_date
         year_stop = config.getint('MAT', 'endyear')
     print(year_start, year_stop)
+    
+    if args.height_member:
+        member = int(args.height_member)
+    else:
+        member = 1
+    print(member)
     
     #path where the covariance(s) is/are located
     #if single covariance, then full path
@@ -199,267 +205,250 @@ def main(argv):
     
     year_list = list(range(int(year_start), int(year_stop)+1,1))
     month_list = list(range(1,13,1))
-    for member in range(1,201):
-        for i in range(len(year_list)):
-            current_year = year_list[i]
+    for i in range(len(year_list)):
+        current_year = year_list[i]
         
-            #add MetOffice pentads here
-            yr_rng = pd.date_range('1970/01/03','1970/12/31',freq='5D')
-            times2 = [j.replace(year=current_year) for j in yr_rng]
-            print(times2)
-            times_series = pd.Series(times2)
-            by_month = list(times_series.groupby(times_series.map(lambda x: x.month)))
-            print(by_month)
+        #add MetOffice pentads here
+        yr_rng = pd.date_range('1970/01/03','1970/12/31',freq='5D')
+        times2 = [j.replace(year=current_year) for j in yr_rng]
+        print(times2)
+        times_series = pd.Series(times2)
+        by_month = list(times_series.groupby(times_series.map(lambda x: x.month)))
+        print(by_month)
             
+        try:
+            ncfile.close()  #make sure dataset is not already open.
+        except: 
+            pass
             
-            try:
-                ncfile.close()  #make sure dataset is not already open.
-            except: 
-                pass
-                    
-            ncfilename = str(output_directory) + str(current_year) + '_kriged_MAT_heightmember_' + str(member).zfill(3) + '.nc'
-            ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
-            #print(ncfile)
-            
-            lat_dim = ncfile.createDimension('lat', len(output_lat))    # latitude axis
-            lon_dim = ncfile.createDimension('lon', len(output_lon))    # longitude axis
-            time_dim = ncfile.createDimension('time', None)         # unlimited axis
-            
-            # Define two variables with the same names as dimensions,
-            # a conventional way to define "coordinate variables".
-            lat = ncfile.createVariable('lat', np.float32, ('lat',))
-            lat.units = 'degrees_north'
-            lat.long_name = 'latitude'
-            lon = ncfile.createVariable('lon', np.float32, ('lon',))
-            lon.units = 'degrees_east'
-            lon.long_name = 'longitude'
-            time = ncfile.createVariable('time', np.float64, ('time',))
-            time.units = 'days since %s-01-01' % (str(current_year))
-            time.long_name = 'time'
-            #print(time)
-            
-            # Define a 3D variable to hold the data
-            ok = ncfile.createVariable('mat_anomaly',np.float32,('time','lat','lon'))
-            # note: unlimited dimension is leftmost
-            ok.units = 'deg C' # degrees Kelvin
-            ok.standard_name = 'MAT anomaly'
-            # Define a 3D variable to hold the data
-            dz_ok = ncfile.createVariable('mat_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
-            dz_ok.units = 'deg C' # degrees Kelvin
-            dz_ok.standard_name = 'uncertainty' # this is a CF standard name
-            
-            # Write latitudes, longitudes.
-            # Note: the ":" is necessary in these "write" statements
-            lat[:] = output_lat #ds.lat.values
-            lon[:] = output_lon #ds.lon.values
-            
+        ncfilename = str(output_directory) + str(current_year) + '_kriged_MAT_heightmember_' + str(member).zfill(3) + '.nc'
+        ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
+        #print(ncfile)
         
-            for j in range(len(month_list)):
-                current_month = month_list[j]
-                #print(current_month)
-                idx, monthly = by_month[current_month-1]
-                print(monthly)
-                print(idx)
-                print(monthly.index)
-                
-                #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
-                covariance = cov_module.get_covariance(cov_dir, month=current_month)
-                print(covariance)
-                diag_ind = np.diag_indices_from(covariance)
-                covariance[diag_ind] = covariance[diag_ind]*1.01 + 0.005
-                print(covariance)
-                
-                mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
-                print(mask_ds)
-                
-                # read in observations and QC
-                obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
-                print(obs_df)
-                #use day/night mask from PyCOADS
-                obs_df_polars = pl.from_pandas(obs_df)  # obs_df is a pandas frame
-                daynight_obs_df_polars = is_daytime(obs_df_polars)
-                obs_df = daynight_obs_df_polars.to_pandas()
-                print(obs_df)
-                #filter day (1) or night(0)
-                obs_df = obs_df[obs_df['is_daytime'] == 0]
-                print(obs_df) #[['local_datetime', 'is_daytime']])
-                # read in climatology here
-                # match with obs against DOY
-                print(clim)
-                #obs_df = obs_qc_module.MAT_match_climatology(obs_df, clim)
-                obs_df = obs_qc_module.MAT_match_climatology_to_obs(clim, obs_df)
+        lat_dim = ncfile.createDimension('lat', len(output_lat))    # latitude axis
+        lon_dim = ncfile.createDimension('lon', len(output_lon))    # longitude axis
+        time_dim = ncfile.createDimension('time', None)         # unlimited axis
+        
+        # Define two variables with the same names as dimensions,
+        # a conventional way to define "coordinate variables".
+        lat = ncfile.createVariable('lat', np.float32, ('lat',))
+        lat.units = 'degrees_north'
+        lat.long_name = 'latitude'
+        lon = ncfile.createVariable('lon', np.float32, ('lon',))
+        lon.units = 'degrees_east'
+        lon.long_name = 'longitude'
+        time = ncfile.createVariable('time', np.float64, ('time',))
+        time.units = 'days since %s-01-01' % (str(current_year))
+        time.long_name = 'time'
+        #print(time)
+        
+        # Define a 3D variable to hold the data
+        ok = ncfile.createVariable('mat_anomaly',np.float32,('time','lat','lon'))
+        # note: unlimited dimension is leftmost
+        ok.units = 'deg C' # degrees Kelvin
+        ok.standard_name = 'MAT anomaly'
+        # Define a 3D variable to hold the data
+        dz_ok = ncfile.createVariable('mat_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
+        dz_ok.units = 'deg C' # degrees Kelvin
+        dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        
+        # Write latitudes, longitudes.
+        # Note: the ":" is necessary in these "write" statements
+        lat[:] = output_lat #ds.lat.values
+        lon[:] = output_lon #ds.lon.values
+        
+        
+        for j in range(len(month_list)):
+            current_month = month_list[j]
+            #print(current_month)
+            idx, monthly = by_month[current_month-1]
+            print(monthly)
+            print(idx)
+            print(monthly.index)
             
-                #merge on the height adjustment
-                obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
-                print(obs_df)
+            #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
+            covariance = cov_module.get_covariance(cov_dir, month=current_month)
+            print(covariance)
+            diag_ind = np.diag_indices_from(covariance)
+            covariance[diag_ind] = covariance[diag_ind]*1.01 + 0.005
+            print(covariance)
+            
+            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
+            print(mask_ds)
+            
+            # read in observations and QC
+            obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
+            print(obs_df)
+            #use day/night mask from PyCOADS
+            obs_df_polars = pl.from_pandas(obs_df)  # obs_df is a pandas frame
+            daynight_obs_df_polars = is_daytime(obs_df_polars)
+            obs_df = daynight_obs_df_polars.to_pandas()
+            print(obs_df)
+            #filter day (1) or night(0)
+            obs_df = obs_df[obs_df['is_daytime'] == 0]
+            print(obs_df) #[['local_datetime', 'is_daytime']])
+            # read in climatology here
+            # match with obs against DOY
+            print(clim)
+            #obs_df = obs_qc_module.MAT_match_climatology(obs_df, clim)
+            obs_df = obs_qc_module.MAT_match_climatology_to_obs(clim, obs_df)
+            
+            #merge on the height adjustment
+            obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
+            print(obs_df)
+            
+            #print(obs_df.columns.values)
+            
+            
+            # list of dates for each year 
+            _,month_range = monthrange(current_year, current_month)
+            #print(month_range)
+            
+            #if we do MetOffice processing:
+            for i in monthly.index:
+                print('i', i, 'monthly.index', monthly.index)
+                pentad_date = monthly[i]
+                pentad_idx = i 
+                print(pentad_date)
+                print(pentad_idx)
                 
-                #print(obs_df.columns.values)
-                """
-                #location of the ICOADS observation files
-                data_path = config.get('MAT', 'observations')
-                height_adjustments = config.get('MAT', 'height_adjustments')
+                timestep = pentad_idx
+                current_date = pentad_date
+                start_date = current_date - timedelta(days=2)
+                end_date = current_date + timedelta(days=3)
+                print('----------')
+                print('timestep', timestep)
+                print('current date', current_date)
+                print('start date', start_date)
+                print('end date', end_date)
+                print('----------')
                 
-                #location og QC flags in GROUPS subdirectories
-                qc_mat = config.get('MAT', 'qc')
-                qc_path = config.get('observations', 'qc_flags_joe')
-                qc_path_2 = config.get('observations', 'qc_flags_joe_tracked')
-                """
-                
-                # list of dates for each year 
-                _,month_range = monthrange(current_year, current_month)
-                #print(month_range)
-                
-                #if we do MetOffice processing:
-                for i in monthly.index:
-                    print('i', i, 'monthly.index', monthly.index)
-                    pentad_date = monthly[i]
-                    pentad_idx = i 
-                    print(pentad_date)
-                    print(pentad_idx)
-                    
-                    timestep = pentad_idx
-                    current_date = pentad_date
+                if isleap(current_year):
+                    fake_non_leap_year = 1970
+                    current_date = current_date.replace(year=fake_non_leap_year)
                     start_date = current_date - timedelta(days=2)
                     end_date = current_date + timedelta(days=3)
-                    print('----------')
-                    print('timestep', timestep)
-                    print('current date', current_date)
-                    print('start date', start_date)
-                    print('end date', end_date)
-                    print('----------')
+                    start_date = start_date.replace(year=current_year)
+                    end_date = end_date.replace(year=current_year)
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
+                else:
+                    start_date = current_date - timedelta(days=2)
+                    end_date = current_date + timedelta(days=2)
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
+                print(day_df)
                     
-                    if isleap(current_year):
-                        fake_non_leap_year = 1970
-                        current_date = current_date.replace(year=fake_non_leap_year)
-                        start_date = current_date - timedelta(days=2)
-                        end_date = current_date + timedelta(days=3)
-                        start_date = start_date.replace(year=current_year)
-                        end_date = end_date.replace(year=current_year)
-                        day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
-                    else:
-                        start_date = current_date - timedelta(days=2)
-                        end_date = current_date + timedelta(days=3)
-                        day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
-                    print(day_df)
-                    
-                    """     
-                    day_climatology = climatology['climatology'][timestep]
-                    print(esa_climatology)
-                    #add climatology value and calculate the SST anomaly
-                    day_df = obs_module.extract_clim_anom(esa_climatology, day_df)
-                    """
-                    #calculate flattened idx based on the ESA landmask file
-                    #which is compatible with the ESA-derived covariance
-                    #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-                    cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
-                    
-                    #print(cond_df.columns.values)
-                    #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
-                    #quick temperature check
-                    #print(cond_df['sst'])
-                    #print(cond_df['climatology_sst'])
-                    #print(cond_df['sst_anomaly'])
-                    
-                    """
-                    plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
-                    lons = plotting_df['lon']
-                    lats = plotting_df['lat']
-                    ssts = plotting_df['sst']
-                    clims = plotting_df['climatology_sst']
-                    anoms = plotting_df['sst_anomaly']
-                    
-                    skwargs = {'s': 2, 'c': 'red'}
-                    fig = plt.figure(figsize=(10, 5))
-                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad_idx)+' pentad '+ str(current_year)+' year')
-                    #plt.show()
-                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%spoints.png' % (str(current_year), str(pentad_idx)))
-                    
-                    skwargs = {'s': 2, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                    ckwargs = {'label': 'SST [deg C]'}
-                    fig = plt.figure(figsize=(10, 5))
-                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS measured SST -' +str(pentad_idx)+ ' pentad ' + str(current_year)+' year', land_col='darkolivegreen')
-                    #plt.show()
-                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%ssst.png' % (str(current_year), str(pentad_idx)))
-                    
-                    skwargs = {'s': 2, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                    ckwargs = {'label': 'SST [deg C]'}
-                    fig = plt.figure(figsize=(10, 5))
-                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ESA CCI climatology - '+str(pentad_idx)+' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                    #plt.show()
-                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sclim.png' % (str(current_year), str(pentad_idx)))
-                    
-                    skwargs = {'s': 2, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                    ckwargs = {'label': 'SST [deg C]'}
-                    fig = plt.figure(figsize=(10, 5))
-                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS SST anomalies - '+str(pentad_idx)+ ' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                    #plt.show()
-                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
-                    """
+                #calculate flattened idx based on the ESA landmask file
+                #which is compatible with the ESA-derived covariance
+                #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
                 
-                    day_flat_idx = cond_df['flattened_idx'][:]
-                
-                    obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
-                    print(obs_covariance)
-                    print(W)
+                #print(cond_df.columns.values)
+                #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
+                #quick temperature check
+                #print(cond_df['sst'])
+                #print(cond_df['climatology_sst'])
+                #print(cond_df['sst_anomaly'])
                     
-                    #krige obs onto gridded field
-                    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
-                    #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
-                    print('Kriging done, saving output')
-                    """
-                    fig = plt.figure(figsize=(10, 5))
-                    img_extent = (-180., 180., -90., 90.)
-                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
-                    ax.add_feature(cfeature.LAND, color='darkolivegreen')
-                    ax.coastlines()
-                    m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
-                    fig.colorbar(m)
-                    plt.clim(-4, 4)
-                    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
-                    gl.xlabels_top = False
-                    gl.ylabels_right = False
-                    ax.set_title('Kriged SST anomalies ' +str(pentad_idx)+' pentad '+str(current_year)+' year')
-                    plt.show()
-                    #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
-                    """
-                    # Write the data.  
-                    #This writes each time slice to the netCDF
-                    ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
-                    dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
-                    print("-- Wrote data")
-                    print(pentad_idx, pentad_date)
+                """
+                plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
+                lons = plotting_df['lon']
+                lats = plotting_df['lat']
+                ssts = plotting_df['sst']
+                clims = plotting_df['climatology_sst']
+                anoms = plotting_df['sst_anomaly']
+                
+                skwargs = {'s': 2, 'c': 'red'}
+                fig = plt.figure(figsize=(10, 5))
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad_idx)+' pentad '+ str(current_year)+' year')
+                #plt.show()
+                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%spoints.png' % (str(current_year), str(pentad_idx)))
+                
+                skwargs = {'s': 2, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                ckwargs = {'label': 'SST [deg C]'}
+                fig = plt.figure(figsize=(10, 5))
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS measured SST -' +str(pentad_idx)+ ' pentad ' + str(current_year)+' year', land_col='darkolivegreen')
+                #plt.show()
+                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%ssst.png' % (str(current_year), str(pentad_idx)))
+                
+                skwargs = {'s': 2, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                ckwargs = {'label': 'SST [deg C]'}
+                fig = plt.figure(figsize=(10, 5))
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ESA CCI climatology - '+str(pentad_idx)+' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
+                #plt.show()
+                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sclim.png' % (str(current_year), str(pentad_idx)))
+                    
+                skwargs = {'s': 2, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                ckwargs = {'label': 'SST [deg C]'}
+                fig = plt.figure(figsize=(10, 5))
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS SST anomalies - '+str(pentad_idx)+ ' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
+                #plt.show()
+                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
+                """
+                
+                day_flat_idx = cond_df['flattened_idx'][:]
+                
+                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
+                print(obs_covariance)
+                print(W)
+                
+                #krige obs onto gridded field
+                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
+                print('Kriging done, saving output')
+                """
+                fig = plt.figure(figsize=(10, 5))
+                img_extent = (-180., 180., -90., 90.)
+                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
+                ax.add_feature(cfeature.LAND, color='darkolivegreen')
+                ax.coastlines()
+                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
+                fig.colorbar(m)
+                plt.clim(-4, 4)
+                gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+                gl.xlabels_top = False
+                gl.ylabels_right = False
+                ax.set_title('Kriged SST anomalies ' +str(pentad_idx)+' pentad '+str(current_year)+' year')
+                plt.show()
+                #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
+                """
+                # Write the data.  
+                #This writes each time slice to the netCDF
+                ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
+                dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+                print("-- Wrote data")
+                print(pentad_idx, pentad_date)
             
-            # Write time
-            #pd.date_range takes month/day/year as input dates
-            clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
-            print(clim_times_updated)
-            dates_ = pd.Series(clim_times_updated)
-            dates = dates_.dt.to_pydatetime() # Here it becomes date
-            print('pydate', dates)
-            times = date2num(dates, time.units)
-            print(times)
-            """
-            #dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
-            #dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
-            print('dates', dates_)
-            dates = dates_.dt.to_pydatetime() # Here it becomes date
-            print('pydate', dates)
-            times = date2num(dates, time.units)
-            print(times)
-            """
-            time[:] = times
-            print(time)    
-            # first print the Dataset object to see what we've got
-            print(ncfile)
-            # close the Dataset.
-            ncfile.close()
-            print('Dataset is closed!')
-        
+        # Write time
+        #pd.date_range takes month/day/year as input dates
+        clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
+        print(clim_times_updated)
+        dates_ = pd.Series(clim_times_updated)
+        dates = dates_.dt.to_pydatetime() # Here it becomes date
+        print('pydate', dates)
+        times = date2num(dates, time.units)
+        print(times)
+        """
+        #dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
+        #dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
+        print('dates', dates_)
+        dates = dates_.dt.to_pydatetime() # Here it becomes date
+        print('pydate', dates)
+        times = date2num(dates, time.units)
+        print(times)
+        """
+        time[:] = times
+        print(time)    
+        # first print the Dataset object to see what we've got
+        print(ncfile)
+        # close the Dataset.
+        ncfile.close()
+        print('Dataset is closed!')
+        STOP
 
 
 
