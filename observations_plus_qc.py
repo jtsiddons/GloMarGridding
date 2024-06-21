@@ -308,6 +308,10 @@ def MAT_main(obs_path, obs_path_2, qc_path, year, month):
     #print(len(height_df))
     #print('Joined df with height adjustemnt merged on')
     #print(len(height_adjusted_df))
+    
+    del obs_qc
+    del obs_df
+    
     return joined_df #height_adjusted_df
 
 
@@ -322,6 +326,9 @@ def MAT_add_height_adjustment(joined_df, height_path, year, height_member):
     print(height_adjusted_df.dtypes)
     height_adjusted_df['obs_anomalies_height'] = height_adjusted_df['obs_anomalies'] - height_adjusted_df['height']
     print(height_adjusted_df)
+    
+    del height_df
+    
     return height_adjusted_df
 
 
@@ -403,8 +410,11 @@ def MAT_match_climatology_to_obs(climatology_365, obs_df):
     
     #in case some of the values are Nan (because covered by ice)        
     obs_df = obs_df.dropna()
-    
     print(obs_df)
+    
+    del c
+    del climatology_365
+    
     return obs_df
 
 

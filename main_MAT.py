@@ -190,16 +190,14 @@ def main(argv):
     
     climatology = obs_module.read_climatology(climatology, lat_north,lat_south, lon_west,lon_east)
     print(climatology)
-    
-    clim_times = climatology.day
-    print(clim_times)
     clim = climatology.t10m_clim_day
     print(clim)
+    del climatology
     #while doing pentad processing, this will set "mid-pentads" dates for the year
     pentad_climatology = obs_module.read_climatology(metoffice_climatology, lat_south,lat_north, lon_west,lon_east)
     clim_times = pentad_climatology.time
     print(clim_times)
-    
+    del pentad_climatology
     #climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
 
     
