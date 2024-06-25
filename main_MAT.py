@@ -10,15 +10,6 @@ import os.path
 from os import path
 from os.path import isfile, join
 
-# IMPORTANT: Environmental Variables to limit Numpy
-os.environ["OMP_NUM_THREADS"] = '16'
-os.environ["OPENBLAS_NUM_THREADS"] = '16'
-os.environ["MKL_NUM_THREADS"] = '16'
-os.environ["VECLIB_MAXIMUM_THREADS"] = '16'
-os.environ["NUMEXPR_NUM_THREADS"] = '16'
-#limit Polars threads
-os.environ["POLARS_MAX_THREADS"] = '16'
-
 #argument parser
 import argparse
 try:
