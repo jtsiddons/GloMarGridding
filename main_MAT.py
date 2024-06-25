@@ -16,6 +16,8 @@ os.environ["OPENBLAS_NUM_THREADS"] = '16'
 os.environ["MKL_NUM_THREADS"] = '16'
 os.environ["VECLIB_MAXIMUM_THREADS"] = '16'
 os.environ["NUMEXPR_NUM_THREADS"] = '16'
+#limit Polars threads
+os.environ["POLARS_MAX_THREADS"] = '16'
 
 #argument parser
 import argparse
