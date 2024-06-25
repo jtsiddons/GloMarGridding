@@ -36,6 +36,7 @@ import netCDF4 as nc
 from functools import partial
 
 from sklearn.metrics.pairwise import haversine_distances
+from typing import Tuple
 
 
 def extract_sic(sic, df):
