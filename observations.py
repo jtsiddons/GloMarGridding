@@ -403,11 +403,11 @@ def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
     W = np.matrix(np.zeros((_N, _P)))
     all_is = np.arange(_P)
 
-    for obs in unique_obs_idx:
+    for i, obs in enumerate(unique_obs_idx):
         # Where data match the obs id
         q = all_is[obs_idx == obs]
 
-        W[obs, q] = 1/len(q)  # I think this works...
+        W[i, q] = 1/len(q)  # I think this works...
 
         # Get matrix for the data subset
         C = haversine_distances(pos[q])*R_earth
