@@ -1,3 +1,7 @@
+'''
+This requires geopandas, which may not be avail
+by default
+'''
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -33,6 +37,12 @@ def latlon2ne(latlons,
                         'lon': latlons2[:, 1]})
     pt0 = df0.apply(lambda row: Point([row.lon, row.lat]), axis=1)
     df0 = gpd.GeoDataFrame(df0, geometry=pt0, crs="EPSG:4326")
+    #
+    # Transverse Mercator projection
+    # Recommended to be centered on the central point
+    # of the grid box
+    # Large distortions will occur if you use a single value for 
+    # latlon0 for the entire globe
     proj4 = '+proj=tmerc +lat_0='+str(latlon0[0])
     proj4 += ' +lon_0='+str(latlon0[1])
     proj4 += ' +k=0.9996 +x_0=0 +y_0=0 +units=km'
@@ -71,6 +81,10 @@ def Ls2sigma(Lx, Ly, theta):
 def compute_tau(dE, dN, sigma):
     '''
     Eq.15 in Karspeck paper
+    but it is standard formulation to the
+    Mahalanobis distance
+    https://en.wikipedia.org/wiki/Mahalanobis_distance
+    10.1002/qj.900
     '''
     dx_vec = np.array([dE, dN])
     return np.sqrt(dx_vec.T @ np.linalg.inv(sigma) @ dx_vec)
