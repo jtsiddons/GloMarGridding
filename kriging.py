@@ -98,7 +98,7 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
     #print(W)
     #print(x_obs)
      
-    if x_bias:
+    if x_bias is not None:
         grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
         bias_obs = W @ x_bias
         grid_obs = grid_obs_ - bias_obs
@@ -263,7 +263,7 @@ def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias
             #qq = q[i]
             #W[k,qq] = np.divide(1, len(q))
     if bias==True:
-        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, obs_bias)
+        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, x_bias=obs_bias)
     else:
         obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov)
     #print('3 - DONE')
