@@ -828,32 +828,41 @@ def nearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
 
 
-def match_hadsst_bias_to_gridded_obs(hadsst_bias, flattened_idx, mask_ds):
-    hadsst_lat = hadsst_bias.latitude
-    hadsst_lon = hadsst_bias.longitude
-    print(f'{hadsst_lat =}')
-    print(f'{hadsst_lon =}')
-    unique_idx = np.unique(flattened_idx)
-    print(f'{mask_ds =}')
+def match_ellipse_parameters_to_gridded_obs(ellipse_monthly_file, cond_df, mask_ds):
+    el_lat = ellipse_monthly_file.latitude
+    el_lon = ellipse_monthly_file.longitude
+    print(f'{el_lat =}')
+    print(f'{el_lon =}')
+    el_lx = ellipse_monthly_file.lx.values.flatten()
+    el_ly = ellipse_monthly_file.ly.values.flatten()
+    el_theta = ellipse_monthly_file.theta.values.flatten()
+    
+    
+    #to remind how obtained:
+    #flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
+    #flattened_idx is a column in the dataframe called "flattened_idx" 
+    #unique_idx = np.unique(flattened_idx)
+    
+    
+    print(f'{cond_df =}')
     try:
         mask = mask_ds.variables['landmask'].values
     except KeyError:
         #mask = mask_ds.variables['land_sea_mask'].values
         mask = mask_ds.variables['landice_sea_mask'].values
     output_size = (mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
-    
-    #transform location indices into a flattened 1D index
-    (lat_idx, lon_idx) = np.unravel_index(unique_idx, output_size, order='C')
-    print(f'{lat_idx =}')
-    print(f'{lon_idx =}')
-    obs_lat = mask_ds.latitude[lat_idx]
-    obs_lon = mask_ds.longitude[lon_idx]
-    print(f'{obs_lat =}')
-    print(f'{obs_lon =}')
-    
-    bias_lat_idx = find_nearest(hadsst_lat, obs_lat)    
-    bias_lon_idx = find_nearest(hadsst_lon, obs_lon)
-    hadsst_bias_values = hadsst_bias.bias.values[np.array(bias_lat_idx),np.array(bias_lon_idx)]
-    print(f'{hadsst_bias_values =}')
-    STOP
-    return
+    print(f'{output_size =}')
+    print(f'{el_lx.shape =}')
+    gridcell_lx = []
+    gridcell_ly = []
+    gridcell_theta = []
+    for gridcell in cond_df['flattened_idx']:
+        print(gridcell)
+        gridcell_lx.append(el_lx[gridcell])
+        gridcell_ly.append(el_ly[gridcell])
+        gridcell_theta.append(el_theta[gridcell])
+    cond_df['gridcell_lx'] = gridcell_lx
+    cond_df['gridcell_ly'] = gridcell_ly
+    cond_df['gridcell_theta'] = gridcell_theta
+    print(cond_df)
+    return cond_df
