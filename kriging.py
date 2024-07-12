@@ -99,11 +99,14 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
     #print(x_obs)
      
     if x_bias is not None:
+        print('with bias')
         grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
         bias_obs = W @ x_bias
         grid_obs = grid_obs_ - bias_obs
     else:
+        print('without bias')
         grid_obs = W @ x_obs #- clim[ia] - bias[ia]
+        grid_obs = np.squeeze(np.array(grid_obs)) #remove "1" in the vector shape, 2D ->  1D
     #possibly use W matrix to "put weighting" on the HadSST bias so that it's the same as sst_obs
     #bias = W @ bias_obs
     
