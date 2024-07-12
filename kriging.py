@@ -103,7 +103,7 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
         bias_obs = W @ x_bias
         grid_obs = grid_obs_ - bias_obs
     else:
-        grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
+        grid_obs = W @ x_obs #- clim[ia] - bias[ia]
     #possibly use W matrix to "put weighting" on the HadSST bias so that it's the same as sst_obs
     #bias = W @ bias_obs
     
