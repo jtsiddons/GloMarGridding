@@ -64,7 +64,7 @@ def intersect_mtlb(a, b):
 
 
 
-def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
+def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
     '''
     Returns arrays of krigged observations and anomalies for all grid points in the domain
     
@@ -97,15 +97,24 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     #ICOADS obs  
     #print(W)
     #print(x_obs)
-    sst_obs = W @ x_obs #- clim[ia] - bias[ia] 
+     
+    if x_bias:
+        grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
+        bias_obs = W @ x_bias
+        grid_obs = grid_obs_ - bias_obs
+    else:
+        grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
+    #possibly use W matrix to "put weighting" on the HadSST bias so that it's the same as sst_obs
+    #bias = W @ bias_obs
+    
     #print('SST OBS', sst_obs.shape)
     print(f'{x_obs = }')
     print(f'{x_obs.shape = }')
     print(f'{np.isnan(x_obs).sum() = }')
 
-    print(f'{sst_obs = }')
-    print(f'{sst_obs.shape = }')
-    print(f'{np.isnan(sst_obs).sum() = }')
+    print(f'{grid_obs = }')
+    print(f'{grid_obs.shape = }')
+    print(f'{np.isnan(grid_obs).sum() = }')
     
     
     #R is the covariance due to the measurements i.e. measurement noise, bias noise and sampling noise 
@@ -126,7 +135,7 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     #S+R because the measurements have uncertainties as well as spatial covarince 
     #G is the weight vector for Simple Kriging 
     G = np.transpose(Ss) @ np.linalg.inv(S+R)
-    z_obs_sk = G @ sst_obs
+    z_obs_sk = G @ grid_obs
     #print('G', G)
     #print('z obs sk', z_obs_sk)
     CG = G @ Ss
@@ -149,8 +158,8 @@ def krige(iid, uind, W, x_obs, cci_covariance, covx, bias=False, clim=False):
     G = np.transpose(Ss) @ np.linalg.inv(np.matrix(S))
     CG = G @ Ss 
     
-    sst_obs0 = np.append(sst_obs, 0)
-    z_obs_ok = np.transpose(G @ sst_obs0) 
+    grid_obs0 = np.append(grid_obs, 0)
+    z_obs_ok = np.transpose(G @ grid_obs0) 
     
     alpha = G[:,-1]
   
@@ -228,11 +237,18 @@ def watermask(ds_masked):
 
 
 
-def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
+def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias=False):
     try:
         obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     except KeyError:
         obs = cond_df['obs_anomalies_height'].values
+    if bias==True:
+        obs_bias = cond_df['hadsst_bias'].values
+    """
+    print('CHECK BIAS AND SST HAVE SAME LENGHT')
+    print(len(obs))
+    print(len(bias))
+    """
     #print('1 - DONE')
     #water_mask, water_idx = watermask(ds, ds_var, timestep)
     water_mask, water_idx = watermask(ds_masked)
@@ -246,7 +262,10 @@ def kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W):
         #for i in range(len(q)):
             #qq = q[i]
             #W[k,qq] = np.divide(1, len(q))
-    obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov)
+    if bias==True:
+        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, obs_bias)
+    else:
+        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov)
     #print('3 - DONE')
     obs_sk_2d = result_reshape_2d(obs_sk, water_idx, water_mask)
     #print('4 - DONE')
@@ -359,39 +378,3 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
     d = np.squeeze(np.asarray(dz_ok))
     return a, b, c, d
 
-
-
-
-
-
-
-
-
-
-
-
-
-def kriging_main(covariance, ds_masked, cond_df, flattened_idx, obs_cov, W):
-    #obs_cov removed as argument for now
-    obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = kriged_output(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W)
-    
-    """
-    obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
-    print('1 - DONE')
-    water_mask, water_idx = watermask(ds_masked, 0)
-    obs_idx = flattened_idx
-    unique_obs_idx = np.unique(obs_idx)
-    print('2 - DONE')
-    obs_sk, dz_sk, obs_ok, dz_ok = krige_for_esa_values_only(water_idx, unique_obs_idx, W, obs, covariance)
-    print('3 - DONE')
-    obs_sk_2d = result_reshape_2d(obs_sk, water_idx, water_mask)
-    print('4 - DONE')
-    dz_sk_2d = result_reshape_2d(dz_sk, water_idx, water_mask)
-    print('5 - DONE')
-    obs_ok_2d = result_reshape_2d(obs_ok, water_idx, water_mask)
-    print('6 - DONE')
-    dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
-    print('7 - DONE')
-    """
-    
-    return obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d

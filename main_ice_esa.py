@@ -340,7 +340,7 @@ def main(argv):
                 #print(W)
                 
                 #krige obs onto gridded field
-                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W)
                 #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
                 print('Kriging done, saving output')
                 
