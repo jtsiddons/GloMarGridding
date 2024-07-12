@@ -151,7 +151,8 @@ def main(argv):
     
     output_directory = config.get('MAT', 'output')
     
-        
+    ellipse_param_path = config.get('MAT', 'ellipse_parameters')
+    
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
@@ -248,7 +249,6 @@ def main(argv):
         lat[:] = output_lat #ds.lat.values
         lon[:] = output_lon #ds.lon.values
         
-        
         for j in range(len(month_list)):
             current_month = month_list[j]
             #print(current_month)
@@ -290,6 +290,8 @@ def main(argv):
             
             #print(obs_df.columns.values)
             
+            #read in ellipse parameters file corresponding to the processed file
+            month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
             
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)

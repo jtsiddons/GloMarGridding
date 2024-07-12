@@ -253,7 +253,7 @@ def MAT_heigh_adj(height_path, year, height_member):
     print(columns)
     height_df = height_df[columns]
     print(height_df)
-    return height_df
+    return height_dfellipse_param_path
 
 
 def MAT_qc(qc_path, year, month):
@@ -309,7 +309,7 @@ def MAT_main(obs_path, obs_path_2, qc_path, year, month):
     #print('Joined df with height adjustemnt merged on')
     #print(len(height_adjusted_df))
     
-    del obs_qc
+    del qc_df
     del obs_df
     
     return joined_df #height_adjusted_df
@@ -332,20 +332,24 @@ def MAT_add_height_adjustment(joined_df, height_path, year, height_member):
     return height_adjusted_df
 
 
-def MAT_match_climatology(df, climatology):
-    obs_lat = df['lat']
-    obs_lon = df['lon']
-    df['DOY'] = df['datetime'].dt.dayofyear
-    print(df)
-    obs_DOY = df['DOY']
-    df['is_leap'] = df['yr'].apply(calendar.isleap)
-    print(df)
-    if df.loc[df['is_leap'] == True]:
-        df['DOY_nonleap'] = df['DOY'] - 1
-        print(df)
-    elif df.loc[df['is_leap'] == False]:
-        print(df)
-    return df
+def MAT_heigh_adj(height_path, year, height_member):
+    #height_path is to Richard's gzip files with 200 members
+    ds_dir = [x[0] for x in os.walk(height_path)][0] #os.walk(path)
+    print(ds_dir)
+    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
+    print(filelist)
+    chosen_filename = ['MAT_hgt_' + str(year)+'_t10m.csv.gz']
+    filtered_list = [i for i in filelist if i in chosen_filename]
+    print(filtered_list)
+    height_file = [os.path.join(ds_dir,f) for f in filtered_list][0]
+    print(height_file)
+    height_df = pd.read_csv(height_file)
+    print(height_df)
+    columns = ['uid', 'end '+str(height_member)]
+    print(columns)
+    height_df = height_df[columns]
+    print(height_df)
+    return height_df
 
 
 def MAT_match_climatology_to_obs(climatology_365, obs_df):
@@ -495,10 +499,14 @@ def find_latlon_idx(nc_xr, lat, lon):
     Dataframe with added anomalies for each observation point
     '''
     #print(nc_xr)
-    lat_idx = find_nearest(nc_xr.lat, lat)  
-    #print(nc_xr.lat, lat_idx)
-    lon_idx = find_nearest(nc_xr.lon, lon)  
-    #print(nc_xr.lon, lon_idx)
+    try:
+        lat_idx = find_nearest(nc_xr.lat, lat)  
+        #print(nc_xr.lat, lat_idx)
+        lon_idx = find_nearest(nc_xr.lon, lon)  
+        #print(nc_xr.lon, lon_idx)
+    except AttributeError:
+        lat_idx = find_nearest(nc_xr.latitude, lat)
+        lon_idx = find_nearest(nc_xr.longitude, lon)
     return lat_idx, lon_idx
 
 
@@ -506,3 +514,57 @@ def find_nearest(array, values):
     array = np.asarray(array)
     idx_list = [(np.abs(array - value)).argmin() for value in values]
     return idx_list
+
+
+def SST_match_bias_to_obs(bias_ds, obs_df):
+    bias = bias_ds.bias
+    print(f'{bias =}')
+    obs_lat = obs_df.lat
+    obs_lon = obs_df.lon
+    print(obs_lat)
+    print(obs_lon)
+    obs_df['bias_lat_idx'], obs_df['bias_lon_idx'] = find_latlon_idx(bias, obs_lat, obs_lon)
+    print(obs_df)
+    b = bias.values
+    print(f'{b =}') #.shape)
+    print('nans for b: ', np.count_nonzero(np.isnan(np.array(b))))
+    print('no-nans for b: ', np.count_nonzero(~np.isnan(np.array(b))))
+    #print(bias.latitude[np.array(obs_df.bias_lat_idx)])
+    #print(bias.longitude[np.array(obs_df.bias_lon_idx)])
+    b_nonans = np.nonzero(~np.isnan(b))
+    print(b_nonans)
+    print(len(b_nonans))
+    b_obs = np.c_[obs_df.bias_lat_idx, obs_df.bias_lon_idx]
+    print(b_obs)
+    #print([i for i in b_obs if i in b_nonans])
+    
+    #selected = b[b_nonans]
+    selected = b[np.array(obs_df.bias_lat_idx), np.array(obs_df.bias_lon_idx)]
+    """
+    import matplotlib.pyplot as plt
+    plt.imshow(b)
+    plt.scatter(np.array(obs_df.bias_lon_idx), np.array(obs_df.bias_lat_idx), marker=',', s=1)
+    plt.show()
+    """
+
+    obs_df['hadsst_bias'] = selected
+    print(obs_df)
+    obs_df = obs_df.dropna()
+    print(obs_df)
+    return obs_df
+
+
+def MAT_ellipse_param(ellipse_param_path, month):
+     #height_path is to Richard's gzip files with 200 members
+    ds_dir = [x[0] for x in os.walk(ellipse_param_path)][0] #os.walk(path)
+    print(ds_dir)
+    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
+    print(filelist)
+    chosen_filename = ['Global_With_Poles_' + str(month).zfill(2)+'_1.0_85.5.nc']
+    filtered_list = [i for i in filelist if i in chosen_filename]
+    print(filtered_list)
+    monthly_ellipse_file = [os.path.join(ds_dir,f) for f in filtered_list][0]
+    print(monthly_ellipse_file)
+    monthly_ellipse_param = xr.open_dataset(monthly_ellipse_file)
+    print(monthly_ellipse_param)
+    return monthly_ellipse_param
