@@ -386,7 +386,7 @@ def main(argv):
                 
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
-                STOP
+                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
                 print(W)
@@ -395,7 +395,7 @@ def main(argv):
                 obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W)
                 #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
                 print('Kriging done, saving output')
-                STOP
+                
                 """
                 fig = plt.figure(figsize=(10, 5))
                 img_extent = (-180., 180., -90., 90.)
