@@ -151,7 +151,8 @@ def main(argv):
     
     output_directory = config.get('MAT', 'output')
     
-        
+    ellipse_param_path = config.get('MAT', 'ellipse_parameters')
+    
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
@@ -248,7 +249,6 @@ def main(argv):
         lat[:] = output_lat #ds.lat.values
         lon[:] = output_lon #ds.lon.values
         
-        
         for j in range(len(month_list)):
             current_month = month_list[j]
             #print(current_month)
@@ -288,8 +288,10 @@ def main(argv):
             obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
             print(obs_df)
             
-            #print(obs_df.columns.values)
+            print(obs_df.columns.values)
             
+            #read in ellipse parameters file corresponding to the processed file
+            month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
             
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
@@ -382,14 +384,18 @@ def main(argv):
                 
                 day_flat_idx = cond_df['flattened_idx'][:]
                 
+                #match gridded observations to ellipse parameters
+                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
+                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
                 print(W)
                 
                 #krige obs onto gridded field
-                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W)
                 #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
                 print('Kriging done, saving output')
+                
                 """
                 fig = plt.figure(figsize=(10, 5))
                 img_extent = (-180., 180., -90., 90.)

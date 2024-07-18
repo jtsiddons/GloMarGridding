@@ -172,6 +172,8 @@ def main(argv):
     print(clim_times)
     
     #climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
+    hadsst_bias_path = config.get('SST', 'hadsst_bias')
+    
     
 
     year_list = list(range(int(year_start), int(year_stop)+1,1))
@@ -252,6 +254,9 @@ def main(argv):
             covariance[diag_ind] = covariance[diag_ind]*1.02 + 0.005
             print(covariance)
             
+            hadsst_bias_month = obs_module.read_hadsst_bias(hadsst_bias_path, current_year, current_month)
+            print(f'{hadsst_bias_month =}')
+            
             mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
             
             # list of dates for each year 
@@ -300,6 +305,9 @@ def main(argv):
                 #add climatology value and calculate the SST anomaly
                 #day_df = obs_module.extract_clim_anom(metoffice_climatology, day_df)
                 day_df = obs_qc_module.SST_match_climatology_to_obs(metoffice_climatology, day_df)
+                day_df = obs_qc_module.SST_match_bias_to_obs(hadsst_bias_month, day_df)
+                print(day_df)
+                
                 
                 #calculate flattened idx based on the ESA landmask file
                 #which is compatible with the ESA-derived covariance
@@ -356,13 +364,16 @@ def main(argv):
                 """
               
                 day_flat_idx = cond_df['flattened_idx'][:]
+                print(day_flat_idx)
+                
+                #obs_module.match_hadsst_bias_to_gridded_obs(hadsst_bias_month, day_flat_idx, mask_ds)
                 
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 #print(obs_covariance)
                 #print(W)
                 
                 #krige obs onto gridded field
-                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, day_flat_idx, obs_covariance, W)
+                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=True)
                 #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
                 print('Kriging done, saving output')
                 

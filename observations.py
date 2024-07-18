@@ -270,7 +270,7 @@ def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mas
     
     #find the indices for lats and lons of the observations
     idx_tuple = np.array([lat_idx, lon_idx])
-    
+    print(f'{idx_tuple =}')
     #below 0 is set as the first timestep, it can be any number as the scenes have the same land/ice mask over all time steps, but it has to be set to extract the 2D field
     try:
         mask = mask_ds.variables['landmask'].values
@@ -278,9 +278,10 @@ def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mas
         #mask = mask_ds.variables['land_sea_mask'].values
         mask = mask_ds.variables['landice_sea_mask'].values
     output_size = (mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
-    
+    print(f'{output_size =}')
     #transform location indices into a flattened 1D index
     flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
+    #print(f'{flattened_idx =}')
     #print('flattened idx', flattened_idx.shape)
     
     #add information about the 1D obs index to the dataframe
@@ -395,19 +396,18 @@ def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
     unique_obs_idx = np.unique(obs_idx)
     _N = np.max(unique_obs_idx.shape)
     _P = np.max(obs_idx.shape)
-
+    
     # Get positional data: lat, lon as radians (required for haversine_distances)
     pos = np.radians(df[["lat", "lon"]].to_numpy())
 
     W = np.matrix(np.zeros((_N, _P)))
+    
     all_is = np.arange(_P)
-
     for i, obs in enumerate(unique_obs_idx):
         # Where data match the obs id
         q = all_is[obs_idx == obs]
-
+        
         W[i, q] = 1/len(q)  # I think this works...
-
         # Get matrix for the data subset
         C = haversine_distances(pos[q])*R_earth
         C = np.exp(-C ** 2 / r ** 2)
@@ -420,7 +420,7 @@ def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
         del C, q, q_idx
 
     del pos, unique_obs_idx, all_is, _N, _P
-
+    
     return covx, W
 
 
@@ -528,6 +528,65 @@ def dist_weight(
         weights[i, gridbox_idcs] = 1 / len(gridbox_idcs)
 
     return dist, weights
+
+
+def sampling_uncertainty_old(flattened_idx, covx, df):
+    '''
+    Returns an updated measurement covariance matrix by adding sampling uncertainty of the observations
+Parameters:
+    uind (list) - list of unique (i.e. not repeated) locations of the observations for a given date
+    iid (list) - list of all locations of the observations for a given date
+    clim (array) - 1-D array of climatology for the whole map grid
+    scale_clim (array) - scaling climatology parameters (based on the scale from the variogram)
+    mr (array) - range parameters from the variogram file
+    covx (array) - ship and buoy measurement covariance matrix
+    lat (array) - array of latitudes for observation points
+    lon (array) - array of longitudes for observation points
+ 
+    Returns:
+    Covariance matrix of the ship and buoy measurements including sampling uncertainty
+    Matrix C of the counts of observations based on the radial distance and range and scale parameters
+    Matrix W of weight of each observation on the grid cell
+    '''
+    lat = df['lat'].to_numpy()
+    lon = df['lon'].to_numpy()
+    obs_idx = flattened_idx
+    print(obs_idx, obs_idx.shape)
+    unique_obs_idx = np.unique(obs_idx)
+    print(unique_obs_idx, unique_obs_idx.shape)
+    W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
+    print(W.shape)
+    
+    for k in range(max(unique_obs_idx.shape)):
+        range_ = 40. #set_number for now
+        scale = 0.6 #set_number for now
+        q = [i for i, x in enumerate(obs_idx) if x == unique_obs_idx[k]]
+        
+        #print('obs_idx', obs_idx)
+        #print('unique obs idx', unique_obs_idx)
+        #print('q', q)
+        for i in range(len(q)):
+            qq = q[i]
+            W[k,qq] = np.divide(1, len(q))   
+        
+        C = np.zeros((len(q),len(q)))
+        
+        
+        for jj in range(len(q)):
+            for kk in range(len(q)):  
+                idx1 = q[jj]
+                idx2 = q[kk]
+                C[jj,kk] = radial_dist(lat[idx1],lon[idx1],lat[idx2],lon[idx2])
+
+        C = np.exp(-C ** 2 / range_ ** 2)
+        C = scale / 2 * C
+        #print('C', C)
+        for jj in range(len(q)): 
+            for kk in range(len(q)):
+                #print(q[jj], q[kk])
+                covx[q[jj],q[kk]] = covx[q[jj],q[kk]] + C[jj,kk]
+    #print('covx', covx)
+    return covx, W
 
 
 def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
@@ -856,3 +915,60 @@ def obs_main(obs_path, lon_bnds, lat_bnds, ds_masked_xr, climatology_path, year=
     return df_anomaly, flattened_idx1
     #return cond_df_ship_buoy, flattened_idx #obs_covariance, W_matrix, cond_df, flattened_idx
     
+
+def read_hadsst_bias(filepath, year, month):
+    bias_file = xr.open_dataset(filepath, engine="netcdf4")
+    #if subsampling needed:
+    #bias_file = bias_file.sel(lat=slice(min_lat,max_lat), lon=slice(min_lon,max_lon))
+    print(bias_file)
+    obs_date = np.datetime64(str(year)+'-'+str(month).zfill(2)+'-16') #'ns'
+    print(f'{obs_date =}')
+    hadsst_date = nearest(bias_file.time[:], obs_date)
+    print(f'{hadsst_date =}')
+    bias_file_for_month = bias_file.sel(time=hadsst_date)
+    print(bias_file_for_month)
+    return bias_file_for_month
+
+
+def nearest(items, pivot):
+    return min(items, key=lambda x: abs(x - pivot))
+
+
+def match_ellipse_parameters_to_gridded_obs(ellipse_monthly_file, cond_df, mask_ds):
+    el_lat = ellipse_monthly_file.latitude
+    el_lon = ellipse_monthly_file.longitude
+    print(f'{el_lat =}')
+    print(f'{el_lon =}')
+    el_lx = ellipse_monthly_file.lx.values.flatten()
+    el_ly = ellipse_monthly_file.ly.values.flatten()
+    el_theta = ellipse_monthly_file.theta.values.flatten()
+    
+    
+    #to remind how obtained:
+    #flattened_idx = np.ravel_multi_index(idx_tuple, output_size, order='C') #row-major
+    #flattened_idx is a column in the dataframe called "flattened_idx" 
+    #unique_idx = np.unique(flattened_idx)
+    
+    
+    print(f'{cond_df =}')
+    try:
+        mask = mask_ds.variables['landmask'].values
+    except KeyError:
+        #mask = mask_ds.variables['land_sea_mask'].values
+        mask = mask_ds.variables['landice_sea_mask'].values
+    output_size = (mask).shape #used to be: output_size = (ds[str(ds_var)].values[timestep,:,:]).shape
+    print(f'{output_size =}')
+    print(f'{el_lx.shape =}')
+    gridcell_lx = []
+    gridcell_ly = []
+    gridcell_theta = []
+    for gridcell in cond_df['flattened_idx']:
+        print(gridcell)
+        gridcell_lx.append(el_lx[gridcell])
+        gridcell_ly.append(el_ly[gridcell])
+        gridcell_theta.append(el_theta[gridcell])
+    cond_df['gridcell_lx'] = gridcell_lx
+    cond_df['gridcell_ly'] = gridcell_ly
+    cond_df['gridcell_theta'] = gridcell_theta
+    print(cond_df)
+    return cond_df
