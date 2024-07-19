@@ -683,12 +683,26 @@ def measurement_covariance(
     # print(covx1, covx1.shape)
     # adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
     df["gridbox"] = flattened_idx.reshape(-1)
-    dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
+    # dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
+    required_cols = [
+        "lat",
+        "lon",
+        "gridbox",
+        "gridcell_lat",
+        "gridcell_lon",
+        "gridcell_lx",
+        "gridcell_ly",
+        "gridcell_theta",
+    ]
+    cols_miss = [c for c in required_cols if c not in df]
+    if cols_miss:
+        raise ValueError(f"Missing columns required for tau computation: {cols_miss}")
+    dist, W = dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     # print(covx1, covx1.shape)
-    covx2 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
+    covx1 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
     # print(covx2, covx2.shape)
-    return covx2, W
+    return covx1, W
 
 
 def esa_cci_monthly_climatology(climatology_path):

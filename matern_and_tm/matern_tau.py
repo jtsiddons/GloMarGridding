@@ -101,13 +101,43 @@ def compute_tau_wrapper(dyx, sigma):
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist(
-    df: pd.DataFrame,
-    sigmas: Dict[int, np.matrix],
-) -> np.matrix:
-    paired_dist = paired_vector_dist(df[["northing", "easting"]].to_numpy())
-    gridbox = df["gridbox"].values[0]
-    sigma = sigmas[gridbox]
+def tau_dist(df: pd.DataFrame) -> np.matrix:
+    """
+    Compute the tau/Mahalanobis matrix for all records within a gridbox
+
+    Can be used as an input function for observations.dist_weight.
+
+    Eq.15 in Karspeck paper
+    but it is standard formulation to the
+    Mahalanobis distance
+    https://en.wikipedia.org/wiki/Mahalanobis_distance
+    10.1002/qj.900
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The observational DataFrame, containing positional information for each
+        observation ("lat", "lon"), gridbox specific positional information
+        ("gridcell_lat", "gridcell_lon"), and ellipse length-scale parameters
+        used for computation of `sigma` ("gridcell_lx", "gridcell_ly",
+        "gridcell_theta").
+
+    Returns
+    -------
+    tau : numpy.matrix
+        A matrix of dimension n x n where n is the number of rows in `df` and
+        is the tau/Mahalanobis distance.
+    """
+    # Get northing and easting
+    lat0, lon0 = df[["gridcell_lat", "gridcell_lon"]].values[0]
+    latlons = df[["lat", "lon"]].values
+    ne = latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
+    paired_dist = paired_vector_dist(ne)
+
+    # Get sigma
+    Lx, Ly, theta = df[["gridcell_lx", "gridcell_ly", "gridcell_theta"]].values[0]
+    sigma = Ls2sigma(Lx, Ly, theta)
+
     return compute_tau_wrapper(paired_dist, sigma)
 
 
