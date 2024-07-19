@@ -232,6 +232,15 @@ def MAT_observations(obs_path, obs_path_2, year, month):
     else:
         obs_df = obs_df[~obs_df[qc_columns].any(axis=1)]
         print(obs_df)
+
+    ''' Force all float32/64 columns to float16 '''
+    float64_cols = obs_df.select_dtypes(include='float64').columns
+    mapper = {col_name: np.float16 for col_name in float64_cols}
+    obs_df = obs_df.astype(mapper)
+
+    float32_cols = obs_df.select_dtypes(include='float32').columns
+    mapper = {col_name: np.float16 for col_name in float32_cols}
+    obs_df = obs_df.astype(mapper)
         
     return obs_df
 
