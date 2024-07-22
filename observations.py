@@ -229,8 +229,8 @@ def find_values(mask_ds, lat, lon):
         mask_lon = mask_ds.longitude.values
         mask_lon = ((mask_lon + 540) % 360) - 180
         #print(mask_lon)
-    cci_lat_idx = find_nearest(mask_lat, lat)    
-    cci_lon_idx = find_nearest(mask_lon, lon)
+    cci_lat_idx, grid_lat = find_nearest(mask_lat, lat)    
+    cci_lon_idx, grid_lon = find_nearest(mask_lon, lon)
     
     esa_cci_mask = mask
     water_point = []
@@ -241,13 +241,16 @@ def find_values(mask_ds, lat, lon):
         water_point.append(wp)
     water_point = np.hstack(water_point)
     
-    return water_point, cci_lat_idx, cci_lon_idx
+    return water_point, cci_lat_idx, cci_lon_idx, grid_lat, grid_lon
 
 
 def find_nearest(array, values):
     array = np.asarray(array)
     idx_list = [(np.abs(array - value)).argmin() for value in values]
-    return idx_list
+    array_values_list = array[idx_list]
+    #print(values)
+    #print(array_values_list)
+    return idx_list, array_values_list
 
 
 
@@ -264,8 +267,10 @@ def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mas
     
     #extract the CCI SST anomaly values corresponding to the obs lat/lon coordinate points
     #print(ds_masked_xr)
-    its_waterpoint_for_obs, lat_idx, lon_idx = find_values(mask_ds, obs_lat, obs_lon)
+    its_waterpoint_for_obs, lat_idx, lon_idx, grid_lat, grid_lon  = find_values(mask_ds, obs_lat, obs_lon)
     cond_df['cci_waterpoint'] = its_waterpoint_for_obs
+    cond_df['gridcell_lat'] = grid_lat
+    cond_df['gridcell_lon'] = grid_lon
     print(cond_df)
     
     #find the indices for lats and lons of the observations
