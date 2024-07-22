@@ -323,11 +323,11 @@ def main(argv):
                     end_date = current_date + timedelta(days=2)
                     start_date = start_date.replace(year=current_year)
                     end_date = end_date.replace(year=current_year)
-                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 else:
                     start_date = current_date - timedelta(days=2)
                     end_date = current_date + timedelta(days=2)
-                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 print(day_df)
                     
                 #calculate flattened idx based on the ESA landmask file
