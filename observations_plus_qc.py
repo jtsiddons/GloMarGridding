@@ -253,7 +253,7 @@ def MAT_heigh_adj(height_path, year, height_member):
     print(columns)
     height_df = height_df[columns]
     print(height_df)
-    return height_dfellipse_param_path
+    return height_df
 
 
 def MAT_qc(qc_path, year, month):
@@ -316,7 +316,7 @@ def MAT_main(obs_path, obs_path_2, qc_path, year, month):
 
 
 def MAT_add_height_adjustment(joined_df, height_path, year, height_member):
-    height_df = MAT_heigh_adj(height_path, year, height_member)
+    height_df = MAT_height_adj(height_path, year, height_member)
     height_adjusted_df = joined_df.merge(height_df, how='inner', on='uid')
     print(height_adjusted_df)
     height_adjusted_df.columns = [*height_adjusted_df.columns[:-1], 'height']
@@ -332,7 +332,7 @@ def MAT_add_height_adjustment(joined_df, height_path, year, height_member):
     return height_adjusted_df
 
 
-def MAT_heigh_adj(height_path, year, height_member):
+def MAT_height_adj(height_path, year, height_member):
     #height_path is to Richard's gzip files with 200 members
     ds_dir = [x[0] for x in os.walk(height_path)][0] #os.walk(path)
     print(ds_dir)
