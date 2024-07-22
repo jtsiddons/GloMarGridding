@@ -280,12 +280,12 @@ def main(argv):
             # Print some helpful info, including current date and memory usage
             print('Current month and year: ', (current_month, current_year))
 
-            gs = dir()
-            sg = globals()
-            mem_update = [(x, sys.getsizeof(sg.get(x))/1E9) for x in gs if not x.startswith('_') and x not in sys.modules and x not in gs]
-            mem_update = sorted(mem_update, key=lambda x: x[1], reverse=True)
-            print('Memory usage update:')
-            print(mem_update)
+            # gs = dir()
+            # sg = globals()
+            # mem_update = [(x, sys.getsizeof(sg.get(x))/1E9) for x in gs if not x.startswith('_') and x not in sys.modules and x not in gs]
+            # mem_update = sorted(mem_update, key=lambda x: x[1], reverse=True)
+            # print('Memory usage update:')
+            # print(mem_update)
             # for asdf, etadpu_mem in enumerate(mem_update):
             #     print(asdf, etadpu_mem)
             #     if asdf >= 19:
