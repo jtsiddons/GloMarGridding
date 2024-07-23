@@ -36,7 +36,7 @@ import netCDF4 as nc
 from functools import partial
 
 from sklearn.metrics.pairwise import haversine_distances
-from typing import Tuple
+from typing import Callable, Tuple
 
 
 def extract_sic(sic, df):
@@ -332,7 +332,6 @@ def obs_covariance(df, sig_ms=1.27, sig_mb=0.23):
     return covx
 
 
-
 def radial_dist(lat1, lon1, lat2, lon2):
     '''
      Computes a distance matrix of the coordinates using a spherical metric.
@@ -409,7 +408,6 @@ def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
     W = np.matrix(np.zeros((_N, _P)))
     
     all_is = np.arange(_P)
-    print(f'{all_is =}')
     for i, obs in enumerate(unique_obs_idx):
         # Where data match the obs id
         q = all_is[obs_idx == obs]
@@ -429,6 +427,112 @@ def sampling_uncertainty(obs_idx: np.ndarray,  # I think this is 1d?
     del pos, unique_obs_idx, all_is, _N, _P
     
     return covx, W
+
+
+def haversine_gaussian(
+    df: pd.DataFrame,
+    R: float = 6371.0,
+    r: float = 40,
+    s: float = 0.6,
+) -> np.ndarray:
+    """
+    Gaussian Haversine Model
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Observations, required columns are "lat" and "lon" representing
+        latitude and longitude respectively.
+    R : float
+        Radius of the sphere on which Haversine distance is computed. Defaults
+        to radius of earth in km.
+    r : float
+        Gaussian model range parameter
+    s : float
+        Gaussian model scale parameter
+
+    Returns
+    -------
+    C : np.ndarray
+        Distance matrix for the input positions. Result has been modified using
+        the Gaussian model.
+    """
+    pos = np.radians(df[["lat", "lon"]].to_numpy())
+    C = haversine_distances(pos) * R
+    C = np.exp(-(C**2) / r**2)
+    return s / 2 * C
+
+
+def dist_weight(
+    df: pd.DataFrame,
+    dist_fn: Callable,
+    **dist_kwargs,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the distance and weight matrices over gridboxes for an input Frame.
+
+    This function acts as a wrapper for a distance function, allowing for
+    computation of the distances between positions in the same gridbox using any
+    distance metric.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The observation DataFrame, containing the columns required for computation
+        of the distance matrix. Contains the "gridbox" column which indicates the
+        gridbox for a given observation. The index of the DataFrame should match the
+        index ordering for the output distance matrix/weights.
+    dist_fn : Callable
+        The function used to compute a distance matrix for all points in a given
+        grid-cell. Takes as input a pandas.DataFrame as first argument. Any other
+        arguments should be constant over all gridboxes, or can be a look-up
+        table that can use values in the DataFrame to specify values specific to
+        a gridbox. The function should return a numpy matrix, which is the distance
+        matrix for the gridbox only. This wrapper function will correctly apply
+        this matrix to the larger distance matrix using the index from the DataFrame.
+    **dist_kwargs
+        Arguments to be passed to dist_fn. In general these should be constant across
+        all gridboxes. It is possible to pass a look-up table that contains
+        pre-computed values that are gridbox specific, if the keys can be matched to
+        a column in df.
+
+    Returns
+    -------
+    dist : numpy.matrix
+        The distance matrix, which contains the same number of rows and columns as
+        rows in the input DataFrame df. The values in the matrix are 0 if the
+        indices of the row/column are for observations from different gridboxes, and
+        non-zero if the row/column indices fall within the same gridbox. Consequently,
+        with appropriate re-arrangement of rows and columns this matrix can be
+        transformed into a block-diagonal matrix. If the DataFrame input is pre-sorted
+        by the gridbox column, then the result is a block-diagonal matrix.
+    W : numpy.matrix
+        A matrix of weights. This has dimensions n x p where n is the number of unique
+        gridboxes and p is the number of observations (the number of rows in df). The
+        values are 0 if the row and column do not correspond to the same gridbox and
+        equal to the inverse of the number of observations in a gridbox if the row and
+        column indices fall within the same gridbox. The rows of W are in a sorted order
+        of the gridbox. Should this be incorrect, one should re-arrange the rows after
+        calling this function.
+    """
+    # QUESTION: Do we want to sort the unique grid-cell values?
+    #           Ensures consistency between runs if the frame ordering gets
+    #           shuffled in some way.
+    gridboxes = sorted(df["gridbox"].unique())
+    _n_gridboxes = len(gridboxes)
+    _n_obs = len(df)
+
+    weights = np.zeros((_n_gridboxes, _n_obs))
+    dist = np.zeros((_n_obs, _n_obs))
+
+    for i, gridbox in enumerate(gridboxes):
+        gridbox_idcs = list(df[df["gridbox"] == gridbox].index)
+        idcs_array = np.ix_(gridbox_idcs, gridbox_idcs)
+
+        dist[idcs_array] = dist_fn(df.loc[gridbox_idcs], **dist_kwargs)
+        weights[i, gridbox_idcs] = 1 / len(gridbox_idcs)
+
+    return dist, weights
 
 
 def sampling_uncertainty_old(flattened_idx, covx, df):
@@ -488,8 +592,6 @@ Parameters:
                 covx[q[jj],q[kk]] = covx[q[jj],q[kk]] + C[jj,kk]
     #print('covx', covx)
     return covx, W
-
-
 
 
 def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
@@ -576,18 +678,36 @@ def correlated_uncertainty(df):
         #print(vessel_ratio_per_obs_grid)
 
 
-
-def measurement_covariance(df, flattened_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38):
-    #covx = correlated_uncertainty(df)
-    covx1 = obs_covariance(df, sig_ms, sig_mb) #just the basic covariance for number of ship and buoy
-    #print(covx1, covx1.shape)
-    covx2, W = sampling_uncertainty(flattened_idx, covx1, df) #adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
-    #print(covx2, covx2.shape)
-    covx3 = bias_uncertainty(df, covx2, sig_bs, sig_bb)
-    #print(covx3, covx3.shape)
-    return covx3, W
-
-
+# WARN: Memory!! Unnecessary copies!
+def measurement_covariance(
+    df, flattened_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38
+):
+    # covx = correlated_uncertainty(df)
+    # just the basic covariance for number of ship and buoy
+    covx1 = obs_covariance(df, sig_ms, sig_mb)
+    # print(covx1, covx1.shape)
+    # adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
+    df["gridbox"] = flattened_idx.reshape(-1)
+    # dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
+    required_cols = [
+        "lat",
+        "lon",
+        "gridbox",
+        "gridcell_lat",
+        "gridcell_lon",
+        "gridcell_lx",
+        "gridcell_ly",
+        "gridcell_theta",
+    ]
+    cols_miss = [c for c in required_cols if c not in df]
+    if cols_miss:
+        raise ValueError(f"Missing columns required for tau computation: {cols_miss}")
+    dist, W = dist_weight(df, dist_fn=tau_dist)
+    covx1 = covx1 + dist
+    # print(covx1, covx1.shape)
+    covx1 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
+    # print(covx2, covx2.shape)
+    return covx1, W
 
 
 def esa_cci_monthly_climatology(climatology_path):
