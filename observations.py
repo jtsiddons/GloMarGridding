@@ -687,7 +687,7 @@ def measurement_covariance(
     covx1 = obs_covariance(df, sig_ms, sig_mb)
     # print(covx1, covx1.shape)
     # adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
-    df["gridbox"] = flattened_idx.reshape(-1)
+    df["gridbox"] = flattened_idx.values.reshape(-1)
     # dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
     required_cols = [
         "lat",
