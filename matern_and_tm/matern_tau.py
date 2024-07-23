@@ -138,7 +138,8 @@ def tau_dist(df: pd.DataFrame) -> np.matrix:
     Lx, Ly, theta = df[["gridcell_lx", "gridcell_ly", "gridcell_theta"]].values[0]
     sigma = Ls2sigma(Lx, Ly, theta)
 
-    return compute_tau_wrapper(paired_dist, sigma)
+    tau = compute_tau_wrapper(paired_dist, sigma)
+    return np.exp(-tau)
 
 
 def tau_unit_test():
