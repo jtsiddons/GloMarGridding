@@ -488,7 +488,6 @@ def main(argv):
         # close the Dataset.
         ncfile.close()
         print('Dataset is closed!')
-        # STOP
 
 
 
