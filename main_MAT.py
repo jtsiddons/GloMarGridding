@@ -342,31 +342,33 @@ def main(argv):
                 
                 timestep = pentad_idx
                 current_date = pentad_date
-                start_date = current_date - timedelta(days=2)
-                # end_date = current_date + timedelta(days=3)
-                end_date = current_date + timedelta(days=2)  # Aga changes
-                print('----------')
-                print('timestep', timestep)
-                print('current date', current_date)
-                print('start date', start_date)
-                print('end date', end_date)
-                print('----------')
-                
+
+
                 if isleap(current_year):
                     fake_non_leap_year = 1970
                     current_date = current_date.replace(year=fake_non_leap_year)
                     start_date = current_date - timedelta(days=2)
-                    # end_date = current_date + timedelta(days=3)
-                    end_date = current_date + timedelta(days=2)  # Aga changes
+                    end_date = current_date + timedelta(days=2)
                     start_date = start_date.replace(year=current_year)
                     end_date = end_date.replace(year=current_year)
-                    # day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
-                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]  # Aga change
+                    print('----------')
+                    print('timestep', timestep)
+                    print('current date', current_date)
+                    print('start date', start_date)
+                    print('end date', end_date)
+                    print('----------')
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 else:
                     start_date = current_date - timedelta(days=2)
                     end_date = current_date + timedelta(days=2)
-                    # day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] < str(end_date))]
-                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]  # Aga changes
+                    print('----------')
+                    print('timestep', timestep)
+                    print('current date', current_date)
+                    print('start date', start_date)
+                    print('end date', end_date)
+                    print('----------')
+                    day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
+                
                 print(day_df)
                     
                 #calculate flattened idx based on the ESA landmask file
