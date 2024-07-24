@@ -431,7 +431,7 @@ def main(argv):
                 dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
-                STOP
+                
             
         # Write time
         #pd.date_range takes month/day/year as input dates
