@@ -176,7 +176,7 @@ def main(data_path, qc_path, qc_path_2, year, month):
         print(qc_df)
         
         #when merging with FINAL_PROC datafiles, which are not pre-appended
-        #qc_df['uid'] = qc_df['uid'].str.slice(-6)
+        qc_df['uid'] = qc_df['uid'].str.slice(-6)
         
         #extra bit to check for duplicates in uid
         duplicate_values = qc_df['uid'].duplicated()
@@ -192,8 +192,8 @@ def main(data_path, qc_path, qc_path_2, year, month):
     #qc_df_merged = pd.concat(qc_df)
 
     #add a loop over qc_df files to match with the data_df
-    #joined_df = data_df.merge(qc_df, how='inner', on='uid')
-    joined_df = qc_df
+    joined_df = data_df.merge(qc_df, how='inner', on='uid')
+    #joined_df = qc_df
     #extra bit 
     #create a date (to subsample into MetOffice pentads)
     joined_df['date'] = pd.to_datetime(dict(year=joined_df.yr, month=joined_df.mo, day=joined_df.dy))
@@ -201,37 +201,56 @@ def main(data_path, qc_path, qc_path_2, year, month):
     return(joined_df)
     
 
-def MAT_observations(obs_path, obs_path_2, year, month):
-    #obs_path is to Joe's data directories
-    obs_dir_1 = read_in_data(obs_path, year=year, month=month, subdirectories=True)
-    obs_dir_2 = read_in_data(obs_path_2, year=year, month=month, subdirectories=True)
-    obs_dir =  obs_dir_1 + obs_dir_2
+def MAT_observations(obs_path, qc_path, qc_path_2, year, month):
+    data_dir = read_in_data(obs_path, year=year, month=month, obs=True)
+    #qc_path is to Joe's data directories
+    qc_dir_1 = read_in_data(qc_path, year=year, month=month, subdirectories=True)
+    qc_dir_2 = read_in_data(qc_path_2, year=year, month=month, subdirectories=True)
+    qc_dir =  qc_dir_1 + qc_dir_2
     
-    print(obs_dir_1)
-    print(obs_dir_2)
-    print(obs_dir)
+    print(data_dir)
+    print(qc_dir_1)
+    print(qc_dir_2)
+    print(qc_dir)
     
-    obs_df = pd.DataFrame()
+    qc_df = pd.DataFrame()
+    data_df = pd.read_csv(data_dir[0])
+    print(data_dir)
+    print(data_df)
     
     data_columns = ['yr', 'mo', 'dy', 'hr', 'datetime', 'local_datetime', 'lat', 'lon', 'at', 'ii', 'id', 'orig_id', 'uid', 'dck','data_type']
     qc_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
     columns_wanted = data_columns + qc_columns
     
-    for i in range (0,len(obs_dir),1):
-        if any(k not in pl.read_ipc_schema(obs_dir[i]) for k in qc_columns):
+    for i in range (0,len(qc_dir),1):
+        if any(k not in pl.read_ipc_schema(qc_dir[i]) for k in qc_columns):
             continue
-        obs_df_i = pd.read_feather(obs_dir[i], columns=columns_wanted)
-        print(obs_df_i.columns.values)
+        qc_df_i = pd.read_feather(qc_dir[i], columns=columns_wanted)
+        print(qc_df_i.columns.values)
         
-        obs_df = pd.concat([obs_df, obs_df_i])
-        del obs_df_i
-        print('OBS DF', obs_df)
+        qc_df = pd.concat([qc_df, qc_df_i])
+        del qc_df_i
+        print('JOE QC DF', qc_df)
 
-    if obs_df.shape[0] == 0:
+    if qc_df.shape[0] == 0:
         raise ValueError("No data, or don't have the flags")
     else:
-        obs_df = obs_df[~obs_df[qc_columns].any(axis=1)]
-        print(obs_df)
+        qc_df = qc_df[~qc_df[qc_columns].any(axis=1)]
+        print(qc_df)
+        
+        #when merging with FINAL_PROC datafiles, which are not pre-appended
+        qc_df['uid'] = qc_df['uid'].str.slice(-6)
+        
+        #extra bit to check for duplicates in uid
+        duplicate_values = qc_df['uid'].duplicated()
+        #print(duplicate_values[duplicate_values== True])
+        # remove duplicate values in uid column
+        qc_df = qc_df.drop_duplicates(subset=['uid'], keep='last')
+        qc_df.drop(columns='dck')
+        qc_df = qc_df[(qc_df['any_flag'] == False) & (qc_df['point_dup_flag'] <= 1) & (qc_df['track_dup_flag'] == False)]
+        print('QC DF', qc_df) #.columns)
+    
+    obs_df = data_df.merge(qc_df, how='inner', on='uid')
 
     ''' Force all float32/64 columns to float16 '''
     float64_cols = obs_df.select_dtypes(include='float64').columns
@@ -241,7 +260,6 @@ def MAT_observations(obs_path, obs_path_2, year, month):
     float32_cols = obs_df.select_dtypes(include='float32').columns
     mapper = {col_name: np.float16 for col_name in float32_cols}
     obs_df = obs_df.astype(mapper)
-        
     return obs_df
 
 
@@ -294,13 +312,11 @@ def MAT_qc(qc_path, year, month):
 
 
 #def MAT_main(obs_path, obs_path_2, height_path, qc_path, year, month, height_member):
-def MAT_main(obs_path, obs_path_2, qc_path, year, month):
-    obs_df = MAT_observations(obs_path, obs_path_2, year, month)
+def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
+    obs_df = MAT_observations(obs_path, joe_qc_path, joe_qc_path_2, year, month)
     qc_df = MAT_qc(qc_path, year, month)
     #height_df = MAT_heigh_adj(height_path, year, height_member)
     
-    #when merging with qc and height datafiles, which are not pre-appended
-    obs_df['uid'] = obs_df['uid'].str.slice(-6)
     #merge obs_df with qc_df and height adjustments using UID
     joined_df = obs_df.merge(qc_df, how='inner', on='uid')
     #height_adjusted_df = joined_df.merge(height_df, how='inner', on='uid')
