@@ -102,9 +102,9 @@ def main(argv):
     # ===== MODIFIED =====
     #parce existing config file
     config.read(config_file) #('config.ini' or 'three_step_kriging.ini')
-    
+
     print(config)
-    
+
 
     #read values from auxiliary_files section
     #for string use config.get
@@ -204,7 +204,7 @@ def main(argv):
 
     for i in range(len(year_list)):
         current_year = year_list[i]
-        
+
         #add MetOffice pentads here
         yr_rng = pd.date_range('1970/01/03', '1970/12/31', freq='5D')
 
@@ -213,7 +213,7 @@ def main(argv):
         times_series = pd.Series(times2)
         by_month = list(times_series.groupby(times_series.map(lambda x: x.month)))
         print(by_month)
-            
+
         try:
             ncfile.close()  #make sure dataset is not already open.
         except: 
@@ -301,7 +301,7 @@ def main(argv):
             
             mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
             print(mask_ds)
-            
+
             # read in observations and QC
             obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
             print(obs_df)
@@ -327,13 +327,13 @@ def main(argv):
             
             #merge on the height adjustment
             obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
-            
+
             print(obs_df)
             print(obs_df.columns.values)
-            
+
             #read in ellipse parameters file corresponding to the processed file
             month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
-            
+
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
             #print(month_range)
@@ -345,11 +345,11 @@ def main(argv):
                 pentad_idx = i 
                 print(pentad_date)
                 print(pentad_idx)
-                
+
                 timestep = pentad_idx
                 current_date = pentad_date
-                
-                
+
+
                 if isleap(current_year):
                     fake_non_leap_year = 1970
                     current_date = current_date.replace(year=fake_non_leap_year)
@@ -376,7 +376,7 @@ def main(argv):
                     day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 
                 print(day_df)
-                
+
                 #calculate flattened idx based on the ESA landmask file
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
@@ -388,7 +388,7 @@ def main(argv):
                 #print(cond_df['sst'])
                 #print(cond_df['climatology_sst'])
                 #print(cond_df['sst_anomaly'])
-                    
+
                 """
                 plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
                 lons = plotting_df['lon']
@@ -466,8 +466,8 @@ def main(argv):
                 dz_ok[timestep,:,:] = dz_ok_2d.astype(np.float32) #ordinary_kriging
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
-                
-            
+
+
         # Write time
         #pd.date_range takes month/day/year as input dates
         clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
@@ -497,7 +497,7 @@ def main(argv):
         # close the Dataset.
         ncfile.close()
         print('Dataset is closed!')
-        
+
 
 
 
