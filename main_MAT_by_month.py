@@ -81,9 +81,10 @@ def main(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type = int)
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type = int)
-    parser.add_argument("-height_member", dest="height_member", required=False, help="height member", type = int, default = 1)
+    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
+    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
+    parser.add_argument("-month", dest="month", required=True, help="month")  # New Argument
+    parser.add_argument("-height_member", dest="height_member", required=False, help="height member")
     args = parser.parse_args()
     
     config_file = args.config
@@ -142,6 +143,10 @@ def main(argv):
         year_stop = config.getint('MAT', 'endyear')
     print(year_start, year_stop)
 
+    # ===== NEW =====
+    mm2process = int(args.month)
+    # ===== NEW =====
+    
     if args.height_member:
         member = int(args.height_member)
     else:
@@ -200,13 +205,19 @@ def main(argv):
     #climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
     
     year_list = list(range(int(year_start), int(year_stop)+1,1))
-    month_list = list(range(1, 13, 1))
+    # ===== MODIFIED =====
+    month_list = list(range(mm2process, mm2process+1, 1))
+    # ===== MODIFIED =====
 
     for i in range(len(year_list)):
         current_year = year_list[i]
 
         #add MetOffice pentads here
-        yr_rng = pd.date_range('1970/01/03', '1970/12/31', freq='5D')
+        yr_rng = pd.date_range('1970/01/03','1970/12/31',freq='5D')
+
+        # ===== NEW =====
+        yr_rng = yr_rng[yr_rng.month == mm2process]
+        # ===== NEW =====
 
         times2 = [j.replace(year=current_year) for j in yr_rng]
         print(times2)
@@ -221,7 +232,7 @@ def main(argv):
             
         ncfilename = str(output_directory) 
         # ===== MODIFIED =====
-        ncfilename += str(current_year)
+        ncfilename += str(current_year)+'_'+str(mm2process).zfill(2)
         ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc' 
         # ===== MODIFIED =====
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
@@ -270,7 +281,9 @@ def main(argv):
             current_month = month_list[j]
             #print(current_month) 
 
-            idx, monthly = by_month[current_month-1]
+            # ===== MODIFIED =====
+            idx, monthly = by_month[0]
+            # ===== MODIFIED =====
 
             print(monthly)
             print(idx)
@@ -476,7 +489,15 @@ def main(argv):
         dates = dates_.dt.to_pydatetime() # Here it becomes date
         print('pydate', dates)
 
-        times = date2num(dates, time.units)
+        # ===== NEW + MODIFIED =====
+        new_dates = []
+        for dddd in dates:
+            if dddd.month == mm2process:
+                new_dates.append(dddd)
+        print('pydate2', new_dates)
+
+        times = date2num(new_dates, time.units)
+        # ===== NEW + MODIFIED =====
 
         print('==== Times to be saved ====')
         print(times)
