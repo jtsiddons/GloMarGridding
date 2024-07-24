@@ -81,9 +81,9 @@ def main(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
-    parser.add_argument("-height_member", dest="height_member", required=False, help="height member")
+    parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type = int)
+    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type = int)
+    parser.add_argument("-height_member", dest="height_member", required=False, help="height member", type = int, default = 1)
     args = parser.parse_args()
     
     config_file = args.config
@@ -305,11 +305,17 @@ def main(argv):
             # read in observations and QC
             obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
             print(obs_df)
+            day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
+            day_night = day_night.pipe(is_daytime)
+            obs_df = obs_df.merge(day_night.select(['uid', 'is_daytime']).to_pandas(), on='uid')
+            del day_night
+            """
             #use day/night mask from PyCOADS
             obs_df_polars = pl.from_pandas(obs_df)  # obs_df is a pandas frame
             daynight_obs_df_polars = is_daytime(obs_df_polars)
             obs_df = daynight_obs_df_polars.to_pandas()
             print(obs_df)
+            """
             #filter day (1) or night(0)
             obs_df = obs_df[obs_df['is_daytime'] == 0]
             print(obs_df) #[['local_datetime', 'is_daytime']])
@@ -321,8 +327,8 @@ def main(argv):
             
             #merge on the height adjustment
             obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
-            print(obs_df)
             
+            print(obs_df)
             print(obs_df.columns.values)
             
             #read in ellipse parameters file corresponding to the processed file
@@ -370,12 +376,12 @@ def main(argv):
                     day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 
                 print(day_df)
-                    
+                
                 #calculate flattened idx based on the ESA landmask file
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
-                
+                cond_df.reset_index(drop=True, inplace=True)
                 #print(cond_df.columns.values)
                 #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
                 #quick temperature check
@@ -460,6 +466,7 @@ def main(argv):
                 dz_ok[timestep,:,:] = dz_ok_2d.astype(np.float32) #ordinary_kriging
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
+                
             
         # Write time
         #pd.date_range takes month/day/year as input dates
