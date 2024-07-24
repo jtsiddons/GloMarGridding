@@ -94,12 +94,10 @@ def main(argv):
     #load config options from ini file
     #this is done using an ini config file, which is located in the same direcotry as the python code
     #instantiate
-    # ===== MODIFIED =====
     config = ConfigParser(strict=False,
                           empty_lines_in_values=False,
                           dict_type=ConfigParserMultiValues,
                           converters={"list": ConfigParserMultiValues.getlist})
-    # ===== MODIFIED =====
     #parce existing config file
     config.read(config_file) #('config.ini' or 'three_step_kriging.ini')
 
@@ -153,7 +151,6 @@ def main(argv):
     #if several different covariances, then path to directory
     cov_dir = config.get('MAT', 'covariance')
     
-    
     output_directory = config.get('MAT', 'output')
     
     ellipse_param_path = config.get('MAT', 'ellipse_parameters')
@@ -167,25 +164,6 @@ def main(argv):
     output_lon = np.arange(lon_bnds[0]+0.5, lon_bnds[-1]+0.5,1)
     print(output_lat)
     print(output_lon)
-    
-    """
-    #land-water-mask for observations
-    water_mask_dir = config.get('MAT', 'covariance')
-    mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(water_mask_dir, month=1)
-    """
-    
-    """
-    water_mask_file = config.getlist('landmask', 'land_mask')
-    print(water_mask_file)
-    #for ellipse Atlatic 0, for ellipse world 1, for ESA world 2
-    water_mask_file = water_mask_file[1]
-    print(water_mask_file)
-    
-    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-    print('----')
-    print(mask_ds)
-    """
-    
     
     climatology = obs_module.read_climatology(climatology, lat_north,lat_south, lon_west,lon_east)
     print(climatology)
@@ -220,10 +198,8 @@ def main(argv):
             pass
             
         ncfilename = str(output_directory) 
-        # ===== MODIFIED =====
         ncfilename += str(current_year)
         ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc' 
-        # ===== MODIFIED =====
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
         
@@ -233,14 +209,12 @@ def main(argv):
         
         # Define two variables with the same names as dimensions,
         # a conventional way to define "coordinate variables".
-        # ===== MODIFIED =====
         lat = ncfile.createVariable('lat', np.float32, ('lat',))
         lat.units = 'degrees_north'
         lat.long_name = 'latitude'
         lon = ncfile.createVariable('lon', np.float32, ('lon',))
         lon.units = 'degrees_east'
         lon.long_name = 'longitude'
-        # ===== MODIFIED =====
         time = ncfile.createVariable('time', np.float32, ('time',))
         time.units = 'days since %s-01-01' % (str(current_year))
         time.long_name = 'time'
@@ -276,21 +250,7 @@ def main(argv):
             print(idx)
             print(monthly.index)
 
-            # ===== NEW =====
-            # Print some helpful info, including current date and memory usage
             print('Current month and year: ', (current_month, current_year))
-
-            # gs = dir()
-            # sg = globals()
-            # mem_update = [(x, sys.getsizeof(sg.get(x))/1E9) for x in gs if not x.startswith('_') and x not in sys.modules and x not in gs]
-            # mem_update = sorted(mem_update, key=lambda x: x[1], reverse=True)
-            # print('Memory usage update:')
-            # print(mem_update)
-            # for asdf, etadpu_mem in enumerate(mem_update):
-            #     print(asdf, etadpu_mem)
-            #     if asdf >= 19:
-            #         break
-            # ===== NEW =====
 
             #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
@@ -309,13 +269,7 @@ def main(argv):
             day_night = day_night.pipe(is_daytime)
             obs_df = obs_df.merge(day_night.select(['uid', 'is_daytime']).to_pandas(), on='uid')
             del day_night
-            """
-            #use day/night mask from PyCOADS
-            obs_df_polars = pl.from_pandas(obs_df)  # obs_df is a pandas frame
-            daynight_obs_df_polars = is_daytime(obs_df_polars)
-            obs_df = daynight_obs_df_polars.to_pandas()
-            print(obs_df)
-            """
+            
             #filter day (1) or night(0)
             obs_df = obs_df[obs_df['is_daytime'] == 0]
             print(obs_df) #[['local_datetime', 'is_daytime']])
@@ -382,12 +336,6 @@ def main(argv):
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
                 cond_df.reset_index(drop=True, inplace=True)
-                #print(cond_df.columns.values)
-                #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
-                #quick temperature check
-                #print(cond_df['sst'])
-                #print(cond_df['climatology_sst'])
-                #print(cond_df['sst_anomaly'])
 
                 """
                 plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
@@ -480,16 +428,7 @@ def main(argv):
 
         print('==== Times to be saved ====')
         print(times)
-
-        """
-        #dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
-        #dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
-        print('dates', dates_)
-        dates = dates_.dt.to_pydatetime() # Here it becomes date
-        print('pydate', dates)
-        times = date2num(dates, time.units)
-        print(times)
-        """
+        
         time[:] = times
         print(time)    
         # first print the Dataset object to see what we've got
