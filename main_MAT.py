@@ -243,6 +243,11 @@ def main(argv):
         dz_ok = ncfile.createVariable('mat_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
         dz_ok.units = 'deg C' # degrees Kelvin
         dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        # Define a 3D variable to hold the data
+        grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
+        # note: unlimited dimension is leftmost
+        ok.units = '' # degrees Kelvin
+        ok.standard_name = 'Number of observations within each gridcell'
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
