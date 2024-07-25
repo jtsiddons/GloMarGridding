@@ -335,7 +335,7 @@ def main(argv):
                 
                 day_flat_idx = cond_df['flattened_idx'][:]
                 
-                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
+                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
                 #print(obs_covariance)
                 #print(W)
                 
