@@ -246,8 +246,8 @@ def main(argv):
         # Define a 3D variable to hold the data
         grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
         # note: unlimited dimension is leftmost
-        ok.units = '' # degrees Kelvin
-        ok.standard_name = 'Number of observations within each gridcell'
+        grid_obs.units = '' # degrees Kelvin
+        grid_obs.standard_name = 'Number of observations within each gridcell'
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -403,6 +403,11 @@ def main(argv):
                 
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
+                
+                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                gridbox_counts = cond_df['gridbox'].value_counts()
+                print(gridbox_counts)
+                
                 
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)

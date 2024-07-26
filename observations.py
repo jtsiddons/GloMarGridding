@@ -689,7 +689,6 @@ def measurement_covariance(
     covx1 = obs_covariance(df, sig_ms, sig_mb)
     # print(covx1, covx1.shape)
     # adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
-    df["gridbox"] = flattened_idx #.values.reshape(-1)
     # dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
     required_cols = [
         "lat",
@@ -704,7 +703,7 @@ def measurement_covariance(
     cols_miss = [c for c in required_cols if c not in df]
     if cols_miss:
         raise ValueError(f"Missing columns required for tau computation: {cols_miss}")
-    dist, W = dist_weight(df, dist_fn=tau_dist)
+    #dist, W = dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     # print(covx1, covx1.shape)
     covx1 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
