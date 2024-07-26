@@ -406,8 +406,11 @@ def main(argv):
                 
                 cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
                 gridbox_counts = cond_df['gridbox'].value_counts()
-                print(gridbox_counts)
-                
+                gridbox_count_np = gridbox_counts.to_numpy()
+                gridbox_id_np = gridbox_counts.index.to_numpy()
+                del gridbox_counts
+                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
+                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
                 
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
@@ -425,7 +428,7 @@ def main(argv):
                 ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
                 ax.add_feature(cfeature.LAND, color='darkolivegreen')
                 ax.coastlines()
-                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
+                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=plt.cm.get_cmap('coolwarm'))
                 fig.colorbar(m)
                 plt.clim(-4, 4)
                 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
