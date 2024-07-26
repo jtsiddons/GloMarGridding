@@ -228,6 +228,11 @@ def main(argv):
         dz_ok = ncfile.createVariable('sst_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
         dz_ok.units = 'deg C' # degrees Kelvin
         dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        # Define a 3D variable to hold the data
+        grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
+        # note: unlimited dimension is leftmost
+        grid_obs.units = '' # degrees Kelvin
+        grid_obs.standard_name = 'Number of observations within each gridcell'
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -335,6 +340,14 @@ def main(argv):
                 
                 day_flat_idx = cond_df['flattened_idx'][:]
                 
+                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                gridbox_counts = cond_df['gridbox'].value_counts()
+                gridbox_count_np = gridbox_counts.to_numpy()
+                gridbox_id_np = gridbox_counts.index.to_numpy()
+                del gridbox_counts
+                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
+                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
+                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=1.27, sig_mb=0.23, sig_bs=1.47, sig_bb=0.38)
                 #print(obs_covariance)
                 #print(W)
@@ -365,12 +378,13 @@ def main(argv):
                 #This writes each time slice to the netCDF
                 ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
                 dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+                grid_obs[timestep,:,:] = grid_obs_2d
                 print("-- Wrote data")
                 print(pentad_idx, pentad_day)
         print('Test whether yearly or monthly processing')
         print(ok.shape)
         print(dz_ok.shape)
-        STOP
+        
         # Write time
         #pd.date_range takes month/day/year as input dates
         clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
