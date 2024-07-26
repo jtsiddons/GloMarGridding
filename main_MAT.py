@@ -442,6 +442,7 @@ def main(argv):
                 #This writes each time slice to the netCDF
                 ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
                 dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+                grid_obs[timestep,:,:] = grid_obs_2d
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
                 
