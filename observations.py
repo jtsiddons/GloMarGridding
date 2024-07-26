@@ -703,7 +703,7 @@ def measurement_covariance(
     cols_miss = [c for c in required_cols if c not in df]
     if cols_miss:
         raise ValueError(f"Missing columns required for tau computation: {cols_miss}")
-    #dist, W = dist_weight(df, dist_fn=tau_dist)
+    dist, W = dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     # print(covx1, covx1.shape)
     covx1 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
