@@ -81,9 +81,10 @@ def main(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type = int)
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type = int)
-    parser.add_argument("-height_member", dest="height_member", required=False, help="height member", type = int, default = 1)
+    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
+    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
+    parser.add_argument("-month", dest="month", required=True, help="month")  # New Argument
+    parser.add_argument("-height_member", dest="height_member", required=False, help="height member")
     args = parser.parse_args()
     
     config_file = args.config
@@ -94,10 +95,12 @@ def main(argv):
     #load config options from ini file
     #this is done using an ini config file, which is located in the same direcotry as the python code
     #instantiate
+    # ===== MODIFIED =====
     config = ConfigParser(strict=False,
                           empty_lines_in_values=False,
                           dict_type=ConfigParserMultiValues,
                           converters={"list": ConfigParserMultiValues.getlist})
+    # ===== MODIFIED =====
     #parce existing config file
     config.read(config_file) #('config.ini' or 'three_step_kriging.ini')
 
@@ -140,6 +143,10 @@ def main(argv):
         year_stop = config.getint('MAT', 'endyear')
     print(year_start, year_stop)
 
+    # ===== NEW =====
+    mm2process = int(args.month)
+    # ===== NEW =====
+    
     if args.height_member:
         member = int(args.height_member)
     else:
@@ -150,6 +157,7 @@ def main(argv):
     #if single covariance, then full path
     #if several different covariances, then path to directory
     cov_dir = config.get('MAT', 'covariance')
+    
     
     output_directory = config.get('MAT', 'output')
     
@@ -165,6 +173,25 @@ def main(argv):
     print(output_lat)
     print(output_lon)
     
+    """
+    #land-water-mask for observations
+    water_mask_dir = config.get('MAT', 'covariance')
+    mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(water_mask_dir, month=1)
+    """
+    
+    """
+    water_mask_file = config.getlist('landmask', 'land_mask')
+    print(water_mask_file)
+    #for ellipse Atlatic 0, for ellipse world 1, for ESA world 2
+    water_mask_file = water_mask_file[1]
+    print(water_mask_file)
+    
+    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+    print('----')
+    print(mask_ds)
+    """
+    
+    
     climatology = obs_module.read_climatology(climatology, lat_north,lat_south, lon_west,lon_east)
     print(climatology)
     clim = climatology.t10m_clim_day
@@ -178,13 +205,19 @@ def main(argv):
     #climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
     
     year_list = list(range(int(year_start), int(year_stop)+1,1))
-    month_list = list(range(1, 13, 1))
+    # ===== MODIFIED =====
+    month_list = list(range(mm2process, mm2process+1, 1))
+    # ===== MODIFIED =====
 
     for i in range(len(year_list)):
         current_year = year_list[i]
 
         #add MetOffice pentads here
-        yr_rng = pd.date_range('1970/01/03', '1970/12/31', freq='5D')
+        yr_rng = pd.date_range('1970/01/03','1970/12/31',freq='5D')
+
+        # ===== NEW =====
+        yr_rng = yr_rng[yr_rng.month == mm2process]
+        # ===== NEW =====
 
         times2 = [j.replace(year=current_year) for j in yr_rng]
         print(times2)
@@ -198,8 +231,10 @@ def main(argv):
             pass
             
         ncfilename = str(output_directory) 
-        ncfilename += str(current_year)
+        # ===== MODIFIED =====
+        ncfilename += str(current_year)+'_'+str(mm2process).zfill(2)
         ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc' 
+        # ===== MODIFIED =====
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
         
@@ -209,12 +244,14 @@ def main(argv):
         
         # Define two variables with the same names as dimensions,
         # a conventional way to define "coordinate variables".
+        # ===== MODIFIED =====
         lat = ncfile.createVariable('lat', np.float32, ('lat',))
         lat.units = 'degrees_north'
         lat.long_name = 'latitude'
         lon = ncfile.createVariable('lon', np.float32, ('lon',))
         lon.units = 'degrees_east'
         lon.long_name = 'longitude'
+        # ===== MODIFIED =====
         time = ncfile.createVariable('time', np.float32, ('time',))
         time.units = 'days since %s-01-01' % (str(current_year))
         time.long_name = 'time'
@@ -233,11 +270,6 @@ def main(argv):
                                       ('time','lat','lon')) # note: unlimited dimension is leftmost
         dz_ok.units = 'deg C' # degrees Kelvin
         dz_ok.standard_name = 'uncertainty' # this is a CF standard name
-        # Define a 3D variable to hold the data
-        grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
-        # note: unlimited dimension is leftmost
-        grid_obs.units = '' # degrees Kelvin
-        grid_obs.standard_name = 'Number of observations within each gridcell'
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -249,13 +281,29 @@ def main(argv):
             current_month = month_list[j]
             #print(current_month) 
 
-            idx, monthly = by_month[current_month-1]
+            # ===== MODIFIED =====
+            idx, monthly = by_month[0]
+            # ===== MODIFIED =====
 
             print(monthly)
             print(idx)
             print(monthly.index)
 
+            # ===== NEW =====
+            # Print some helpful info, including current date and memory usage
             print('Current month and year: ', (current_month, current_year))
+
+            # gs = dir()
+            # sg = globals()
+            # mem_update = [(x, sys.getsizeof(sg.get(x))/1E9) for x in gs if not x.startswith('_') and x not in sys.modules and x not in gs]
+            # mem_update = sorted(mem_update, key=lambda x: x[1], reverse=True)
+            # print('Memory usage update:')
+            # print(mem_update)
+            # for asdf, etadpu_mem in enumerate(mem_update):
+            #     print(asdf, etadpu_mem)
+            #     if asdf >= 19:
+            #         break
+            # ===== NEW =====
 
             #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
@@ -268,14 +316,19 @@ def main(argv):
             print(mask_ds)
 
             # read in observations and QC
-            obs_df = obs_qc_module.MAT_main(data_path, qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
+            obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
             print(obs_df)
-            
             day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
             day_night = day_night.pipe(is_daytime)
             obs_df = obs_df.merge(day_night.select(['uid', 'is_daytime']).to_pandas(), on='uid')
             del day_night
-            
+            """
+            #use day/night mask from PyCOADS
+            obs_df_polars = pl.from_pandas(obs_df)  # obs_df is a pandas frame
+            daynight_obs_df_polars = is_daytime(obs_df_polars)
+            obs_df = daynight_obs_df_polars.to_pandas()
+            print(obs_df)
+            """
             #filter day (1) or night(0)
             obs_df = obs_df[obs_df['is_daytime'] == 0]
             print(obs_df) #[['local_datetime', 'is_daytime']])
@@ -342,6 +395,12 @@ def main(argv):
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
                 cond_df.reset_index(drop=True, inplace=True)
+                #print(cond_df.columns.values)
+                #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
+                #quick temperature check
+                #print(cond_df['sst'])
+                #print(cond_df['climatology_sst'])
+                #print(cond_df['sst_anomaly'])
 
                 """
                 plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
@@ -388,14 +447,6 @@ def main(argv):
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
-                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
-                gridbox_counts = cond_df['gridbox'].value_counts()
-                gridbox_count_np = gridbox_counts.to_numpy()
-                gridbox_id_np = gridbox_counts.index.to_numpy()
-                del gridbox_counts
-                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
-                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
-                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
                 print(W)
@@ -412,7 +463,7 @@ def main(argv):
                 ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
                 ax.add_feature(cfeature.LAND, color='darkolivegreen')
                 ax.coastlines()
-                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=plt.cm.get_cmap('coolwarm'))
+                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
                 fig.colorbar(m)
                 plt.clim(-4, 4)
                 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
@@ -426,7 +477,6 @@ def main(argv):
                 #This writes each time slice to the netCDF
                 ok[timestep,:,:] = obs_ok_2d.astype(np.float32) #ordinary_kriging
                 dz_ok[timestep,:,:] = dz_ok_2d.astype(np.float32) #ordinary_kriging
-                grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
 
@@ -439,11 +489,28 @@ def main(argv):
         dates = dates_.dt.to_pydatetime() # Here it becomes date
         print('pydate', dates)
 
-        times = date2num(dates, time.units)
+        # ===== NEW + MODIFIED =====
+        new_dates = []
+        for dddd in dates:
+            if dddd.month == mm2process:
+                new_dates.append(dddd)
+        print('pydate2', new_dates)
+
+        times = date2num(new_dates, time.units)
+        # ===== NEW + MODIFIED =====
 
         print('==== Times to be saved ====')
         print(times)
-        
+
+        """
+        #dates_ = pd.date_range(str(current_month)+'/3/'+str(current_year), str(current_month)+'/28/'+str(current_year), freq='5D')
+        #dates_ = pd.Series([datetime.combine(i, datetime.min.time()) for i in dates_])
+        print('dates', dates_)
+        dates = dates_.dt.to_pydatetime() # Here it becomes date
+        print('pydate', dates)
+        times = date2num(dates, time.units)
+        print(times)
+        """
         time[:] = times
         print(time)    
         # first print the Dataset object to see what we've got
