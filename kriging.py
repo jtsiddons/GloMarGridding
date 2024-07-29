@@ -198,14 +198,14 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     
     if grid_2d.ndim > 1:
         grid_2d_flat = grid_2d.flatten()
-
-    to_modify = grid_2d_flat
-
+    
+    to_modify = np.zeros(grid_2d_flat.shape)
+    
     if iid.ndim > 1:
         iid = np.squeeze(iid)
     indexes = iid
 
-    landmask = np.copy(to_modify)
+    landmask = np.copy(grid_2d_flat)
     #print(landmask)
     
     if(~np.isnan(landmask).any()):
@@ -215,11 +215,11 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     replacements = result_1d
     for (index, replacement) in zip(indexes, replacements):
       to_modify[index] = replacement
-    to_modify = to_modify * landmask
+    #to_modify = to_modify * landmask
+    to_modify = np.where(np.isnan(landmask), np.nan, to_modify)
     result_2d = np.reshape(to_modify, (grid_2d.shape))
     return(result_2d)
-
-
+ 
 
 def watermask(ds_masked):
     try:

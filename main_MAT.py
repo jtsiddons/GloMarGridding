@@ -233,6 +233,11 @@ def main(argv):
                                       ('time','lat','lon')) # note: unlimited dimension is leftmost
         dz_ok.units = 'deg C' # degrees Kelvin
         dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        # Define a 3D variable to hold the data
+        grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
+        # note: unlimited dimension is leftmost
+        grid_obs.units = '' # degrees Kelvin
+        grid_obs.standard_name = 'Number of observations within each gridcell'
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -383,6 +388,14 @@ def main(argv):
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
+                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                gridbox_counts = cond_df['gridbox'].value_counts()
+                gridbox_count_np = gridbox_counts.to_numpy()
+                gridbox_id_np = gridbox_counts.index.to_numpy()
+                del gridbox_counts
+                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
+                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
+                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
                 print(W)
@@ -399,7 +412,7 @@ def main(argv):
                 ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
                 ax.add_feature(cfeature.LAND, color='darkolivegreen')
                 ax.coastlines()
-                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree(), cmap=plt.cm.get_cmap('coolwarm'))
+                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=plt.cm.get_cmap('coolwarm'))
                 fig.colorbar(m)
                 plt.clim(-4, 4)
                 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
@@ -413,6 +426,7 @@ def main(argv):
                 #This writes each time slice to the netCDF
                 ok[timestep,:,:] = obs_ok_2d.astype(np.float32) #ordinary_kriging
                 dz_ok[timestep,:,:] = dz_ok_2d.astype(np.float32) #ordinary_kriging
+                grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
 
