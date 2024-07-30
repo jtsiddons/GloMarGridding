@@ -301,7 +301,7 @@ def watermask_at_obs_locations(lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mas
 
 
 
-def obs_covariance(df, sig_ms=0.73, sig_mb=0.24): 
+def obs_covariance(df, sig_ms, sig_mb): 
     '''
     Calculates the covariance matrix of the measurements (obervations)
     
@@ -596,7 +596,7 @@ Parameters:
     return covx, W
 
 
-def bias_uncertainty(df, covx, sig_bs=1.47, sig_bb=0.38):
+def bias_uncertainty(df, covx, sig_bs, sig_bb):
     '''
     Returns measurements covariance matrix updated by adding bias uncertainty to the measurements
 
@@ -682,7 +682,7 @@ def correlated_uncertainty(df):
 
 # WARN: Memory!! Unnecessary copies!
 def measurement_covariance(
-    df, flattened_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38
+    df, flattened_idx, sig_ms, sig_mb, sig_bs, sig_bb
 ):
     # covx = correlated_uncertainty(df)
     # just the basic covariance for number of ship and buoy

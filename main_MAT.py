@@ -119,7 +119,13 @@ def main(argv):
     lon_west  = config.getfloat('MAT', 'lon_west') #-180. 
     lon_east  = config.getfloat('MAT', 'lon_east') #180. 
     lat_south = config.getfloat('MAT', 'lat_south') #-90.
-    lat_north = config.getfloat('MAT', 'lat_north') #90. 
+    lat_north = config.getfloat('MAT', 'lat_north') #90.
+    
+    #read measurement and bias uncertainties from config
+    sig_ms = config.getfloat('MAT', 'sig_ms')
+    sig_mb = config.getfloat('MAT', 'sig_mb')
+    sig_bs =  config.getfloat('MAT', 'sig_bs')
+    sig_bb = config.getfloat('MAT', 'sig_bb')
     
     #location of the ICOADS observation files
     data_path = config.get('MAT', 'observations')
@@ -290,10 +296,10 @@ def main(argv):
 
             print(obs_df)
             print(obs_df.columns.values)
-
+            
             #read in ellipse parameters file corresponding to the processed file
             month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
-
+            
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
             #print(month_range)
@@ -336,7 +342,7 @@ def main(argv):
                     day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 
                 print(day_df)
-
+                
                 #calculate flattened idx based on the ESA landmask file
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
@@ -396,7 +402,7 @@ def main(argv):
                 water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
                 grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
                 
-                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
+                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb)
                 print(obs_covariance)
                 print(W)
                 
