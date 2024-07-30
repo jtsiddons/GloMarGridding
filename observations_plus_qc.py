@@ -146,15 +146,19 @@ def main(data_path, qc_path, qc_path_2, year, month):
     # do the same for obs
     # if no obs or no QC - set as empty and proceed straight to creating an empty netcdf layer
     # if obs and QC both present - proceed with processing as normal
-    data_df = pd.read_csv(data_dir[0])
     
     qc_df = pd.DataFrame() #create the empty dataframe
     key_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
     print(qc_dir)
     
-    data_columns = ['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'sst', 'ii', 'id', 'orig_id', 'uid', 'dck','data_type']
+    data_columns = ['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'sst', 'ii', 'id', 'uid', 'dck']
     qc_columns = ['noval_sst', 'freez_sst', 'hardlim_sst', 'nonorm_sst', 'clim_sst', 'any_flag', 'point_dup_flag', 'track_dup_flag']
-    columns_wanted = data_columns + qc_columns
+    qc_data_columns = ['uid', 'dck', 'datetime', 'local_datetime', 'orig_id', 'data_type']
+    columns_wanted = qc_data_columns + qc_columns
+    
+    data_df = pd.read_csv(data_dir[0], usecols=data_columns)
+    print(data_df)
+    print(f'FINAL PROC data columns, {data_df.columns.tolist() =}')
     
     for i in range (0,len(qc_dir),1):
         if any(k not in pl.read_ipc_schema(qc_dir[i]) for k in key_columns):
@@ -214,14 +218,16 @@ def MAT_observations(obs_path, qc_path, qc_path_2, year, month):
     print(qc_dir)
     
     qc_df = pd.DataFrame()
-    data_df = pd.read_csv(data_dir[0])
-    print(data_dir)
-    print(data_df)
     
-    data_columns = ['yr', 'mo', 'dy', 'hr', 'datetime', 'local_datetime', 'lat', 'lon', 'at', 'ii', 'id', 'orig_id', 'uid', 'dck','data_type']
+    data_columns = ['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'at', 'ii', 'id', 'uid', 'dck']
     qc_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
-    columns_wanted = data_columns + qc_columns
+    qc_data_columns = ['uid', 'dck', 'datetime', 'local_datetime', 'orig_id', 'data_type']
+    columns_wanted = qc_data_columns + qc_columns
     
+    data_df = pd.read_csv(data_dir[0], usecols=data_columns)
+    print(data_dir)
+    print(f'FINAL PROC data columns, {data_df.columns.tolist() =}')
+
     for i in range (0,len(qc_dir),1):
         if any(k not in pl.read_ipc_schema(qc_dir[i]) for k in qc_columns):
             continue
@@ -315,6 +321,7 @@ def MAT_qc(qc_path, year, month):
 def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     obs_df = MAT_observations(obs_path, joe_qc_path, joe_qc_path_2, year, month)
     qc_df = MAT_qc(qc_path, year, month)
+    
     #height_df = MAT_heigh_adj(height_path, year, height_member)
     
     #merge obs_df with qc_df and height adjustments using UID
@@ -329,6 +336,7 @@ def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     print(len(qc_df))
     print('Joined df')
     print(len(joined_df))
+    
     #print('Height adjustment df')
     #print(len(height_df))
     #print('Joined df with height adjustemnt merged on')
@@ -336,7 +344,7 @@ def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     
     del qc_df
     del obs_df
-    
+    print(joined_df)
     return joined_df #height_adjusted_df
 
 
@@ -430,7 +438,10 @@ def MAT_match_climatology_to_obs(climatology_365, obs_df):
     
     non_leap_df['climatology'] = selected
     leap_df['climatology'] = selected2
+    print(f'{non_leap_df =}' )
+    print(f'{leap_df =}' )
     obs_df = pd.concat([non_leap_df, leap_df])
+    print(f'{obs_df =}' )
     #print('joint leap and non-leap observations', obs_df)
     obs_df['obs_anomalies'] = obs_df['at'] - obs_df['climatology']
     #df1 = obs_df[['lat', 'lon', 'sst', 'climatology', 'cci_anomalies', 'obs_anomalies']]
@@ -438,8 +449,10 @@ def MAT_match_climatology_to_obs(climatology_365, obs_df):
     #STOP
     
     #in case some of the values are Nan (because covered by ice)        
-    obs_df = obs_df.dropna()
-    print(obs_df)
+    obs_df = obs_df.dropna(subset=['obs_anomalies'])
+    print(f'after dropna {obs_df =}')
+    nan_cols = [c for c in obs_df.columns if pd.isna(obs_df[c]).all()]
+    print(f"{nan_cols = }")
     
     del c
     del climatology_365
