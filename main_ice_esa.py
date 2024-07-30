@@ -129,6 +129,12 @@ def main(argv):
     lat_south = config.getfloat('SST', 'lat_south') #-90.
     lat_north = config.getfloat('SST', 'lat_north') #90. 
     
+    #read measurement and bias uncertainties from config
+    sig_ms = config.getfloat('SST', 'sig_ms')
+    sig_mb = config.getfloat('SST', 'sig_mb')
+    sig_bs =  config.getfloat('SST', 'sig_bs')
+    sig_bb = config.getfloat('SST', 'sig_bb')
+    
     #location of the ICOADS observation files
     data_path = config.get('observations', 'observations')
     #location og QC flags in GROUPS subdirectories
@@ -348,7 +354,7 @@ def main(argv):
                 water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
                 grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
                 
-                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
+                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb)
                 #print(obs_covariance)
                 #print(W)
                 
