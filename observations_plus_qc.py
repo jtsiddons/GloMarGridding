@@ -49,7 +49,7 @@ def is_single_item_list(list_to_check):
 
 def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=False):
     ds_dir = [x[0] for x in os.walk(data_path)] #os.walk(path)
-    print(ds_dir)
+    #print(ds_dir)
     if obs is True and subdirectories is False:
         print('there are files')
         ds_dir = (ds_dir[0])
@@ -57,7 +57,7 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
         
         long_filelist = []
         filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-        print(filelist)
+        #print(filelist)
         
         #r = re.compile(str(year)+'_'+str(month).zfill(2) + '.csv')
         #filtered_list = list(filter(r.match, fdef rmse(predictions, targets):
@@ -67,14 +67,14 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
         #(when processing MetOffice pentads, there might be need for a few days from before/after main month
         mon_list = [month-1, month, month+1]
         str_list = [str(year)+'_'+str(i).zfill(2)+'.csv' for i in mon_list]
-        print(mon_list)
-        print(str_list)
+        #print(mon_list)
+        #print(str_list)
         filtered_list = [i for i in filelist if i in str_list]
-        print(filtered_list)
+        #print(filtered_list)
         
         fullpath_list = [os.path.join(ds_dir,f) for f in filtered_list]
         long_filelist.extend(fullpath_list)
-        print(long_filelist)
+        #print(long_filelist)
         
     elif obs is False and subdirectories is False:
         print('there are files')
@@ -83,7 +83,7 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
         
         long_filelist = []
         filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-        print(filelist)
+        #print(filelist)
         #r = re.compile(str(year)+'_'+str(month).zfill(2) + '.feather')
         #filtered_list = list(filter(r.match, filelist))
         
@@ -91,14 +91,14 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
         #(when processing MetOffice pentads, there might be need for a few days from before/after main month
         mon_list = [month-1, month, month+1]
         str_list = [str(year)+'_'+str(i).zfill(2)+'.feather' for i in mon_list]
-        print(mon_list)
-        print(str_list)
+        #print(mon_list)
+        #print(str_list)
         filtered_list = [i for i in filelist if i in str_list]
-        print(filtered_list)
+        #print(filtered_list)
         
         fullpath_list = [os.path.join(ds_dir,f) for f in filtered_list]
         long_filelist.extend(fullpath_list)
-        print(long_filelist)
+        #print(long_filelist)
         
     else:
         print('there are subdirectories')
@@ -108,7 +108,7 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
         long_filelist = []
         for dirname in sorted(ds_dir):
             filelist = sorted(os.listdir(dirname)) #_fullpath(dirname))
-            print(filelist)
+            #print(filelist)
             #r = re.compile(str(year)+'_'+str(month).zfill(2) + '.feather')
             #filtered_list = list(filter(r.match, filelist))
             #print(filtered_list)
@@ -117,14 +117,14 @@ def read_in_data(data_path, year=False, month=False,  obs=False, subdirectories=
             #(when processing MetOffice pentads, there might be need for a few days from before/after main month
             mon_list = [month-1, month, month+1]
             str_list = [str(year)+'_'+str(i).zfill(2)+'.feather' for i in mon_list]
-            print(mon_list)
-            print(str_list)
+            #print(mon_list)
+            #print(str_list)
             filtered_list = [i for i in filelist if i in str_list]
-            print(filtered_list)
+            #print(filtered_list)
             
             fullpath_list = [os.path.join(dirname,f) for f in filtered_list]
             long_filelist.extend(fullpath_list)
-        print(long_filelist)
+        #print(long_filelist)
     return long_filelist
 
 
@@ -212,37 +212,41 @@ def MAT_observations(obs_path, qc_path, qc_path_2, year, month):
     qc_dir_2 = read_in_data(qc_path_2, year=year, month=month, subdirectories=True)
     qc_dir =  qc_dir_1 + qc_dir_2
     
-    print(data_dir)
-    print(qc_dir_1)
-    print(qc_dir_2)
-    print(qc_dir)
+    #print(data_dir)
+    #print(qc_dir_1)
+    #print(qc_dir_2)
+    #print(qc_dir)
     
     qc_df = pd.DataFrame()
+    data_df = pd.DataFrame()
     
     data_columns = ['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'at', 'ii', 'id', 'uid', 'dck']
     qc_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
     qc_data_columns = ['uid', 'dck', 'datetime', 'local_datetime', 'orig_id', 'data_type']
     columns_wanted = qc_data_columns + qc_columns
+    for i in range (0,len(data_dir),1):
+        data_df_i = pd.read_csv(data_dir[i], usecols=data_columns)
+        data_df = pd.concat([data_df, data_df_i])
+        del data_df_i
     
-    data_df = pd.read_csv(data_dir[0], usecols=data_columns)
-    print(data_dir)
-    print(f'FINAL PROC data columns, {data_df.columns.tolist() =}')
+    #print(data_dir)
+    #print(f'FINAL PROC data columns, {data_df.columns.tolist() =}')
 
     for i in range (0,len(qc_dir),1):
         if any(k not in pl.read_ipc_schema(qc_dir[i]) for k in qc_columns):
             continue
         qc_df_i = pd.read_feather(qc_dir[i], columns=columns_wanted)
-        print(qc_df_i.columns.values)
+        #print(qc_df_i.columns.values)
         
         qc_df = pd.concat([qc_df, qc_df_i])
         del qc_df_i
-        print('JOE QC DF', qc_df)
+        #print('JOE QC DF', qc_df)
 
     if qc_df.shape[0] == 0:
         raise ValueError("No data, or don't have the flags")
     else:
         qc_df = qc_df[~qc_df[qc_columns].any(axis=1)]
-        print(qc_df)
+        #print(qc_df)
         
         #when merging with FINAL_PROC datafiles, which are not pre-appended
         qc_df['uid'] = qc_df['uid'].str.slice(-6)
@@ -254,7 +258,7 @@ def MAT_observations(obs_path, qc_path, qc_path_2, year, month):
         qc_df = qc_df.drop_duplicates(subset=['uid'], keep='last')
         qc_df.drop(columns='dck')
         qc_df = qc_df[(qc_df['any_flag'] == False) & (qc_df['point_dup_flag'] <= 1) & (qc_df['track_dup_flag'] == False)]
-        print('QC DF', qc_df) #.columns)
+        #print('QC DF', qc_df) #.columns)
     
     obs_df = data_df.merge(qc_df, how='inner', on='uid')
 
@@ -266,6 +270,8 @@ def MAT_observations(obs_path, qc_path, qc_path_2, year, month):
     float32_cols = obs_df.select_dtypes(include='float32').columns
     mapper = {col_name: np.float16 for col_name in float32_cols}
     obs_df = obs_df.astype(mapper)
+    obs_df = obs_df.sort_values(by='datetime')
+    print(f'{obs_df =}')
     return obs_df
 
 
@@ -292,28 +298,28 @@ def MAT_heigh_adj(height_path, year, height_member):
 def MAT_qc(qc_path, year, month):
     #qc_path is to Richard's qc files
     ds_dir = [x[0] for x in os.walk(qc_path)][0] #os.walk(path)
-    print(ds_dir)
+    #print(ds_dir)
     filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-    print(filelist)
+    #print(filelist)
     chosen_filename = ['MAT_QC_' + str(year)+'.csv']
     filtered_list = [i for i in filelist if i in chosen_filename]
-    print(filtered_list)
+    #print(filtered_list)
     fullpath_list = [os.path.join(ds_dir,f) for f in filtered_list]
-    print(fullpath_list)
+    #print(fullpath_list)
     qc_dir = fullpath_list[0]
-    print(qc_dir)
+    #print(qc_dir)
     #data_df = pd.read_csv(fullpath_list[0])
     
     qc_df = pd.read_csv(qc_dir)
-    print(qc_df.columns.to_list())
+    #print(qc_df.columns.to_list())
     qc_columns = ['buddy', 'clim_mat', 'hardlimit_mat', 'blklst', 'qc_mat_blacklist']
     data_columns = ['uid']
     needed_columns = qc_columns + data_columns
-    print(needed_columns)
+    #print(needed_columns)
     qc_df = qc_df[needed_columns]
-    print(qc_df)
+    #print(qc_df)
     qc_df = qc_df[(qc_df['buddy'] == 0 ) & (qc_df['clim_mat'] == 0) & (qc_df['hardlimit_mat'] == 0) & (qc_df['blklst'] == 0) & (qc_df['qc_mat_blacklist'] == 0)]
-    print(qc_df)
+    #print(qc_df)
     return qc_df
 
 
@@ -328,8 +334,8 @@ def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     joined_df = obs_df.merge(qc_df, how='inner', on='uid')
     #height_adjusted_df = joined_df.merge(height_df, how='inner', on='uid')
     #print(height_adjusted_df)
-    print(obs_df['uid'])
-    print(qc_df['uid'])
+    #print(obs_df['uid'])
+    #print(qc_df['uid'])
     print('Obs files from Joe')
     print(len(obs_df))
     print('QC files from Richard')
@@ -344,7 +350,8 @@ def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     
     del qc_df
     del obs_df
-    print(joined_df)
+    joined_df = joined_df.sort_values(by='datetime')
+    print(f'{joined_df =}')
     return joined_df #height_adjusted_df
 
 
