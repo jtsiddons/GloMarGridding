@@ -260,9 +260,8 @@ def main(argv):
             print(monthly)
             print(idx)
             print(monthly.index)
-
             print('Current month and year: ', (current_month, current_year))
-
+            
             #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
             print(covariance)
@@ -275,8 +274,6 @@ def main(argv):
 
             # read in observations and QC
             obs_df = obs_qc_module.MAT_main(data_path, qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
-            print(obs_df)
-            
             day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
             day_night = day_night.pipe(is_daytime)
             obs_df = obs_df.merge(day_night.select(['uid', 'is_daytime']).to_pandas(), on='uid')
@@ -341,7 +338,7 @@ def main(argv):
                     print('----------')
                     day_df = obs_df.loc[(obs_df['datetime'] >= str(start_date)) & (obs_df['datetime'] <= str(end_date))]
                 
-                print(day_df)
+                print(f'{day_df =}')
                 
                 #calculate flattened idx based on the ESA landmask file
                 #which is compatible with the ESA-derived covariance
