@@ -381,6 +381,9 @@ def main(argv):
               
                 day_flat_idx = cond_df['flattened_idx'][:]
                 print(day_flat_idx)
+
+                #match gridded observations to ellipse parameters
+                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
                 cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
                 gridbox_counts = cond_df['gridbox'].value_counts()
