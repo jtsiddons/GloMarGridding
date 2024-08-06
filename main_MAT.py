@@ -295,7 +295,7 @@ def main(argv):
             print(obs_df.columns.values)
             
             #read in ellipse parameters file corresponding to the processed file
-            month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
+            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var='MAT')
             
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)

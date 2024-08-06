@@ -263,6 +263,9 @@ def main(argv):
 
             mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
 
+            #read in ellipse parameters file corresponding to the processed file
+            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var='SST')
+            
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
             #print(month_range)
