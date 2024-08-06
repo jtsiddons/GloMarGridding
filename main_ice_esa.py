@@ -157,7 +157,8 @@ def main(argv):
     cov_dir = config.get('SST', 'covariance_path')
     
     output_directory = config.get('SST', 'output_dir')
-    
+
+    ellipse_param_path = config.get('SST', 'ellipse_parameters')
      
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input

@@ -159,7 +159,8 @@ def main(argv):
     
     output_directory = config.get('SST', 'output_dir')
     print(output_directory)
-    
+
+    ellipse_param_path = config.get('SST', 'ellipse_parameters')
     
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
