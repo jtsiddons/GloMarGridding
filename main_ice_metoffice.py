@@ -329,6 +329,7 @@ def main(argv):
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                cond_df.reset_index(drop=True, inplace=True)
                 
                 #print(cond_df.columns.values)
                 #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
@@ -386,6 +387,7 @@ def main(argv):
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
                 cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                
                 gridbox_counts = cond_df['gridbox'].value_counts()
                 gridbox_count_np = gridbox_counts.to_numpy()
                 gridbox_id_np = gridbox_counts.index.to_numpy()

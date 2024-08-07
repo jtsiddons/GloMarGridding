@@ -300,6 +300,7 @@ def main(argv):
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                cond_df.reset_index(drop=True, inplace=True)
                 
                 #print(cond_df.columns.values)
                 #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
