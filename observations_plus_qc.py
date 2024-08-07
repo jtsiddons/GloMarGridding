@@ -146,7 +146,7 @@ def main(data_path, qc_path, qc_path_2, year, month):
     # do the same for obs
     # if no obs or no QC - set as empty and proceed straight to creating an empty netcdf layer
     # if obs and QC both present - proceed with processing as normal
-    
+    data_df = pd.DataFrame()
     qc_df = pd.DataFrame() #create the empty dataframe
     key_columns = ['any_flag', 'point_dup_flag', 'track_dup_flag']
     print(qc_dir)
@@ -155,8 +155,11 @@ def main(data_path, qc_path, qc_path_2, year, month):
     qc_columns = ['noval_sst', 'freez_sst', 'hardlim_sst', 'nonorm_sst', 'clim_sst', 'any_flag', 'point_dup_flag', 'track_dup_flag']
     qc_data_columns = ['uid', 'dck', 'datetime', 'local_datetime', 'orig_id', 'data_type']
     columns_wanted = qc_data_columns + qc_columns
-    
-    data_df = pd.read_csv(data_dir[0], usecols=data_columns)
+     
+    for i in range (0,len(data_dir),1):
+        data_df_i = pd.read_csv(data_dir[i], usecols=data_columns)
+        data_df = pd.concat([data_df, data_df_i])
+        del data_df_i
     print(data_df)
     print(f'FINAL PROC data columns, {data_df.columns.tolist() =}')
     
