@@ -600,17 +600,13 @@ def SST_match_bias_to_obs(bias_ds, obs_df):
 
 
 def ellipse_param(ellipse_param_path, month, var):
-    ds_dir = [x[0] for x in os.walk(ellipse_param_path)][0] #os.walk(path)
-    print(ds_dir)
-    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-    print(filelist)
-    if var == 'MAT':
-        chosen_filename = ['Global_With_Poles_' + str(month).zfill(2)+'_1.0_85.5.nc']
-    elif var == 'SST':
-        chosen_filename = ['Global_With_Poles_' + str(month).zfill(2)+'.nc']
-    filtered_list = [i for i in filelist if i in chosen_filename]
-    print(filtered_list)
-    monthly_ellipse_file = [os.path.join(ds_dir,f) for f in filtered_list][0]
+    filename = f"Global_With_Poles_{month:02d}"
+    if var == "MAT":
+        filename += "_1.0_85.5"
+    filename += ".nc"
+    monthly_ellipse_file = os.path.join(ellipse_param_path, filename)
+    if not os.path.isfile(monthly_ellipse_file):
+        raise FileNotFoundError(f"{monthly_ellipse_file} does not exist")
     print(monthly_ellipse_file)
     monthly_ellipse_param = xr.open_dataset(monthly_ellipse_file)
     print(monthly_ellipse_param)
