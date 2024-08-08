@@ -157,7 +157,8 @@ def main(argv):
     cov_dir = config.get('SST', 'covariance_path')
     
     output_directory = config.get('SST', 'output_dir')
-    
+
+    ellipse_param_path = config.get('SST', 'ellipse_parameters')
      
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
@@ -262,6 +263,9 @@ def main(argv):
 
             mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
 
+            #read in ellipse parameters file corresponding to the processed file
+            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var='SST')
+            
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
             #print(month_range)
@@ -296,6 +300,7 @@ def main(argv):
                 #which is compatible with the ESA-derived covariance
                 #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
                 cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                cond_df.reset_index(drop=True, inplace=True)
                 
                 #print(cond_df.columns.values)
                 #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
@@ -345,6 +350,9 @@ def main(argv):
                 """
                 
                 day_flat_idx = cond_df['flattened_idx'][:]
+
+                #match gridded observations to ellipse parameters
+                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
                 cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
                 gridbox_counts = cond_df['gridbox'].value_counts()
