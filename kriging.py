@@ -225,123 +225,6 @@ def kriging_ordinary(
     return z_obs, dz
 
 
-def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
-    '''
-    Returns arrays of krigged observations and anomalies for all grid points in the domain
-    
-    Parameters:
-    iid (list) - ID of all measurement points for the chosen date
-    x_obs (list) - all point observations for the chosen date
-    clim (list) - climatology values for all observation points
-    bias (list) - bias for all observation points
-    covx (array) - measurement covariance matrix
-    cci_covariance (array) - covariance of all CCI grid points (each point in time and all points against each other)
-    df (dataframe) - dataframe containing all information and observations for a chosen date
-
-    Returns:
-    Full set of values for the whole domain derived from observation points using Simple Kriging
-    Uncertainty associated using Simple Kriging
-    Full set of values for the whole domain derived from observation points using Ordinary Kriging
-    Uncertainty associated using Ordinary Kriging
-    '''
-    #So Now we can get to the part where we krige the grid 
-    #bias = np.array(bias)
-    #bias[np.isnan(bias)] = 0
-    if iid.ndim > 1:
-        iid = np.squeeze(iid)
-    print('iid', iid.shape)
-    print('uind', uind.shape)
-    _,ia,_ = intersect_mtlb(iid,uind)
-    ia = ia.astype(int)
-    #print(f'{ia.shape = }') # ia.shape)
-    
-    #ICOADS obs  
-    #print(W)
-    #print(x_obs)
-     
-    if x_bias is not None:
-        print('with bias')
-        grid_obs_ = W @ x_obs #- clim[ia] - bias[ia]
-        bias_obs = W @ x_bias
-        grid_obs = grid_obs_ - bias_obs
-    else:
-        print('without bias')
-        grid_obs = W @ x_obs #- clim[ia] - bias[ia]
-        grid_obs = np.squeeze(np.array(grid_obs)) #remove "1" in the vector shape, 2D ->  1D
-    #possibly use W matrix to "put weighting" on the HadSST bias so that it's the same as sst_obs
-    #bias = W @ bias_obs
-    
-    #print('SST OBS', sst_obs.shape)
-    print(f'{x_obs = }')
-    print(f'{x_obs.shape = }')
-    print(f'{np.isnan(x_obs).sum() = }')
-
-    print(f'{grid_obs = }')
-    print(f'{grid_obs.shape = }')
-    print(f'{np.isnan(grid_obs).sum() = }')
-    
-    
-    #R is the covariance due to the measurements i.e. measurement noise, bias noise and sampling noise 
-    #takes the ICOADS points covariance and maps to grid point covariance 
-    Wtrans = np.transpose(W)
-    R  = W @ covx @ Wtrans
-    #print('W', W)
-    #print('W trans', Wtrans)
-    #print('R', R)
-    #S is the spatial covariance between all "measured" grid points 
-    covar = np.copy(cci_covariance)
-    S  = covar[ia[:,None],ia[None,:]]
-    print('S', S.shape)
-    #Ss is the covariance between to be "predicted" grid points (i.e. all) and "measured" points 
-    Ss = covar[ia,:]      
-    print('Ss', Ss.shape)
-    
-    #S+R because the measurements have uncertainties as well as spatial covarince 
-    #G is the weight vector for Simple Kriging 
-    G = np.transpose(Ss) @ np.linalg.inv(S+R)
-    z_obs_sk = G @ grid_obs
-    #print('G', G)
-    #print('z obs sk', z_obs_sk)
-    CG = G @ Ss
-    #print('CG', CG)
-    diagonal = np.diag(covar-CG)
-    #diagonal[abs(diagonal) < 1e-15] = 0.0
-    dz_sk = np.sqrt(diagonal)
-    dz_sk[np.isnan(dz_sk)] = 0.0
-    #print('dz_sk', dz_sk)
-    #print('Simple Kriging Done')
-    
-    #Now we will convert to ordinary kriging 
-    S_ = np.concatenate((S+R, np.ones((len(ia),1))), axis=1)
-    S= np.concatenate((S_, np.ones((1,len(ia)+1))), axis=0)
-    #add a Lagrangian multiplier
-    S[-1, -1] = 0
-
-    Ss = np.concatenate((Ss, np.ones((1,len(iid)))), axis = 0)
-    
-    G = np.transpose(Ss) @ np.linalg.inv(np.matrix(S))
-    CG = G @ Ss 
-    
-    grid_obs0 = np.append(grid_obs, 0)
-    z_obs_ok = np.transpose(G @ grid_obs0) 
-    
-    alpha = G[:,-1]
-  
-    diagonal = (np.diag(covar-CG)).reshape(-1,1)
-    dz_ok = np.sqrt(diagonal-alpha)
-    print(f'{z_obs_ok = }')
-    print(f'{z_obs_ok.shape = }')
-    print('Ordinary Kriging Done')
-    #get rid of resulting double brackets
-    a = np.squeeze(np.asarray(z_obs_sk))
-    b = np.squeeze(np.asarray(dz_sk))
-    c = np.squeeze(np.asarray(z_obs_ok))
-    d = np.squeeze(np.asarray(dz_ok))
-    return a, b, c, d
-
-
-
-
 def result_reshape_2d(result_1d, iid, grid_2d):
     '''
     Returns reshaped krigged output array, from 1-D into 2-D reproducing Matlab's functionality (going over all rows first, before moving onto columns)
@@ -401,13 +284,11 @@ def watermask(ds_masked):
 
 
 
-def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias=False):
+def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias=False, krigging_method: KrigMethod = "simple"):
     try:
         obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     except KeyError:
         obs = cond_df['obs_anomalies_height'].values
-    if bias==True:
-        obs_bias = cond_df['hadsst_bias'].values
     """
     print('CHECK BIAS AND SST HAVE SAME LENGHT')
     print(len(obs))
@@ -419,39 +300,22 @@ def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias
     obs_idx = flattened_idx
     unique_obs_idx = np.unique(obs_idx)
     #print('2 - DONE')
-   # _,ia,_ = intersect_mtlb(water_idx,unique_obs_idx)
+    # _,ia,_ = intersect_mtlb(water_idx,unique_obs_idx)
     #W = np.zeros((int(max(unique_obs_idx.shape)),int(max(obs_idx.shape))))
     #for k in range(max(unique_obs_idx.shape)):
         #q = [i for i, x in enumerate(obs_idx) if x == unique_obs_idx[k]]
         #for i in range(len(q)):
             #qq = q[i]
             #W[k,qq] = np.divide(1, len(q))
-    if bias==True:
-        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, x_bias=obs_bias)
-    else:
-        obs_sk, dz_sk, obs_ok, dz_ok = krige(water_idx, unique_obs_idx, W, obs, covariance, obs_cov)
+    obs_bias = None
+    if bias:
+        obs_bias = cond_df['hadsst_bias'].values
+    z_obs, dz = kriging(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, x_bias=obs_bias, method=kriging_method)
     #print('3 - DONE')
-    obs_sk_2d = result_reshape_2d(obs_sk, water_idx, water_mask)
-    #print('4 - DONE')
-    dz_sk_2d = result_reshape_2d(dz_sk, water_idx, water_mask)
-    #print('5 - DONE')
-    obs_ok_2d = result_reshape_2d(obs_ok, water_idx, water_mask)
-    #print('6 - DONE')
-    dz_ok_2d = result_reshape_2d(dz_ok, water_idx, water_mask)
-    #print('7 - DONE')
-    print(f'{obs_ok_2d.shape = }')
-    print(f'{np.isnan(obs_ok_2d).sum() = }')
-    """
-    plt.imshow(obs_sk_2d)
-    plt.show()
-    plt.imshow(dz_sk_2d)
-    plt.show()
-    plt.imshow(obs_ok_2d)
-    plt.show()
-    plt.imshow(dz_ok_2d)
-    plt.show()
-    """
-    return obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d
+    return (
+        result_reshape_2d(z_obs, water_idx, water_mask),
+        result_reshape_2d(dz, water_idx, water_mask),
+    )
 
 
 
