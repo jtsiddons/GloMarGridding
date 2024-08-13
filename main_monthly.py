@@ -89,6 +89,7 @@ def main(argv):
     parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
+    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
     args = parser.parse_args()
     
     config_file = args.config
@@ -227,14 +228,14 @@ def main(argv):
         #print(time)
         
         # Define a 3D variable to hold the data
-        ok = ncfile.createVariable('sst_anomaly',np.float32,('time','lat','lon'))
+        krig_anom = ncfile.createVariable('sst_anomaly',np.float32,('time','lat','lon'))
         # note: unlimited dimension is leftmost
-        ok.units = 'deg C' # degrees Kelvin
-        ok.standard_name = 'SST anomaly'
+        krig_anom.units = 'deg C' # degrees Kelvin
+        krig_anom.standard_name = 'SST anomaly'
         # Define a 3D variable to hold the data
-        dz_ok = ncfile.createVariable('sst_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
-        dz_ok.units = 'deg C' # degrees Kelvin
-        dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        krig_uncert = ncfile.createVariable('sst_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
+        krig_uncert.units = 'deg C' # degrees Kelvin
+        krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -326,8 +327,7 @@ def main(argv):
             #print(W)
             
             #krige obs onto gridded field
-            obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, mask_ds, cond_df, mon_flat_idx, obs_covariance, W)
-            #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
+            anom, uncert = krig_module.kriging_main(covariance, mask_ds, cond_df, mon_flat_idx, obs_covariance, W, krigging_method=args.method)
             print('Kriging done, saving output')
             """
             fig = plt.figure(figsize=(10, 5))
@@ -348,8 +348,8 @@ def main(argv):
             """
             # Write the data.  
             #This writes each time slice to the netCDF
-            ok[timestep,:,:] = obs_ok_2d #ordinary_kriging
-            dz_ok[timestep,:,:] = dz_ok_2d #ordinary_kriging
+            krig_anom[timestep,:,:] = anom #ordinary_kriging
+            krig_uncert[timestep,:,:] = uncert #ordinary_kriging
             print("-- Wrote data")
             print(timestep, current_date)
             
