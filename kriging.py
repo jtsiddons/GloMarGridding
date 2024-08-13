@@ -12,6 +12,7 @@ from os.path import isfile, join
 
 #argument parser
 import argparse
+from typing import Literal, Optional, Tuple
 try:
     from configparser import ConfigParser
 except ImportError:
@@ -34,7 +35,7 @@ import xarray as xr
 import netCDF4 as nc
 from functools import partial
 
-
+KrigMethod = Literal["simple", "ordinary"]
 
 
 
@@ -62,6 +63,166 @@ def intersect_mtlb(a, b):
     c = aux[:-1][aux[1:] == aux[:-1]]
     return c, ia[np.isin(a1, c)], ib[np.isin(b1, c)]  
 
+
+def kriging(
+    iid: np.ndarray,
+    uind: np.ndarray,
+    W: np.ndarray,
+    x_obs: np.ndarray,
+    cci_covariance: np.ndarray,
+    covx: np.ndarray,
+    x_bias: Optional[np.ndarray] = None,
+    method: KrigMethod = "simple",
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Perform Kriging using a chosen method.
+
+    Get array of krigged observations and anomalies for all grid points in the
+    domain.
+
+    Parameters
+    ----------
+    iid : np.ndarray[int]
+        indices of all measurement points for chosen date.
+    uind : np.ndarray[int]
+    W : np.ndarray[float]
+        Weight matrix (inverse count of observations).
+    x_obs : np.ndarray[float]
+        All point observations for the chosen date.
+    cci_covariance : np.ndarray[float]
+        Covariance of all CCI grid points (each point in time and all points
+        against each other).
+    covx : np.ndarray[float]
+        Measurement covariance matrix.
+    x_bias : np.ndarray[float] | None
+    method : KrigMethod
+        The kriging method to use. One of "simple" or "ordinary".
+
+    Returns
+    -------
+    z_obs : np.ndarray[float]
+        Full set of values for the whole domain derived from the observation
+        points using the chosen kriging method.
+    dz : np.ndarray[float]
+        Uncertainty assoicated with the chosen kriging method.
+    """
+    iid = np.squeeze(iid) if iid.ndim > 1 else iid
+    _, ia, _ = intersect_mtlb(iid, uind)
+    ia = ia.astype(int)
+
+    if x_bias:
+        print("With bias")
+        grid_obs = W @ (x_obs - x_bias)  # - clim[ia] - bias[ia]
+    else:
+        grid_obs = W @ x_obs
+    grid_obs = np.squeeze(grid_obs)
+
+    # S is the spatial covariance between all "measured" grid points 
+    # Plus the covariance due to the measurements, i.e. measurement noise, bias
+    # noise, and sampling noise (R)
+    S = np.asarray(cci_covariance[ia[:, None], ia[None, :]])
+    S += W @ covx @ W.T
+
+    # Ss is the covariance between to be "predicted" grid points (i.e. all) and
+    # "measured" points 
+    Ss = np.asarray(cci_covariance[ia, :])
+
+    if method.lower() == "simple":
+        print("Performing Simple Kriging")
+        return kriging_simple(S, Ss, grid_obs, cci_covariance)
+    elif method.lower() == "ordinary":
+        print("Performing Ordinary Kriging")
+        return kriging_ordinary(S, Ss, grid_obs, cci_covariance)
+    else:
+        raise NotImplementedError(
+            f"Kriging method {method} is not implemented. " 
+            "Expected one of \"simple\" or \"ordinary\"")
+
+
+def kriging_simple(
+    S: np.ndarray,
+    Ss: np.ndarray,
+    grid_obs: np.ndarray,
+    cci_covariance: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Perform Simple Kriging
+
+    Parameters
+    ----------
+    S : np.ndarray[float]
+        Spatial covariance between all measured grid points plus the
+        covariance due to measurements (i.e. measurement noise, bias noise, and
+        sampling noise).
+    Ss : np.ndarray[float]
+        Covariance between the predicted grid points and measured points.
+    grid_obs : np.ndarray[float]
+    cci_covariance : np.ndarray[float]
+        Covariance of all CCI grid points (each point in time and all points
+        against each other).
+
+    Returns
+    -------
+    z_obs : np.ndarray[float]
+        Full set of values for the whole domain derived from the observation
+        points using simple kriging.
+    dz : np.ndarray[float]
+        Uncertainty assoicated with the simple kriging.
+    """
+    G = np.linalg.solve(S, Ss).T
+    z_obs = G @ grid_obs
+
+    G = G @ Ss
+    dz = np.sqrt(np.diag(cci_covariance - G))
+    dz[np.isnan(dz)] = 0.0
+    print("Simple Kriging Complete")
+    return z_obs, dz
+
+
+def kriging_ordinary(
+    S: np.ndarray,
+    Ss: np.ndarray,
+    grid_obs: np.ndarray,
+    cci_covariance: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Perform Ordinary Kriging
+
+    Parameters
+    ----------
+    S : np.ndarray[float]
+        Spatial covariance between all measured grid points plus the
+        covariance due to measurements (i.e. measurement noise, bias noise, and
+        sampling noise).
+    Ss : np.ndarray[float]
+        Covariance between the predicted grid points and measured points.
+    grid_obs : np.ndarray[float]
+    cci_covariance : np.ndarray[float]
+        Covariance of all CCI grid points (each point in time and all points
+        against each other).
+
+    Returns
+    -------
+    z_obs : np.ndarray[float]
+        Full set of values for the whole domain derived from the observation
+        points using ordinary kriging.
+    dz : np.ndarray[float]
+        Uncertainty assoicated with the ordinary kriging.
+    """
+    # Convert to ordinary kriging, add Lagrangian multiplier
+    N, M = Ss.shape
+    S = np.block([[S, np.ones((M, 1))], [np.ones((1, M)), 0]])
+    Ss = np.concatenate((Ss, np.ones((1, N))), axis=0)
+    grid_obs = np.append(grid_obs, 0)
+
+    G = np.linalg.solve(S, Ss).T
+    z_obs = G @ grid_obs
+
+    G = G @ Ss
+    dz = np.sqrt(np.diag(cci_covariance - G) - G[:, -1])
+    # dz[np.isnan(dz)] = 0.0
+    print("Ordinary Kriging Complete")
+    return z_obs, dz
 
 
 def krige(iid, uind, W, x_obs, cci_covariance, covx, x_bias=None, clim=False):
