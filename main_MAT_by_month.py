@@ -84,7 +84,7 @@ def main(argv):
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
     parser.add_argument("-month", dest="month", required=True, help="month")  # New Argument
-    parser.add_argument("-height_member", dest="height_member", required=False, help="height member")
+    parser.add_argument("-height_member", dest="height_member", required=False, help="height member: if height member is 0, no height adjustment is performed.", type = int, default = 0)
     args = parser.parse_args()
     
     config_file = args.config
@@ -126,7 +126,12 @@ def main(argv):
     
     #location of the ICOADS observation files
     data_path = config.get('MAT', 'observations')
-    height_adjustments = config.get('MAT', 'height_adjustments')
+
+    member = args.height_member
+    print(member)
+    if member > 0:
+        height_adjustment_path = config.get('MAT', 'height_adjustments')
+        adjusted_height = config.getint("MAT", "adjusted_height")
     
     #location og QC flags in GROUPS subdirectories
     qc_mat = config.get('MAT', 'qc')
@@ -146,12 +151,6 @@ def main(argv):
     # ===== NEW =====
     mm2process = int(args.month)
     # ===== NEW =====
-    
-    if args.height_member:
-        member = int(args.height_member)
-    else:
-        member = 1
-    print(member)
     
     #path where the covariance(s) is/are located
     #if single covariance, then full path
@@ -339,7 +338,15 @@ def main(argv):
             obs_df = obs_qc_module.MAT_match_climatology_to_obs(clim, obs_df)
             
             #merge on the height adjustment
-            obs_df = obs_qc_module.MAT_add_height_adjustment(obs_df, height_adjustments, year=current_year, height_member=member)
+            if member > 0:
+                obs_df = obs_qc_module.MAT_add_height_adjustment(
+                    obs_df,
+                    height_adjustment_path=height_adjustment_path,
+                    year=current_year,
+                    adjusted_height=adjusted_height,
+                    height_member=member,
+                    mat_col="obs_anomalies",
+                )
 
             print(obs_df)
             print(obs_df.columns.values)
