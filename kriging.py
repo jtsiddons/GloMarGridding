@@ -83,20 +83,22 @@ def kriging(
     Parameters
     ----------
     iid : np.ndarray[int]
-        indices of all measurement points for chosen date.
+        Indices of all measurement points for chosen date.
     uind : np.ndarray[int]
+        Unique indices of measurement points for a chosen date, representative of the indices of gridboxes, which have => 1 measurement. 
     W : np.ndarray[float]
-        Weight matrix (inverse count of observations).
+        Weight matrix (inverse of counts of observations).
     x_obs : np.ndarray[float]
-        All point observations for the chosen date.
+        All point observations/measurements for the chosen date.
     cci_covariance : np.ndarray[float]
-        Covariance of all CCI grid points (each point in time and all points
+        Covariance of all output grid points (each point in time and all points
         against each other).
     covx : np.ndarray[float]
         Measurement covariance matrix.
     x_bias : np.ndarray[float] | None
+        Bias of all measurement points for a chosen date (corresponds to x_obs).
     method : KrigMethod
-        The kriging method to use. One of "simple" or "ordinary".
+        The kriging method to use to fill in the output grid. One of "simple" or "ordinary".
 
     Returns
     -------
@@ -104,7 +106,7 @@ def kriging(
         Full set of values for the whole domain derived from the observation
         points using the chosen kriging method.
     dz : np.ndarray[float]
-        Uncertainty assoicated with the chosen kriging method.
+        Uncertainty associated with the chosen kriging method.
     """
     iid = np.squeeze(iid) if iid.ndim > 1 else iid
     _, ia, _ = intersect_mtlb(iid, uind)
@@ -155,10 +157,11 @@ def kriging_simple(
         covariance due to measurements (i.e. measurement noise, bias noise, and
         sampling noise).
     Ss : np.ndarray[float]
-        Covariance between the predicted grid points and measured points.
+        Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
+        Gridded measurements (all measurement points averaged onto the output gridboxes).
     cci_covariance : np.ndarray[float]
-        Covariance of all CCI grid points (each point in time and all points
+        Covariance of all grid points (each point in time and all points
         against each other).
 
     Returns
@@ -167,7 +170,7 @@ def kriging_simple(
         Full set of values for the whole domain derived from the observation
         points using simple kriging.
     dz : np.ndarray[float]
-        Uncertainty assoicated with the simple kriging.
+        Uncertainty associated with the simple kriging.
     """
     G = np.linalg.solve(S, Ss).T
     z_obs = G @ grid_obs
@@ -195,10 +198,11 @@ def kriging_ordinary(
         covariance due to measurements (i.e. measurement noise, bias noise, and
         sampling noise).
     Ss : np.ndarray[float]
-        Covariance between the predicted grid points and measured points.
+        Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
+        Gridded measurements (all measurement points averaged onto the output gridboxes).
     cci_covariance : np.ndarray[float]
-        Covariance of all CCI grid points (each point in time and all points
+        Covariance of all grid points (each point in time and all points
         against each other).
 
     Returns
@@ -207,7 +211,7 @@ def kriging_ordinary(
         Full set of values for the whole domain derived from the observation
         points using ordinary kriging.
     dz : np.ndarray[float]
-        Uncertainty assoicated with the ordinary kriging.
+        Uncertainty associated with the ordinary kriging.
     """
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = Ss.shape
