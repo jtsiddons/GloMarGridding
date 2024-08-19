@@ -358,41 +358,58 @@ def MAT_main(obs_path, joe_qc_path, joe_qc_path_2, qc_path, year, month):
     return joined_df #height_adjusted_df
 
 
-def MAT_add_height_adjustment(joined_df, height_path, year, height_member):
-    height_df = MAT_height_adj(height_path, year, height_member)
-    height_adjusted_df = joined_df.merge(height_df, how='inner', on='uid')
-    print(height_adjusted_df)
-    height_adjusted_df.columns = [*height_adjusted_df.columns[:-1], 'height']
-    # Change column height's values to floats
-    height_adjusted_df['height'] = height_adjusted_df['height'].astype(float)
-    print(height_adjusted_df)
-    print(height_adjusted_df.dtypes)
-    height_adjusted_df['obs_anomalies_height'] = height_adjusted_df['obs_anomalies'] - height_adjusted_df['height']
-    print(height_adjusted_df)
-    
-    del height_df
-    
-    return height_adjusted_df
+def MAT_add_height_adjustment(
+    joined_df: pd.DataFrame,
+    height_adjustment_path: str,
+    year: int,
+    height_member: int,
+    adjusted_height: int = 10,
+    mat_col: str = "obs_anomalies"
+) -> pd.DataFrame:
+    """
+    Adjust MAT height measurement using a height adjustment file
 
+    Parameters
+    ----------
+    joined_df : pandas.DataFrame
+        The DataFrame containing UIDS and MAT values to adjust
+    height_adjustment_path : str
+        Path to the height adjustment file
+    year : int
+        Year of the data (used as part of the filename)
+    height_member : int
+        Height adjustment ensemble member to use (defines column to load). If
+        the height_member is 0 then no adjustment is applied.
+    adjusted_height : int
+        Height to adjust to (used as part of the filename). One of 2, 10, 20
+    mat_col : str
+        Name of the MAT column to adjust
 
-def MAT_height_adj(height_path, year, height_member):
-    #height_path is to Richard's gzip files with 200 members
-    ds_dir = [x[0] for x in os.walk(height_path)][0] #os.walk(path)
-    print(ds_dir)
-    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-    print(filelist)
-    chosen_filename = ['MAT_hgt_' + str(year)+'_t10m.csv.gz']
-    filtered_list = [i for i in filelist if i in chosen_filename]
-    print(filtered_list)
-    height_file = [os.path.join(ds_dir,f) for f in filtered_list][0]
-    print(height_file)
-    height_df = pd.read_csv(height_file)
-    print(height_df)
-    columns = ['uid', 'end '+str(height_member)]
-    print(columns)
-    height_df = height_df[columns]
-    print(height_df)
-    return height_df
+    Returns
+    -------
+    joined_df : pandas.DataFrame
+        With height adjustment applied to the MAT column
+    """
+    if adjusted_height not in [2, 10, 20]:
+        raise ValueError(f"Adjustment height {adjusted_height} is not valid")
+    if height_member == 0:
+        return joined_df
+
+    hadj_file = f"MAT_hgt_{year}_t{adjusted_height}m.feather"
+    hadj_file = os.path.join(height_adjustment_path, hadj_file)
+    if not os.path.isfile(hadj_file):
+        raise FileNotFoundError(
+            f"Height adjustment file: {hadj_file} not found."
+        )
+    hadj_col = f"end.{height_member}"
+    joined_df = joined_df.merge(
+        pd.read_feather(hadj_file, columns=["uid", hadj_col]),
+        on = "uid",
+        how="inner",
+    )
+    joined_df[mat_col] = joined_df[mat_col] - joined_df[hadj_col]
+    joined_df.drop(columns=[hadj_col], inplace=True)
+    return joined_df
 
 
 def MAT_match_climatology_to_obs(climatology_365, obs_df):

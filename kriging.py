@@ -244,7 +244,7 @@ def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias
     try:
         obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     except KeyError:
-        obs = cond_df['obs_anomalies_height'].values
+        obs = cond_df['obs_anomalies'].values
     if bias==True:
         obs_bias = cond_df['hadsst_bias'].values
     """
