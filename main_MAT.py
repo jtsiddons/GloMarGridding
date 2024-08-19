@@ -294,7 +294,8 @@ def main(argv):
                     height_adjustment_path=height_adjustment_path,
                     year=current_year,
                     adjusted_height=adjusted_height,
-                    height_member=member
+                    height_member=member,
+                    mat_col="obs_anomalies",
                 )
 
             print(obs_df)
