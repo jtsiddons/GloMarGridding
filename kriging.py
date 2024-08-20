@@ -288,7 +288,7 @@ def watermask(ds_masked):
 
 
 
-def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias=False, krigging_method: KrigMethod = "simple"):
+def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias=False, kriging_method: KrigMethod = "simple"):
     try:
         obs = cond_df['sst_anomaly'].values #cond_df['cci_anomalies'].values
     except KeyError:
