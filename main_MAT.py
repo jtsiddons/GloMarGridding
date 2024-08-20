@@ -227,12 +227,12 @@ def main(argv):
         #print(time)
         
         # Define a 3D variable to hold the data
-        krig_anom = ncfile.createVariable('mat_anomaly',
+        krig_anom = ncfile.createVariable('mat_anomaly_%sm' % (str(adjusted_height)),
                                    np.float32,
                                    ('time','lat','lon'))
         # note: unlimited dimension is leftmost
         krig_anom.units = 'deg C' # degrees Kelvin
-        krig_anom.standard_name = 'MAT anomaly'
+        krig_anom.standard_name = 'MAT anomaly at %s m' % (str(adjusted_height))
         # Define a 3D variable to hold the data
         krig_uncert = ncfile.createVariable('mat_anomaly_uncertainty',
                                       np.float32,
