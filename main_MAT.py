@@ -84,6 +84,7 @@ def main(argv):
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type = int)
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type = int)
     parser.add_argument("-height_member", dest="height_member", required=False, help="height member: if height member is 0, no height adjustment is performed.", type = int, default = 0)
+    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
     args = parser.parse_args()
     
     config_file = args.config
@@ -226,18 +227,18 @@ def main(argv):
         #print(time)
         
         # Define a 3D variable to hold the data
-        ok = ncfile.createVariable('mat_anomaly',
+        krig_anom = ncfile.createVariable('mat_anomaly',
                                    np.float32,
                                    ('time','lat','lon'))
         # note: unlimited dimension is leftmost
-        ok.units = 'deg C' # degrees Kelvin
-        ok.standard_name = 'MAT anomaly'
+        krig_anom.units = 'deg C' # degrees Kelvin
+        krig_anom.standard_name = 'MAT anomaly'
         # Define a 3D variable to hold the data
-        dz_ok = ncfile.createVariable('mat_anomaly_uncertainty',
+        krig_uncert = ncfile.createVariable('mat_anomaly_uncertainty',
                                       np.float32,
                                       ('time','lat','lon')) # note: unlimited dimension is leftmost
-        dz_ok.units = 'deg C' # degrees Kelvin
-        dz_ok.standard_name = 'uncertainty' # this is a CF standard name
+        krig_uncert.units = 'deg C' # degrees Kelvin
+        krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
         # Define a 3D variable to hold the data
         grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
         # note: unlimited dimension is leftmost
@@ -411,8 +412,7 @@ def main(argv):
                 print(W)
                 
                 #krige obs onto gridded field
-                obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W)
-                #obs_sk_2d, dz_sk_2d, obs_ok_2d, dz_ok_2d = krig_module.kriging_main(covariance, ds_masked, day_df, day_flat_idx,  W)
+                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, krigging_method=args.method)
                 print('Kriging done, saving output')
                 
                 """
@@ -434,8 +434,8 @@ def main(argv):
                 """
                 # Write the data.  
                 #This writes each time slice to the netCDF
-                ok[timestep,:,:] = obs_ok_2d.astype(np.float32) #ordinary_kriging
-                dz_ok[timestep,:,:] = dz_ok_2d.astype(np.float32) #ordinary_kriging
+                krig_anom[timestep,:,:] = anom.astype(np.float32) #ordinary_kriging
+                krig_uncert[timestep,:,:] = uncert.astype(np.float32) #ordinary_kriging
                 grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
