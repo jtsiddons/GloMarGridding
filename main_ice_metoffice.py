@@ -402,7 +402,7 @@ def main(argv):
                 #print(W)
                 
                 #krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=True, krigging_method=args.method)
+                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=True, kriging_method=args.method)
                 print('Kriging done, saving output')
                 
                 """
