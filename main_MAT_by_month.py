@@ -353,7 +353,7 @@ def main(argv):
             print(obs_df.columns.values)
 
             #read in ellipse parameters file corresponding to the processed file
-            month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
+            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var="MAT")
 
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
@@ -454,6 +454,14 @@ def main(argv):
                 
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
+                
+                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                gridbox_counts = cond_df['gridbox'].value_counts()
+                gridbox_count_np = gridbox_counts.to_numpy()
+                gridbox_id_np = gridbox_counts.index.to_numpy()
+                del gridbox_counts
+                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
+                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
                 
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
