@@ -316,7 +316,7 @@ def main(argv):
             print(mask_ds)
 
             # read in observations and QC
-            obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
+            obs_df = obs_qc_module.MAT_main(data_path, qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
             print(obs_df)
             day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
             day_night = day_night.pipe(is_daytime)
