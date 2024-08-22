@@ -316,7 +316,7 @@ def main(argv):
             print(mask_ds)
 
             # read in observations and QC
-            obs_df = obs_qc_module.MAT_main(qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
+            obs_df = obs_qc_module.MAT_main(data_path, qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
             print(obs_df)
             day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
             day_night = day_night.pipe(is_daytime)
@@ -353,7 +353,7 @@ def main(argv):
             print(obs_df.columns.values)
 
             #read in ellipse parameters file corresponding to the processed file
-            month_ellipse_param = obs_qc_module.MAT_ellipse_param(ellipse_param_path, month=current_month)
+            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var="MAT")
 
             # list of dates for each year 
             _,month_range = monthrange(current_year, current_month)
@@ -455,12 +455,20 @@ def main(argv):
                 #match gridded observations to ellipse parameters
                 cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
                 
+                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                gridbox_counts = cond_df['gridbox'].value_counts()
+                gridbox_count_np = gridbox_counts.to_numpy()
+                gridbox_id_np = gridbox_counts.index.to_numpy()
+                del gridbox_counts
+                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
+                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
+                
                 obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms=0.73, sig_mb=0.24, sig_bs=1.47, sig_bb=0.38)
                 print(obs_covariance)
                 print(W)
                 
                 #krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, krigging_method=args.method)
+                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, kriging_method=args.method)
                 print('Kriging done, saving output')
                 
                 """
