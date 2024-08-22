@@ -233,6 +233,8 @@ def main(argv):
         # note: unlimited dimension is leftmost
         krig_anom.units = 'deg C' # degrees Kelvin
         krig_anom.standard_name = 'MAT anomaly at %s m' % (str(adjusted_height))
+        krig_anom.height = str(adjusted_height)
+        krig_anom.ensemble_member = member
         # Define a 3D variable to hold the data
         krig_uncert = ncfile.createVariable('mat_anomaly_uncertainty',
                                       np.float32,
