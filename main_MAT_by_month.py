@@ -232,12 +232,12 @@ def main(argv):
             
         ncfilename = str(output_directory) 
         # ===== MODIFIED =====
-        ncfilename += str(current_year)+'_'+str(mm2process).zfill(2)
+        ncfilename = f"{current_year}_{mm2process:02d}_kriged_MAT"
         if member:
-            ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc'
-        else:
-            ncfilename += '_kriged_MAT.nc'
-        # ===== MODIFIED =====
+            ncfilename += f"_heightmember_{member:03d}"
+        ncfilename += ".nc"
+        ncfilename = os.path.join(output_directory, ncfilename)
+        
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
         

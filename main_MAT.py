@@ -204,11 +204,12 @@ def main(argv):
             pass
             
         ncfilename = str(output_directory) 
-        ncfilename += str(current_year)
+        ncfilename = f"{current_year}_kriged_MAT"
         if member:
-            ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc'
-        else:
-            ncfilename += '_kriged_MAT.nc'
+            ncfilename += f"_heightmember_{member:03d}"
+        ncfilename += '.nc'
+        ncfilename = os.path.join(output_directory, ncfilename)
+        
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
         
