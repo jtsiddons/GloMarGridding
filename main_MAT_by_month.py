@@ -231,7 +231,6 @@ def main(argv):
             pass
             
         ncfilename = str(output_directory) 
-        # ===== MODIFIED =====
         ncfilename = f"{current_year}_{mm2process:02d}_kriged_MAT"
         if member:
             ncfilename += f"_heightmember_{member:03d}"
