@@ -205,7 +205,10 @@ def main(argv):
             
         ncfilename = str(output_directory) 
         ncfilename += str(current_year)
-        ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc' 
+        if member:
+            ncfilename += '_kriged_MAT_heightmember_'+str(member).zfill(3)+'.nc'
+        else:
+            ncfilename += '_kriged_MAT.nc'
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
         
@@ -227,14 +230,18 @@ def main(argv):
         #print(time)
         
         # Define a 3D variable to hold the data
-        krig_anom = ncfile.createVariable(f"mat_anomaly_{adjusted_height:%d}m",
+        if member:      
+            krig_anom = ncfile.createVariable(f"mat_anomaly_{adjusted_height}m",
                                       np.float32, ('time','lat','lon'))
-        # note: unlimited dimension is leftmost
-        krig_anom.units = 'deg C' # degrees Kelvin
-        krig_anom.standard_name = 'MAT anomaly at %s m' % (str(adjusted_height))
-        krig_anom.height = str(adjusted_height)
-        if member > 0:
+            # note: unlimited dimension is leftmost
+            krig_anom.standard_name = f"MAT anomaly at {adjusted_height} m"
+            krig_anom.height = str(adjusted_height)
             krig_anom.ensemble_member = member
+        else:
+            krig_anom = ncfile.createVariable("mat_anomaly", np.float32, ('time', 'lat', 'lon'))
+            krig_anom.standard_name = "MAT anomaly"
+        krig_anom.units = 'deg C' # degrees Kelvin
+        
         # Define a 3D variable to hold the data
         krig_uncert = ncfile.createVariable('mat_anomaly_uncertainty',
                                       np.float32,
