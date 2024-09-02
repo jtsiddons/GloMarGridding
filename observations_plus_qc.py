@@ -631,3 +631,54 @@ def ellipse_param(ellipse_param_path, month, var):
     monthly_ellipse_param = xr.open_dataset(monthly_ellipse_file)
     print(monthly_ellipse_param)
     return monthly_ellipse_param
+
+
+def TAO_obs_main(data_path, year, month):
+    ds_dir = [x[0] for x in os.walk(data_path)]
+    ds_dir = (ds_dir[0])
+    long_filelist = []
+    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
+    print(filelist)
+
+    str_list = 'TAO_' + str(year)+'_'+str(month).zfill(2)+'.csv' 
+    #print(mon_list)
+    #print(str_list)
+    filtered_list = [i for i in filelist if i in str_list] #this will alays yield a 1-item list as we're looking forr a specific year and month
+    #print(filtered_list)
+    
+    fullpath_file = os.path.join(ds_dir,filtered_list[0]) 
+    #print(fullpath_file)
+    obs_df = pd.read_csv(fullpath_file)
+    obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
+    print(obs_df)
+    return obs_df
+
+def TAO_match_climatology_to_obs(climatology_365, obs_df):
+    obs_lat = obs_df.lat
+    obs_lon = obs_df.lon
+    print(obs_lat)
+    print(obs_lon)
+    obs_df['lat_idx'], obs_df['lon_idx'] = find_latlon_idx(climatology_365, obs_lat, obs_lon)
+    cci_clim = [] #ESA CCI climatology values
+    
+    obs_df['fake_non_leap_year'] = 2010
+    obs_df['fake_non_leap_date'] = pd.to_datetime(dict(year=obs_df.fake_non_leap_year, month=obs_df.mo, day=obs_df.dy))
+    obs_df['doy'] = [int(i.strftime('%j')) for i in obs_df['fake_non_leap_date']]
+    print(obs_df.doy)
+    obs_df['doy_idx'] = obs_df.doy - 1
+    print(obs_df.doy_idx)
+    
+    print(climatology_365)
+    c = climatology_365.values
+    #print(c.shape)
+    selected = c[np.array(obs_df.doy_idx), np.array(obs_df.lat_idx), np.array(obs_df.lon_idx)]
+    print(selected)
+    
+    selected = selected - 273.15 #from Kelvin to Celsius
+    #print(selected)
+    
+    obs_df['climatology'] = selected
+    obs_df['sst_anomaly'] = obs_df['sst'] - obs_df['climatology']     
+    #obs_df = obs_df.dropna()
+    print(obs_df)
+    return obs_df
