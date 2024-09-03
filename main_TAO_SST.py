@@ -239,9 +239,13 @@ def main(argv):
             print(idx)
             print(monthly.index)
             #print(current_month)
-
+            pentad_info_df = pd.DataFrame({'pentad_index': monthly.index, 'date': monthly})
+            
             obs_df = obs_qc_module.TAO_obs_main(data_path, year=current_year, month=current_month)
-            #print(obs_df.columns.values)
+            
+            #merge index of the pentad processed as information in a new column into the dataframe
+            obs_df = obs_df.merge(pentad_info_df, how='inner', on='date')
+            print(obs_df)
             
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
             print(covariance)
@@ -272,130 +276,141 @@ def main(argv):
                 
                 day_df = obs_df.loc[(obs_df['date'] == str(pentad_date))]
                 print(day_df)
-                
-                try:
-                    metoffice_climatology = climatology['climatology'] #[timestep]
-                except KeyError:
-                    metoffice_climatology = climatology['analysed_sst']
-                print(metoffice_climatology)
-                
-                #add climatology value and calculate the SST anomaly
-                #day_df = obs_module.extract_clim_anom(metoffice_climatology, day_df)
-                day_df = obs_qc_module.TAO_match_climatology_to_obs(metoffice_climatology, day_df)
-                
-                print(day_df)
-                
-                #calculate flattened idx based on the ESA landmask file
-                #which is compatible with the ESA-derived covariance
-                #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
-                cond_df.reset_index(drop=True, inplace=True)
-                print(cond_df)
-                print(f'{mask_ds =}')
-                print(obs_flat_idx)
-                
-                #print(cond_df.columns.values)
-                #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
-                #quick temperature check
-                #print(cond_df['sst'])
-                #print(cond_df['climatology_sst'])
-                #print(cond_df['sst_anomaly'])
-                
-                
-                """
-                #EXTRA BIT FOR PLOTTING INSIDE MAIN CODE
-                plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
-                lons = plotting_df['lon']
-                lats = plotting_df['lat']
-                ssts = plotting_df['sst']
-                clims = plotting_df['climatology_sst']
-                anoms = plotting_df['sst_anomaly']
-                
-                skwargs = {'s': 2, 'c': 'red'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad_idx)+' pentad '+ str(current_year)+' year')
-                #plt.show()
-                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%spoints.png' % (str(current_year), str(pentad_idx)))
-                
-                skwargs = {'s': 2, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS measured SST -' +str(pentad_idx)+ ' pentad ' + str(current_year)+' year', land_col='darkolivegreen')
-                #plt.show()
-                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%ssst.png' % (str(current_year), str(pentad_idx)))
-                
-                skwargs = {'s': 2, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ESA CCI climatology - '+str(pentad_idx)+' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                #plt.show()
-                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sclim.png' % (str(current_year), str(pentad_idx)))
-                
-                skwargs = {'s': 2, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                ckwargs = {'label': 'SST [deg C]'}
-                fig = plt.figure(figsize=(10, 5))
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS SST anomalies - '+str(pentad_idx)+ ' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                #plt.show()
-                fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
-                """
-                day_flat_idx = cond_df['flattened_idx'][:]
-                print(day_flat_idx)
 
-                """
-                # NOT USED FOR TAO
-                #match gridded observations to ellipse parameters
-                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
-                """
-                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                # ADD CHECK IF DF EMPTY HERE
+                if day_df.empty:
+                    print('Observation dataframe is empty, there are no measurements available')
+                    print('Appending an empty layer to the netcdf')
+                    empty = np.zeros(shape=(mask_ds.landmask.shape))
+                    krig_anom[timestep,:,:] = empty.astype(np.float32) #ordinary_kriging
+                    krig_uncert[timestep,:,:] = empty.astype(np.float32) #ordinary_kriging
+                    grid_obs[timestep,:,:] = empty.astype(np.float32)
                 
-                gridbox_counts = cond_df['gridbox'].value_counts()
-                gridbox_count_np = gridbox_counts.to_numpy()
-                gridbox_id_np = gridbox_counts.index.to_numpy()
-                del gridbox_counts
-                water_mask = np.copy(mask_ds.variables['landmask'][:,:])
-                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
-                """
-                #NOT USED FOR TAO
-                #obs_module.match_hadsst_bias_to_gridded_obs(hadsst_bias_month, day_flat_idx, mask_ds)
-                """
+                else:
                 
-                obs_covariance, W = obs_module.TAO_measurement_covariance(cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb)
-                #print(obs_covariance)
-                #print(W)
+                    try:
+                        #this needs to be changed to pentad, not daily
+                        metoffice_climatology = pentad_climatology['climatology'] #[timestep]
+                    except KeyError:
+                        metoffice_climatology = pentad_climatology['analysed_sst']
+                        print(metoffice_climatology)
+                    
+                    #add climatology value and calculate the SST anomaly
+                    #day_df = obs_module.extract_clim_anom(metoffice_climatology, day_df)
+                    day_df = obs_qc_module.TAO_match_climatology_to_obs(metoffice_climatology, day_df)
                 
-                #krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=False, kriging_method=args.method)
-                print('Kriging done, saving output')
+                    print(day_df)
+                    raise Exception('Breakpoint')
+                    #calculate flattened idx based on the ESA landmask file
+                    #which is compatible with the ESA-derived covariance
+                    #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+                    cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+                    #reset row index in the dataframe after dropping NaNs
+                    cond_df.reset_index(drop=True, inplace=True)
+                    print(cond_df)
+                    print(f'{mask_ds =}')
+
+                    #print(cond_df.columns.values)
+                    #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
+                    #quick temperature check
+                    #print(cond_df['sst'])
+                    #print(cond_df['climatology_sst'])
+                    #print(cond_df['sst_anomaly'])
                 
-                """
-                fig = plt.figure(figsize=(10, 5))
-                img_extent = (-180., 180., -90., 90.)
-                ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
-                ax.add_feature(cfeature.LAND, color='darkolivegreen')
-                ax.coastlines()
-                m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=cm.get_cmap('coolwarm'))
-                fig.colorbar(m)
-                plt.clim(-4, 4)
-                gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
-                gl.xlabels_top = False
-                gl.ylabels_right = False
-                ax.set_title('Kriged SST anomalies ' +str(pentad_idx)+' pentad '+str(current_year)+' year')
-                plt.show()
-                #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
-                """
+                    """
+                    #EXTRA BIT FOR PLOTTING INSIDE MAIN CODE
+                    plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
+                    lons = plotting_df['lon']
+                    lats = plotting_df['lat']
+                    ssts = plotting_df['sst']
+                    clims = plotting_df['climatology_sst']
+                    anoms = plotting_df['sst_anomaly']
+                    
+                    skwargs = {'s': 2, 'c': 'red'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad_idx)+' pentad '+ str(current_year)+' year')
+                    #plt.show()
+                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%spoints.png' % (str(current_year), str(pentad_idx)))
                 
-                # Write the data.  
-                #This writes each time slice to the netCDF
-                krig_anom[timestep,:,:] = anom.astype(np.float32) #ordinary_kriging
-                krig_uncert[timestep,:,:] = uncert.astype(np.float32) #ordinary_kriging
-                grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
-                print("-- Wrote data")
-                print(pentad_idx, pentad_date)
+                    skwargs = {'s': 2, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS measured SST -' +str(pentad_idx)+ ' pentad ' + str(current_year)+' year', land_col='darkolivegreen')
+                    #plt.show()
+                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%ssst.png' % (str(current_year), str(pentad_idx)))
+                    
+                    skwargs = {'s': 2, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ESA CCI climatology - '+str(pentad_idx)+' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
+                    #plt.show()
+                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sclim.png' % (str(current_year), str(pentad_idx)))
+                    
+                    skwargs = {'s': 2, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
+                    ckwargs = {'label': 'SST [deg C]'}
+                    fig = plt.figure(figsize=(10, 5))
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS SST anomalies - '+str(pentad_idx)+ ' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
+                    #plt.show()
+                    fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
+                    """
+                    day_flat_idx = cond_df['flattened_idx'][:]
+                    print(day_flat_idx)
+                    
+                    """
+                    # NOT USED FOR TAO
+                    #match gridded observations to ellipse parameters
+                    cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
+                    """
+                    cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
+                    
+                    gridbox_counts = cond_df['gridbox'].value_counts()
+                    gridbox_count_np = gridbox_counts.to_numpy()
+                    gridbox_id_np = gridbox_counts.index.to_numpy()
+                    del gridbox_counts
+                    water_mask = np.copy(mask_ds.variables['landmask'][:,:])
+                    grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
+                    """
+                    #NOT USED FOR TAO
+                    #obs_module.match_hadsst_bias_to_gridded_obs(hadsst_bias_month, day_flat_idx, mask_ds)
+                    """
+                    
+                    obs_covariance, W = obs_module.TAO_measurement_covariance(cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb)
+                    #print(obs_covariance)
+                    #print(W)
+                    
+                    #krige obs onto gridded field
+                    anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=False, kriging_method=args.method)
+                    print('Kriging done, saving output')
+                    
+                    """
+                    fig = plt.figure(figsize=(10, 5))
+                    img_extent = (-180., 180., -90., 90.)
+                    ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
+                    ax.add_feature(cfeature.LAND, color='darkolivegreen')
+                    ax.coastlines()
+                    m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=cm.get_cmap('coolwarm'))
+                    fig.colorbar(m)
+                    plt.clim(-4, 4)
+                    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
+                    gl.xlabels_top = False
+                    gl.ylabels_right = False
+                    ax.set_title('Kriged SST anomalies ' +str(pentad_idx)+' pentad '+str(current_year)+' year')
+                    plt.show()
+                    #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
+                    """
+                
+                    # Write the data.  
+                    #This writes each time slice to the netCDF
+                    krig_anom[timestep,:,:] = anom.astype(np.float32) #ordinary_kriging
+                    krig_uncert[timestep,:,:] = uncert.astype(np.float32) #ordinary_kriging
+                    grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
+                    print("-- Wrote data")
+                    print(pentad_idx, pentad_date)
                 
         # Write time
         #pd.date_range takes month/day/year as input dates
