@@ -681,7 +681,7 @@ def TAO_match_climatology_to_obs(climatology, obs_df):
         selected = c[np.array(obs_df.pentad_index), np.array(obs_df.lat_idx), np.array(obs_df.lon_idx)]
     print(selected)
 
-    if selected > 273.15:
+    if selected.any() > 273.15:
         selected = selected - 273.15 #from Kelvin to Celsius
     #print(selected)
     
