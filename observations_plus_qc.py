@@ -645,13 +645,17 @@ def TAO_obs_main(data_path, year, month):
     #print(str_list)
     filtered_list = [i for i in filelist if i in str_list] #this will alays yield a 1-item list as we're looking forr a specific year and month
     #print(filtered_list)
-    
-    fullpath_file = os.path.join(ds_dir,filtered_list[0]) 
-    #print(fullpath_file)
-    obs_df = pd.read_csv(fullpath_file)
-    obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
+    try:
+        fullpath_file = os.path.join(ds_dir,filtered_list[0])
+        #print(fullpath_file)
+        obs_df = pd.read_csv(fullpath_file)
+        obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
+    except IndexError:
+        print('No file available for the chosen month')
+        obs_df = pd.DataFrame(columns=['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'sst', 'ii',  'id',  'uid',  'dck', 'date'])
     print(obs_df)
     return obs_df
+
 
 def TAO_match_climatology_to_obs(climatology, obs_df):
     obs_lat = obs_df.lat

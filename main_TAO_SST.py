@@ -242,9 +242,9 @@ def main(argv):
             pentad_info_df = pd.DataFrame({'pentad_index': monthly.index, 'date': monthly})
             
             obs_df = obs_qc_module.TAO_obs_main(data_path, year=current_year, month=current_month)
-            
-            #merge index of the pentad processed as information in a new column into the dataframe
-            obs_df = obs_df.merge(pentad_info_df, how='inner', on='date')
+            if not obs_df.empty:
+                #merge index of the pentad processed as information in a new column into the dataframe
+                obs_df = obs_df.merge(pentad_info_df, how='inner', on='date')
             print(obs_df)
             
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
