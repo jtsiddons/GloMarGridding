@@ -300,7 +300,6 @@ def main(argv):
                     day_df = obs_qc_module.TAO_match_climatology_to_obs(metoffice_climatology, day_df)
                 
                     print(day_df)
-                    raise Exception('Breakpoint')
                     #calculate flattened idx based on the ESA landmask file
                     #which is compatible with the ESA-derived covariance
                     #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
