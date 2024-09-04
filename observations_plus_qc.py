@@ -634,26 +634,14 @@ def ellipse_param(ellipse_param_path, month, var):
 
 
 def TAO_obs_main(data_path, year, month):
-    ds_dir = [x[0] for x in os.walk(data_path)]
-    ds_dir = (ds_dir[0])
-    long_filelist = []
-    filelist = sorted(os.listdir(ds_dir)) #_fullpath(dirname)
-    print(filelist)
-
-    str_list = 'TAO_' + str(year)+'_'+str(month).zfill(2)+'.csv' 
-    #print(mon_list)
-    #print(str_list)
-    filtered_list = [i for i in filelist if i in str_list] #this will alays yield a 1-item list as we're looking forr a specific year and month
-    #print(filtered_list)
-    try:
-        fullpath_file = os.path.join(ds_dir,filtered_list[0])
-        #print(fullpath_file)
-        obs_df = pd.read_csv(fullpath_file)
+    filename = f"TAO_{year}_{month:02d}.csv"
+    filename = os.path.join(data_path, filename)
+    if not os.path.isfile(filename):
+        print(f"Cannot find file: {filename}")
+        obs_df = None
+    else:
+        obs_df = pd.read_csv(filename)
         obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
-    except IndexError:
-        print('No file available for the chosen month')
-        obs_df = pd.DataFrame(columns=['yr', 'mo', 'dy', 'hr', 'lat', 'lon', 'sst', 'ii',  'id',  'uid',  'dck', 'date'])
-    print(obs_df)
     return obs_df
 
 
