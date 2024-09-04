@@ -638,7 +638,7 @@ def TAO_obs_main(data_path, year, month):
     filename = os.path.join(data_path, filename)
     if not os.path.isfile(filename):
         print(f"Cannot find file: {filename}")
-        obs_df = None
+        return None
     else:
         obs_df = pd.read_csv(filename)
         obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
