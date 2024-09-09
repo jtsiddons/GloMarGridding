@@ -1,6 +1,18 @@
 # Project output files
 dataframe*
 ESA_CCI_SST*
+/calculate_ESA_empirical_covariance.py
+/esa_cci_climatology_monthly.nc
+/esa_cci_clim_to_netcdf.py
+/esa_daily_climatology.nc
+/harmonics_climatology_from_r.py
+/harmonics_climatology.py
+/icoads_kriging_main.py
+/main_2.py
+/config_2.ini
+TAO/
+icoads_observations_csv_dataframe_yearly/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
