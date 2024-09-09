@@ -106,7 +106,25 @@ def get_landmask(path, month):
     #gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
     return ds, lat, lon
 
-
+def get_singlefile_landmask(path):
+    ds = xr.open_dataset(str(path), engine="netcdf4")
+    print(ds)
+    try:
+        landmask = ds.variables['landice_sea_mask'].values
+    except KeyError:
+        landmask = ds.variables['landmask'].values
+    print(landmask)
+    lat = ds.lat.values
+    lon = ds.lon.values
+    print(lon)
+    lon = ((lon + 540.) % 360.) - 180.
+    print(lon)
+    #water is 1, land is 0
+    ds.coords['lon'] = lon
+    print(ds.lat.values)
+    print(ds.lon.values)
+    #gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
+    return ds, lat, lon
 
 
 

@@ -992,3 +992,20 @@ def match_ellipse_parameters_to_gridded_obs(ellipse_monthly_file, cond_df, mask_
     cond_df['gridcell_theta'] = gridcell_theta
     print(cond_df)
     return cond_df
+
+# WARN: Memory!! Unnecessary copies!
+def TAO_measurement_covariance(
+    df, flattened_idx, sig_ms, sig_mb, sig_bs, sig_bb
+):
+    # covx = correlated_uncertainty(df)
+    # just the basic covariance for number of ship and buoy
+    print(f'{df =}')
+    df.insert(0, 'data_type', 'buoy')
+    print(f'{df =}')
+    covx1 = obs_covariance(df, sig_ms, sig_mb)
+    # print(covx1, covx1.shape)
+    # adding the weights (no of obs in each grid) + importance based on distance scaled by range and scale (values adapted from the power point presentation)
+    dist, W = dist_weight(df, dist_fn=haversine_gaussian, R=6371.0, r=40, s=0.6)
+    covx1 = covx1 + dist
+    print(covx1)
+    return covx1, W

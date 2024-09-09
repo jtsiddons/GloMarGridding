@@ -117,18 +117,21 @@ def kriging(
         grid_obs = W @ (x_obs - x_bias)  # - clim[ia] - bias[ia]
     else:
         grid_obs = W @ x_obs
-    grid_obs = np.squeeze(grid_obs)
-
+    
+    if len(grid_obs) > 1:
+        grid_obs = np.squeeze(grid_obs)
+    print(f'{grid_obs.shape = }')
     # S is the spatial covariance between all "measured" grid points 
     # Plus the covariance due to the measurements, i.e. measurement noise, bias
     # noise, and sampling noise (R)
     S = np.asarray(cci_covariance[ia[:, None], ia[None, :]])
     S += W @ covx @ W.T
-
+    print(f'{S =}')
     # Ss is the covariance between to be "predicted" grid points (i.e. all) and
     # "measured" points 
     Ss = np.asarray(cci_covariance[ia, :])
-
+    print(f'{Ss =}')
+    
     if method.lower() == "simple":
         print("Performing Simple Kriging")
         return kriging_simple(S, Ss, grid_obs, cci_covariance)
@@ -173,10 +176,15 @@ def kriging_simple(
         Uncertainty associated with the simple kriging.
     """
     G = np.linalg.solve(S, Ss).T
+    print(f'{G.shape = }')
+    print(f'{grid_obs.shape =}')
     z_obs = G @ grid_obs
-
+    print(f'{z_obs =}')
+          
     G = G @ Ss
+    print(f'{G =}')
     dz = np.sqrt(np.diag(cci_covariance - G))
+    print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
     print("Simple Kriging Complete")
     return z_obs, dz

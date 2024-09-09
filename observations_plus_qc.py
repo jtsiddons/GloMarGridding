@@ -631,3 +631,54 @@ def ellipse_param(ellipse_param_path, month, var):
     monthly_ellipse_param = xr.open_dataset(monthly_ellipse_file)
     print(monthly_ellipse_param)
     return monthly_ellipse_param
+
+
+def TAO_obs_main(data_path, year, month):
+    filename = f"TAO_{year}_{month:02d}.csv"
+    filename = os.path.join(data_path, filename)
+    if not os.path.isfile(filename):
+        print(f"Cannot find file: {filename}")
+        return None
+    else:
+        obs_df = pd.read_csv(filename)
+        obs_df['date'] = pd.to_datetime(dict(year=obs_df.yr, month=obs_df.mo, day=obs_df.dy))
+    return obs_df
+
+
+def TAO_match_climatology_to_obs(climatology, obs_df):
+    obs_lat = obs_df.lat
+    obs_lon = obs_df.lon
+    print(obs_lat)
+    print(obs_lon)
+    obs_df['lat_idx'], obs_df['lon_idx'] = find_latlon_idx(climatology, obs_lat, obs_lon)
+    cci_clim = [] #ESA CCI climatology values
+
+    print(len(climatology.time.values))
+    if len(climatology.time.values) == 365:
+        print('Using daily climatology')
+        obs_df['fake_non_leap_year'] = 2010
+        obs_df['fake_non_leap_date'] = pd.to_datetime(dict(year=obs_df.fake_non_leap_year, month=obs_df.mo, day=obs_df.dy))
+        obs_df['doy'] = [int(i.strftime('%j')) for i in obs_df['fake_non_leap_date']]
+        print(obs_df.doy)
+        obs_df['doy_idx'] = obs_df.doy - 1
+        print(obs_df.doy_idx)
+        
+        print(climatology)
+        c = climatology.values
+        #print(c.shape)
+        selected = c[np.array(obs_df.doy_idx), np.array(obs_df.lat_idx), np.array(obs_df.lon_idx)]
+    elif len(climatology.time.values) == 73:
+        print('Using pentad climatology')
+        c = climatology.values
+        selected = c[np.array(obs_df.pentad_index), np.array(obs_df.lat_idx), np.array(obs_df.lon_idx)]
+    print(selected)
+
+    if selected.any() > 273.15:
+        selected = selected - 273.15 #from Kelvin to Celsius
+    #print(selected)
+    
+    obs_df['climatology'] = selected
+    obs_df['sst_anomaly'] = obs_df['sst'] - obs_df['climatology']     
+    #obs_df = obs_df.dropna()
+    print(obs_df)
+    return obs_df
