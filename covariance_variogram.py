@@ -86,22 +86,27 @@ bscott.murphy@gmail.com
 
 def matern_variogram_model_classic(m, d, nu=0.5):
     '''
+    Same args as the *_variogram_model functions
+    with additional kwarg for nu/v parameter.
+
     One can set up lambda or def functions to use different nu values 
-    that can be used as part of the kwargs of "variogram"
-    e.g.
+    that can be used as part of the kwargs of "variogram"; e.g.
 
     def matern_nu_eq_1p5(m, d):
+        # Prefered style for pep/Python style guidelines
         return matern_variogram_model_classic(m, d, nu=1.5)    
     or
+    # The lazy way, but not recommended by pep style guidelines (does the same thing)
     matern_nu_eq_1p5 = lambda m, d: matern_variogram_model_classic(m, d, nu=1.5)
 
     1) This is called ``classic'' because if d/range_ = 1.0 and nu=0.5, it gives 1/e correlation...
-    2) This is NOT the same formulation in GSTAT nor the one used in papers about non-stationary anistropic
+    2) This is NOT the same formulation as in GSTAT nor in papers about non-stationary anistropic
     covariance models (aka Karspeck paper).
-    3) It is the most intitutive one (because of 1) and is used in sklearn and HadCRUT5 and other UKMO dataset.
+    3) It is perhaps the most intitutive (because of (1)) and is used in sklearn GP and HadCRUT5 and other UKMO dataset.
     4) nu defaults to 0.5 (exponential; used in HADSST4 and our kriging). HadCRUT5 uses 1.5.  
-    5) "2" is inside the square root for middle and right.
-    See Chapter 4.2 of:
+    5) The "2" is inside the square root for middle and right.
+    
+    Reference; see chapter 4.2 of:
     Rasmussen, C. E., & Williams, C. K. I. (2005). 
     Gaussian Processes for Machine Learning. The MIT Press. 
     https://doi.org/10.7551/mitpress/3206.001.0001
@@ -119,7 +124,10 @@ def matern_variogram_model_gstat(m, d, nu=0.5):
     '''
     Similar to matern_variogram_model_classic 
     but uses the range scaling in gstat. 
-    Note: no square root 2 or nu in middle and right
+    Note: there are no square root 2 or nu in middle and right
+
+    Yields the same answer to matern_variogram_model_classic if nu==0.5
+    but are otherwise different.
     '''
     psill = float(m[0])
     range_ = float(m[1])
@@ -249,6 +257,47 @@ def variogram(distance_matrix,
     #this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix
     obs_covariance = variogram_model(m, d)
     return obs_covariance
+
+
+def variogram(distance_matrix,
+              variance,
+              nugget_=0.0,
+              range_=350.0,
+              variogram_model=exponential_variogram_model):
+    #range from Dave's presentation on space length scales (in km)
+    # range_ = 350 
+    #from researchgate - Sill of the semivariogram is equal to the variance of the random variable, at large distances, when variables become uncorrelated
+    sill_ = variance 
+    #nugget for now can be set to zero, it will change once we quantify the obs uncertainty better
+    # nugget_ = 0 
+    
+    #create m - a list containing [psill, range, nugget]
+    m = [sill_, range_, nugget_]
+    
+    #create d - an array of the distance values at which to calculate the variogram model
+    d = distance_matrix
+    
+    #call variogram function
+    #this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix
+    obs_covariance = variogram_model(m, d)
+    return obs_covariance
+
+
+def variogram_hadcrut5(distance_matrix,
+                       terrain='sea',
+                       nugget_=0.0):
+    assert terrain in ['lnd', 'sea'], 'terrain must be lnd or sea.'
+    hadcrut5_covariance_parms = {
+        'lnd': {'sigma': 1.2, 'r': 1300.0, 'v': 1.5},
+        'sea': {'sigma': 0.6, 'r': 1300.0, 'v': 1.5}, 
+        }
+    variogram_parms = hadcrut5_covariance_parms[terrain]
+    return variogram(distance_matrix, 
+                     variogram_parms['sigma']**2.0,
+                     nugget_=nugget_,
+                     range_=variogram_parms['r'],
+                     variogram_model=lambda m, d: matern_variogram_model_classic(m, d, nu=variogram_parms['v']))
+
 
 """
 ######################
