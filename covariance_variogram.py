@@ -284,7 +284,7 @@ def variogram(distance_matrix,
 
 
 def variogram_hadcrut5(distance_matrix,
-                       terrain='sea',
+                       terrain='lnd',
                        nugget_=0.0):
     assert terrain in ['lnd', 'sea'], 'terrain must be lnd or sea.'
     hadcrut5_covariance_parms = {
@@ -298,7 +298,9 @@ def variogram_hadcrut5(distance_matrix,
                      range_=variogram_parms['r'],
                      variogram_model=lambda m, d: matern_variogram_model_classic(m, d, nu=variogram_parms['v']))
 
-
+def variogram_to_covariance(variogram, sigma):
+    covariance = sigma ** 2 - variogram
+    return covariance
 """
 ######################
 # read in the observational data
