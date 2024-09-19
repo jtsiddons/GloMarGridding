@@ -150,9 +150,6 @@ def main(argv):
     #location of landmasks
     landmask = config.get('DCENT', 'land_mask')
 
-    #location of climatology 
-    climatology = config.get('DCENT', 'climatology')
-
     #path to directory where the covariance(s) is/are located
     sst_error_cov_dir = config.get('DCENT', 'sst_error_covariance')
     lsat_error_cov_dir = config.get('DCENT', 'lsat_error_covariance')
@@ -164,6 +161,8 @@ def main(argv):
     #path to output directory
     output_directory = config.get('DCENT', 'output_dir')
 
+    #what variable is being processed
+    variable = config.get('DCENT', 'variable')
     
     
     bnds = [lon_west, lon_east, lat_south, lat_north]
@@ -177,25 +176,50 @@ def main(argv):
     print(output_lon)
 
     
-    """
-    mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-    print('----')
-    print(mask_ds)
+
     
-    climatology = obs_module.read_climatology(climatology, lat_north,lat_south, lon_west,lon_east)
-    print(climatology)
-    clim = climatology.t10m_clim_day
-    print(clim)
-    del climatology
-    #while doing pentad processing, this will set "mid-pentads" dates for the year
-    """
-    
-    #read in lsat error covariance for a chosen member
-    lsat_error_cov = np.load(lsat_error_cov_dir+'/lsat_error_covariance_'+str(member)+'.npz')['err_cov']
-    #read in sst error covariance
-    sst_error_cov = np.load(sst_error_cov_dir+'/sst_error_covariance.npz')['err_cov']
+    member = int(args.member)
+
+    #ts1 = datetime.now()
+    #print(ts1)
     #read in observations for a chosen member
-    obs = xr.open_dataset(data_path+'DCENT_ensemble_1850_2023_member_'+str(member).zfill(2)+'.nc')
+    obs = xr.open_dataset(data_path+'/DCENT_ensemble_1850_2023_member_'+str(member).zfill(3)+'.nc')
+    print('loaded observations')
+    #ts2 = datetime.now()
+    #print(ts2)
+    print(obs)
+
+
+
+    
+    if variable == 'sst':
+        #read in sst error covariance
+        error_cov = np.load(sst_error_cov_dir+'/sst_error_covariance_common.npz')['err_cov']
+        print('loaded sst error covariance')
+        #ts3 = datetime.now()
+        #print(ts3)
+        #(no of timesteps, no of gridboxes, no of gridboxes)
+        #to extract what wanted chosen=[timestep,:,:]
+        #replace NaNs with 0 before adding the matrices together
+        print(error_cov)
+        print(error_cov.shape)
+        print(len(error_cov.shape))
+
+        interp_covariance = np.load(sea_interp_cov)
+        
+    elif variable == 'lsat':
+        #ts0 = datetime.now()
+        #print(ts0)
+        #read in lsat error covariance for a chosen member
+        error_cov = np.load(lsat_error_cov_dir+'/lsat_error_covariance_'+str(member)+'.npz')['err_cov']
+        print('loaded lsat error covariance')
+        print(error_cov)
+        print(error_cov.shape)
+        print(len(error_cov.shape))
+        #(no of timesteps, no of gridboxeds 2592)
+        #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
+
+        interp_covariance = np.load(lnd_interp_cov)
     
     #create yearly output files
     year_list = list(range(int(year_start), int(year_stop)+1,1))
@@ -284,56 +308,50 @@ def main(argv):
             print('Current month and year: ', (current_month, current_year))
 
 ###############################################################################            
-            mon_df = obs_qc_module.main(data_path, year=current_year, month=current_month)
+            mon_ds = obs.sel(time=np.logical_and(obs.time.dt.month == current_month, obs.time.dt.year == current_year))
+            print(mon_ds)
+            mon_df = mon_ds.to_dataframe().reset_index()
+            print(mon_df)
+            print(mon_df.columns)
+            mon_df = mon_df.dropna(subset=['temperature']) #drop rows there sst, lsat and temperature are all NaNs
+            print(mon_df)
+            mon_df.reset_index(inplace=True)
+            print(mon_df)
             
-            # calculate covariance based on the observations for given year and month
-            covariance = cov_module.calculate_covariance()
-            print(covariance)
-
-            #read in landmask corresponding to the covariance
-            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask()
-            print(mask_ds)
+            
+            date_int = i * 12 + timestep
+            print(f'{i =}, {current_year =}, {timestep =}, {current_month =}')
+            print(f'{date_int =}')
+            if len(error_cov.shape) == 3:
+                error_covariance = error_cov[date_int,:,:]
+            elif len(error_cov.shape) == 2:
+                error_covariance = np.diag(error_cov[date_int,:])
+            print(error_covariance)
+            
+            # add interpolation (distance-based) and error covariances (lsat and sst) for given year and month
+            joined_covariance = interp_covariance + error_covariance
+            print(joined_covariance)
+            
             """
-            # NOT NEEDED AT CURRENT STAGE - MIGHT BE NEEDED IN THE FUTURE
-            # read in observations
-            obs_df = obs_qc_module.MAT_main(data_path, qc_path, qc_path_2, qc_mat, year=current_year, month=current_month)
-            print(obs_df)
-            day_night = pl.from_pandas(obs_df[['uid', 'datetime', 'lon', 'lat']]) # required cols for is_daytime
-            day_night = day_night.pipe(is_daytime)
-            obs_df = obs_df.merge(day_night.select(['uid', 'is_daytime']).to_pandas(), on='uid')
-            del day_night
-
-            #filter day (1) or night(0)
-            obs_df = obs_df[obs_df['is_daytime'] == 0]
-            print(obs_df) #[['local_datetime', 'is_daytime']])
-            """
-            
-            
             current_date = datetime(current_year,current_month,15)
             print('----------')
             print('timestep', timestep)
             print('----------')
             print(current_date)
-            
-            esa_climatology = climatology['climatology']
-            print(esa_climatology)
-            
-            #add climatology value and calculate the SST anomaly
-            #mon_df = obs_module.extract_clim_anom(esa_climatology, mon_df)
-            mon_df = obs_qc_module.SST_match_climatology_to_obs(climatology, mon_df)
- 
+            """
+            print(output_lat)
+            print(output_lon)
+            mesh_lon, mesh_lat = np.meshgrid(output_lon, output_lat)
+            print(mesh_lat, mesh_lat.shape)
+            print(mesh_lon, mesh_lon.shape)
+            print(mon_ds['sst'].values.squeeze().shape)
+            STOP
             cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon)
                 
             mon_flat_idx = cond_df['flattened_idx'][:]
-
-            #read in error covariance for a given month and year
-            #should be the same size as the total number of observations for that timestep
-            obs_covariance, W = obs_module.red_error_covariance()
-            #print(obs_covariance)
-            #print(W)
             
             #krige obs onto gridded field
-            anom, uncert = krig_module.kriging_main(covariance, mask_ds, cond_df, mon_flat_idx, obs_covariance, W, kriging_method=args.method)
+            anom, uncert = krig_module.kriging_main(interp_covariance, mask_ds, cond_df, mon_flat_idx, joined_covariance, kriging_method=args.method)
             print('Kriging done, saving output')
 
             # Write the data.  
