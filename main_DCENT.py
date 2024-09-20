@@ -359,13 +359,23 @@ def main(argv):
             del gridbox_counts
             water_mask = np.copy(mesh_lat)
             grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
-            STOP
-            #need to either add weights (which will be just 1 everywhere as obs are gridded)
-            #or ammend the code to skip weights
-            #krige obs onto gridded field
-            anom, uncert = krig_module.kriging_main(interp_covariance, mask_ds, cond_df, mon_flat_idx, error_covariance, W, kriging_method=args.method)
-            print('Kriging done, saving output')
 
+            
+            #need to either add weights (which will be just 1 everywhere as obs are gridded)
+            #krige obs onto gridded field
+            _, W = obs_module.dist_weight(mon_df, dist_fn=obs_module.haversine_gaussian, R=6371.0, r=40, s=0.6)
+            print(W)
+            print(error_covariance, error_covariance.shape)
+            error_covariance = error_covariance[mon_flat_idx[:,None],mon_flat_idx[None,:]]
+            print(error_covariance, error_covariance.shape)
+            anom, uncert = krig_module.kriging(mon_flat_idx, np.unique(mon_flat_idx), W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
+            print('Kriging done, saving output')
+            print(anom)
+            print(uncert)
+            print(grid_obs_2d)
+            #reshape output into 2D
+
+            
             # Write the data.  
             #This writes each time slice to the netCDF
             krig_anom[timestep,:,:] = anom #ordinary_kriging
