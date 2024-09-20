@@ -85,6 +85,7 @@ def main(argv):
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
     parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
+    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat")
     parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
     args = parser.parse_args()
     
@@ -162,7 +163,10 @@ def main(argv):
     output_directory = config.get('DCENT', 'output_dir')
 
     #what variable is being processed
-    variable = config.get('DCENT', 'variable')
+    if args.variable:
+        variable = str(args.variable)
+    else:
+        variable = config.get('DCENT', 'variable')
     
     
     bnds = [lon_west, lon_east, lat_south, lat_north]
@@ -206,6 +210,7 @@ def main(argv):
         print(len(error_cov.shape))
 
         interp_covariance = np.load(sea_interp_cov)
+
         
     elif variable == 'lsat':
         #ts0 = datetime.now()
@@ -220,6 +225,8 @@ def main(argv):
         #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
 
         interp_covariance = np.load(lnd_interp_cov)
+
+        
     
     #create yearly output files
     year_list = list(range(int(year_start), int(year_stop)+1,1))
@@ -258,36 +265,22 @@ def main(argv):
         time.units = 'days since %s-01-15' % (str(current_year))
         time.long_name = 'time'
         #print(time)
-        
+                
         # Define a 3D variable to hold the data
         # note: unlimited dimension is leftmost
-        seasig_krig = ncfile.createVariable(f'{variable}_anomaly_sea',
+        krig_anom = ncfile.createVariable(f'{variable}_anomaly',
                                       np.float32,
                                       ('time','lat','lon'))
-        seasig_krig.standard_name = f"{variable} anomaly"
-        seasig_krig.units = 'deg C' # degrees Kelvin    
+        krig_anom.standard_name = f"{variable} anomaly"
+        krig_anom.units = 'deg C' # degrees Kelvin    
 
         # Define a 3D variable to hold the data
-        seasig_krig_uncert = ncfile.createVariable(f'{variable}_anomaly_uncertainty_sea',
+        krig_uncert = ncfile.createVariable(f'{variable}_anomaly_uncertainty',
                                       np.float32,
                                       ('time','lat','lon'))
-        seasig_krig_uncert.units = 'deg C' # degrees Kelvin
-        seasig_krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
+        krig_uncert.units = 'deg C' # degrees Kelvin
+        krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
         
-        # Define a 3D variable to hold the data
-        lndsig_krig = ncfile.createVariable(f'{variable}_anomaly_lnd',
-                                      np.float32,
-                                      ('time','lat','lon'))
-        lndsig_krig.standard_name = f"{variable} anomaly"
-        lndsig_krig.units = 'deg C' # degrees Kelvin    
-
-        # Define a 3D variable to hold the data
-        lndsig_krig_uncert = ncfile.createVariable(f'{variable}_anomaly_uncertainty_lnd',
-                                      np.float32,
-                                      ('time','lat','lon'))
-        lndsig_krig_uncert.units = 'deg C' # degrees Kelvin
-        lndsig_krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
-
         # Define a 3D variable to hold the data
         grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
         # note: unlimited dimension is leftmost
@@ -313,10 +306,10 @@ def main(argv):
             mon_df = mon_ds.to_dataframe().reset_index()
             print(mon_df)
             print(mon_df.columns)
-            mon_df = mon_df.dropna(subset=['temperature']) #drop rows there sst, lsat and temperature are all NaNs
-            print(mon_df)
+            mon_df = mon_df.dropna(subset=[variable])
             mon_df.reset_index(inplace=True)
             print(mon_df)
+
             
             
             date_int = i * 12 + timestep
@@ -344,20 +337,40 @@ def main(argv):
             mesh_lon, mesh_lat = np.meshgrid(output_lon, output_lat)
             print(mesh_lat, mesh_lat.shape)
             print(mesh_lon, mesh_lon.shape)
-            print(mon_ds['sst'].values.squeeze().shape)
+            print(mon_ds[variable].values.squeeze().shape)
+            print('-----------------')
+            #since we're not using any landmask for this run
+            #the line below:
+            #cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon)
+            #mon_flat_idx = cond_df['flattened_idx'][:]
+            #can be substituted with:
+            lat_idx, grid_lat = obs_module.find_nearest(output_lat, mon_df.lat)
+            lon_idx, grid_lon = obs_module.find_nearest(output_lon, mon_df.lon)
+            idx_tuple = np.array([lat_idx, lon_idx])
+            print(f'{idx_tuple =}')
+            mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
+            print(mon_flat_idx)
+
+            #count obs per grid for output
+            mon_df["gridbox"] = mon_flat_idx
+            gridbox_counts = mon_df['gridbox'].value_counts()
+            gridbox_count_np = gridbox_counts.to_numpy()
+            gridbox_id_np = gridbox_counts.index.to_numpy()
+            del gridbox_counts
+            water_mask = np.copy(mesh_lat)
+            grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
             STOP
-            cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon)
-                
-            mon_flat_idx = cond_df['flattened_idx'][:]
-            
+            #need to either add weights (which will be just 1 everywhere as obs are gridded)
+            #or ammend the code to skip weights
             #krige obs onto gridded field
-            anom, uncert = krig_module.kriging_main(interp_covariance, mask_ds, cond_df, mon_flat_idx, joined_covariance, kriging_method=args.method)
+            anom, uncert = krig_module.kriging_main(interp_covariance, mask_ds, cond_df, mon_flat_idx, error_covariance, W, kriging_method=args.method)
             print('Kriging done, saving output')
 
             # Write the data.  
             #This writes each time slice to the netCDF
             krig_anom[timestep,:,:] = anom #ordinary_kriging
             krig_uncert[timestep,:,:] = uncert #ordinary_kriging
+            grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
             print("-- Wrote data")
             print(timestep, current_date)
             
