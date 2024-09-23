@@ -112,7 +112,7 @@ def kriging(
     _, ia, _ = intersect_mtlb(iid, uind)
     ia = ia.astype(int)
 
-    if x_bias:
+    if x_bias is not None:
         print("With bias")
         grid_obs = W @ (x_obs - x_bias)  # - clim[ia] - bias[ia]
     else:
@@ -223,8 +223,8 @@ def kriging_ordinary(
     """
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = Ss.shape
-    S = np.block([[S, np.ones((M, 1))], [np.ones((1, M)), 0]])
-    Ss = np.concatenate((Ss, np.ones((1, N))), axis=0)
+    S = np.block([[S, np.ones((N, 1))], [np.ones((1, N)), 0]])
+    Ss = np.concatenate((Ss, np.ones((1, M))), axis=0)
     grid_obs = np.append(grid_obs, 0)
 
     G = np.linalg.solve(S, Ss).T
