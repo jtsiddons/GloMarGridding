@@ -168,18 +168,16 @@ def main(argv):
     else:
         variable = config.get('DCENT', 'variable')
     
-    
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
     print(lon_bnds, lat_bnds)
     
+    #output_lat = np.arange(lat_bnds[-1]-2.5, lat_bnds[0]-2.5,-5)
     output_lat = np.arange(lat_bnds[0]+2.5, lat_bnds[-1]+2.5,5)
     output_lon = np.arange(lon_bnds[0]+2.5, lon_bnds[-1]+2.5,5)
-    print(output_lat)
-    print(output_lon)
-
-    
+    print(f'{output_lat =}')
+    print(f'{output_lon =}')
 
     
     member = int(args.member)
@@ -312,14 +310,20 @@ def main(argv):
 
             
             
-            date_int = i * 12 + timestep
+            #date_int = i * 12 + timestep
+            date_int = (current_year - 1850) * 12 + timestep
             print(f'{i =}, {current_year =}, {timestep =}, {current_month =}')
             print(f'{date_int =}')
             if len(error_cov.shape) == 3:
                 error_covariance = error_cov[date_int,:,:]
             elif len(error_cov.shape) == 2:
                 error_covariance = np.diag(error_cov[date_int,:])
-            print(error_covariance)
+            print(f'{error_covariance =}')
+            ec_1 = error_covariance[~np.isnan(error_covariance)]
+            ec_2 = ec_1[np.nonzero(ec_1)]
+            print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
+            idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
+            print('Index of non-nan and non-zero values =', idx, len(idx))
             
             # add interpolation (distance-based) and error covariances (lsat and sst) for given year and month
             joined_covariance = interp_covariance + error_covariance
@@ -346,10 +350,19 @@ def main(argv):
             #can be substituted with:
             lat_idx, grid_lat = obs_module.find_nearest(output_lat, mon_df.lat)
             lon_idx, grid_lon = obs_module.find_nearest(output_lon, mon_df.lon)
+
+            mon_df['grid_lat'] = grid_lat
+            mon_df['grid_lon'] = grid_lon
+            mon_df['lat_idx'] = lat_idx
+            mon_df['lon_idx'] = lon_idx
+            
             idx_tuple = np.array([lat_idx, lon_idx])
             print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
-            print(mon_flat_idx)
+            #mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='F') #column-major
+            mon_df['flat_idx'] = mon_flat_idx
+            print(mon_df)
+            
 
             #count obs per grid for output
             mon_df["gridbox"] = mon_flat_idx
@@ -367,7 +380,7 @@ def main(argv):
             print(W)
             print(error_covariance, error_covariance.shape)
             error_covariance = error_covariance[mon_flat_idx[:,None],mon_flat_idx[None,:]]
-            print(error_covariance, error_covariance.shape)
+            print(f'{error_covariance =}, {error_covariance.shape =}')
             anom, uncert = krig_module.kriging(mon_flat_idx, np.unique(mon_flat_idx), W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
@@ -382,7 +395,7 @@ def main(argv):
             krig_uncert[timestep,:,:] = uncert #ordinary_kriging
             grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
             print("-- Wrote data")
-            print(timestep, current_date)
+            print(timestep, current_month)
             
         # Write time
         #pd.date_range takes month/day/year as input dates
@@ -395,6 +408,7 @@ def main(argv):
         print(times)
 
         time[:] = times
+
         print(time)    
         # first print the Dataset object to see what we've got
         print(ncfile)
