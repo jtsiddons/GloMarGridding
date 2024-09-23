@@ -229,8 +229,7 @@ def main(argv):
     #create yearly output files
     year_list = list(range(int(year_start), int(year_stop)+1,1))
 
-    for i in range(len(year_list)):
-        current_year = year_list[i]
+    for current_year in year_list:
         
         try:
             ncfile.close()  #make sure dataset is not already open.
@@ -293,9 +292,8 @@ def main(argv):
 
 
         month_list = list(range(1,13,1))
-        for timestep in range(len(month_list)):
-
-            current_month = month_list[timestep]
+        for current_month in month_list:
+            timestep=current_month-1
             print('Current month and year: ', (current_month, current_year))
 
 ###############################################################################            
@@ -312,7 +310,7 @@ def main(argv):
             
             #date_int = i * 12 + timestep
             date_int = (current_year - 1850) * 12 + timestep
-            print(f'{i =}, {current_year =}, {timestep =}, {current_month =}')
+            print(f'{current_year =}, {current_month =}')
             print(f'{date_int =}')
             if len(error_cov.shape) == 3:
                 error_covariance = error_cov[date_int,:,:]
@@ -398,8 +396,9 @@ def main(argv):
             print(timestep, current_month)
             
         # Write time
+        clim_times = pd.date_range(start='01/15/2000', end='12/15/2000', periods=12)
         #pd.date_range takes month/day/year as input dates
-        clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
+        clim_times_updated = [j.replace(year=current_year, day=15) for j in pd.to_datetime(clim_times)]
         print(clim_times_updated)
         dates_ = pd.Series(clim_times_updated)
         dates = dates_.dt.to_pydatetime() # Here it becomes date
