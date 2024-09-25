@@ -64,6 +64,59 @@ def intersect_mtlb(a, b):
     return c, ia[np.isin(a1, c)], ib[np.isin(b1, c)]  
 
 
+
+def kriging_simplified(
+    obs_idx: np.ndarray,
+    W: np.ndarray,
+    obs: np.ndarray,
+    interp_cov: np.ndarray,
+    error_cov: np.ndarray,
+    obs_bias: Optional[np.ndarray] = None,
+    method: KrigMethod = "simple",
+) -> Tuple[np.ndarray, np.ndarray]:
+
+   
+    if obs_bias is not None:
+        print("With bias")
+        grid_obs = W @ (obs - obs_bias)
+    else:
+        grid_obs = W @ obs
+    
+    if len(grid_obs) > 1:
+        grid_obs = np.squeeze(grid_obs)
+        
+    print(f'{grid_obs.shape = }')
+    # S is the spatial covariance between all "measured" grid points 
+    # Plus the covariance due to the measurements, i.e. measurement noise, bias
+    # noise, and sampling noise (R)
+
+    if error_cov.shape == interp_cov.shape:
+        print('Error covariance supplied is of the same size as interpolation covariance, subsetting to indices of observation grids')
+        error_cov = error_cov[obs_idx[:,None], obs_idx[None,:]]
+    
+    print(f'{error_cov =}, {error_cov.shape =}')
+    S = np.asarray(interp_cov[obs_idx[:, None], obs_idx[None, :]])
+    S += W @ error_cov @ W.T
+    print(f'{S =}, {S.shape =}')
+    # Ss is the covariance between to be "predicted" grid points (i.e. all) and
+    # "measured" points 
+    Ss = np.asarray(interp_cov[obs_idx, :])
+    print(f'{Ss =}, {Ss.shape =}')
+
+
+    if method.lower() == "simple":
+        print("Performing Simple Kriging")
+        return kriging_simple(S, Ss, grid_obs, interp_cov)
+    elif method.lower() == "ordinary":
+        print("Performing Ordinary Kriging")
+        return kriging_ordinary(S, Ss, grid_obs, interp_cov)
+    else:
+        raise NotImplementedError(
+            f"Kriging method {method} is not implemented. " 
+            "Expected one of \"simple\" or \"ordinary\"")
+    
+
+
 def kriging(
     iid: np.ndarray,
     uind: np.ndarray,
@@ -110,7 +163,8 @@ def kriging(
     """
     iid = np.squeeze(iid) if iid.ndim > 1 else iid
     _, ia, _ = intersect_mtlb(iid, uind)
-    ia = ia.astype(int)
+    ia = ia.astype(int) #index of the sorted unique (iid) in the full iid array
+    
 
     if x_bias is not None:
         print("With bias")
@@ -124,12 +178,12 @@ def kriging(
     # S is the spatial covariance between all "measured" grid points 
     # Plus the covariance due to the measurements, i.e. measurement noise, bias
     # noise, and sampling noise (R)
-    S = np.asarray(cci_covariance[ia[:, None], ia[None, :]])
+    S = np.asarray(cci_covariance[iid[:, None], iid[None, :]])
     S += W @ covx @ W.T
     print(f'{S =}')
     # Ss is the covariance between to be "predicted" grid points (i.e. all) and
     # "measured" points 
-    Ss = np.asarray(cci_covariance[ia, :])
+    Ss = np.asarray(cci_covariance[iid, :])
     print(f'{Ss =}')
     
     if method.lower() == "simple":
@@ -182,7 +236,6 @@ def kriging_simple(
     print(f'{z_obs =}')
           
     G = G @ Ss
-    print(f'{G =}')
     dz = np.sqrt(np.diag(cci_covariance - G))
     print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
