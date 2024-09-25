@@ -128,7 +128,7 @@ def main(argv):
     land_sigma = config.getfloat('DCENT', 'land_sigma') #0.6
     land_matern = config.getfloat('DCENT', 'land_matern') #1.5
     
-    sea_range =config.getfloat('DCENT', 'sea_range') #31300
+    sea_range =config.getfloat('DCENT', 'sea_range') #3100
     sea_sigma = config.getfloat('DCENT', 'sea_sigma') #1.2
     sea_matern = config.getfloat('DCENT', 'sea_matern') #1.5
     
@@ -173,7 +173,7 @@ def main(argv):
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
     print(lon_bnds, lat_bnds)
     
-    #output_lat = np.arange(lat_bnds[-1]-2.5, lat_bnds[0]-2.5,-5)
+    
     output_lat = np.arange(lat_bnds[0]+2.5, lat_bnds[-1]+2.5,5)
     output_lon = np.arange(lon_bnds[0]+2.5, lon_bnds[-1]+2.5,5)
     print(f'{output_lat =}')
@@ -209,6 +209,9 @@ def main(argv):
 
         interp_covariance = np.load(sea_interp_cov)
 
+        var_range = sea_range
+        var_sigma = sea_sigma
+        
         
     elif variable == 'lsat':
         #ts0 = datetime.now()
@@ -224,7 +227,8 @@ def main(argv):
 
         interp_covariance = np.load(lnd_interp_cov)
 
-        
+        var_range = land_range
+        var_sigma = land_sigma
     
     #create yearly output files
     year_list = list(range(int(year_start), int(year_stop)+1,1))
@@ -241,7 +245,7 @@ def main(argv):
         if member:
             ncfilename += f"_member_{member:03d}"
         ncfilename += ".nc"
-        ncfilename = os.path.join(output_directory, ncfilename)
+        ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
         
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
@@ -298,10 +302,8 @@ def main(argv):
 
 ###############################################################################            
             mon_ds = obs.sel(time=np.logical_and(obs.time.dt.month == current_month, obs.time.dt.year == current_year))
-            print(mon_ds)
             mon_df = mon_ds.to_dataframe().reset_index()
-            print(mon_df)
-            print(mon_df.columns)
+            #print(mon_df.columns)
             mon_df = mon_df.dropna(subset=[variable])
             mon_df.reset_index(inplace=True)
             print(mon_df)
@@ -316,30 +318,22 @@ def main(argv):
                 error_covariance = error_cov[date_int,:,:]
             elif len(error_cov.shape) == 2:
                 error_covariance = np.diag(error_cov[date_int,:])
-            print(f'{error_covariance =}')
+            #print(f'{error_covariance =}')
             ec_1 = error_covariance[~np.isnan(error_covariance)]
             ec_2 = ec_1[np.nonzero(ec_1)]
-            print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
-            idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
-            print('Index of non-nan and non-zero values =', idx, len(idx))
+            #print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
+            ec_idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
+            print('Index of non-nan and non-zero values =', ec_idx, len(ec_idx))
             
-            # add interpolation (distance-based) and error covariances (lsat and sst) for given year and month
-            joined_covariance = interp_covariance + error_covariance
-            print(joined_covariance)
+
             
-            """
-            current_date = datetime(current_year,current_month,15)
-            print('----------')
-            print('timestep', timestep)
-            print('----------')
-            print(current_date)
-            """
-            print(output_lat)
-            print(output_lon)
+            
+            #print(output_lat)
+            #print(output_lon)
             mesh_lon, mesh_lat = np.meshgrid(output_lon, output_lat)
-            print(mesh_lat, mesh_lat.shape)
-            print(mesh_lon, mesh_lon.shape)
-            print(mon_ds[variable].values.squeeze().shape)
+            #print(mesh_lat, mesh_lat.shape)
+            #print(mesh_lon, mesh_lon.shape)
+            #print(mon_ds[variable].values.squeeze().shape)
             print('-----------------')
             #since we're not using any landmask for this run
             #the line below:
@@ -355,15 +349,25 @@ def main(argv):
             mon_df['lon_idx'] = lon_idx
             
             idx_tuple = np.array([lat_idx, lon_idx])
-            print(f'{idx_tuple =}')
+            #print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
-            #mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='F') #column-major
-            mon_df['flat_idx'] = mon_flat_idx
+            #print(f'{mon_flat_idx =}') #it's the same as ec_idx
+            #print(f'{sorted(mon_flat_idx) =}')
+            
+            #diff = sorted(mon_flat_idx) - np.unique(mon_flat_idx)
+            # diff results in 0s as unique idx is the same as sorted mon_flat_idx
+            
+            mon_df['gridbox'] = mon_flat_idx
+            #print(mon_df)
+            mon_df['error_covariance_diagonal'] = error_covariance[mon_flat_idx,mon_flat_idx]
             print(mon_df)
+            mon_df = mon_df.dropna(subset=['error_covariance_diagonal'])
+            mon_df.reset_index(inplace=True)
+            print(mon_df)
+            
             
 
             #count obs per grid for output
-            mon_df["gridbox"] = mon_flat_idx
             gridbox_counts = mon_df['gridbox'].value_counts()
             gridbox_count_np = gridbox_counts.to_numpy()
             gridbox_id_np = gridbox_counts.index.to_numpy()
@@ -374,18 +378,27 @@ def main(argv):
             
             #need to either add weights (which will be just 1 everywhere as obs are gridded)
             #krige obs onto gridded field
-            _, W = obs_module.dist_weight(mon_df, dist_fn=obs_module.haversine_gaussian, R=6371.0, r=40, s=0.6)
-            print(W)
-            print(error_covariance, error_covariance.shape)
-            error_covariance = error_covariance[mon_flat_idx[:,None],mon_flat_idx[None,:]]
-            print(f'{error_covariance =}, {error_covariance.shape =}')
-            anom, uncert = krig_module.kriging(mon_flat_idx, np.unique(mon_flat_idx), W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
+            _, W = obs_module.dist_weight(mon_df, dist_fn=obs_module.haversine_gaussian, R=6371.0, r=var_range, s=var_sigma)
+            #print(W)
+
+            
+            grid_idx = np.array(sorted(mon_df['gridbox'])) #sorted?
+            #print(error_covariance, error_covariance.shape)
+            error_covariance = error_covariance[grid_idx[:,None],grid_idx[None,:]]
+            #print(np.argwhere(np.isnan(np.diag(error_covariance))))
+            #print(f'{error_covariance =}, {error_covariance.shape =}')
+            
+            
+            anom, uncert = krig_module.kriging_simplified(grid_idx, W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)
             print(grid_obs_2d)
-            #reshape output into 2D
 
+            
+            #reshape output into 2D
+            anom = np.reshape(anom, mesh_lat.shape)
+            uncert = np.reshape(uncert, mesh_lat.shape)
             
             # Write the data.  
             #This writes each time slice to the netCDF
