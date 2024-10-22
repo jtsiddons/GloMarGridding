@@ -4,49 +4,28 @@
 ################
 
 #global
-import sys, os, re
-import glob
+import sys
+import os
 import os.path
-from os import path
-from os.path import isfile, join
 
 #argument parser
 import argparse
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0                                               
+from configparser import ConfigParser
 from collections import OrderedDict
-from configparser import ConfigParser  
 
 #math tools 
 import numpy as np
-import math
-from scipy.linalg import block_diag
 
-#plotting tools
-import matplotlib.pyplot as plt
-
-#timing tools
-import timeit
-from calendar import isleap
-from calendar import monthrange
 #import datetime as dt
-from datetime import datetime, timedelta
-from netCDF4 import date2num, num2date
+from netCDF4 import date2num
 
 #data handling tools
 import pandas as pd
 import xarray as xr
 import netCDF4 as nc
-from functools import partial
-import polars as pl
 
 #self-written modules (from the same directory)
-import covariance_calculation as cov_cal
-import covariance as cov_module
 import observations as obs_module
-import observations_plus_qc as obs_qc_module
 import kriging as krig_module
 
 
