@@ -60,13 +60,13 @@ class ConfigParserMultiValues(OrderedDict):
 def main(argv):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
-    parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
+    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings", type=str)
+    parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type=int)
+    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type=int)
+    parser.add_argument("-month", dest="month", required=False, help="month", type=int)  # New Argument
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
-    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat")
-    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
+    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str)
+    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
     args = parser.parse_args()
     
     config_file = args.config
@@ -153,8 +153,7 @@ def main(argv):
     print(f'{output_lat =}')
     print(f'{output_lon =}')
 
-    
-    member = int(args.member)
+    member = args.member
 
     #ts1 = datetime.now()
     #print(ts1)
