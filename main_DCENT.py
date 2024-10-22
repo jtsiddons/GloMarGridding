@@ -212,7 +212,7 @@ def main(argv):
     print(len(error_cov.shape))
     
     #create yearly output files
-    year_list = list(range(int(year_start), int(year_stop)+1,1))
+    year_list = range(int(year_start), int(year_stop)+1)
 
     for current_year in year_list:
         
@@ -278,8 +278,7 @@ def main(argv):
         lon[:] = output_lon #ds.lon.values
 
 
-        month_list = list(range(1,13,1))
-        for current_month in month_list:
+        for current_month in range(1, 13):
             timestep=current_month-1
             print('Current month and year: ', (current_month, current_year))
 
