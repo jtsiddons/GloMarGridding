@@ -294,10 +294,14 @@ def main(argv):
             date_int = (current_year - 1850) * 12 + timestep
             print(f'{current_year =}, {current_month =}')
             print(f'{date_int =}')
-            if len(error_cov.shape) == 3:
-                error_covariance = error_cov[date_int,:,:]
-            elif len(error_cov.shape) == 2:
-                error_covariance = np.diag(error_cov[date_int,:])
+            match len(error_cov.shape):
+                case 3:
+                    error_covariance = error_cov[date_int,:,:]
+                case 2:
+                    error_covariance = np.diag(error_cov[date_int,:])
+                case _:
+                    raise ValueError("Error covariance.shape is not 2 or 3")
+
             #print(f'{error_covariance =}')
             ec_1 = error_covariance[~np.isnan(error_covariance)]
             ec_2 = ec_1[np.nonzero(ec_1)]
