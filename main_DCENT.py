@@ -165,7 +165,12 @@ def main(argv):
     #ts1 = datetime.now()
     #print(ts1)
     #read in observations for a chosen member
-    obs = xr.open_dataset(data_path+'/DCENT_ensemble_1850_2023_member_'+str(member).zfill(3)+'.nc')
+    obs = xr.open_dataset(
+        os.path.join(
+            data_path, 
+            f'DCENT_ensemble_1850_2023_member_{member:03d}.nc'
+        )
+    )
     print('loaded observations')
     #ts2 = datetime.now()
     #print(ts2)
@@ -225,7 +230,7 @@ def main(argv):
         if member:
             ncfilename += f"_member_{member:03d}"
         ncfilename += ".nc"
-        ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
+        ncfilename = os.path.join(output_directory, variable, ncfilename)
         
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
@@ -243,7 +248,7 @@ def main(argv):
         lon.units = 'degrees_east'
         lon.long_name = 'longitude'
         time = ncfile.createVariable('time', np.float32, ('time',))
-        time.units = 'days since %s-01-15' % (str(current_year))
+        time.units = f'days since {current_year}-01-15'
         time.long_name = 'time'
         #print(time)
                 
