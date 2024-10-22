@@ -57,7 +57,7 @@ def main(argv):
     parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
     parser.add_argument("-member", dest="member", required=False, help="ensemble member: required argument", type = int, default = 0)
     parser.add_argument("-variable", dest="variable", required=True, help="variable to process: sst or lsat")
-    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
+    parser.add_argument("-method", dest="method", default="ordinary", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
     args = parser.parse_args()
     
     config_file = args.config
@@ -132,7 +132,7 @@ def main(argv):
     output_lon = np.arange(lon_bnds[0]+2.5, lon_bnds[-1]+2.5,5)
     print(f'{output_lat =}')
     print(f'{output_lon =}')
-
+    
     if variable == 'tos':
         data_path = config.get('sst', 'observations')
         error_covariance_path = config.get('sst', 'error_covariance')
@@ -267,6 +267,7 @@ def main(argv):
                 print(covariance2)
                 error_covariance = error_cov + covariance2
                 del error_cov
+                
                 print(error_covariance)
                 ec_1 = error_covariance[~np.isnan(error_covariance)]
                 ec_2 = ec_1[np.nonzero(ec_1)]
@@ -294,6 +295,7 @@ def main(argv):
                 mon_df['grid_lon'] = grid_lon
                 mon_df['lat_idx'] = lat_idx
                 mon_df['lon_idx'] = lon_idx
+                print(mon_df)
                 
                 idx_tuple = np.array([lat_idx, lon_idx])
                 #print(f'{idx_tuple =}')
@@ -395,7 +397,7 @@ def main(argv):
         print(error_meas)
         print(error_stat)
         error_cov = error_meas + error_stat
-        print(error_cov)
+        
         interp_covariance = np.load(interpolation_covariance_path)
         print('loaded interpolation covariance')
         print(interp_covariance)
@@ -468,8 +470,6 @@ def main(argv):
 
 
             
-            
-            
             month_list = list(range(1,13,1))
             for current_month in month_list:
                 timestep=current_month-1
@@ -496,10 +496,10 @@ def main(argv):
                     error_covariance = error_cov[date_int,:,:]
                 elif len(error_cov.shape) == 2:
                     error_covariance = np.diag(error_cov[date_int,:])
-                #print(f'{error_covariance =}')
+                print(f'{error_covariance =}')
                 ec_1 = error_covariance[~np.isnan(error_covariance)]
                 ec_2 = ec_1[np.nonzero(ec_1)]
-                #print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
+                print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
                 ec_idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
                 print('Index of non-nan and non-zero values =', ec_idx, len(ec_idx))
 
