@@ -30,20 +30,6 @@ import observations as obs_module
 import kriging as krig_module
 
 
-####
-#for plotting
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
-import simple_plots as cp
-
-
-#PyCOADS functions
-from PyCOADS.utils.solar import sun_position, is_daytime
-
-
-
-
 class ConfigParserMultiValues(OrderedDict):
     def __setitem__(self, key, value):
         if key in self and isinstance(value, list):
@@ -311,9 +297,6 @@ def main(argv):
             ec_idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
             print('Index of non-nan and non-zero values =', ec_idx, len(ec_idx))
             
-
-            
-            
             #print(output_lat)
             #print(output_lon)
             mesh_lon, mesh_lat = np.meshgrid(output_lon, output_lat)
@@ -351,8 +334,6 @@ def main(argv):
             mon_df.reset_index(inplace=True)
             print(mon_df)
             
-            
-
             #count obs per grid for output
             gridbox_counts = mon_df['gridbox'].value_counts()
             gridbox_count_np = gridbox_counts.to_numpy()
@@ -410,10 +391,6 @@ def main(argv):
         ncfile.close()
         print('Dataset is closed!')
         
-
-
-
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])
