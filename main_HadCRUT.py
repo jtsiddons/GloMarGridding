@@ -167,6 +167,10 @@ def main(argv):
             print('loaded interpolation covariance')
             print(interp_covariance)
 
+        output_directory = output_directory+f'/{variable}'
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+        print(output_directory)
 
         #create yearly output files
         year_list = list(range(int(year_start), int(year_stop)+1,1))
@@ -177,12 +181,7 @@ def main(argv):
                 ncfile.close()  #make sure dataset is not already open.
             except:     
                 pass
-            
-            output_directory = output_directory+f'/{variable}'
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
-            print(output_directory)
-            
+
             ncfilename = str(output_directory) 
             ncfilename = f"{current_year}_kriged"
             if member:
@@ -423,6 +422,11 @@ def main(argv):
     
         #create yearly output files
         year_list = list(range(int(year_start), int(year_stop)+1,1))
+        
+        output_directory = output_directory+f'/{variable}'
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+        print(output_directory)
 
         for current_year in year_list:
             
@@ -430,11 +434,6 @@ def main(argv):
                 ncfile.close()  #make sure dataset is not already open.
             except: 
                 pass
-
-            output_directory = output_directory+f'/{variable}'
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
-            print(output_directory)
 
             ncfilename = str(output_directory) 
             ncfilename = f"{current_year}_kriged"
