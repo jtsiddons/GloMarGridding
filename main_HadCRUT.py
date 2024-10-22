@@ -58,6 +58,7 @@ def main(argv):
     parser.add_argument("-member", dest="member", required=False, help="ensemble member: required argument", type = int, default = 0)
     parser.add_argument("-variable", dest="variable", required=True, help="variable to process: sst or lsat")
     parser.add_argument("-method", dest="method", default="ordinary", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
+    parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"")
     args = parser.parse_args()
     
     config_file = args.config
@@ -132,13 +133,18 @@ def main(argv):
     output_lon = np.arange(lon_bnds[0]+2.5, lon_bnds[-1]+2.5,5)
     print(f'{output_lat =}')
     print(f'{output_lon =}')
+
+    interpolation_covariance_type = str(args.interpolation)
     
     if variable == 'tos':
         data_path = config.get('sst', 'observations')
         error_covariance_path = config.get('sst', 'error_covariance')
         sampling_uncertainty = config.get('sst', 'sampling_uncertainty')
         uncorrelated_uncertainty = config.get('sst', 'uncorrelated_uncertainty')
-        interpolation_covariance_path = config.get('sst', 'interpolation_covariance')
+        if interpolation_covariance_type == 'distance':
+            interpolation_covariance_path = config.get('sst', 'interpolation_covariance')
+        elif interpolation_covariance_type == 'ellipse':
+            interpolation_covariance_path = config.get('sst', 'ellipse_interpolation_covariance')
         var_range =config.getfloat('HadCRUT', 'sea_range') #3100
         var_sigma = config.getfloat('HadCRUT', 'sea_sigma') #1.2
         var_matern = config.getfloat('HadCRUT', 'sea_matern') #1.5
@@ -156,10 +162,10 @@ def main(argv):
         print('loaded uncertainties')
         print(sampling)
         print(uncorrelated)
-        
-        interp_covariance = np.load(interpolation_covariance_path)
-        print('loaded interpolation covariance')
-        print(interp_covariance)
+        if interpolation_covariance_type == 'distance':
+            interp_covariance = np.load(interpolation_covariance_path)
+            print('loaded interpolation covariance')
+            print(interp_covariance)
 
 
         #create yearly output files
@@ -177,8 +183,8 @@ def main(argv):
             if member:
                 ncfilename += f"_member_{member:03d}"
             ncfilename += ".nc"
-            #ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
-            ncfilename = os.path.join(output_directory, ncfilename)
+            ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
+            #ncfilename = os.path.join(output_directory, ncfilename)
         
             ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
             #print(ncfile)
@@ -244,6 +250,10 @@ def main(argv):
                 mon_df = mon_df.rename(columns={'latitude':'lat', 'longitude':'lon'})
 
                 print(mon_df)
+
+                if interpolation_covariance_type == 'ellipse':
+                    interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_sst_clipped.nc')['covariance'].values
+                    #print(interp_covariance)
 
                 #FOR TOS from HadSST4:
                 error_cov = xr.open_dataset(error_covariance_path+'/HadSST.4.0.1.0_error_covariance_'+str(current_year)+str(current_month).zfill(2)+'.nc')['tos_cov'].values
@@ -380,7 +390,10 @@ def main(argv):
     elif variable == 'tas':
         data_path = config.get('lsat', 'observations')
         error_covariance_path = config.get('lsat', 'error_covariance')
-        interpolation_covariance_path = config.get('lsat', 'interpolation_covariance')
+        if interpolation_covariance_type == 'distance':
+            interpolation_covariance_path = config.get('lsat', 'interpolation_covariance')
+        elif interpolation_covariance_type == 'ellipse':
+            interpolation_covariance_path = config.get('lsat', 'ellipse_interpolation_covariance')
         var_range = config.getfloat('HadCRUT', 'land_range') #1300
         var_sigma = config.getfloat('HadCRUT', 'land_sigma') #0.6
         var_matern = config.getfloat('HadCRUT', 'land_matern') #1.5
@@ -398,9 +411,10 @@ def main(argv):
         print(error_stat)
         error_cov = error_meas + error_stat
         
-        interp_covariance = np.load(interpolation_covariance_path)
-        print('loaded interpolation covariance')
-        print(interp_covariance)
+        if interpolation_covariance_type == 'distance':
+            interp_covariance = np.load(interpolation_covariance_path)
+            print('loaded interpolation covariance')
+            print(interp_covariance)
 
     
         #create yearly output files
@@ -418,8 +432,8 @@ def main(argv):
             if member:
                 ncfilename += f"_member_{member:03d}"
             ncfilename += ".nc"
-            #ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
-            ncfilename = os.path.join(output_directory, ncfilename)
+            ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
+            #ncfilename = os.path.join(output_directory, ncfilename)
 
             ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
             #print(ncfile)
@@ -486,6 +500,10 @@ def main(argv):
                 mon_df = mon_df.rename(columns={'latitude':'lat', 'longitude':'lon'})
 
                 print(mon_df)
+
+                if interpolation_covariance_type == 'ellipse':
+                    interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_lsat_clipped.nc')['covariance'].values
+                    #print(interp_covariance)
 
                 # FOR TAS from CRUTEM:
                 #date_int = i * 12 + timestep
@@ -602,7 +620,6 @@ def main(argv):
             # close the Dataset.
             ncfile.close()
             print('Dataset is closed!')
-        
 
 
 
