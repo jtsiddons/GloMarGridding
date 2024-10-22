@@ -141,12 +141,6 @@ def main(argv):
 
     #path to output directory
     output_directory = config.get('DCENT', 'output_dir')
-
-    #what variable is being processed
-    if args.variable:
-        variable = str(args.variable)
-    else:
-        variable = config.get('DCENT', 'variable')
     
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
@@ -176,44 +170,47 @@ def main(argv):
     #print(ts2)
     print(obs)
 
+    #what variable is being processed
+    variable = args.variable or config.get("DCENT", "variable")
+    match variable.lower():
+        case 'sst':
+            #read in sst error covariance
+            error_cov = np.load(
+                os.path.join(sst_error_cov_dir, 'sst_error_covariance_common.npz')
+            )['err_cov']
+            print('loaded sst error covariance')
+            #ts3 = datetime.now()
+            #print(ts3)
+            #(no of timesteps, no of gridboxes, no of gridboxes)
+            #to extract what wanted chosen=[timestep,:,:]
+            #replace NaNs with 0 before adding the matrices together
 
+            interp_covariance = np.load(sea_interp_cov)
 
-    
-    if variable == 'sst':
-        #read in sst error covariance
-        error_cov = np.load(sst_error_cov_dir+'/sst_error_covariance_common.npz')['err_cov']
-        print('loaded sst error covariance')
-        #ts3 = datetime.now()
-        #print(ts3)
-        #(no of timesteps, no of gridboxes, no of gridboxes)
-        #to extract what wanted chosen=[timestep,:,:]
-        #replace NaNs with 0 before adding the matrices together
-        print(error_cov)
-        print(error_cov.shape)
-        print(len(error_cov.shape))
+            var_range = sea_range
+            var_sigma = sea_sigma
+        case 'lsat':
+            #ts0 = datetime.now()
+            #print(ts0)
+            #read in lsat error covariance for a chosen member
+            error_cov = np.load(
+                os.path.join(lsat_error_cov_dir,
+                             f'lsat_error_covariance_{member}.npz')
+            )['err_cov']
+            print('loaded lsat error covariance')
+            #(no of timesteps, no of gridboxeds 2592)
+            #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
 
-        interp_covariance = np.load(sea_interp_cov)
+            interp_covariance = np.load(lnd_interp_cov)
 
-        var_range = sea_range
-        var_sigma = sea_sigma
-        
-        
-    elif variable == 'lsat':
-        #ts0 = datetime.now()
-        #print(ts0)
-        #read in lsat error covariance for a chosen member
-        error_cov = np.load(lsat_error_cov_dir+'/lsat_error_covariance_'+str(member)+'.npz')['err_cov']
-        print('loaded lsat error covariance')
-        print(error_cov)
-        print(error_cov.shape)
-        print(len(error_cov.shape))
-        #(no of timesteps, no of gridboxeds 2592)
-        #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
+            var_range = land_range
+            var_sigma = land_sigma
+        case _:
+            raise ValueError(f"Unknown Variable {variable}")
 
-        interp_covariance = np.load(lnd_interp_cov)
-
-        var_range = land_range
-        var_sigma = land_sigma
+    print(error_cov)
+    print(error_cov.shape)
+    print(len(error_cov.shape))
     
     #create yearly output files
     year_list = list(range(int(year_start), int(year_stop)+1,1))
