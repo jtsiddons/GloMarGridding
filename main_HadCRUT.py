@@ -51,7 +51,7 @@ class ConfigParserMultiValues(OrderedDict):
 def main(argv):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
+    parser.add_argument("-config", dest="config", required=True, default="config.ini", help="INI file containing configuration settings")
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
     parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
