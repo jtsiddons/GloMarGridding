@@ -17,11 +17,8 @@ from collections import OrderedDict
 #math tools 
 import numpy as np
 
-#import datetime as dt
-from netCDF4 import date2num
-
 #data handling tools
-import pandas as pd
+from polars import date_range
 import xarray as xr
 import netCDF4 as nc
 
@@ -139,7 +136,6 @@ def main(argv):
     print(f'{output_lat =}')
     print(f'{output_lon =}')
 
-    
     member = args.member
 
     #ts1 = datetime.now()
@@ -377,11 +373,11 @@ def main(argv):
             print(timestep, current_month)
             
         # Write time
-        clim_times = pd.date_range(start=datetime(2000, 1, 15), end=datetime(2000, 12, 15), periods=12)
-        dates = pd.Series(clim_times.map(lambda x: x.replace(year=current_year, day=15))).dt.to_pydatetime()
-        print('pydate', dates)
-        times = date2num(dates, time.units)
-        print(times)
+        times = (
+            date_range(start=datetime(current_year, 1, 15), end=datetime(current_year, 12, 15), interval="1mo", eager=True)
+            - datetime(current_year, 1, 15)
+        ).dt.total_days().to_numpy()
+        print(f"{times = }")
 
         time[:] = times
 
