@@ -222,8 +222,10 @@ def main(argv):
         
         try:
             ncfile.close()  #make sure dataset is not already open.
-        except: 
+        except NameError | RuntimeError:  # ncfile not initialised or already closed
             pass
+        except Exception as e:  # Unknown Error
+            raise e
             
         ncfilename = str(output_directory) 
         ncfilename = f"{current_year}_kriged"
