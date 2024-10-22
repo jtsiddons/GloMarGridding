@@ -7,6 +7,7 @@
 import sys
 import os
 import os.path
+from datetime import datetime
 
 #argument parser
 import argparse
@@ -388,12 +389,8 @@ def main(argv):
             print(timestep, current_month)
             
         # Write time
-        clim_times = pd.date_range(start='01/15/2000', end='12/15/2000', periods=12)
-        #pd.date_range takes month/day/year as input dates
-        clim_times_updated = [j.replace(year=current_year, day=15) for j in pd.to_datetime(clim_times)]
-        print(clim_times_updated)
-        dates_ = pd.Series(clim_times_updated)
-        dates = dates_.dt.to_pydatetime() # Here it becomes date
+        clim_times = pd.date_range(start=datetime(2000, 1, 15), end=datetime(2000, 12, 15), periods=12)
+        dates = pd.Series(clim_times.map(lambda x: x.replace(year=current_year, day=15))).dt.to_pydatetime()
         print('pydate', dates)
         times = date2num(dates, time.units)
         print(times)
