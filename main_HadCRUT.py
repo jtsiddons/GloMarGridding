@@ -56,7 +56,7 @@ def main(argv):
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
     parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
     parser.add_argument("-member", dest="member", required=False, help="ensemble member: required argument", type = int, default = 0)
-    parser.add_argument("-variable", dest="variable", required=True, help="variable to process: sst or lsat")
+    parser.add_argument("-variable", dest="variable", required=True, help="variable to process: tos (for sst) or tas (for lsat)")
     parser.add_argument("-method", dest="method", default="ordinary", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
     parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"")
     args = parser.parse_args()
@@ -178,13 +178,17 @@ def main(argv):
             except:     
                 pass
             
+            output_directory = output_directory+f'/{variable}'
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+            print(output_directory)
+            
             ncfilename = str(output_directory) 
             ncfilename = f"{current_year}_kriged"
             if member:
                 ncfilename += f"_member_{member:03d}"
             ncfilename += ".nc"
-            ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
-            #ncfilename = os.path.join(output_directory, ncfilename)
+            ncfilename = os.path.join(output_directory, ncfilename)
         
             ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
             #print(ncfile)
@@ -426,14 +430,18 @@ def main(argv):
                 ncfile.close()  #make sure dataset is not already open.
             except: 
                 pass
-                
+
+            output_directory = output_directory+f'/{variable}'
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+            print(output_directory)
+
             ncfilename = str(output_directory) 
             ncfilename = f"{current_year}_kriged"
             if member:
                 ncfilename += f"_member_{member:03d}"
             ncfilename += ".nc"
-            ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
-            #ncfilename = os.path.join(output_directory, ncfilename)
+            ncfilename = os.path.join(output_directory, ncfilename)
 
             ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
             #print(ncfile)
