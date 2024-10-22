@@ -139,6 +139,7 @@ def main(argv):
     print(f'{output_lat =}')
     print(f'{output_lon =}')
 
+    
     member = args.member
 
     #ts1 = datetime.now()
@@ -317,7 +318,7 @@ def main(argv):
             mon_df['lat_idx'] = lat_idx
             mon_df['lon_idx'] = lon_idx
             
-            idx_tuple = np.array([lat_idx, lon_idx])
+            idx_tuple = list(zip(lat_idx, lon_idx))
             #print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
             #print(f'{mon_flat_idx =}') #it's the same as ec_idx
@@ -356,7 +357,7 @@ def main(argv):
             #print(f'{error_covariance =}, {error_covariance.shape =}')
             
             
-            anom, uncert = krig_module.kriging_simplified(grid_idx, W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
+            anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)
