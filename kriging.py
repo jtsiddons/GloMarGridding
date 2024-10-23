@@ -281,10 +281,11 @@ def kriging_ordinary(
     grid_obs = np.append(grid_obs, 0)
 
     G = np.linalg.solve(S, Ss).T
+    alpha = G[:, -1]
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz = np.sqrt(np.diag(cci_covariance - G) - G[:, -1])
+    dz = np.sqrt(np.diag(cci_covariance - G) - alpha)
     # dz[np.isnan(dz)] = 0.0
     print("Ordinary Kriging Complete")
     return z_obs, dz
