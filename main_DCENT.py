@@ -4,64 +4,27 @@
 ################
 
 #global
-import sys, os, re
-import glob
+import sys
+import os
 import os.path
-from os import path
-from os.path import isfile, join
+from datetime import datetime
 
 #argument parser
 import argparse
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0                                               
+from configparser import ConfigParser
 from collections import OrderedDict
-from configparser import ConfigParser  
 
 #math tools 
 import numpy as np
-import math
-from scipy.linalg import block_diag
-
-#plotting tools
-import matplotlib.pyplot as plt
-
-#timing tools
-import timeit
-from calendar import isleap
-from calendar import monthrange
-#import datetime as dt
-from datetime import datetime, timedelta
-from netCDF4 import date2num, num2date
 
 #data handling tools
-import pandas as pd
+from polars import date_range
 import xarray as xr
 import netCDF4 as nc
-from functools import partial
-import polars as pl
 
 #self-written modules (from the same directory)
-import covariance_calculation as cov_cal
-import covariance as cov_module
 import observations as obs_module
-import observations_plus_qc as obs_qc_module
 import kriging as krig_module
-
-
-####
-#for plotting
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
-import simple_plots as cp
-
-
-#PyCOADS functions
-from PyCOADS.utils.solar import sun_position, is_daytime
-
-
 
 
 class ConfigParserMultiValues(OrderedDict):
@@ -80,13 +43,13 @@ class ConfigParserMultiValues(OrderedDict):
 def main(argv):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
-    parser.add_argument("-month", dest="month", required=False, help="month")  # New Argument
+    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings", type=str)
+    parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type=int)
+    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type=int)
+    parser.add_argument("-month", dest="month", required=False, help="month", type=int)  # New Argument
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
-    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat")
-    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
+    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str)
+    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
     args = parser.parse_args()
     
     config_file = args.config
@@ -161,12 +124,6 @@ def main(argv):
 
     #path to output directory
     output_directory = config.get('DCENT', 'output_dir')
-
-    #what variable is being processed
-    if args.variable:
-        variable = str(args.variable)
-    else:
-        variable = config.get('DCENT', 'variable')
     
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
@@ -179,73 +136,82 @@ def main(argv):
     print(f'{output_lat =}')
     print(f'{output_lon =}')
 
-    
-    member = int(args.member)
+    member = args.member
 
     #ts1 = datetime.now()
     #print(ts1)
     #read in observations for a chosen member
-    obs = xr.open_dataset(data_path+'/DCENT_ensemble_1850_2023_member_'+str(member).zfill(3)+'.nc')
+    obs = xr.open_dataset(
+        os.path.join(
+            data_path, 
+            f'DCENT_ensemble_1850_2023_member_{member:03d}.nc'
+        )
+    )
     print('loaded observations')
     #ts2 = datetime.now()
     #print(ts2)
     print(obs)
 
+    #what variable is being processed
+    variable = args.variable or config.get("DCENT", "variable")
+    match variable.lower():
+        case 'sst':
+            #read in sst error covariance
+            error_cov = np.load(
+                os.path.join(sst_error_cov_dir, 'sst_error_covariance_common.npz')
+            )['err_cov']
+            print('loaded sst error covariance')
+            #ts3 = datetime.now()
+            #print(ts3)
+            #(no of timesteps, no of gridboxes, no of gridboxes)
+            #to extract what wanted chosen=[timestep,:,:]
+            #replace NaNs with 0 before adding the matrices together
 
+            interp_covariance = np.load(sea_interp_cov)
 
-    
-    if variable == 'sst':
-        #read in sst error covariance
-        error_cov = np.load(sst_error_cov_dir+'/sst_error_covariance_common.npz')['err_cov']
-        print('loaded sst error covariance')
-        #ts3 = datetime.now()
-        #print(ts3)
-        #(no of timesteps, no of gridboxes, no of gridboxes)
-        #to extract what wanted chosen=[timestep,:,:]
-        #replace NaNs with 0 before adding the matrices together
-        print(error_cov)
-        print(error_cov.shape)
-        print(len(error_cov.shape))
+            var_range = sea_range
+            var_sigma = sea_sigma
+        case 'lsat':
+            #ts0 = datetime.now()
+            #print(ts0)
+            #read in lsat error covariance for a chosen member
+            error_cov = np.load(
+                os.path.join(lsat_error_cov_dir,
+                             f'lsat_error_covariance_{member}.npz')
+            )['err_cov']
+            print('loaded lsat error covariance')
+            #(no of timesteps, no of gridboxeds 2592)
+            #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
 
-        interp_covariance = np.load(sea_interp_cov)
+            interp_covariance = np.load(lnd_interp_cov)
 
-        var_range = sea_range
-        var_sigma = sea_sigma
-        
-        
-    elif variable == 'lsat':
-        #ts0 = datetime.now()
-        #print(ts0)
-        #read in lsat error covariance for a chosen member
-        error_cov = np.load(lsat_error_cov_dir+'/lsat_error_covariance_'+str(member)+'.npz')['err_cov']
-        print('loaded lsat error covariance')
-        print(error_cov)
-        print(error_cov.shape)
-        print(len(error_cov.shape))
-        #(no of timesteps, no of gridboxeds 2592)
-        #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
+            var_range = land_range
+            var_sigma = land_sigma
+        case _:
+            raise ValueError(f"Unknown Variable {variable}")
 
-        interp_covariance = np.load(lnd_interp_cov)
-
-        var_range = land_range
-        var_sigma = land_sigma
+    print(error_cov)
+    print(error_cov.shape)
+    print(len(error_cov.shape))
     
     #create yearly output files
-    year_list = list(range(int(year_start), int(year_stop)+1,1))
+    year_list = range(int(year_start), int(year_stop)+1)
 
     for current_year in year_list:
         
         try:
             ncfile.close()  #make sure dataset is not already open.
-        except: 
+        except NameError | RuntimeError:  # ncfile not initialised or already closed
             pass
+        except Exception as e:  # Unknown Error
+            raise e
             
         ncfilename = str(output_directory) 
         ncfilename = f"{current_year}_kriged"
         if member:
             ncfilename += f"_member_{member:03d}"
         ncfilename += ".nc"
-        ncfilename = os.path.join(output_directory+f'/{variable}', ncfilename)
+        ncfilename = os.path.join(output_directory, variable, ncfilename)
         
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
@@ -263,7 +229,7 @@ def main(argv):
         lon.units = 'degrees_east'
         lon.long_name = 'longitude'
         time = ncfile.createVariable('time', np.float32, ('time',))
-        time.units = 'days since %s-01-15' % (str(current_year))
+        time.units = f'days since {current_year}-01-15'
         time.long_name = 'time'
         #print(time)
                 
@@ -295,8 +261,7 @@ def main(argv):
         lon[:] = output_lon #ds.lon.values
 
 
-        month_list = list(range(1,13,1))
-        for current_month in month_list:
+        for current_month in range(1, 13):
             timestep=current_month-1
             print('Current month and year: ', (current_month, current_year))
 
@@ -314,19 +279,20 @@ def main(argv):
             date_int = (current_year - 1850) * 12 + timestep
             print(f'{current_year =}, {current_month =}')
             print(f'{date_int =}')
-            if len(error_cov.shape) == 3:
-                error_covariance = error_cov[date_int,:,:]
-            elif len(error_cov.shape) == 2:
-                error_covariance = np.diag(error_cov[date_int,:])
+            match len(error_cov.shape):
+                case 3:
+                    error_covariance = error_cov[date_int,:,:]
+                case 2:
+                    error_covariance = np.diag(error_cov[date_int,:])
+                case _:
+                    raise ValueError("Error covariance.shape is not 2 or 3")
+
             #print(f'{error_covariance =}')
             ec_1 = error_covariance[~np.isnan(error_covariance)]
             ec_2 = ec_1[np.nonzero(ec_1)]
             #print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
             ec_idx = np.argwhere(np.logical_and(~np.isnan(error_covariance), error_covariance !=0.0))
             print('Index of non-nan and non-zero values =', ec_idx, len(ec_idx))
-            
-
-            
             
             #print(output_lat)
             #print(output_lon)
@@ -348,7 +314,7 @@ def main(argv):
             mon_df['lat_idx'] = lat_idx
             mon_df['lon_idx'] = lon_idx
             
-            idx_tuple = np.array([lat_idx, lon_idx])
+            idx_tuple = list(zip(lat_idx, lon_idx))
             #print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
             #print(f'{mon_flat_idx =}') #it's the same as ec_idx
@@ -365,8 +331,6 @@ def main(argv):
             mon_df.reset_index(inplace=True)
             print(mon_df)
             
-            
-
             #count obs per grid for output
             gridbox_counts = mon_df['gridbox'].value_counts()
             gridbox_count_np = gridbox_counts.to_numpy()
@@ -389,7 +353,7 @@ def main(argv):
             #print(f'{error_covariance =}, {error_covariance.shape =}')
             
             
-            anom, uncert = krig_module.kriging_simplified(grid_idx, W, mon_df[variable].values, interp_covariance, error_covariance, method=args.method)
+            anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)
@@ -409,15 +373,11 @@ def main(argv):
             print(timestep, current_month)
             
         # Write time
-        clim_times = pd.date_range(start='01/15/2000', end='12/15/2000', periods=12)
-        #pd.date_range takes month/day/year as input dates
-        clim_times_updated = [j.replace(year=current_year, day=15) for j in pd.to_datetime(clim_times)]
-        print(clim_times_updated)
-        dates_ = pd.Series(clim_times_updated)
-        dates = dates_.dt.to_pydatetime() # Here it becomes date
-        print('pydate', dates)
-        times = date2num(dates, time.units)
-        print(times)
+        times = (
+            date_range(start=datetime(current_year, 1, 15), end=datetime(current_year, 12, 15), interval="1mo", eager=True)
+            - datetime(current_year, 1, 15)
+        ).dt.total_days().to_numpy()
+        print(f"{times = }")
 
         time[:] = times
 
@@ -428,10 +388,6 @@ def main(argv):
         ncfile.close()
         print('Dataset is closed!')
         
-
-
-
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])
