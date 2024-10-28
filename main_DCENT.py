@@ -287,9 +287,9 @@ def main(argv):
             print(mon_df)
 
             if interpolation_covariance_type == 'ellipse':
-                interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_sst_clipped.nc')['covariance'].values
+                interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_'+str(variable)+'_clipped.nc')['covariance'].values
                 print(interp_covariance)
-            raise Exception('Breakpoint')
+            
             
             #date_int = i * 12 + timestep
             date_int = (current_year - 1850) * 12 + timestep
@@ -330,7 +330,7 @@ def main(argv):
             mon_df['lat_idx'] = lat_idx
             mon_df['lon_idx'] = lon_idx
             
-            idx_tuple = list(zip(lat_idx, lon_idx))
+            idx_tuple = np.array([lat_idx, lon_idx]) #list(zip(lat_idx, lon_idx))
             #print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(idx_tuple, mesh_lat.shape, order='C') #row-major
             #print(f'{mon_flat_idx =}') #it's the same as ec_idx
