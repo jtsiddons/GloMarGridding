@@ -50,7 +50,7 @@ def main(argv):
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
     parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str)
     parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
-    parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"")
+    parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"", type=str, choices=["distance", "ellipse"])
     args = parser.parse_args()
     
     config_file = args.config
@@ -161,7 +161,7 @@ def main(argv):
                 os.path.join(sst_error_cov_dir, 'sst_error_covariance_common.npz')
             )['err_cov']
             print('loaded sst error covariance')
-            #ts3 = datetime.now()
+            # #ts3 = datetime.now()
             #print(ts3)
             #(no of timesteps, no of gridboxes, no of gridboxes)
             #to extract what wanted chosen=[timestep,:,:]
@@ -210,12 +210,11 @@ def main(argv):
     
     #create yearly output files
     year_list = range(int(year_start), int(year_stop)+1)
-
     for current_year in year_list:
-        
         try:
             ncfile.close()  #make sure dataset is not already open.
-        except NameError | RuntimeError:  # ncfile not initialised or already closed
+        except (NameError, RuntimeError) as e:
+            print(e)
             pass
         except Exception as e:  # Unknown Error
             raise e
@@ -229,7 +228,7 @@ def main(argv):
         
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
-        
+
         lat_dim = ncfile.createDimension('lat', len(output_lat))    # latitude axis
         lon_dim = ncfile.createDimension('lon', len(output_lon))    # longitude axis
         time_dim = ncfile.createDimension('time', None)         # unlimited axis
@@ -290,7 +289,7 @@ def main(argv):
             if interpolation_covariance_type == 'ellipse':
                 interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_sst_clipped.nc')['covariance'].values
                 print(interp_covariance)
- 
+            raise Exception('Breakpoint')
             
             #date_int = i * 12 + timestep
             date_int = (current_year - 1850) * 12 + timestep
