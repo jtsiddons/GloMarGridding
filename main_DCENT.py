@@ -43,13 +43,14 @@ class ConfigParserMultiValues(OrderedDict):
 def main(argv):
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings", type=str)
+    parser.add_argument("-config", dest="config", required=True, default="config.ini", help="INI file containing configuration settings", type=str)
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type=int)
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type=int)
     parser.add_argument("-month", dest="month", required=False, help="month", type=int)  # New Argument
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
     parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str)
     parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
+    parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"")
     args = parser.parse_args()
     
     config_file = args.config
@@ -115,16 +116,12 @@ def main(argv):
     landmask = config.get('DCENT', 'land_mask')
 
     #path to directory where the covariance(s) is/are located
-    sst_error_cov_dir = config.get('DCENT', 'sst_error_covariance')
-    lsat_error_cov_dir = config.get('DCENT', 'lsat_error_covariance')
-
-    #path to where the global interpolation covariance is
-    sea_interp_cov = config.get('DCENT', 'interpolation_covariance_seasig')
-    lnd_interp_cov = config.get('DCENT',  'interpolation_covariance_lndsig')
+    sst_error_cov_dir = config.get('sst', 'sst_error_covariance')
+    lsat_error_cov_dir = config.get('lsat', 'lsat_error_covariance')
 
     #path to output directory
     output_directory = config.get('DCENT', 'output_dir')
-    
+
     bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
@@ -152,6 +149,9 @@ def main(argv):
     #print(ts2)
     print(obs)
 
+    interpolation_covariance_type = str(args.interpolation)
+
+
     #what variable is being processed
     variable = args.variable or config.get("DCENT", "variable")
     match variable.lower():
@@ -166,11 +166,15 @@ def main(argv):
             #(no of timesteps, no of gridboxes, no of gridboxes)
             #to extract what wanted chosen=[timestep,:,:]
             #replace NaNs with 0 before adding the matrices together
-
-            interp_covariance = np.load(sea_interp_cov)
+            if interpolation_covariance_type == 'distance':
+                interpolation_covariance_path = config.get('sst', 'interpolation_covariance_seasig')
+                interp_covariance = np.load(interpolation_covariance_path)
+            elif interpolation_covariance_type == 'ellipse':
+                interpolation_covariance_path = config.get('sst', 'ellipse_interpolation_covariance')
 
             var_range = sea_range
             var_sigma = sea_sigma
+        
         case 'lsat':
             #ts0 = datetime.now()
             #print(ts0)
@@ -183,8 +187,12 @@ def main(argv):
             #(no of timesteps, no of gridboxeds 2592)
             #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
 
-            interp_covariance = np.load(lnd_interp_cov)
-
+            if interpolation_covariance_type == 'distance':
+                interpolation_covariance_path = config.get('lsat', 'interpolation_covariance_lndsig')
+                interp_covariance = np.load(interpolation_covariance_path)
+            elif interpolation_covariance_type == 'ellipse':
+                interpolation_covariance_path = config.get('lsat', 'ellipse_interpolation_covariance')
+    
             var_range = land_range
             var_sigma = land_sigma
         case _:
@@ -193,6 +201,12 @@ def main(argv):
     print(error_cov)
     print(error_cov.shape)
     print(len(error_cov.shape))
+    
+
+    output_directory = output_directory+f'/{variable}'
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    print(output_directory)
     
     #create yearly output files
     year_list = range(int(year_start), int(year_stop)+1)
@@ -211,7 +225,7 @@ def main(argv):
         if member:
             ncfilename += f"_member_{member:03d}"
         ncfilename += ".nc"
-        ncfilename = os.path.join(output_directory, variable, ncfilename)
+        ncfilename = os.path.join(output_directory, ncfilename)
         
         ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
         #print(ncfile)
@@ -273,7 +287,10 @@ def main(argv):
             mon_df.reset_index(inplace=True)
             print(mon_df)
 
-            
+            if interpolation_covariance_type == 'ellipse':
+                interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_sst_clipped.nc')['covariance'].values
+                print(interp_covariance)
+ 
             
             #date_int = i * 12 + timestep
             date_int = (current_year - 1850) * 12 + timestep
