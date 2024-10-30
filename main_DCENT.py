@@ -156,11 +156,13 @@ def main(argv):
     variable = args.variable or config.get("DCENT", "variable")
     match variable.lower():
         case 'sst':
+            """
             #read in sst error covariance
             error_cov = np.load(
                 os.path.join(sst_error_cov_dir, 'sst_error_covariance_common.npz')
             )['err_cov']
             print('loaded sst error covariance')
+            """
             # #ts3 = datetime.now()
             #print(ts3)
             #(no of timesteps, no of gridboxes, no of gridboxes)
@@ -198,9 +200,9 @@ def main(argv):
         case _:
             raise ValueError(f"Unknown Variable {variable}")
 
-    print(error_cov)
-    print(error_cov.shape)
-    print(len(error_cov.shape))
+    #print(error_cov)
+    #print(error_cov.shape)
+    #print(len(error_cov.shape))
     
 
     output_directory = output_directory+f'/{variable}'
@@ -290,20 +292,29 @@ def main(argv):
                 interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_'+str(variable)+'_clipped.nc')['covariance'].values
                 print(interp_covariance)
             
-            
+
             #date_int = i * 12 + timestep
             date_int = (current_year - 1850) * 12 + timestep
             print(f'{current_year =}, {current_month =}')
             print(f'{date_int =}')
-            match len(error_cov.shape):
-                case 3:
-                    error_covariance = error_cov[date_int,:,:]
-                case 2:
-                    error_covariance = np.diag(error_cov[date_int,:])
+            match variable.lower():
+                case 'lsat':
+                    match len(error_cov.shape):
+                        case 3:
+                            error_covariance = error_cov[date_int,:,:]
+                        case 2:
+                            error_covariance = np.diag(error_cov[date_int,:])
+                        case _:
+                            raise ValueError("Error covariance.shape is not 2 or 3")
+                case 'sst':
+                    error_covariance = np.load(
+                    os.path.join(sst_error_cov_dir, f'sst_error_covariance_{current_year}_{current_month:02}.npz')
+                    )['err_cov']
+                    print('loaded sst error covariance')
                 case _:
-                    raise ValueError("Error covariance.shape is not 2 or 3")
-
-            #print(f'{error_covariance =}')
+                    raise ValueError(f"Unknown Variable {variable}")
+            print(f'{error_covariance =}')
+            
             ec_1 = error_covariance[~np.isnan(error_covariance)]
             ec_2 = ec_1[np.nonzero(ec_1)]
             #print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
