@@ -1,10 +1,11 @@
+#!/usr/bin/env python
+
 ################
 # by A. Faulkner
 # for python version 3.0 and up
 ################
 
 #global
-import sys
 import os
 import os.path
 from datetime import datetime
@@ -39,24 +40,20 @@ class ConfigParserMultiValues(OrderedDict):
         return value.splitlines()
 
 
-
-def main(argv):
+def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-config", dest="config", required=True, default="config.ini", help="INI file containing configuration settings", type=str)
     parser.add_argument("-year_start", dest="year_start", required=False, help="start year", type=int)
     parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year", type=int)
-    parser.add_argument("-month", dest="month", required=False, help="month", type=int)  # New Argument
     parser.add_argument("-member", dest="member", required=True, help="ensemble member: required argument", type = int, default = 0)
-    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str)
+    parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str, choices=["lsat", "sst"], default="sst")
     parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
     parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"", type=str, choices=["distance", "ellipse"])
     args = parser.parse_args()
     
     config_file = args.config
     print(config_file)
-
-    
     
     #load config options from ini file
     #this is done using an ini config file, which is located in the same direcotry as the python code
@@ -72,14 +69,12 @@ def main(argv):
 
     print(config)
 
-
     #read values from auxiliary_files section
     #for string use config.get
     #for boolean use config.getboolean
     #for int use config.getint
     #for float use config.getfloat
     #for list (multiple options for same key) use config.getlist
-    
 
     #set boundaries for the domain
     lon_west  = config.getfloat('DCENT', 'lon_west') #-180. 
@@ -87,44 +82,21 @@ def main(argv):
     lat_south = config.getfloat('DCENT', 'lat_south') #-90.
     lat_north = config.getfloat('DCENT', 'lat_north') #90. 
     
-
-    land_range = config.getfloat('DCENT', 'land_range') #1300
-    land_sigma = config.getfloat('DCENT', 'land_sigma') #0.6
-    land_matern = config.getfloat('DCENT', 'land_matern') #1.5
-    
-    sea_range =config.getfloat('DCENT', 'sea_range') #3100
-    sea_sigma = config.getfloat('DCENT', 'sea_sigma') #1.2
-    sea_matern = config.getfloat('DCENT', 'sea_matern') #1.5
-    
-    
-    if args.year_start and args.year_stop:
-        year_start = int(args.year_start)
-        year_stop = int(args.year_stop)
-    else:
-        #start_date
-        year_start = config.getint('DCENT', 'startyear')
-        #end_date
-        year_stop = config.getint('DCENT', 'endyear')
+    year_start = args.year_start or config.getint('DCENT', 'startyear')
+    year_stop = args.year_stop or config.getint('DCENT', 'endyear')
     print(year_start, year_stop)
 
-
-    
     #location of the ICOADS observation files
     data_path = config.get('DCENT', 'observations')
 
     #location of landmasks
     landmask = config.get('DCENT', 'land_mask')
 
-    #path to directory where the covariance(s) is/are located
-    sst_error_cov_dir = config.get('sst', 'sst_error_covariance')
-    lsat_error_cov_dir = config.get('lsat', 'lsat_error_covariance')
-
     #path to output directory
     output_directory = config.get('DCENT', 'output_dir')
 
-    bnds = [lon_west, lon_east, lat_south, lat_north]
     #extract the latitude and longitude boundaries from user input
-    lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
+    lon_bnds, lat_bnds = (lon_west, lon_east), (lat_south, lat_north)
     print(lon_bnds, lat_bnds)
     
     
@@ -149,74 +121,61 @@ def main(argv):
     #print(ts2)
     print(obs)
 
-    interpolation_covariance_type = str(args.interpolation)
-
-
     #what variable is being processed
-    variable = args.variable or config.get("DCENT", "variable")
-    match variable.lower():
-        case 'sst':
-            """
-            #read in sst error covariance
-            error_cov = np.load(
-                os.path.join(sst_error_cov_dir, 'sst_error_covariance_common.npz')
-            )['err_cov']
-            print('loaded sst error covariance')
-            """
-            # #ts3 = datetime.now()
-            #print(ts3)
-            #(no of timesteps, no of gridboxes, no of gridboxes)
-            #to extract what wanted chosen=[timestep,:,:]
-            #replace NaNs with 0 before adding the matrices together
-            if interpolation_covariance_type == 'distance':
-                interpolation_covariance_path = config.get('sst', 'interpolation_covariance_seasig')
-                interp_covariance = np.load(interpolation_covariance_path)
-            elif interpolation_covariance_type == 'ellipse':
-                interpolation_covariance_path = config.get('sst', 'ellipse_interpolation_covariance')
+    variable = args.variable
+    #path to directory where the covariance(s) is/are located
+    error_cov_dir = config.get(variable, 'error_covariance_path')
 
-            var_range = sea_range
-            var_sigma = sea_sigma
-        
+    interpolation_covariance_type = args.interpolation
+    match interpolation_covariance_type:
+        case 'distance':
+            interpolation_covariance_path = config.get(variable, 'distance_interpolation_covariance')
+            interp_covariance = np.load(interpolation_covariance_path)
+        case 'ellipse':
+            interpolation_covariance_path = config.get(variable, 'ellipse_interpolation_covariance')
+        case _:
+            raise ValueError(f"Somehow we got a bad interpolation value {interpolation_covariance_type}")
+
+    var_range = config.getfloat(variable, 'range')
+    var_sigma = config.getfloat(variable, 'sigma')
+    # var_matern = config.getfloat(variable, 'matern')
+
+    match variable:
+        case 'sst':
+            def get_error_cov(year: int, month: int) -> np.ndarray:
+                fn = os.path.join(error_cov_dir, f"sst_error_covariance_{year}_{month:02}.npz")
+                print(f'loaded lsat error covariance for {year}-{month:02d}')
+                return np.load(fn)["err_cov"]
+
         case 'lsat':
             #ts0 = datetime.now()
             #print(ts0)
             #read in lsat error covariance for a chosen member
             error_cov = np.load(
-                os.path.join(lsat_error_cov_dir,
+                os.path.join(error_cov_dir,
                              f'lsat_error_covariance_{member}.npz')
             )['err_cov']
-            print('loaded lsat error covariance')
-            #(no of timesteps, no of gridboxeds 2592)
-            #to extract what wanted chosen=[timestep,:] and then np.diag(chosen)
-
-            if interpolation_covariance_type == 'distance':
-                interpolation_covariance_path = config.get('lsat', 'interpolation_covariance_lndsig')
-                interp_covariance = np.load(interpolation_covariance_path)
-            elif interpolation_covariance_type == 'ellipse':
-                interpolation_covariance_path = config.get('lsat', 'ellipse_interpolation_covariance')
-    
-            var_range = land_range
-            var_sigma = land_sigma
+            def get_error_cov(year: int, month: int) -> np.ndarray:
+                i = (year - 1850) * 12 + (month - 1)
+                return np.diag(error_cov[i, :])
         case _:
-            raise ValueError(f"Unknown Variable {variable}")
+            raise ValueError(f"Bad variable: {variable}")
 
     #print(error_cov)
     #print(error_cov.shape)
     #print(len(error_cov.shape))
     
-
-    output_directory = output_directory+f'/{variable}'
+    output_directory = os.path.join(output_directory, variable)
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     print(output_directory)
     
     #create yearly output files
-    year_list = range(int(year_start), int(year_stop)+1)
+    year_list = range(year_start, year_stop+1)
     for current_year in year_list:
         try:
             ncfile.close()  #make sure dataset is not already open.
         except (NameError, RuntimeError) as e:
-            print(e)
             pass
         except Exception as e:  # Unknown Error
             raise e
@@ -268,13 +227,11 @@ def main(argv):
         # note: unlimited dimension is leftmost
         grid_obs.units = '' # degrees Kelvin
         grid_obs.standard_name = 'Number of observations within each gridcell'
-
         
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
         lat[:] = output_lat #ds.lat.values
         lon[:] = output_lon #ds.lon.values
-
 
         for current_month in range(1, 13):
             timestep=current_month-1
@@ -288,32 +245,10 @@ def main(argv):
             mon_df.reset_index(inplace=True)
             print(mon_df)
 
-            if interpolation_covariance_type == 'ellipse':
-                interp_covariance = xr.open_dataset(interpolation_covariance_path + '/covariance_' + str(current_month).zfill(2) + '_v_eq_1p5_'+str(variable)+'_clipped.nc')['covariance'].values
-                print(interp_covariance)
-            
-
-            #date_int = i * 12 + timestep
-            date_int = (current_year - 1850) * 12 + timestep
-            print(f'{current_year =}, {current_month =}')
-            print(f'{date_int =}')
-            match variable.lower():
-                case 'lsat':
-                    match len(error_cov.shape):
-                        case 3:
-                            error_covariance = error_cov[date_int,:,:]
-                        case 2:
-                            error_covariance = np.diag(error_cov[date_int,:])
-                        case _:
-                            raise ValueError("Error covariance.shape is not 2 or 3")
-                case 'sst':
-                    error_covariance = np.load(
-                    os.path.join(sst_error_cov_dir, f'sst_error_covariance_{current_year}_{current_month:02}.npz')
-                    )['err_cov']
-                    print('loaded sst error covariance')
-                case _:
-                    raise ValueError(f"Unknown Variable {variable}")
-            print(f'{error_covariance =}')
+            print(f'{current_year = }, {current_month = }')
+            error_covariance = get_error_cov(current_year, current_month)
+            print('loaded sst error covariance')
+            print(f'{error_covariance = }')
             
             ec_1 = error_covariance[~np.isnan(error_covariance)]
             ec_2 = ec_1[np.nonzero(ec_1)]
@@ -366,31 +301,32 @@ def main(argv):
             water_mask = np.copy(mesh_lat)
             grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
 
-            
             #need to either add weights (which will be just 1 everywhere as obs are gridded)
             #krige obs onto gridded field
             _, W = obs_module.dist_weight(mon_df, dist_fn=obs_module.haversine_gaussian, R=6371.0, r=var_range, s=var_sigma)
             #print(W)
 
-            
             grid_idx = np.array(sorted(mon_df['gridbox'])) #sorted?
             #print(error_covariance, error_covariance.shape)
             error_covariance = error_covariance[grid_idx[:,None],grid_idx[None,:]]
             #print(np.argwhere(np.isnan(np.diag(error_covariance))))
             #print(f'{error_covariance =}, {error_covariance.shape =}')
-            
-            
+
+            if interpolation_covariance_type == "ellipse":
+                interp_covariane_filename = f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc"
+                interp_covariane_filename = os.path.join(interpolation_covariance_path, interp_covariane_filename)
+                interp_covariance = xr.open_dataset(interp_covariane_filename)['covariance'].values
+
             anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)
             print(grid_obs_2d)
 
-            
             #reshape output into 2D
             anom = np.reshape(anom, mesh_lat.shape)
             uncert = np.reshape(uncert, mesh_lat.shape)
-            
+
             # Write the data.  
             #This writes each time slice to the netCDF
             krig_anom[timestep,:,:] = anom #ordinary_kriging
@@ -398,7 +334,7 @@ def main(argv):
             grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
             print("-- Wrote data")
             print(timestep, current_month)
-            
+
         # Write time
         times = (
             date_range(start=datetime(current_year, 1, 15), end=datetime(current_year, 12, 15), interval="1mo", eager=True)
@@ -408,7 +344,7 @@ def main(argv):
 
         time[:] = times
 
-        print(time)    
+        print(time)
         # first print the Dataset object to see what we've got
         print(ncfile)
         # close the Dataset.
@@ -417,4 +353,4 @@ def main(argv):
         
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
