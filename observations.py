@@ -545,6 +545,33 @@ def dist_weight(
     return dist, weights
 
 
+def get_weights(df: pd.DataFrame) -> np.ndarray:
+    """
+    Get just the weight matrices over gridboxes for an input Frame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The observation DataFrame, containing the columns required for computation
+        of the weights matrix. Contains the "gridbox" column which indicates the
+        gridbox for a given observation. The index of the DataFrame should match the
+        index ordering for the output weights.
+
+    Returns
+    -------
+    W : numpy.matrix
+        A matrix of weights. This has dimensions n x p where n is the number of unique
+        gridboxes and p is the number of observations (the number of rows in df). The
+        values are 0 if the row and column do not correspond to the same gridbox and
+        equal to the inverse of the number of observations in a gridbox if the row and
+        column indices fall within the same gridbox. The rows of W are in a sorted order
+        of the gridbox. Should this be incorrect, one should re-arrange the rows after
+        calling this function.
+    """
+    _, weights = dist_weight(df, dist_fn=None)
+    return weights
+
+
 def sampling_uncertainty_old(flattened_idx, covx, df):
     '''
     Returns an updated measurement covariance matrix by adding sampling uncertainty of the observations
