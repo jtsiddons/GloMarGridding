@@ -426,7 +426,7 @@ def main():
             anom, uncert = krig_module.kriging_simplified(
                 grid_idx,
                 W,
-                mon_df[variable].values,
+                mon_df[hadcrut_var].values,
                 interp_covariance,
                 error_covariance,
                 method=args.method,
