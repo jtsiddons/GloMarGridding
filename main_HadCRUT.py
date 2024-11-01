@@ -397,7 +397,7 @@ def main():
             ]
             print(mon_df)
             mon_df = mon_df.dropna(subset=["error_covariance_diagonal"])
-            mon_df.reset_index(inplace=True)
+            mon_df.reset_index(inplace=True, drop=True)
             print(mon_df)
 
             # count obs per grid for output
