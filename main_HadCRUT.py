@@ -345,7 +345,7 @@ def main():
                 interp_covariance = xr.open_dataset(
                     os.path.join(
                         interpolation_covariance_path,
-                        f"covariance_{current_month:02d}_v_eq_1p5_lsat_clipped.nc",
+                        f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc",
                     )
                 )["covariance"].values
                 # print(interp_covariance)
