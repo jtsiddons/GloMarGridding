@@ -467,15 +467,17 @@ def haversine_gaussian(
 
 def dist_weight(
     df: pd.DataFrame,
-    dist_fn: Callable,
+    dist_fn: Callable | None,
     **dist_kwargs,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray | None, np.ndarray]:
     """
     Compute the distance and weight matrices over gridboxes for an input Frame.
 
     This function acts as a wrapper for a distance function, allowing for
     computation of the distances between positions in the same gridbox using any
     distance metric.
+
+    Set dist_fn to None to just compute weights.
 
     Parameters
     ----------
@@ -484,7 +486,7 @@ def dist_weight(
         of the distance matrix. Contains the "gridbox" column which indicates the
         gridbox for a given observation. The index of the DataFrame should match the
         index ordering for the output distance matrix/weights.
-    dist_fn : Callable
+    dist_fn : Callable | None
         The function used to compute a distance matrix for all points in a given
         grid-cell. Takes as input a pandas.DataFrame as first argument. Any other
         arguments should be constant over all gridboxes, or can be a look-up
@@ -492,6 +494,9 @@ def dist_weight(
         a gridbox. The function should return a numpy matrix, which is the distance
         matrix for the gridbox only. This wrapper function will correctly apply
         this matrix to the larger distance matrix using the index from the DataFrame.
+
+        If dist_fn is None, then no distances are computed and None is returned for
+        the dist value.
     **dist_kwargs
         Arguments to be passed to dist_fn. In general these should be constant across
         all gridboxes. It is possible to pass a look-up table that contains
@@ -500,7 +505,7 @@ def dist_weight(
 
     Returns
     -------
-    dist : numpy.matrix
+    dist : numpy.matrix | None
         The distance matrix, which contains the same number of rows and columns as
         rows in the input DataFrame df. The values in the matrix are 0 if the
         indices of the row/column are for observations from different gridboxes, and
@@ -508,6 +513,8 @@ def dist_weight(
         with appropriate re-arrangement of rows and columns this matrix can be
         transformed into a block-diagonal matrix. If the DataFrame input is pre-sorted
         by the gridbox column, then the result is a block-diagonal matrix.
+
+        If dist_fn is None, then this value will be None.
     W : numpy.matrix
         A matrix of weights. This has dimensions n x p where n is the number of unique
         gridboxes and p is the number of observations (the number of rows in df). The
@@ -525,14 +532,15 @@ def dist_weight(
     _n_obs = len(df)
 
     weights = np.zeros((_n_gridboxes, _n_obs))
-    dist = np.zeros((_n_obs, _n_obs))
+    dist = np.zeros((_n_obs, _n_obs)) if dist_fn is not None else None
 
     for i, gridbox in enumerate(gridboxes):
         gridbox_idcs = list(df[df["gridbox"] == gridbox].index)
         idcs_array = np.ix_(gridbox_idcs, gridbox_idcs)
 
-        dist[idcs_array] = dist_fn(df.loc[gridbox_idcs], **dist_kwargs)
         weights[i, gridbox_idcs] = 1 / len(gridbox_idcs)
+        if dist_fn is not None and dist is not None:
+            dist[idcs_array] = dist_fn(df.loc[gridbox_idcs], **dist_kwargs)
 
     return dist, weights
 
