@@ -50,6 +50,17 @@ def main():
     parser.add_argument("-variable", dest="variable", required=False, help="variable to process: sst or lsat", type=str, choices=["lsat", "sst"], default="sst")
     parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"", type=str, choices=["simple", "ordinary"])
     parser.add_argument("-interpolation", dest="interpolation", default="ellipse", required=False, help="Interpolation covariance - one of \"distance\" or \"ellipse\"", type=str, choices=["distance", "ellipse"])
+    
+    parser.add_argument(
+        "-remove_obs_mean",
+        dest="remove_obs_mean",
+        default=0,
+        required=False,
+        type=int,
+        help='Should the global mean be removed? - 0:no, 1:yes, 2:yes but median',
+        choices=[0, 1, 2],
+    )
+
     args = parser.parse_args()
     
     config_file = args.config
@@ -317,7 +328,8 @@ def main():
                 interp_covariane_filename = os.path.join(interpolation_covariance_path, interp_covariane_filename)
                 interp_covariance = xr.open_dataset(interp_covariane_filename)['covariance'].values
 
-            anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
+            anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method,
+                                                          remove_obs_mean=args.remove_obs_mean)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)

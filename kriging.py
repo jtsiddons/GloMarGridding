@@ -71,6 +71,7 @@ def kriging_simplified(
     obs: np.ndarray,
     interp_cov: np.ndarray,
     error_cov: np.ndarray,
+    remove_obs_mean: int=0,
     obs_bias: Optional[np.ndarray] = None,
     method: KrigMethod = "simple",
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -106,10 +107,10 @@ def kriging_simplified(
 
     if method.lower() == "simple":
         print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, interp_cov)
+        return kriging_simple(S, Ss, grid_obs, interp_cov, remove_obs_mean=remove_obs_mean)
     elif method.lower() == "ordinary":
         print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, interp_cov)
+        return kriging_ordinary(S, Ss, grid_obs, interp_cov, remove_obs_mean=remove_obs_mean)
     else:
         raise NotImplementedError(
             f"Kriging method {method} is not implemented. " 
@@ -124,6 +125,7 @@ def kriging(
     x_obs: np.ndarray,
     cci_covariance: np.ndarray,
     covx: np.ndarray,
+    remove_obs_mean: int=0,
     x_bias: Optional[np.ndarray] = None,
     method: KrigMethod = "simple",
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -188,10 +190,10 @@ def kriging(
     
     if method.lower() == "simple":
         print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, cci_covariance)
+        return kriging_simple(S, Ss, grid_obs, cci_covariance, remove_obs_mean=remove_obs_mean)
     elif method.lower() == "ordinary":
         print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, cci_covariance)
+        return kriging_ordinary(S, Ss, grid_obs, cci_covariance, remove_obs_mean=remove_obs_mean)
     else:
         raise NotImplementedError(
             f"Kriging method {method} is not implemented. " 
@@ -203,6 +205,7 @@ def kriging_simple(
     Ss: np.ndarray,
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
+    remove_obs_mean: int=0,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging
@@ -220,6 +223,11 @@ def kriging_simple(
     cci_covariance : np.ndarray[float]
         Covariance of all grid points (each point in time and all points
         against each other).
+    remove_obs_mean: int
+        Should the mean or median from grib_obs be removed and added back onto grib_obs?
+        0 = No (default action)
+        1 = the mean is removed
+        2 = the median is removed
 
     Returns
     -------
@@ -229,6 +237,14 @@ def kriging_simple(
     dz : np.ndarray[float]
         Uncertainty associated with the simple kriging.
     """
+    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
+    if remove_obs_mean == 1:
+        E_grid_obs = np.ma.average(grid_obs)
+        grid_obs = grid_obs - E_grid_obs
+    elif remove_obs_mean == 2:
+        q50_grid_obs = np.ma.median(grid_obs)
+        grid_obs = grid_obs - q50_grid_obs
+
     G = np.linalg.solve(S, Ss).T
     print(f'{G.shape = }')
     print(f'{grid_obs.shape =}')
@@ -239,6 +255,12 @@ def kriging_simple(
     dz = np.sqrt(np.diag(cci_covariance - G))
     print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
+
+    if remove_obs_mean == 1:
+        z_obs = z_obs + E_grid_obs
+    elif remove_obs_mean == 2:
+        z_obs = z_obs + q50_grid_obs
+
     print("Simple Kriging Complete")
     return z_obs, dz
 
@@ -248,6 +270,7 @@ def kriging_ordinary(
     Ss: np.ndarray,
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
+    remove_obs_mean: int=0,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Perform Ordinary Kriging
@@ -265,6 +288,11 @@ def kriging_ordinary(
     cci_covariance : np.ndarray[float]
         Covariance of all grid points (each point in time and all points
         against each other).
+    remove_obs_mean: int
+        Should the mean or median from grib_obs be removed and added back onto grib_obs?
+        0 = No (default action)
+        1 = the mean is removed
+        2 = the median is removed
 
     Returns
     -------
@@ -274,6 +302,14 @@ def kriging_ordinary(
     dz : np.ndarray[float]
         Uncertainty associated with the ordinary kriging.
     """
+    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
+    if remove_obs_mean == 1:
+        E_grid_obs = np.ma.average(grid_obs)
+        grid_obs = grid_obs - E_grid_obs
+    elif remove_obs_mean == 2:
+        q50_grid_obs = np.ma.median(grid_obs)
+        grid_obs = grid_obs - q50_grid_obs
+
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = Ss.shape
     S = np.block([[S, np.ones((N, 1))], [np.ones((1, N)), 0]])
@@ -287,6 +323,12 @@ def kriging_ordinary(
     G = G @ Ss
     dz = np.sqrt(np.diag(cci_covariance - G) - alpha)
     # dz[np.isnan(dz)] = 0.0
+
+    if remove_obs_mean == 1:
+        z_obs = z_obs + E_grid_obs
+    elif remove_obs_mean == 2:
+        z_obs = z_obs + q50_grid_obs
+
     print("Ordinary Kriging Complete")
     return z_obs, dz
 
