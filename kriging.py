@@ -52,13 +52,16 @@ def kriging_simplified(
     if len(grid_obs) > 1:
         grid_obs = np.squeeze(grid_obs)
 
-    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
+    assert remove_obs_mean in [0, 1, 2, 3], 'Unknown remove_obs_mean value'
     grid_obs_av = None
     if remove_obs_mean == 1:
         grid_obs_av = np.ma.average(grid_obs)
         grid_obs = grid_obs - grid_obs_av
     elif remove_obs_mean == 2:
         grid_obs_av = np.ma.median(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 3:
+        grid_obs_av = get_spatial_mean(grid_obs, error_cov)
         grid_obs = grid_obs - grid_obs_av
         
     print(f'{grid_obs.shape = }')
@@ -160,13 +163,16 @@ def kriging(
         grid_obs = np.squeeze(grid_obs)
     print(f'{grid_obs.shape = }')
 
-    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
+    assert remove_obs_mean in [0, 1, 2, 3], 'Unknown remove_obs_mean value'
     grid_obs_av = None
     if remove_obs_mean == 1:
         grid_obs_av = np.ma.average(grid_obs)
         grid_obs = grid_obs - grid_obs_av
     elif remove_obs_mean == 2:
         grid_obs_av = np.ma.median(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 3:
+        grid_obs_av = get_spatial_mean(grid_obs, covx)
         grid_obs = grid_obs - grid_obs_av
 
     # S is the spatial covariance between all "measured" grid points 
@@ -474,3 +480,30 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
     d = np.squeeze(np.asarray(dz_ok))
     return a, b, c, d
 
+
+def get_spatial_mean(grid_obs: np.ndarray, covx: np.ndarray) -> float:
+    """
+    Get spatial mean accounting for auto-correlation.
+
+    Parameters
+    ==========
+
+    grid_obs : np.ndarray
+        Vector containing observations
+    covx : np.ndarray
+        Observation covariance matrix
+
+    Returns
+    =======
+    spatial_mean : float
+        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
+
+    Reference
+    =========
+    https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
+    """
+    n = len(grid_obs)
+    ones = np.ones(n)
+    invcov = ones.T @ np.linalg.inv(covx)
+    
+    return float(1/(invcov @ ones) * (invcov @ grid_obs))
