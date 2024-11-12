@@ -3,7 +3,7 @@
 # for python version 3.0 and up
 ################
 
-from typing import Literal, Optional, Tuple
+from typing import Literal
 import numpy as np
 
 KrigMethod = Literal["simple", "ordinary"]
@@ -39,11 +39,10 @@ def kriging_simplified(
     interp_cov: np.ndarray,
     error_cov: np.ndarray,
     remove_obs_mean: int=0,
-    obs_bias: Optional[np.ndarray] = None,
+    obs_bias: np.ndarray | None = None,
     method: KrigMethod = "simple",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
 
-   
     if obs_bias is not None:
         print("With bias")
         grid_obs = W @ (obs - obs_bias)
@@ -93,9 +92,9 @@ def kriging(
     cci_covariance: np.ndarray,
     covx: np.ndarray,
     remove_obs_mean: int=0,
-    x_bias: Optional[np.ndarray] = None,
+    x_bias: np.ndarray | None = None,
     method: KrigMethod = "simple",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Kriging using a chosen method.
 
@@ -173,7 +172,7 @@ def kriging_simple(
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
     remove_obs_mean: int=0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging
 
@@ -238,7 +237,7 @@ def kriging_ordinary(
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
     remove_obs_mean: int=0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Ordinary Kriging
 
