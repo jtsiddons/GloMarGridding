@@ -3,43 +3,10 @@
 # for python version 3.0 and up
 ################
 
-#global
-import sys, os, re
-import glob
-import os.path
-from os import path
-from os.path import isfile, join
-
-#argument parser
-import argparse
-from typing import Literal, Optional, Tuple
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0                                                 
-
-#math tools 
+from typing import Literal
 import numpy as np
-import math
-from scipy.linalg import block_diag
-
-#plotting tools
-import matplotlib.pyplot as plt
-
-#timing tools
-import timeit
-
-#data handling tools
-import pandas as pd
-import xarray as xr
-import netCDF4 as nc
-from functools import partial
 
 KrigMethod = Literal["simple", "ordinary"]
-
-
-
-
 
 
 def intersect_mtlb(a, b):
@@ -72,11 +39,10 @@ def kriging_simplified(
     interp_cov: np.ndarray,
     error_cov: np.ndarray,
     remove_obs_mean: int=0,
-    obs_bias: Optional[np.ndarray] = None,
+    obs_bias: np.ndarray | None = None,
     method: KrigMethod = "simple",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
 
-   
     if obs_bias is not None:
         print("With bias")
         grid_obs = W @ (obs - obs_bias)
@@ -85,6 +51,18 @@ def kriging_simplified(
     
     if len(grid_obs) > 1:
         grid_obs = np.squeeze(grid_obs)
+
+    assert remove_obs_mean in [0, 1, 2, 3], 'Unknown remove_obs_mean value'
+    grid_obs_av = None
+    if remove_obs_mean == 1:
+        grid_obs_av = np.ma.average(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 2:
+        grid_obs_av = np.ma.median(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 3:
+        grid_obs_av = get_spatial_mean(grid_obs, error_cov)
+        grid_obs = grid_obs - grid_obs_av
         
     print(f'{grid_obs.shape = }')
     # S is the spatial covariance between all "measured" grid points 
@@ -104,18 +82,21 @@ def kriging_simplified(
     Ss = np.asarray(interp_cov[obs_idx, :])
     print(f'{Ss =}, {Ss.shape =}')
 
-
     if method.lower() == "simple":
         print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, interp_cov, remove_obs_mean=remove_obs_mean)
+        z_obs, dz = kriging_simple(S, Ss, grid_obs, interp_cov)
     elif method.lower() == "ordinary":
         print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, interp_cov, remove_obs_mean=remove_obs_mean)
+        z_obs, dz = kriging_ordinary(S, Ss, grid_obs, interp_cov)
     else:
         raise NotImplementedError(
             f"Kriging method {method} is not implemented. " 
             "Expected one of \"simple\" or \"ordinary\"")
-    
+
+    if grid_obs_av is not None:
+        z_obs = z_obs + grid_obs_av
+
+    return z_obs, dz
 
 
 def kriging(
@@ -126,9 +107,9 @@ def kriging(
     cci_covariance: np.ndarray,
     covx: np.ndarray,
     remove_obs_mean: int=0,
-    x_bias: Optional[np.ndarray] = None,
+    x_bias: np.ndarray | None = None,
     method: KrigMethod = "simple",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Kriging using a chosen method.
 
@@ -150,6 +131,11 @@ def kriging(
         against each other).
     covx : np.ndarray[float]
         Measurement covariance matrix.
+    remove_obs_mean: int
+        Should the mean or median from grib_obs be removed and added back onto grib_obs?
+        0 = No (default action)
+        1 = the mean is removed
+        2 = the median is removed
     x_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
     method : KrigMethod
@@ -166,7 +152,6 @@ def kriging(
     iid = np.squeeze(iid) if iid.ndim > 1 else iid
     _, ia, _ = intersect_mtlb(iid, uind)
     ia = ia.astype(int) #index of the sorted unique (iid) in the full iid array
-    
 
     if x_bias is not None:
         print("With bias")
@@ -177,6 +162,19 @@ def kriging(
     if len(grid_obs) > 1:
         grid_obs = np.squeeze(grid_obs)
     print(f'{grid_obs.shape = }')
+
+    assert remove_obs_mean in [0, 1, 2, 3], 'Unknown remove_obs_mean value'
+    grid_obs_av = None
+    if remove_obs_mean == 1:
+        grid_obs_av = np.ma.average(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 2:
+        grid_obs_av = np.ma.median(grid_obs)
+        grid_obs = grid_obs - grid_obs_av
+    elif remove_obs_mean == 3:
+        grid_obs_av = get_spatial_mean(grid_obs, covx)
+        grid_obs = grid_obs - grid_obs_av
+
     # S is the spatial covariance between all "measured" grid points 
     # Plus the covariance due to the measurements, i.e. measurement noise, bias
     # noise, and sampling noise (R)
@@ -190,14 +188,20 @@ def kriging(
     
     if method.lower() == "simple":
         print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, cci_covariance, remove_obs_mean=remove_obs_mean)
+        z_obs, dz = kriging_simple(S, Ss, grid_obs, cci_covariance)
     elif method.lower() == "ordinary":
         print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, cci_covariance, remove_obs_mean=remove_obs_mean)
+        z_obs, dz = kriging_ordinary(S, Ss, grid_obs, cci_covariance)
     else:
         raise NotImplementedError(
             f"Kriging method {method} is not implemented. " 
             "Expected one of \"simple\" or \"ordinary\"")
+
+    if grid_obs_av is not None:
+        z_obs = z_obs + grid_obs_av
+
+    return z_obs, dz
+
 
 
 def kriging_simple(
@@ -205,8 +209,7 @@ def kriging_simple(
     Ss: np.ndarray,
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
-    remove_obs_mean: int=0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging
 
@@ -223,11 +226,6 @@ def kriging_simple(
     cci_covariance : np.ndarray[float]
         Covariance of all grid points (each point in time and all points
         against each other).
-    remove_obs_mean: int
-        Should the mean or median from grib_obs be removed and added back onto grib_obs?
-        0 = No (default action)
-        1 = the mean is removed
-        2 = the median is removed
 
     Returns
     -------
@@ -237,14 +235,6 @@ def kriging_simple(
     dz : np.ndarray[float]
         Uncertainty associated with the simple kriging.
     """
-    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
-    if remove_obs_mean == 1:
-        E_grid_obs = np.ma.average(grid_obs)
-        grid_obs = grid_obs - E_grid_obs
-    elif remove_obs_mean == 2:
-        q50_grid_obs = np.ma.median(grid_obs)
-        grid_obs = grid_obs - q50_grid_obs
-
     G = np.linalg.solve(S, Ss).T
     print(f'{G.shape = }')
     print(f'{grid_obs.shape =}')
@@ -256,11 +246,6 @@ def kriging_simple(
     print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
 
-    if remove_obs_mean == 1:
-        z_obs = z_obs + E_grid_obs
-    elif remove_obs_mean == 2:
-        z_obs = z_obs + q50_grid_obs
-
     print("Simple Kriging Complete")
     return z_obs, dz
 
@@ -270,8 +255,7 @@ def kriging_ordinary(
     Ss: np.ndarray,
     grid_obs: np.ndarray,
     cci_covariance: np.ndarray,
-    remove_obs_mean: int=0,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Ordinary Kriging
 
@@ -288,11 +272,6 @@ def kriging_ordinary(
     cci_covariance : np.ndarray[float]
         Covariance of all grid points (each point in time and all points
         against each other).
-    remove_obs_mean: int
-        Should the mean or median from grib_obs be removed and added back onto grib_obs?
-        0 = No (default action)
-        1 = the mean is removed
-        2 = the median is removed
 
     Returns
     -------
@@ -302,13 +281,6 @@ def kriging_ordinary(
     dz : np.ndarray[float]
         Uncertainty associated with the ordinary kriging.
     """
-    assert remove_obs_mean in [0, 1, 2], 'Unknown remove_obs_mean value'
-    if remove_obs_mean == 1:
-        E_grid_obs = np.ma.average(grid_obs)
-        grid_obs = grid_obs - E_grid_obs
-    elif remove_obs_mean == 2:
-        q50_grid_obs = np.ma.median(grid_obs)
-        grid_obs = grid_obs - q50_grid_obs
 
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = Ss.shape
@@ -323,11 +295,6 @@ def kriging_ordinary(
     G = G @ Ss
     dz = np.sqrt(np.diag(cci_covariance - G) - alpha)
     # dz[np.isnan(dz)] = 0.0
-
-    if remove_obs_mean == 1:
-        z_obs = z_obs + E_grid_obs
-    elif remove_obs_mean == 2:
-        z_obs = z_obs + q50_grid_obs
 
     print("Ordinary Kriging Complete")
     return z_obs, dz
@@ -463,7 +430,6 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
     sst_obs = W @ x_obs #- clim[ia] - bias[ia] 
     print('SST OBS', sst_obs)
     
-   
     #S is the spatial covariance between all "measured" grid points 
     covar = np.copy(cci_covariance)
     S  = covar[ia[:,None],ia[None,:]]
@@ -502,7 +468,7 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
     z_obs_ok = np.transpose(G @ sst_obs0) 
     
     alpha = G[:,-1]
-  
+
     diagonal = (np.diag(covar-CG)).reshape(-1,1)
     dz_ok = np.sqrt(diagonal-alpha)
 
@@ -514,3 +480,30 @@ def krige_for_esa_values_only(iid, uind, W, x_obs, cci_covariance, bias=False, c
     d = np.squeeze(np.asarray(dz_ok))
     return a, b, c, d
 
+
+def get_spatial_mean(grid_obs: np.ndarray, covx: np.ndarray) -> float:
+    """
+    Get spatial mean accounting for auto-correlation.
+
+    Parameters
+    ==========
+
+    grid_obs : np.ndarray
+        Vector containing observations
+    covx : np.ndarray
+        Observation covariance matrix
+
+    Returns
+    =======
+    spatial_mean : float
+        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
+
+    Reference
+    =========
+    https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
+    """
+    n = len(grid_obs)
+    ones = np.ones(n)
+    invcov = ones.T @ np.linalg.inv(covx)
+    
+    return float(1/(invcov @ ones) * (invcov @ grid_obs))
