@@ -3,43 +3,10 @@
 # for python version 3.0 and up
 ################
 
-#global
-import sys, os, re
-import glob
-import os.path
-from os import path
-from os.path import isfile, join
-
-#argument parser
-import argparse
 from typing import Literal, Optional, Tuple
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0                                                 
-
-#math tools 
 import numpy as np
-import math
-from scipy.linalg import block_diag
-
-#plotting tools
-import matplotlib.pyplot as plt
-
-#timing tools
-import timeit
-
-#data handling tools
-import pandas as pd
-import xarray as xr
-import netCDF4 as nc
-from functools import partial
 
 KrigMethod = Literal["simple", "ordinary"]
-
-
-
-
 
 
 def intersect_mtlb(a, b):
