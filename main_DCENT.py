@@ -317,7 +317,7 @@ def main():
                 interp_covariane_filename = os.path.join(interpolation_covariance_path, interp_covariane_filename)
                 interp_covariance = xr.open_dataset(interp_covariane_filename)['covariance'].values
 
-            anom, uncert = krig_module.kriging_simplified(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
+            anom, uncert = krig_module.kriging(grid_idx, W, np.asarray(mon_df[variable].values), interp_covariance, error_covariance, method=args.method)
             print('Kriging done, saving output')
             print(anom)
             print(uncert)

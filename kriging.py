@@ -64,67 +64,13 @@ def intersect_mtlb(a, b):
     return c, ia[np.isin(a1, c)], ib[np.isin(b1, c)]  
 
 
-
-def kriging_simplified(
+def kriging(
     obs_idx: np.ndarray,
-    W: np.ndarray,
+    weights: np.ndarray,
     obs: np.ndarray,
     interp_cov: np.ndarray,
     error_cov: np.ndarray,
     obs_bias: Optional[np.ndarray] = None,
-    method: KrigMethod = "simple",
-) -> Tuple[np.ndarray, np.ndarray]:
-
-   
-    if obs_bias is not None:
-        print("With bias")
-        grid_obs = W @ (obs - obs_bias)
-    else:
-        grid_obs = W @ obs
-    
-    if len(grid_obs) > 1:
-        grid_obs = np.squeeze(grid_obs)
-        
-    print(f'{grid_obs.shape = }')
-    # S is the spatial covariance between all "measured" grid points 
-    # Plus the covariance due to the measurements, i.e. measurement noise, bias
-    # noise, and sampling noise (R)
-
-    if error_cov.shape == interp_cov.shape:
-        print('Error covariance supplied is of the same size as interpolation covariance, subsetting to indices of observation grids')
-        error_cov = error_cov[obs_idx[:,None], obs_idx[None,:]]
-    
-    print(f'{error_cov =}, {error_cov.shape =}')
-    S = np.asarray(interp_cov[obs_idx[:, None], obs_idx[None, :]])
-    S += W @ error_cov @ W.T
-    print(f'{S =}, {S.shape =}')
-    # Ss is the covariance between to be "predicted" grid points (i.e. all) and
-    # "measured" points 
-    Ss = np.asarray(interp_cov[obs_idx, :])
-    print(f'{Ss =}, {Ss.shape =}')
-
-
-    if method.lower() == "simple":
-        print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, interp_cov)
-    elif method.lower() == "ordinary":
-        print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, interp_cov)
-    else:
-        raise NotImplementedError(
-            f"Kriging method {method} is not implemented. " 
-            "Expected one of \"simple\" or \"ordinary\"")
-    
-
-
-def kriging(
-    iid: np.ndarray,
-    uind: np.ndarray,
-    W: np.ndarray,
-    x_obs: np.ndarray,
-    cci_covariance: np.ndarray,
-    covx: np.ndarray,
-    x_bias: Optional[np.ndarray] = None,
     method: KrigMethod = "simple",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -135,20 +81,18 @@ def kriging(
 
     Parameters
     ----------
-    iid : np.ndarray[int]
-        Indices of all measurement points for chosen date.
-    uind : np.ndarray[int]
-        Unique indices of measurement points for a chosen date, representative of the indices of gridboxes, which have => 1 measurement. 
-    W : np.ndarray[float]
+    obs_idx : np.ndarray[int]
+        Grid indices with observations.
+    weights : np.ndarray[float]
         Weight matrix (inverse of counts of observations).
-    x_obs : np.ndarray[float]
+    obs : np.ndarray[float]
         All point observations/measurements for the chosen date.
-    cci_covariance : np.ndarray[float]
-        Covariance of all output grid points (each point in time and all points
+    interp_cov : np.ndarray[float]
+        Interpolation covariance of all output grid points (each point in time and all points
         against each other).
-    covx : np.ndarray[float]
-        Measurement covariance matrix.
-    x_bias : np.ndarray[float] | None
+    error_cov : np.ndarray[float]
+        Measurement/Error covariance matrix.
+    obs_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
     method : KrigMethod
         The kriging method to use to fill in the output grid. One of "simple" or "ordinary".
@@ -161,41 +105,123 @@ def kriging(
     dz : np.ndarray[float]
         Uncertainty associated with the chosen kriging method.
     """
-    iid = np.squeeze(iid) if iid.ndim > 1 else iid
-    _, ia, _ = intersect_mtlb(iid, uind)
-    ia = ia.astype(int) #index of the sorted unique (iid) in the full iid array
-    
-
-    if x_bias is not None:
+    if obs_bias is not None:
         print("With bias")
-        grid_obs = W @ (x_obs - x_bias)  # - clim[ia] - bias[ia]
+        grid_obs = weights @ (obs - obs_bias)
     else:
-        grid_obs = W @ x_obs
-    
+        grid_obs = weights @ obs
+
     if len(grid_obs) > 1:
         grid_obs = np.squeeze(grid_obs)
-    print(f'{grid_obs.shape = }')
-    # S is the spatial covariance between all "measured" grid points 
+
+    print(f"{grid_obs.shape = }")
+
+    if error_cov.shape == interp_cov.shape:
+        print(
+            "Error covariance supplied is of the same size as interpolation covariance, subsetting to indices of observation grids"
+        )
+        error_cov = error_cov[obs_idx[:, None], obs_idx[None, :]]
+
+    print(f"{error_cov =}, {error_cov.shape =}")
+
+    # S is the spatial covariance between all "measured" grid points
     # Plus the covariance due to the measurements, i.e. measurement noise, bias
     # noise, and sampling noise (R)
-    S = np.asarray(cci_covariance[iid[:, None], iid[None, :]])
-    S += W @ covx @ W.T
-    print(f'{S =}')
+    S = np.asarray(interp_cov[obs_idx[:, None], obs_idx[None, :]])
+    S += weights @ error_cov @ weights.T
+    print(f"{S =}, {S.shape =}")
+
     # Ss is the covariance between to be "predicted" grid points (i.e. all) and
-    # "measured" points 
-    Ss = np.asarray(cci_covariance[iid, :])
-    print(f'{Ss =}')
-    
+    # "measured" points
+    Ss = np.asarray(interp_cov[obs_idx, :])
+    print(f"{Ss =}, {Ss.shape =}")
+
     if method.lower() == "simple":
         print("Performing Simple Kriging")
-        return kriging_simple(S, Ss, grid_obs, cci_covariance)
+        return kriging_simple(S, Ss, grid_obs, interp_cov)
     elif method.lower() == "ordinary":
         print("Performing Ordinary Kriging")
-        return kriging_ordinary(S, Ss, grid_obs, cci_covariance)
+        return kriging_ordinary(S, Ss, grid_obs, interp_cov)
     else:
         raise NotImplementedError(
-            f"Kriging method {method} is not implemented. " 
-            "Expected one of \"simple\" or \"ordinary\"")
+            f"Kriging method {method} is not implemented. "
+            'Expected one of "simple" or "ordinary"'
+        )
+
+
+def unmasked_kriging(
+    unmask_idx: np.ndarray,
+    unique_obs_idx: np.ndarray,
+    weights: np.ndarray,
+    obs: np.ndarray,
+    interp_cov: np.ndarray,
+    error_cov: np.ndarray,
+    obs_bias: Optional[np.ndarray] = None,
+    method: KrigMethod = "simple",
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Perform Kriging on a masked grid using a chosen method.
+
+    Get array of krigged observations and anomalies for all grid points in the
+    domain.
+
+    Parameters
+    ----------
+    unmask_idx : np.ndarray[int]
+        Indices of all un-masked points for chosen date.
+    unique_obs_idx : np.ndarray[int]
+        Unique indices of all measurement points for a chosen date, representative of the indices of gridboxes, which have => 1 measurement.
+    weights : np.ndarray[float]
+        Weight matrix (inverse of counts of observations).
+    obs : np.ndarray[float]
+        All point observations/measurements for the chosen date.
+    interp_cov : np.ndarray[float]
+        Interpolation covariance of all output grid points (each point in time and all points
+        against each other).
+    error_cov : np.ndarray[float]
+        Measurement/Error covariance matrix.
+    obs_bias : np.ndarray[float] | None
+        Bias of all measurement points for a chosen date (corresponds to x_obs).
+    method : KrigMethod
+        The kriging method to use to fill in the output grid. One of "simple" or "ordinary".
+
+    Returns
+    -------
+    z_obs : np.ndarray[float]
+        Full set of values for the whole domain derived from the observation
+        points using the chosen kriging method.
+    dz : np.ndarray[float]
+        Uncertainty associated with the chosen kriging method.
+    """
+    obs_idx = get_unmasked_obs_indices(unmask_idx, unique_obs_idx)
+
+    return kriging(obs_idx, weights, obs, interp_cov, error_cov, obs_bias, method)
+
+
+def get_unmasked_obs_indices(
+    unmask_idx: np.ndarray,
+    unique_obs_idx: np.ndarray,
+) -> np.ndarray:
+    """
+    Get grid indices with observations from un-masked grid-box indices and unique
+    grid-box indices with observations.
+
+    Parameters
+    ----------
+    unmask_idx : np.ndarray[int]
+        List of all unmasked grid-box indices.
+    unique_obs_idx : np.ndarray[int]
+        Indices of grid-boxes with observations.
+
+    Returns
+    -------
+    obs_idx : np.ndarray[int]
+        Subset of grid-box indices containing observations that are unmasked.
+    """
+    unmask_idx = np.squeeze(unmask_idx) if unmask_idx.ndim > 1 else unmask_idx
+    _, obs_idx, _ = intersect_mtlb(unmask_idx, unique_obs_idx)
+    # index of the sorted unique (iid) in the full iid array
+    obs_idx = obs_idx.astype(int)
 
 
 def kriging_simple(
@@ -376,7 +402,7 @@ def kriging_main(covariance, cond_df, ds_masked, flattened_idx, obs_cov, W, bias
     obs_bias = None
     if bias:
         obs_bias = cond_df['hadsst_bias'].values
-    z_obs, dz = kriging(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, x_bias=obs_bias, method=kriging_method)
+    z_obs, dz = unmasked_kriging(water_idx, unique_obs_idx, W, obs, covariance, obs_cov, x_bias=obs_bias, method=kriging_method)
     #print('3 - DONE')
     return (
         result_reshape_2d(z_obs, water_idx, water_mask),
