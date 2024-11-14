@@ -223,13 +223,13 @@ def getDistanceByEuclidean(loc1, loc2, to_radians=True, earth_radius=6371):
     lon2 = loc2[1]
     if to_radians:
         lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    x1 = earth_radius*np.cos(lat1)*np.cos(lon1)
-    x2 = earth_radius*np.cos(lat2)*np.cos(lon2)
-    y1 = earth_radius*np.cos(lat1)*np.sin(lon1)
-    y2 = earth_radius*np.cos(lat2)*np.sin(lon2)
-    z1 = earth_radius*np.sin(lat1)
-    z2 = earth_radius*np.sin(lat2)
-    km = np.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
+    x1 = np.cos(lat1)*np.cos(lon1)
+    x2 = np.cos(lat2)*np.cos(lon2)
+    y1 = np.cos(lat1)*np.sin(lon1)
+    y2 = np.cos(lat2)*np.sin(lon2)
+    z1 = np.sin(lat1)
+    z2 = np.sin(lat2)
+    km = earth_radius*np.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
     return km
 
 
