@@ -185,6 +185,17 @@ def main():
         help='Interpolation covariance - one of "distance" or "ellipse"',
         choices=["distance", "ellipse"],
     )
+
+    parser.add_argument(
+        "-remove_obs_mean",
+        dest="remove_obs_mean",
+        default=0,
+        required=False,
+        type=int,
+        help='Should the global mean be removed? - 0:no, 1:yes, 2:yes but median, 3:yes but spatial mean',
+        choices=[0, 1, 2, 3],
+    )
+
     args = parser.parse_args()
 
     config_file = args.config
@@ -428,6 +439,7 @@ def main():
                 interp_covariance,
                 error_covariance,
                 method=args.method,
+                remove_obs_mean=args.remove_obs_mean,
             )
             print("Kriging done, saving output")
             print(anom)
