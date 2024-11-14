@@ -428,13 +428,11 @@ def main():
 
             grid_idx = np.array(sorted(mon_df["gridbox"]))  # sorted?
             # print(error_covariance, error_covariance.shape)
-            error_covariance = error_covariance[
-                grid_idx[:, None], grid_idx[None, :]
-            ]
+            error_covariance = error_covariance[grid_idx[:, None], grid_idx[None, :]]
             # print(np.argwhere(np.isnan(np.diag(error_covariance))))
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
-            anom, uncert = krig_module.kriging_simplified(
+            anom, uncert = krig_module.kriging(
                 grid_idx,
                 W,
                 mon_df[hadcrut_var].values,
