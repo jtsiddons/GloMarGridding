@@ -203,6 +203,34 @@ def find_nearest(array, values):
     return idx_list
 
 
+def getDistanceByEuclidean(loc1, loc2, to_radians=True, earth_radius=6371):
+    '''
+    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
+    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
+
+    d = SQRT((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
+    (x_n y_n z_n) = ( Rcos(lat)cos(lon) Rcos(lat)sin(lon) Rsin(lat) )
+
+    Calculate the Euclidean distance in kilometers between two points 
+    on the earth (specified in decimal degrees)
+    
+    Input: latitude and longitude columns from Pandas dataframe (arrays of values)
+    Output: a 2D numpy array of (lat_decimal,lon_decimal) pairs
+    '''
+    lat1 = loc1[0]
+    lon1 = loc1[1]
+    lat2 = loc2[0]
+    lon2 = loc2[1]
+    if to_radians:
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    x1 = np.cos(lat1)*np.cos(lon1)
+    x2 = np.cos(lat2)*np.cos(lon2)
+    y1 = np.cos(lat1)*np.sin(lon1)
+    y2 = np.cos(lat2)*np.sin(lon2)
+    z1 = np.sin(lat1)
+    z2 = np.sin(lat2)
+    km = earth_radius*np.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
+    return km
 
 
 def getDistanceByHaversine(loc1, loc2, to_radians=True, earth_radius=6371):
@@ -229,8 +257,8 @@ def getDistanceByHaversine(loc1, loc2, to_radians=True, earth_radius=6371):
 
 
 
-def calculate_distance_matrix(df):
-    distance_matrix = pd.DataFrame(squareform(pdist(df, lambda u, v: getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
+def calculate_distance_matrix(df, dist_func=getDistanceByHaversine):
+    distance_matrix = pd.DataFrame(squareform(pdist(df, lambda u, v: dist_func(u,v))), index=df.index, columns=df.index)
     return distance_matrix
 
 
