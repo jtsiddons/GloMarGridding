@@ -43,26 +43,38 @@ def _get_sst_err_cov(
     current_year: int,
     current_month: int,
     error_covariance_path: str,
-    sampling: xr.Dataset,
+    # sampling: xr.Dataset,
     uncorrelated: xr.Dataset,
 ) -> np.ndarray:
-    err_cov_fn = f"HadSST.4.0.1.0_error_covariance_{current_year}{current_month:02d}.nc"
+    # err_cov_fn = f"HadSST.4.0.1.0_error_covariance_{current_year}{current_month:02d}.nc"
+    err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
+    # error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))[
+    #     "tos_cov"
+    # ].values
     error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))[
-        "tos_cov"
-    ].values
-    sampling_mon = sampling.sel(
-        time=np.logical_and(
-            sampling.time.dt.month == current_month,
-            sampling.time.dt.year == current_year,
-        )
-    )["tos_unc"].values
+        "tas_cov"
+    ].values[0]
+    # sampling_mon = sampling.sel(
+    #     time=np.logical_and(
+    #         sampling.time.dt.month == current_month,
+    #         sampling.time.dt.year == current_year,
+    #     )
+    # )["tos_unc"].values
+    # uncorrelated_mon = uncorrelated.sel(
+    #     time=np.logical_and(
+    #         uncorrelated.time.dt.month == current_month,
+    #         uncorrelated.time.dt.year == current_year,
+    #     )
+    # )["tos_unc"].values
     uncorrelated_mon = uncorrelated.sel(
         time=np.logical_and(
             uncorrelated.time.dt.month == current_month,
             uncorrelated.time.dt.year == current_year,
         )
-    )["tos_unc"].values
-    joined_mon = sampling_mon * sampling_mon + uncorrelated_mon * uncorrelated_mon
+    )["tas_unc"].values
+
+    # joined_mon = sampling_mon * sampling_mon + uncorrelated_mon * uncorrelated_mon
+    joined_mon = uncorrelated_mon * uncorrelated_mon
     # joined = np.power(joined_mon, 0.5)
     # print(joined)
     unc_1d = np.reshape(joined_mon, (2592, 1))
@@ -288,8 +300,11 @@ def main():
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_sst_err_cov(
-                    year, month, error_covariance_path, sampling, uncorrelated
+                    year, month, error_covariance_path, uncorrelated
                 )
+                # return _get_sst_err_cov(
+                #     year, month, error_covariance_path, sampling, uncorrelated
+                # )
 
         case "lsat":
             print(f"Processing for variable {variable} | {hadcrut_var}")
