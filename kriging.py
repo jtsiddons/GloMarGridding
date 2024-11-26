@@ -146,7 +146,7 @@ def kriging(
 
 def dz_squared_check_for_negative(
         dz_squared: np.ndarray[float]
-) -> np.ndarray[float]:
+) -> None:
     """
     Check whether there are small negative values on the kriged covariance diagonal
 
@@ -158,7 +158,7 @@ def dz_squared_check_for_negative(
 
     Returns
     -------
-    dz_squared : np.ndarray[float]
+    dz_squared : None
                 Squared uncertainty associated with chosen kriging method
                 with small negative values set to 0.0
     """
@@ -168,7 +168,7 @@ def dz_squared_check_for_negative(
         warn('Small negative vals are detected. Setting to 0.')
         print(dz_squared[small_negative_check])
         dz_squared[small_negative_check] = 0.0
-    return dz_squared
+    return None
     
     
 def kriging_simple(
