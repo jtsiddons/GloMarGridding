@@ -183,7 +183,7 @@ def kriging_simple(
           
     G = G @ Ss
     print(f'{G =}')
-    dz_squared = (np.diag(cci_covariance - G)).copy()
+    dz_squared = (np.diag(cci_covariance - G))
     smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
                                     dz_squared < 0.0)
     if np.sum(smol_neg_check) > 0:
@@ -239,7 +239,7 @@ def kriging_ordinary(
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz_squared = (np.diag(cci_covariance - G) - alpha).copy()
+    dz_squared = (np.diag(cci_covariance - G) - alpha)
     smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
                                     dz_squared < 0.0)
     if np.sum(smol_neg_check) > 0:
