@@ -143,7 +143,33 @@ def kriging(
             f"Kriging method {method} is not implemented. " 
             "Expected one of \"simple\" or \"ordinary\"")
 
+def dz_squared_check_for_negative(
+        dz_squared: np.ndarray[float]
+) -> np.ndarray[float]:
+    """
+    Check whether there are small negative values on the kriged covariance diagonal
 
+    Parameters
+    ----------
+    dz_squared : np.ndarray[float]
+                Squared uncertainty associated with chosen kriging method
+                Derived from the diagonal of the kriged covariance
+
+    Returns
+    -------
+    dz_squared : np.ndarray[float]
+                Squared uncertainty associated with chosen kriging method
+                with small negative values set to 0.0
+    """
+    smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
+                                    dz_squared < 0.0)
+    if np.sum(smol_neg_check) > 0:
+        print('Small negative vals are detected in np.diag(G = G @ Ss) in SK and are set to 0.')
+        print(dz_squared[smol_neg_check])
+    dz_squared[smol_neg_check] = 0.0
+    return dz_squared
+    
+    
 def kriging_simple(
     S: np.ndarray,
     Ss: np.ndarray,
@@ -184,12 +210,7 @@ def kriging_simple(
     G = G @ Ss
     print(f'{G =}')
     dz_squared = (np.diag(cci_covariance - G))
-    smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
-                                    dz_squared < 0.0)
-    if np.sum(smol_neg_check) > 0:
-        print('Small negative vals are detected in np.diag(G = G @ Ss) in SK and are set to 0.')
-        print(dz_squared[smol_neg_check])
-    dz_squared[smol_neg_check] = 0.0
+    dz_squared = dz_squared_check_for_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
@@ -240,12 +261,7 @@ def kriging_ordinary(
 
     G = G @ Ss
     dz_squared = (np.diag(cci_covariance - G) - alpha)
-    smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
-                                    dz_squared < 0.0)
-    if np.sum(smol_neg_check) > 0:
-        print('Small negative vals are detected in np.diag(G @ Ss)-alpha in OK and are set to 0.')
-        print(dz_squared[smol_neg_check])
-    dz_squared[smol_neg_check] = 0.0
+    dz_squared = dz_squared_check_for_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
     print("Ordinary Kriging Complete")
