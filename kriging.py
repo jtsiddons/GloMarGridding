@@ -9,6 +9,7 @@ import glob
 import os.path
 from os import path
 from os.path import isfile, join
+from warnings import warn
 
 #argument parser
 import argparse
@@ -161,12 +162,12 @@ def dz_squared_check_for_negative(
                 Squared uncertainty associated with chosen kriging method
                 with small negative values set to 0.0
     """
-    smol_neg_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
+    small_negative_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
                                     dz_squared < 0.0)
-    if np.sum(smol_neg_check) > 0:
-        print('Small negative vals are detected in np.diag(G = G @ Ss) in SK and are set to 0.')
-        print(dz_squared[smol_neg_check])
-    dz_squared[smol_neg_check] = 0.0
+    if small_negative_check.any() > 0:
+        warn('Small negative vals are detected. Setting to 0.')
+        print(dz_squared[small_negative_check])
+        dz_squared[small_negative_check] = 0.0
     return dz_squared
     
     
