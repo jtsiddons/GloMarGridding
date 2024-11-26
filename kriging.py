@@ -164,7 +164,7 @@ def dz_squared_check_for_negative(
     """
     small_negative_check = np.logical_and(np.isclose(dz_squared, 0, atol=1e-08), 
                                     dz_squared < 0.0)
-    if small_negative_check.any() > 0:
+    if small_negative_check.any():
         warn('Small negative vals are detected. Setting to 0.')
         print(dz_squared[small_negative_check])
         dz_squared[small_negative_check] = 0.0
