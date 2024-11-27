@@ -6,11 +6,8 @@ by default
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-from scipy import stats as sstats
 from scipy.spatial.transform import Rotation
 from shapely.geometry import Point
-
-from typing import Dict
 
 
 def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
@@ -47,7 +44,9 @@ def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
     proj4 += " +lon_0=" + str(latlon0[1])
     proj4 += " +k=0.9996 +x_0=0 +y_0=0 +units=km"
     df1 = gpd.GeoDataFrame(
-        df0, crs="EPSG:4326", geometry=gpd.points_from_xy(df0["lon"], df0["lat"])
+        df0,
+        crs="EPSG:4326",
+        geometry=gpd.points_from_xy(df0["lon"], df0["lat"]),
     ).to_crs(proj4)
     df1["easting"] = df1.geometry.x
     df1["northing"] = df1.geometry.y
@@ -135,7 +134,9 @@ def tau_dist(df: pd.DataFrame) -> np.matrix:
     paired_dist = paired_vector_dist(ne)
 
     # Get sigma
-    Lx, Ly, theta = df[["gridcell_lx", "gridcell_ly", "gridcell_theta"]].values[0]
+    Lx, Ly, theta = df[["gridcell_lx", "gridcell_ly", "gridcell_theta"]].values[
+        0
+    ]
     sigma = Ls2sigma(Lx, Ly, theta)
 
     tau = compute_tau_wrapper(paired_dist, sigma)
@@ -173,11 +174,3 @@ def tau_unit_test():
     print("tau:")
     print(tau_mat)
     return {"tau": tau_mat, "sigma": sigma, "grid": df}
-
-
-def main():
-    print("=== Main ===")
-
-
-if __name__ == "__main__":
-    main()

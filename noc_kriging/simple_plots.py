@@ -1,21 +1,23 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import matplotlib.pyplot as plt
 
 from cartopy.mpl.geoaxes import GeoAxes
 from matplotlib.figure import Figure
 from typing import Any, Dict, Iterable, Optional
 
 
-def projected_scatter(fig: Figure, ax: GeoAxes,
-                      lons: Iterable, lats: Iterable,
-                      add_colorbar: bool = False,
-                      title: Optional[str] = None,
-                      skwargs: Dict[str, Any] = {},
-                      ckwargs: Dict[str, Any] = {},
-                      land_col: Optional[str] = None,
-                      ocean_col: Optional[str] = None,
-                      ) -> None:
+def projected_scatter(
+    fig: Figure,
+    ax: GeoAxes,
+    lons: Iterable,
+    lats: Iterable,
+    add_colorbar: bool = False,
+    title: Optional[str] = None,
+    skwargs: Dict[str, Any] = {},
+    ckwargs: Dict[str, Any] = {},
+    land_col: Optional[str] = None,
+    ocean_col: Optional[str] = None,
+) -> None:
     """
         `projected_scatter`
 
@@ -56,31 +58,33 @@ def projected_scatter(fig: Figure, ax: GeoAxes,
 
     The input fig, ax with the scatter and optional colorbar included
     """
-    lonextent = [-180., 180.] #min(lons), max(lons)]
-    latextent = [-90., 90.] #[min(lats), max(lats)]
+    lonextent = [-180.0, 180.0]  # min(lons), max(lons)]
+    latextent = [-90.0, 90.0]  # [min(lats), max(lats)]
     extent = lonextent + latextent
 
-    if 'transform' not in skwargs:
+    if "transform" not in skwargs:
         proj = ax.projection
         if proj == ccrs.Robinson():
             proj = ccrs.PlateCarree()
-        skwargs['transform'] = proj
-    ax.set_extent(extent, crs=skwargs['transform'])
+        skwargs["transform"] = proj
+    ax.set_extent(extent, crs=skwargs["transform"])
 
     pcm = ax.scatter(lons, lats, **skwargs)
     if add_colorbar:
         fig.colorbar(pcm, ax=ax, **ckwargs)
-        
+
     if land_col is not None:
         ax.add_feature(cfeature.LAND, color=land_col)
     if ocean_col is not None:
         ax.add_feature(cfeature.OCEAN, color=ocean_col)
-    ax.coastlines() 
+    ax.coastlines()
 
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True) #, dms=True, x_inline=False, y_inline=False)
+    gl = ax.gridlines(
+        crs=ccrs.PlateCarree(), draw_labels=True
+    )  # , dms=True, x_inline=False, y_inline=False)
     gl.top_labels = False
     gl.right_labels = False
     if title is not None:
         ax.set_title(title, pad=20)
-    #plt.show()
+    # plt.show()
     return None

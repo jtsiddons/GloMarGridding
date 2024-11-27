@@ -3,70 +3,42 @@
 # for python version 3.0 and up
 ################
 
-#global
-import sys, os, re
-import glob
-import os.path
-from os import path
-from os.path import isfile, join
+# global
+import os
 
 # IMPORTANT: Environmental Variables to limit Numpy
-os.environ["OMP_NUM_THREADS"] = '16'
-os.environ["OPENBLAS_NUM_THREADS"] = '16'
-os.environ["MKL_NUM_THREADS"] = '16'
-os.environ["VECLIB_MAXIMUM_THREADS"] = '16'
-os.environ["NUMEXPR_NUM_THREADS"] = '16'
+os.environ["OMP_NUM_THREADS"] = "16"
+os.environ["OPENBLAS_NUM_THREADS"] = "16"
+os.environ["MKL_NUM_THREADS"] = "16"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "16"
+os.environ["NUMEXPR_NUM_THREADS"] = "16"
 
-#argument parser
+# argument parser
 import argparse
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser  # ver. < 3.0                                               
+
 from collections import OrderedDict
-from configparser import ConfigParser  
+from configparser import ConfigParser
 
-#math tools 
+# math tools
 import numpy as np
-import math
-from scipy.linalg import block_diag
 
-#plotting tools
-import matplotlib.pyplot as plt
-
-#timing tools
-import timeit
+# timing tools
 from calendar import isleap
 from calendar import monthrange
-#import datetime as dt
-from datetime import datetime, timedelta
-from netCDF4 import date2num, num2date
 
-#data handling tools
+# import datetime as dt
+from datetime import timedelta
+from netCDF4 import date2num
+
+# data handling tools
 import pandas as pd
-import xarray as xr
 import netCDF4 as nc
-from functools import partial
 
-#self-written modules (from the same directory)
-import covariance_calculation as cov_cal
-import covariance as cov_module
-import observations as obs_module
-import observations_plus_qc as obs_qc_module
-import kriging as krig_module
-
-
-####
-#for plotting
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import matplotlib.cm as cm
-import simple_plots as cp
-
-
-
-
-
+# self-written modules (from the same directory)
+import noc_kriging.covariance as cov_module
+import noc_kriging.observations as obs_module
+import noc_kriging.observations_plus_qc as obs_qc_module
+import noc_kriging.kriging as krig_module
 
 
 class ConfigParserMultiValues(OrderedDict):
@@ -81,224 +53,264 @@ class ConfigParserMultiValues(OrderedDict):
         return value.splitlines()
 
 
-
-def main(argv):
-
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-config", dest="config", required=False, default="config.ini", help="INI file containing configuration settings")
-    parser.add_argument("-year_start", dest="year_start", required=False, help="start year")
-    parser.add_argument("-year_stop", dest="year_stop", required=False, help="end year")
-    parser.add_argument("-method", dest="method", default="simple", required=False, help="Kriging Method - one of \"simple\" or \"ordinary\"")
+    parser.add_argument(
+        "-config",
+        dest="config",
+        required=False,
+        default="config.ini",
+        help="INI file containing configuration settings",
+    )
+    parser.add_argument(
+        "-year_start", dest="year_start", required=False, help="start year"
+    )
+    parser.add_argument(
+        "-year_stop", dest="year_stop", required=False, help="end year"
+    )
+    parser.add_argument(
+        "-method",
+        dest="method",
+        default="simple",
+        required=False,
+        help='Kriging Method - one of "simple" or "ordinary"',
+    )
     args = parser.parse_args()
-    
+
     config_file = args.config
     print(config_file)
 
-    
-    
-    #load config options from ini file
-    #this is done using an ini config file, which is located in the same direcotry as the python code
-    #instantiate
-    config = ConfigParser(strict=False, empty_lines_in_values=False, dict_type=ConfigParserMultiValues, converters={"list": ConfigParserMultiValues.getlist})
-    #parce existing config file
-    config.read(config_file) #('config.ini' or 'three_step_kriging.ini')
-    
-    print(config)
-    
-        
-    #read values from auxiliary_files section
-    #for string use config.get
-    #for boolean use config.getboolean
-    #for int use config.getint
-    #for float use config.getfloat
-    #for list (multiple options for same key) use config.getlist
-    
-    #location of ESA CCI files for the covariance creation and output grid
-    cci_directory = config.get('observations', 'esa_cci')
-    cci_climatology = config.get('SST', 'esa_climatology')
-    cci_daily_climatology = config.get('SST', 'esa_daily_climatology')
-    metoffice_climatology = config.get('SST', 'metoffice_climatology')
+    # load config options from ini file
+    # this is done using an ini config file, which is located in the same direcotry as the python code
+    # instantiate
+    config = ConfigParser(
+        strict=False,
+        empty_lines_in_values=False,
+        dict_type=ConfigParserMultiValues,
+        converters={"list": ConfigParserMultiValues.getlist},
+    )
+    # parce existing config file
+    config.read(config_file)  # ('config.ini' or 'three_step_kriging.ini')
 
-    #what are we processing - variable in the files from cci_directory
-    ds_varname = config.getlist('variable_name', 'variable')
-    #for sst 0, for sst_anomaly 1
+    print(config)
+
+    # read values from auxiliary_files section
+    # for string use config.get
+    # for boolean use config.getboolean
+    # for int use config.getint
+    # for float use config.getfloat
+    # for list (multiple options for same key) use config.getlist
+
+    # location of ESA CCI files for the covariance creation and output grid
+    cci_directory = config.get("observations", "esa_cci")
+    cci_climatology = config.get("SST", "esa_climatology")
+    cci_daily_climatology = config.get("SST", "esa_daily_climatology")
+    metoffice_climatology = config.get("SST", "metoffice_climatology")
+
+    # what are we processing - variable in the files from cci_directory
+    ds_varname = config.getlist("variable_name", "variable")
+    # for sst 0, for sst_anomaly 1
     ds_varname = ds_varname[1]
-    
-    #set boundaries for the domain
-    lon_west  = config.getfloat('SST', 'lon_west') #-180. 
-    lon_east  = config.getfloat('SST', 'lon_east') #180. 
-    lat_south = config.getfloat('SST', 'lat_south') #-90.
-    lat_north = config.getfloat('SST', 'lat_north') #90. 
-    
-    #read measurement and bias uncertainties from config
-    sig_ms = config.getfloat('SST', 'sig_ms')
-    sig_mb = config.getfloat('SST', 'sig_mb')
-    sig_bs =  config.getfloat('SST', 'sig_bs')
-    sig_bb = config.getfloat('SST', 'sig_bb')
-    
-    
-    #location of the ICOADS observation files
-    data_path = config.get('observations', 'observations')
-    #location og QC flags in GROUPS subdirectories
-    qc_path = config.get('SST', 'qc_flags_joe')
-    qc_path_2 = config.get('SST', 'qc_flags_joe_tracked')
-    
+
+    # set boundaries for the domain
+    lon_west = config.getfloat("SST", "lon_west")  # -180.
+    lon_east = config.getfloat("SST", "lon_east")  # 180.
+    lat_south = config.getfloat("SST", "lat_south")  # -90.
+    lat_north = config.getfloat("SST", "lat_north")  # 90.
+
+    # read measurement and bias uncertainties from config
+    sig_ms = config.getfloat("SST", "sig_ms")
+    sig_mb = config.getfloat("SST", "sig_mb")
+    sig_bs = config.getfloat("SST", "sig_bs")
+    sig_bb = config.getfloat("SST", "sig_bb")
+
+    # location of the ICOADS observation files
+    data_path = config.get("observations", "observations")
+    # location og QC flags in GROUPS subdirectories
+    qc_path = config.get("SST", "qc_flags_joe")
+    qc_path_2 = config.get("SST", "qc_flags_joe_tracked")
+
     if args.year_start and args.year_stop:
         year_start = int(args.year_start)
         year_stop = int(args.year_stop)
     else:
-        #start_date
-        year_start = config.getint('SST', 'startyear')
-        #end_date
-        year_stop = config.getint('SST', 'endyear')
+        # start_date
+        year_start = config.getint("SST", "startyear")
+        # end_date
+        year_stop = config.getint("SST", "endyear")
     print(year_start, year_stop)
-    
-    #path where the covariance(s) is/are located
-    #if single covariance, then full path
-    #if several different covariances, then path to directory
-    cov_dir = config.get('SST', 'covariance_path')
-    
-    output_directory = config.get('SST', 'output_dir')
+
+    # path where the covariance(s) is/are located
+    # if single covariance, then full path
+    # if several different covariances, then path to directory
+    cov_dir = config.get("SST", "covariance_path")
+
+    output_directory = config.get("SST", "output_dir")
     print(output_directory)
 
-    ellipse_param_path = config.get('SST', 'ellipse_parameters')
-    
+    ellipse_param_path = config.get("SST", "ellipse_parameters")
+
     bnds = [lon_west, lon_east, lat_south, lat_north]
-    #extract the latitude and longitude boundaries from user input
+    # extract the latitude and longitude boundaries from user input
     lon_bnds, lat_bnds = (bnds[0], bnds[1]), (bnds[2], bnds[3])
     print(lon_bnds, lat_bnds)
-    
-    output_lat = np.arange(lat_bnds[0]+0.5, lat_bnds[-1]+0.5,1)
-    output_lon = np.arange(lon_bnds[0]+0.5, lon_bnds[-1]+0.5,1)
+
+    output_lat = np.arange(lat_bnds[0] + 0.5, lat_bnds[-1] + 0.5, 1)
+    output_lon = np.arange(lon_bnds[0] + 0.5, lon_bnds[-1] + 0.5, 1)
     print(output_lat)
     print(output_lon)
-    
-    #climatology = obs_module.read_pentad_climatology(cci_climatology, lat_south, lat_north, lon_west,lon_east)
-    climatology = obs_module.read_daily_sst_climatology(cci_daily_climatology, lat_south, lat_north, lon_west,lon_east)
+
+    # climatology = obs_module.read_pentad_climatology(cci_climatology, lat_south, lat_north, lon_west,lon_east)
+    climatology = obs_module.read_daily_sst_climatology(
+        cci_daily_climatology, lat_south, lat_north, lon_west, lon_east
+    )
     print(climatology)
-    pentad_climatology = obs_module.read_climatology(metoffice_climatology, lat_south,lat_north, lon_west,lon_east)
+    pentad_climatology = obs_module.read_climatology(
+        metoffice_climatology, lat_south, lat_north, lon_west, lon_east
+    )
     clim_times = pentad_climatology.time
     print(clim_times)
-    
-    #climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
-    hadsst_bias_path = config.get('SST', 'hadsst_bias')
-    
-    
 
-    year_list = list(range(int(year_start), int(year_stop)+1,1))
-    month_list = list(range(1,13,1))
+    # climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
+    hadsst_bias_path = config.get("SST", "hadsst_bias")
+
+    year_list = list(range(int(year_start), int(year_stop) + 1, 1))
+    month_list = list(range(1, 13, 1))
     for i in range(len(year_list)):
         current_year = year_list[i]
-        
-        
-        #add MetOffice pentads here
-        yr_rng = pd.date_range('1970/01/03','1970/12/31',freq='5D')
+
+        # add MetOffice pentads here
+        yr_rng = pd.date_range("1970/01/03", "1970/12/31", freq="5D")
         times2 = [j.replace(year=current_year) for j in yr_rng]
         print(times2)
         times_series = pd.Series(times2)
-        by_month = list(times_series.groupby(times_series.map(lambda x: x.month)))
+        by_month = list(
+            times_series.groupby(times_series.map(lambda x: x.month))
+        )
         print(by_month)
-        
-        
-        
+
         try:
-            ncfile.close()  #make sure dataset is not already open.
-        except: 
+            ncfile.close()  # make sure dataset is not already open.
+        except:
             pass
-                    
-        ncfilename = str(output_directory) + str(current_year) + '_pentads_kriged_metoffice.nc'
-        ncfile = nc.Dataset(ncfilename,mode='w',format='NETCDF4_CLASSIC') 
-        #print(ncfile)
-        
-        lat_dim = ncfile.createDimension('lat', len(output_lat))    # latitude axis
-        lon_dim = ncfile.createDimension('lon', len(output_lon))    # longitude axis
-        time_dim = ncfile.createDimension('time', None)         # unlimited axis
-        
+
+        ncfilename = (
+            str(output_directory)
+            + str(current_year)
+            + "_pentads_kriged_metoffice.nc"
+        )
+        ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
+        # print(ncfile)
+
+        lat_dim = ncfile.createDimension(
+            "lat", len(output_lat)
+        )  # latitude axis
+        lon_dim = ncfile.createDimension(
+            "lon", len(output_lon)
+        )  # longitude axis
+        time_dim = ncfile.createDimension("time", None)  # unlimited axis
+
         # Define two variables with the same names as dimensions,
         # a conventional way to define "coordinate variables".
-        lat = ncfile.createVariable('lat', np.float32, ('lat',))
-        lat.units = 'degrees_north'
-        lat.long_name = 'latitude'
-        lon = ncfile.createVariable('lon', np.float32, ('lon',))
-        lon.units = 'degrees_east'
-        lon.long_name = 'longitude'
-        time = ncfile.createVariable('time', np.float64, ('time',))
-        time.units = 'days since %s-01-01' % (str(current_year))
-        time.long_name = 'time'
-        #print(time)
-        
+        lat = ncfile.createVariable("lat", np.float32, ("lat",))
+        lat.units = "degrees_north"
+        lat.long_name = "latitude"
+        lon = ncfile.createVariable("lon", np.float32, ("lon",))
+        lon.units = "degrees_east"
+        lon.long_name = "longitude"
+        time = ncfile.createVariable("time", np.float64, ("time",))
+        time.units = "days since %s-01-01" % (str(current_year))
+        time.long_name = "time"
+        # print(time)
+
         # Define a 3D variable to hold the data
-        krig_anom = ncfile.createVariable('sst_anomaly',np.float32,('time','lat','lon'))
+        krig_anom = ncfile.createVariable(
+            "sst_anomaly", np.float32, ("time", "lat", "lon")
+        )
         # note: unlimited dimension is leftmost
-        krig_anom.units = 'deg C' # degrees Kelvin
-        krig_anom.standard_name = 'SST anomaly'
+        krig_anom.units = "deg C"  # degrees Kelvin
+        krig_anom.standard_name = "SST anomaly"
         # Define a 3D variable to hold the data
-        krig_uncert = ncfile.createVariable('sst_anomaly_uncertainty',np.float32,('time','lat','lon')) # note: unlimited dimension is leftmost
-        krig_uncert.units = 'deg C' # degrees Kelvin
-        krig_uncert.standard_name = 'uncertainty' # this is a CF standard name
+        krig_uncert = ncfile.createVariable(
+            "sst_anomaly_uncertainty", np.float32, ("time", "lat", "lon")
+        )  # note: unlimited dimension is leftmost
+        krig_uncert.units = "deg C"  # degrees Kelvin
+        krig_uncert.standard_name = "uncertainty"  # this is a CF standard name
         # Define a 3D variable to hold the data
-        grid_obs = ncfile.createVariable('observations_per_gridcell',np.float32,('time','lat','lon'))
+        grid_obs = ncfile.createVariable(
+            "observations_per_gridcell", np.float32, ("time", "lat", "lon")
+        )
         # note: unlimited dimension is leftmost
-        grid_obs.units = '' # degrees Kelvin
-        grid_obs.standard_name = 'Number of observations within each gridcell'
-        
+        grid_obs.units = ""  # degrees Kelvin
+        grid_obs.standard_name = "Number of observations within each gridcell"
+
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
         lat[:] = output_lat
         lon[:] = output_lon
-        
-        
+
         for j in range(len(month_list)):
             current_month = month_list[j]
-            #print(month_list)
-            idx, monthly = by_month[current_month-1]
+            # print(month_list)
+            idx, monthly = by_month[current_month - 1]
             print(monthly)
             print(idx)
             print(monthly.index)
-            
-            
-            #print(current_month)
-            obs_df = obs_qc_module.main(data_path, qc_path, qc_path_2, year=current_year, month=current_month)
-            #print(obs_df.columns.values)
-            
-            #covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
+
+            # print(current_month)
+            obs_df = obs_qc_module.main(
+                data_path,
+                qc_path,
+                qc_path_2,
+                year=current_year,
+                month=current_month,
+            )
+            # print(obs_df.columns.values)
+
+            # covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
             covariance = cov_module.get_covariance(cov_dir, month=current_month)
             print(covariance)
             diag_ind = np.diag_indices_from(covariance)
-            covariance[diag_ind] = covariance[diag_ind]*1.02 + 0.005
+            covariance[diag_ind] = covariance[diag_ind] * 1.02 + 0.005
             print(covariance)
-            
-            hadsst_bias_month = obs_module.read_hadsst_bias(hadsst_bias_path, current_year, current_month)
-            print(f'{hadsst_bias_month =}')
-            
-            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(cov_dir, month=current_month)
 
-            #read in ellipse parameters file corresponding to the processed file
-            month_ellipse_param = obs_qc_module.ellipse_param(ellipse_param_path, month=current_month, var='SST')
-            
-            # list of dates for each year 
-            _,month_range = monthrange(current_year, current_month)
-            #print(month_range)
-            
-            #if we do MetOffice processing:
+            hadsst_bias_month = obs_module.read_hadsst_bias(
+                hadsst_bias_path, current_year, current_month
+            )
+            print(f"{hadsst_bias_month =}")
+
+            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
+                cov_dir, month=current_month
+            )
+
+            # read in ellipse parameters file corresponding to the processed file
+            month_ellipse_param = obs_qc_module.ellipse_param(
+                ellipse_param_path, month=current_month, var="SST"
+            )
+
+            # list of dates for each year
+            _, month_range = monthrange(current_year, current_month)
+            # print(month_range)
+
+            # if we do MetOffice processing:
             for i in monthly.index:
-                print('i', i, 'monthly.index', monthly.index)
+                print("i", i, "monthly.index", monthly.index)
                 pentad_date = monthly[i]
-                pentad_idx = i 
+                pentad_idx = i
                 print(pentad_date)
                 print(pentad_idx)
-                
+
                 timestep = pentad_idx
                 current_date = pentad_date
                 start_date = current_date - timedelta(days=2)
                 end_date = current_date + timedelta(days=2)
-                print('----------')
-                print('timestep', timestep)
-                print('current date', current_date)
-                print('start date', start_date)
-                print('end date', end_date)
-                print('----------')
-                
+                print("----------")
+                print("timestep", timestep)
+                print("current date", current_date)
+                print("start date", start_date)
+                print("end date", end_date)
+                print("----------")
+
                 if isleap(current_year):
                     fake_non_leap_year = 1970
                     current_date = current_date.replace(year=fake_non_leap_year)
@@ -306,40 +318,57 @@ def main(argv):
                     end_date = current_date + timedelta(days=2)
                     start_date = start_date.replace(year=current_year)
                     end_date = end_date.replace(year=current_year)
-                    day_df = obs_df.loc[(obs_df['date'] >= str(start_date)) & (obs_df['date'] <= str(end_date))]
+                    day_df = obs_df.loc[
+                        (obs_df["date"] >= str(start_date))
+                        & (obs_df["date"] <= str(end_date))
+                    ]
                 else:
                     start_date = current_date - timedelta(days=2)
                     end_date = current_date + timedelta(days=2)
-                    day_df = obs_df.loc[(obs_df['date'] >= str(start_date)) & (obs_df['date'] <= str(end_date))]
+                    day_df = obs_df.loc[
+                        (obs_df["date"] >= str(start_date))
+                        & (obs_df["date"] <= str(end_date))
+                    ]
                 print(day_df)
-                
+
                 try:
-                    metoffice_climatology = climatology['climatology'] #[timestep]
+                    metoffice_climatology = climatology[
+                        "climatology"
+                    ]  # [timestep]
                 except KeyError:
-                    metoffice_climatology = climatology['analysed_sst']
+                    metoffice_climatology = climatology["analysed_sst"]
                 print(metoffice_climatology)
-                
-                #add climatology value and calculate the SST anomaly
-                #day_df = obs_module.extract_clim_anom(metoffice_climatology, day_df)
-                day_df = obs_qc_module.SST_match_climatology_to_obs(metoffice_climatology, day_df)
-                day_df = obs_qc_module.SST_match_bias_to_obs(hadsst_bias_month, day_df)
+
+                # add climatology value and calculate the SST anomaly
+                # day_df = obs_module.extract_clim_anom(metoffice_climatology, day_df)
+                day_df = obs_qc_module.SST_match_climatology_to_obs(
+                    metoffice_climatology, day_df
+                )
+                day_df = obs_qc_module.SST_match_bias_to_obs(
+                    hadsst_bias_month, day_df
+                )
                 print(day_df)
-                
-                
-                #calculate flattened idx based on the ESA landmask file
-                #which is compatible with the ESA-derived covariance
-                #mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, day_df, mask_ds, mask_ds_lat, mask_ds_lon)
+
+                # calculate flattened idx based on the ESA landmask file
+                # which is compatible with the ESA-derived covariance
+                # mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
+                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
+                    lon_bnds,
+                    lat_bnds,
+                    day_df,
+                    mask_ds,
+                    mask_ds_lat,
+                    mask_ds_lon,
+                )
                 cond_df.reset_index(drop=True, inplace=True)
-                
-                #print(cond_df.columns.values)
-                #print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
-                #quick temperature check
-                #print(cond_df['sst'])
-                #print(cond_df['climatology_sst'])
-                #print(cond_df['sst_anomaly'])
-                
-                
+
+                # print(cond_df.columns.values)
+                # print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
+                # quick temperature check
+                # print(cond_df['sst'])
+                # print(cond_df['climatology_sst'])
+                # print(cond_df['sst_anomaly'])
+
                 """
                 #EXTRA BIT FOR PLOTTING INSIDE MAIN CODE
                 plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
@@ -380,31 +409,48 @@ def main(argv):
                 #plt.show()
                 fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
                 """
-                day_flat_idx = cond_df['flattened_idx'][:]
+                day_flat_idx = cond_df["flattened_idx"][:]
                 print(day_flat_idx)
 
-                #match gridded observations to ellipse parameters
-                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(month_ellipse_param, cond_df, mask_ds)
-                
-                cond_df["gridbox"] = day_flat_idx #.values.reshape(-1)
-                
-                gridbox_counts = cond_df['gridbox'].value_counts()
+                # match gridded observations to ellipse parameters
+                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(
+                    month_ellipse_param, cond_df, mask_ds
+                )
+
+                cond_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
+
+                gridbox_counts = cond_df["gridbox"].value_counts()
                 gridbox_count_np = gridbox_counts.to_numpy()
                 gridbox_id_np = gridbox_counts.index.to_numpy()
                 del gridbox_counts
-                water_mask = np.copy(mask_ds.variables['landice_sea_mask'][:,:])
-                grid_obs_2d = krig_module.result_reshape_2d(gridbox_count_np, gridbox_id_np, water_mask)
-                
-                #obs_module.match_hadsst_bias_to_gridded_obs(hadsst_bias_month, day_flat_idx, mask_ds)
-                
-                obs_covariance, W = obs_module.measurement_covariance(cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb)
-                #print(obs_covariance)
-                #print(W)
-                
-                #krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(covariance, cond_df, mask_ds, day_flat_idx, obs_covariance, W, bias=True, kriging_method=args.method)
-                print('Kriging done, saving output')
-                
+                water_mask = np.copy(
+                    mask_ds.variables["landice_sea_mask"][:, :]
+                )
+                grid_obs_2d = krig_module.result_reshape_2d(
+                    gridbox_count_np, gridbox_id_np, water_mask
+                )
+
+                # obs_module.match_hadsst_bias_to_gridded_obs(hadsst_bias_month, day_flat_idx, mask_ds)
+
+                obs_covariance, W = obs_module.measurement_covariance(
+                    cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb
+                )
+                # print(obs_covariance)
+                # print(W)
+
+                # krige obs onto gridded field
+                anom, uncert = krig_module.kriging_main(
+                    covariance,
+                    cond_df,
+                    mask_ds,
+                    day_flat_idx,
+                    obs_covariance,
+                    W,
+                    bias=True,
+                    kriging_method=args.method,
+                )
+                print("Kriging done, saving output")
+
                 """
                 fig = plt.figure(figsize=(10, 5))
                 img_extent = (-180., 180., -90., 90.)
@@ -422,22 +468,29 @@ def main(argv):
                 plt.show()
                 #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
                 """
-                
-                # Write the data.  
-                #This writes each time slice to the netCDF
-                krig_anom[timestep,:,:] = anom.astype(np.float32) #ordinary_kriging
-                krig_uncert[timestep,:,:] = uncert.astype(np.float32) #ordinary_kriging
-                grid_obs[timestep,:,:] = grid_obs_2d.astype(np.float32)
+
+                # Write the data.
+                # This writes each time slice to the netCDF
+                krig_anom[timestep, :, :] = anom.astype(
+                    np.float32
+                )  # ordinary_kriging
+                krig_uncert[timestep, :, :] = uncert.astype(
+                    np.float32
+                )  # ordinary_kriging
+                grid_obs[timestep, :, :] = grid_obs_2d.astype(np.float32)
                 print("-- Wrote data")
                 print(pentad_idx, pentad_date)
-        
+
         # Write time
-        #pd.date_range takes month/day/year as input dates
-        clim_times_updated = [j.replace(year=current_year) for j in pd.to_datetime(clim_times.data)]
+        # pd.date_range takes month/day/year as input dates
+        clim_times_updated = [
+            j.replace(year=current_year)
+            for j in pd.to_datetime(clim_times.data)
+        ]
         print(clim_times_updated)
         dates_ = pd.Series(clim_times_updated)
-        dates = dates_.dt.to_pydatetime() # Here it becomes date
-        print('pydate', dates)
+        dates = dates_.dt.to_pydatetime()  # Here it becomes date
+        print("pydate", dates)
         times = date2num(dates, time.units)
         print(times)
         """
@@ -456,17 +509,14 @@ def main(argv):
         print(times)
         """
         time[:] = times
-        print(time)    
+        print(time)
         # first print the Dataset object to see what we've got
         print(ncfile)
-        
+
         # close the Dataset.
         ncfile.close()
-        print('Dataset is closed!')
-        
+        print("Dataset is closed!")
 
 
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
+if __name__ == "__main__":
+    main()
