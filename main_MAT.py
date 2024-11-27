@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ################
 # by A. Faulkner
 # for python version 3.0 and up
