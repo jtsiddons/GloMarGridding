@@ -12,7 +12,6 @@ import os
 import argparse
 
 from configparser import ConfigParser
-from collections import OrderedDict
 
 # math tools
 import numpy as np
@@ -34,21 +33,10 @@ import noc_kriging.covariance as cov_module
 import noc_kriging.observations as obs_module
 import noc_kriging.observations_plus_qc as obs_qc_module
 import noc_kriging.kriging as krig_module
+from noc_kriging.utils import ConfigParserMultiValues
 
 # PyCOADS functions
 from PyCOADS.processing.solar import is_daytime
-
-
-class ConfigParserMultiValues(OrderedDict):
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):
-        return value.splitlines()
 
 
 def main():

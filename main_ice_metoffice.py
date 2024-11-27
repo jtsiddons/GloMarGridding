@@ -18,7 +18,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "16"
 # argument parser
 import argparse
 
-from collections import OrderedDict
 from configparser import ConfigParser
 
 # math tools
@@ -41,18 +40,7 @@ import noc_kriging.covariance as cov_module
 import noc_kriging.observations as obs_module
 import noc_kriging.observations_plus_qc as obs_qc_module
 import noc_kriging.kriging as krig_module
-
-
-class ConfigParserMultiValues(OrderedDict):
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):
-        return value.splitlines()
+from noc_kriging.utils import ConfigParserMultiValues
 
 
 def main():

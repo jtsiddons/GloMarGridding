@@ -19,7 +19,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "16"
 import argparse
 
 from configparser import ConfigParser
-from collections import OrderedDict
 
 # math tools
 import numpy as np
@@ -39,19 +38,7 @@ import noc_kriging.covariance as cov_module
 import noc_kriging.observations as obs_module
 import noc_kriging.observations_plus_qc as obs_qc_module
 import noc_kriging.kriging as krig_module
-import noc_kriging.utils as utils
-
-
-class ConfigParserMultiValues(OrderedDict):
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):
-        return value.splitlines()
+from noc_kriging.utils import ConfigParserMultiValues, add_empty_layers
 
 
 def main():
@@ -256,7 +243,7 @@ def main():
             )
             print(obs_df)
             if obs_df is None or obs_df.empty:
-                utils.add_empty_layers(
+                add_empty_layers(
                     [krig_anom, krig_uncert, grid_obs],
                     monthly.index,
                     mask_ds.landmask.shape,
@@ -292,7 +279,7 @@ def main():
 
                 # ADD CHECK IF DF EMPTY HERE
                 if day_df.empty:
-                    utils.add_empty_layers(
+                    add_empty_layers(
                         [krig_anom, krig_uncert, grid_obs],
                         timestep,
                         mask_ds.landmask.shape,

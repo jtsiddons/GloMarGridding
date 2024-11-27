@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import netCDF4 as nc
 import numpy as np
 
@@ -18,3 +19,15 @@ def add_empty_layers(
         for timestamp in timestamps:
             variable[timestamp, :, :] = empty
     return None
+
+
+class ConfigParserMultiValues(OrderedDict):
+    def __setitem__(self, key, value):
+        if key in self and isinstance(value, list):
+            self[key].extend(value)
+        else:
+            super().__setitem__(key, value)
+
+    @staticmethod
+    def getlist(value):
+        return value.splitlines()
