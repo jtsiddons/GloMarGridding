@@ -14,16 +14,18 @@ packages = ["noc_kriging"]
 name = "NOCKriging"
 version = "0.1.0"
 dependencies = [
-  "numpy<2",
-  "pandas",
-  "geopandas",
-  "xarray",
-  "netCDF4<1.7",
-  "matplotlib",
   "Cartopy",
-  "scipy",
+  "geopandas",
+  "matplotlib",
+  "netCDF4",
+  "numpy",
+  "pandas",
+  "polars",
+  "pyarrow",
   "scikit-learn",
+  "scipy",
   "tqdm",
+  "xarray",
   "PyCOADS @ git+ssh://git@git.noc.ac.uk/josidd/pycoads.git",
 ]
 requires-python = ">=3.11"
