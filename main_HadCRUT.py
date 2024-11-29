@@ -440,9 +440,6 @@ def main():
             W = obs_module.get_weights(mon_df)
             # print(W)
 
-            check_value = error_covariance[697, 697]
-            print(error_covariance[(697-2):(697+3), (697-2):(697+3)])
-
             grid_idx = np.array(sorted(mon_df["gridbox"]))  # sorted?
             # print(error_covariance, error_covariance.shape)
             error_covariance = error_covariance[grid_idx[:, None], grid_idx[None, :]]
@@ -450,9 +447,6 @@ def main():
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
             print(mon_df)
-            print(mon_df.iloc[34])
-            print(error_covariance[(34-2):(34+3), (34-2):(34+3)])
-            print(check_value, np.isin(check_value, error_covariance), np.where(error_covariance == check_value))
 
             anom, uncert = krig_module.kriging(
                 grid_idx,
