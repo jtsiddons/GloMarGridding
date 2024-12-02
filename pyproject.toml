@@ -8,10 +8,10 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["noc_kriging"]
+packages = ["glomar_gridding"]
 
 [project]
-name = "NOCKriging"
+name = "GloMarGridding"
 version = "0.1.0"
 dependencies = [
   "Cartopy",
@@ -40,10 +40,11 @@ maintainers = [
   { name = "Steven Chan", email = "stchan@noc.ac.uk" },
   { name = "Joseph Siddons", email = "josidd@noc.ac.uk" },
 ]
-description = "National Oceanography Centre library for performing kriging."
+description = "National Oceanography Centre library for performing gridding."
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = [
+  "gridding",
   "kriging",
   "ordinary",
   "simple",
@@ -107,4 +108,4 @@ xarray = "xr"
 netCDF4 = "nc"
 
 [project.urls]
-Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/noc_kriging.git"
+Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"

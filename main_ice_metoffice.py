@@ -36,11 +36,11 @@ import pandas as pd
 import netCDF4 as nc
 
 # self-written modules (from the same directory)
-import noc_kriging.covariance as cov_module
-import noc_kriging.observations as obs_module
-import noc_kriging.observations_plus_qc as obs_qc_module
-import noc_kriging.kriging as krig_module
-from noc_kriging.utils import ConfigParserMultiValues
+import glomar_gridding.covariance as cov_module
+import glomar_gridding.observations as obs_module
+import glomar_gridding.observations_plus_qc as obs_qc_module
+import glomar_gridding.kriging as krig_module
+from glomar_gridding.utils import ConfigParserMultiValues
 
 
 def main():
