@@ -6,107 +6,117 @@
 # global
 import os
 import re
-import os.path
+from warnings import warn
 
-# argument parser
-from configparser import ConfigParser
+import numpy as np
 
 # data handling tools
 import xarray as xr
+from xarray.backends.api import T_Engine
+
+from .utils import MonthName, regex_coord
 
 
 def _preprocess(x, lon_bnds, lat_bnds):
     return x.sel(lon=slice(*lon_bnds), lat=slice(*lat_bnds))
 
 
-def read_in_covariance_file(path, month):
-    # for a path to a directory with covariances
-    if os.path.isdir(path):
-        monthDict = {
-            1: "january",
-            2: "february",
-            3: "march",
-            4: "april",
-            5: "may",
-            6: "june",
-            7: "july",
-            8: "august",
-            9: "september",
-            10: "october",
-            11: "november",
-            12: "december",
-        }
-        long_filelist = []
+def read_in_covariance_file(
+    path: str,
+    month: int,
+) -> xr.Dataset:
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Path {path} not found")
 
-        filelist = os.listdir(path)  # os.path.join(thedirectory, thefile)
-        print(filelist)
+    if os.path.isfile(path):
+        return xr.open_dataset(path, engine="netcdf4")
 
-        mon_str = monthDict[int(month)]
-        print("Matching global covariance for %s" % mon_str)
-        r = re.compile("world_" + str(mon_str) + r"\w+.nc")
-        filtered_list = list(filter(r.match, filelist))
-        if not filtered_list:
-            r = re.compile("covariance_" + str(month).zfill(2) + r"\w+.nc")
-        filtered_list = list(filter(r.match, filelist))
-        fullpath_list = [os.path.join(path, f) for f in filtered_list]
-        print(filtered_list)
-        print(fullpath_list)
-        # long_filelist.extend(fullpath_list)
-        # print(long_filelist)
+    # Is a directory
+    filelist: list[str] = os.listdir(path)
+    if not filelist:
+        raise FileNotFoundError(f"Directory {path} is empty")
 
-        ds = xr.open_dataset(fullpath_list[0], engine="netcdf4")
-        print(ds)
-    # for a path to a single covariance file
-    elif os.path.isfile(path):
-        # for a single file covariance
-        ds = xr.open_dataset(str(path), engine="netcdf4")
-    print(ds)
-    return ds
+    mon_str: str = MonthName(month).name.lower()
+    print(f"Matching global covariance for {mon_str}")
+
+    r: re.Pattern = re.compile(f"world_{mon_str}" + r"\w+.nc")
+    filtered_list: list[str] = [f for f in filelist if r.match(f)]
+    if not filtered_list:
+        r: re.Pattern = re.compile(f"covariance_{month:02d}" + r"\w+.nc")
+        filtered_list: list[str] = [f for f in filelist if r.match(f)]
+    if not filtered_list:
+        raise FileNotFoundError(f"Cannot find monthly file in directory {path}")
+
+    if len(filtered_list) > 1:
+        warn(
+            f"Found multiple files in {path}. Taking first. All files: {', '.join(filtered_list)}"
+        )
+
+    return xr.open_dataset(
+        os.path.join(path, filtered_list[0]), engine="netcdf4"
+    )
 
 
-def get_covariance(path, month):
+def get_covariance(
+    path: str,
+    month: int,
+    cov_var_name: str = "covariance",
+) -> np.ndarray:
     ds = read_in_covariance_file(path, month)
-    covariance = ds.variables["covariance"].values
+    covariance = ds.variables[cov_var_name].values
     print(covariance)
     return covariance
 
 
-def get_landmask(path, month):
-    ds = read_in_covariance_file(path, month)
-    landmask = ds.variables["landice_sea_mask"].values
-    print(landmask)
-    lat = ds.latitude.values
-    lon = ds.longitude.values
-    print(lon)
-    lon = ((lon + 540.0) % 360.0) - 180.0
-    print(lon)
-    # water is 1, land is 0
-    ds.coords["longitude"] = lon
-    print(ds.latitude.values)
-    print(ds.longitude.values)
-    # gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
-    return ds, lat, lon
+def read_single_file(
+    path: str,
+    engine: T_Engine,
+    adjust_lon: bool = True,
+    rename_lon: str | None = None,
+    rename_lat: str | None = None,
+) -> tuple[xr.Dataset, str, str]:
+    ds = xr.open_dataset(path, engine=engine)
+
+    lon_var_name = regex_coord(
+        ds, re.compile(r"^lon(gitude)?$"), case_insensitive=True
+    )
+    if rename_lon:
+        ds.rename({lon_var_name: rename_lon})
+        lon_var_name = rename_lon
+
+    lat_var_name = regex_coord(
+        ds, re.compile(r"^lat(itude)?$"), case_insensitive=True
+    )
+    if rename_lat:
+        ds.rename({lat_var_name: rename_lat})
+        lat_var_name = rename_lat
+
+    if adjust_lon and (ds.coords[lon_var_name] > 180).any():
+        ds.coords[lon_var_name] = (
+            (ds.coords[lon_var_name] + 540.0) % 360.0
+        ) - 180.0
+    return ds, lon_var_name, lat_var_name
 
 
-def get_singlefile_landmask(path):
-    ds = xr.open_dataset(str(path), engine="netcdf4")
-    print(ds)
-    try:
-        landmask = ds.variables["landice_sea_mask"].values
-    except KeyError:
-        landmask = ds.variables["landmask"].values
-    print(landmask)
-    lat = ds.lat.values
-    lon = ds.lon.values
-    print(lon)
-    lon = ((lon + 540.0) % 360.0) - 180.0
-    print(lon)
-    # water is 1, land is 0
-    ds.coords["lon"] = lon
-    print(ds.lat.values)
-    print(ds.lon.values)
-    # gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
-    return ds, lat, lon
+# def get_singlefile_landmask(path: str):
+#     ds = xr.open_dataset(str(path), engine="netcdf4")
+#     print(ds)
+#     try:
+#         landmask = ds.variables["landice_sea_mask"].values
+#     except KeyError:
+#         landmask = ds.variables["landmask"].values
+#     print(landmask)
+#     lat = ds.lat.values
+#     lon = ds.lon.values
+#     print(lon)
+#     lon = ((lon + 540.0) % 360.0) - 180.0
+#     print(lon)
+#     # water is 1, land is 0
+#     ds.coords["lon"] = lon
+#     print(ds.lat.values)
+#     print(ds.lon.values)
+#     # gridlon, gridlat = np.meshgrid(esa_cci_lon, esa_cci_lat)
+#     return ds, lat, lon
 
 
 """

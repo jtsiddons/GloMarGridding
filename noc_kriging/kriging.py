@@ -10,6 +10,8 @@ from typing import Literal, Optional, Tuple
 # math tools
 import numpy as np
 
+from utils import adjust_small_negative
+
 KrigMethod = Literal["simple", "ordinary"]
 
 
@@ -156,17 +158,9 @@ def kriging_simple(
     print(f"{z_obs =}")
 
     G = G @ Ss
-    print(f"{G =}")
-    dz_squared = (np.diag(cci_covariance - G)).copy()
-    smol_neg_check = np.logical_and(
-        np.isclose(dz_squared, 0, atol=1e-08), dz_squared < 0.0
-    )
-    if np.sum(smol_neg_check) > 0:
-        print(
-            "Small negative vals are detected in np.diag(G = G @ Ss) in SK and are set to 0."
-        )
-        print(dz_squared[smol_neg_check])
-    dz_squared[smol_neg_check] = 0.0
+    print(f'{G =}')
+    dz_squared = (np.diag(cci_covariance - G))
+    dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     print(f"{dz =}")
     dz[np.isnan(dz)] = 0.0
@@ -216,16 +210,8 @@ def kriging_ordinary(
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz_squared = (np.diag(cci_covariance - G) - alpha).copy()
-    smol_neg_check = np.logical_and(
-        np.isclose(dz_squared, 0, atol=1e-08), dz_squared < 0.0
-    )
-    if np.sum(smol_neg_check) > 0:
-        print(
-            "Small negative vals are detected in np.diag(G @ Ss)-alpha in OK and are set to 0."
-        )
-        print(dz_squared[smol_neg_check])
-    dz_squared[smol_neg_check] = 0.0
+    dz_squared = (np.diag(cci_covariance - G) - alpha)
+    dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
     print("Ordinary Kriging Complete")
