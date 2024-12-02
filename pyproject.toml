@@ -26,7 +26,6 @@ dependencies = [
   "scipy",
   "tqdm",
   "xarray",
-  "PyCOADS @ git+ssh://git@git.noc.ac.uk/josidd/pycoads.git",
 ]
 requires-python = ">=3.11"
 authors = [
