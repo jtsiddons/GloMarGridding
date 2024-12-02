@@ -16,7 +16,7 @@ def add_empty_layers(nc_variables: list[nc.Variable] | nc.Variable,
 
 
 def adjust_small_negative(
-        dz_squared: np.ndarray[float]
+        mat: np.ndarray[float]
 ) -> None:
     """
     Adjusts small negative values (with absolute value < 1e-8)
