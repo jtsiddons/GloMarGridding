@@ -409,7 +409,7 @@ def main():
                 interp_covariance,
                 error_covariance,
                 method=args.method,
-                # remove_obs_mean=remove_obs_mean,
+                remove_obs_mean=args.remove_obs_mean,
             )
             print("Kriging done, saving output")
             print(anom)
