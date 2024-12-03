@@ -26,6 +26,7 @@ import observations as obs_module
 import kriging as krig_module
 from utils import days_since_by_month
 
+import warnings
 
 class ConfigParserMultiValues(OrderedDict):
     def __setitem__(self, key, value):
@@ -43,41 +44,18 @@ def _get_sst_err_cov(
     current_year: int,
     current_month: int,
     error_covariance_path: str,
-    sampling: xr.Dataset,
     uncorrelated: xr.Dataset,
-    ignore_sampling: bool,
 ) -> np.ndarray:
-    if ignore_sampling:
-        err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
-        error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tas_cov"].values[0]
-        uncorrelated_mon = uncorrelated.sel(
-            time=np.logical_and(
-                uncorrelated.time.dt.month == current_month,
-                uncorrelated.time.dt.year == current_year,
-            )
-        )["tas_unc"].values
-        joined_mon = uncorrelated_mon * uncorrelated_mon
-    else:
-        err_cov_fn = f"HadSST.4.0.1.0_error_covariance_{current_year}{current_month:02d}.nc"
-        error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tos_cov"].values
-        sampling_mon = sampling.sel(
-            time=np.logical_and(
-                sampling.time.dt.month == current_month,
-                sampling.time.dt.year == current_year,
-            )
-        )["tos_unc"].values
-        uncorrelated_mon = uncorrelated.sel(
-            time=np.logical_and(
-                uncorrelated.time.dt.month == current_month,
-                uncorrelated.time.dt.year == current_year,
-            )
-        )["tos_unc"].values
-        joined_mon = sampling_mon * sampling_mon + uncorrelated_mon * uncorrelated_mon
-    
-    # joined = np.power(joined_mon, 0.5)
-    # print(joined)
+    err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
+    error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tas_cov"].values[0]
+    uncorrelated_mon = uncorrelated.sel(
+        time=np.logical_and(
+            uncorrelated.time.dt.month == current_month,
+            uncorrelated.time.dt.year == current_year,
+        )
+    )["tas_unc"].values
+    joined_mon = uncorrelated_mon * uncorrelated_mon
     unc_1d = np.reshape(joined_mon, (2592, 1))
-    # covariance2 = np.diag (np.reshape (unc_1d * unc_1d ,(2592)))
     covariance2 = np.diag(np.reshape(unc_1d, (2592)))
     return error_cov + covariance2
 
@@ -288,21 +266,18 @@ def main():
     match variable:
         case "sst":
             print(f"Processing for variable {variable} | {hadcrut_var}")
-            sampling_uncertainty = config.get(variable, "sampling_uncertainty")
+            if config.has_option('sst', "sampling_uncertainty"):
+                single_sigma_warn_msg = 'Option sampling_uncertainty for sst is ignored. '
+                single_sigma_warn_msg += 'HadCRUT5 only has only a single uncorrelated sigma; '
+                single_sigma_warn_msg += 'if you are using multiple uncorrelated sigmas (e.g. HadSST4), combine them first.'
+                warnings.warn(DeprecationWarning, single_sigma_warn_msg)
             uncorrelated_uncertainty = config.get(variable, "uncorrelated_uncertainty")
 
-            if sampling_uncertainty == 'NA':
-                sampling = xr.open_dataset(uncorrelated_uncertainty)
-                uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
-                ignore_sampling = True
-            else:
-                sampling = xr.open_dataset(sampling_uncertainty)
-                uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
-                ignore_sampling = False
+            uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_sst_err_cov(
-                    year, month, error_covariance_path, sampling, uncorrelated, ignore_sampling
+                    year, month, error_covariance_path, uncorrelated
                 )
 
         case "lsat":
@@ -310,18 +285,12 @@ def main():
 
             error_meas = np.load(
                 os.path.join(
-                    error_covariance_path, "CRUTEM.5.0.2.0.measurement_sampling.npz"
-                )
-            )["err_cov"]
-            error_stat = np.load(
-                os.path.join(
-                    error_covariance_path, "CRUTEM.5.0.2.0.station_uncertainty.npz"
+                    error_covariance_path, "HadCRUT.5.0.2.0.uncorrelated.npz"
                 )
             )["err_cov"]
             print("loaded error covariance")
             print(error_meas)
-            print(error_stat)
-            error_cov = error_meas + error_stat
+            error_cov = error_meas
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_lsat_err_cov(year, month, error_cov)
