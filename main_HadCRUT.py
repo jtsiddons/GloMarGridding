@@ -268,7 +268,7 @@ def main():
             print(f"Processing for variable {variable} | {hadcrut_var}")
             if config.has_option('sst', "sampling_uncertainty"):
                 single_sigma_warn_msg = 'Option sampling_uncertainty for sst is ignored. '
-                single_sigma_warn_msg += 'HadCRUT5 only has only a single uncorrelated sigma; '
+                single_sigma_warn_msg += 'HadCRUT5 only has a single uncorrelated sigma; '
                 single_sigma_warn_msg += 'if you are using multiple uncorrelated sigmas (e.g. HadSST4), combine them first.'
                 warnings.warn(DeprecationWarning, single_sigma_warn_msg)
             uncorrelated_uncertainty = config.get(variable, "uncorrelated_uncertainty")
