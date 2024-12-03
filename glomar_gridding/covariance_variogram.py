@@ -1,5 +1,5 @@
+from typing import TypeVar
 import numpy as np
-from math import *
 import pandas as pd
 
 from scipy.spatial.distance import pdist
@@ -9,9 +9,36 @@ from scipy.spatial.distance import squareform
 from math import radians
 
 
-#######################
-# define any functions here
-#######################
+Numeric = TypeVar("Numeric", float, np.ndarray)
+
+
+class Variogram:
+    """Place holder"""
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the Variogram model to a distance matrix"""
+        raise NotImplementedError("Not implemented for base Variogram class")
+
+
+class LinearVariogram(Variogram):
+    """
+    Linear model
+
+    Parameters
+    ----------
+    slope : float | np.ndarray
+    nugget : float | np.ndarray
+    """
+
+    def __init__(self, slope: Numeric, nugget: Numeric) -> None:
+        self.slope = slope
+        self.nugget = nugget
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the LinearVariogram model to a distance matrix"""
+        return self.slope * distance_matrix + self.nugget
+
+
 def linear_variogram_model(m, d):
     """
     Linear model
@@ -23,6 +50,35 @@ def linear_variogram_model(m, d):
     slope = float(m[0])
     nugget = float(m[1])
     return slope * d + nugget
+
+
+class PowerVariogram(Variogram):
+    """
+    Power model
+
+    Parameters
+    ----------
+    scale : Numeric
+    exponent : Numeric
+    nugget : Numeric
+    """
+
+    def __init__(
+        self,
+        scale: Numeric,
+        exponent: Numeric,
+        nugget: Numeric,
+    ) -> None:
+        self.scale = scale
+        self.exponent = exponent
+        self.nugget = nugget
+        return None
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the PowerVariogram model to a distance matrix"""
+        return (
+            self.scale * np.power(distance_matrix, self.exponent) + self.nugget
+        )
 
 
 def power_variogram_model(m, d):
@@ -39,6 +95,44 @@ def power_variogram_model(m, d):
     return scale * d**exponent + nugget
 
 
+class GaussianVariogram(Variogram):
+    """
+    Gaussian Model
+
+    Parameters
+    ----------
+    psill : Numeric
+    range : Numeric
+    nugget : Numeric
+    """
+
+    def __init__(
+        self,
+        psill: Numeric,
+        range: Numeric,
+        nugget: Numeric,
+    ) -> None:
+        self.psill = psill
+        self.range = range
+        self.nugget = nugget
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the GaussianVariogram model to a distance matrix"""
+        return (
+            self.psill
+            * (
+                1.0
+                - np.exp(
+                    -(
+                        np.power(distance_matrix, 2.0)
+                        / np.power(self.range * (4 / 7), 2.0)
+                    )
+                )
+            )
+            + self.nugget
+        )
+
+
 def gaussian_variogram_model(m, d):
     """
     Gaussian model
@@ -53,6 +147,35 @@ def gaussian_variogram_model(m, d):
     return (
         psill * (1.0 - np.exp(-(d**2.0) / (range_ * 4.0 / 7.0) ** 2.0)) + nugget
     )
+
+
+class ExponentialVariogram(Variogram):
+    """
+    Exponential Model
+
+    Parameters
+    ----------
+    psill : Numeric
+    range : Numeric
+    nugget : Numeric
+    """
+
+    def __init__(
+        self,
+        psill: Numeric,
+        range: Numeric,
+        nugget: Numeric,
+    ) -> None:
+        self.psill = psill
+        self.range = range
+        self.nugget = nugget
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the ExponentialVariogram model to a distance matrix"""
+        return (
+            self.psill * (1.0 - np.exp(-(distance_matrix / (self.range / 3.0))))
+            + self.nugget
+        )
 
 
 def exponential_variogram_model(m, d):
