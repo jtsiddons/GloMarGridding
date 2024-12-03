@@ -23,6 +23,9 @@ from typing import Callable, Tuple
 from matern_and_tm.matern_tau import tau_dist
 
 
+_MONTH_31: list[int] = [1, 3, 5, 7, 8, 10, 12]
+
+
 def extract_sic(sic, df):
     obs_lat = np.array(df["lat"])
     obs_lon = np.array(df["lon"])
@@ -113,6 +116,31 @@ def read_daily_sst_climatology(clim_path, min_lat, max_lat, min_lon, max_lon):
     print("----------------------")
     print(clim_file)
     return clim_file
+
+
+def days_in_pentad(
+    pentad: int,
+    pentad_type: str,
+    month: int | None = None,
+) -> list[int]:
+    match pentad_type:
+        case "standard":
+            return [i + 5 * pentad for i in range(1, 6)]
+        case "esa":
+            if month is None:
+                raise ValueError(
+                    "month must not be None if pentad_type is 'esa'"
+                )
+            dom = (pentad - 1) * 5 + 1
+            day_list = [dom + i for i in range(5)]
+            if pentad == 6:
+                if month == 2:
+                    day_list = day_list[:3]
+                if month in _MONTH_31:
+                    day_list.append(31)
+            return day_list
+        case _:
+            raise ValueError("Unknown pentad type")
 
 
 def read_daily_climatology(
