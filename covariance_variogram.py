@@ -287,30 +287,6 @@ def variogram(distance_matrix,
     return obs_covariance
 
 
-def variogram(distance_matrix,
-              variance,
-              nugget_=0.0,
-              range_=350.0,
-              variogram_model=exponential_variogram_model):
-    #range from Dave's presentation on space length scales (in km)
-    # range_ = 350 
-    #from researchgate - Sill of the semivariogram is equal to the variance of the random variable, at large distances, when variables become uncorrelated
-    sill_ = variance 
-    #nugget for now can be set to zero, it will change once we quantify the obs uncertainty better
-    # nugget_ = 0 
-    
-    #create m - a list containing [psill, range, nugget]
-    m = [sill_, range_, nugget_]
-    
-    #create d - an array of the distance values at which to calculate the variogram model
-    d = distance_matrix
-    
-    #call variogram function
-    #this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix
-    obs_covariance = variogram_model(m, d)
-    return obs_covariance
-
-
 def variogram_hadcrut5(distance_matrix,
                        terrain='lnd',
                        nugget_=0.0):
