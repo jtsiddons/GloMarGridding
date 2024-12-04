@@ -6,6 +6,8 @@
 from typing import Literal
 import numpy as np
 
+from utils import adjust_small_negative
+
 KrigMethod = Literal["simple", "ordinary"]
 
 
@@ -264,8 +266,11 @@ def kriging_simple(
     print(f"{z_obs =}")
 
     G = G @ Ss
-    dz = np.sqrt(np.diag(cci_covariance - G))
-    print(f"{dz =}")
+    print(f'{G =}')
+    dz_squared = (np.diag(cci_covariance - G))
+    adjust_small_negative(dz_squared)
+    dz = np.sqrt(dz_squared)
+    print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
 
     print("Simple Kriging Complete")
@@ -315,7 +320,9 @@ def kriging_ordinary(
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz = np.sqrt(np.diag(cci_covariance - G) - alpha)
+    dz_squared = (np.diag(cci_covariance - G) - alpha)
+    adjust_small_negative(dz_squared)
+    dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
 
     print("Ordinary Kriging Complete")
