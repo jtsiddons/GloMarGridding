@@ -283,14 +283,13 @@ def main():
         case "lsat":
             print(f"Processing for variable {variable} | {hadcrut_var}")
 
-            error_meas = np.load(
+            error_cov = np.load(
                 os.path.join(
                     error_covariance_path, "HadCRUT.5.0.2.0.uncorrelated.npz"
                 )
             )["err_cov"]
             print("loaded error covariance")
-            print(error_meas)
-            error_cov = error_meas
+            print(error_cov)
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_lsat_err_cov(year, month, error_cov)
