@@ -270,7 +270,7 @@ def main():
                 single_sigma_warn_msg = 'Option sampling_uncertainty for sst is ignored. '
                 single_sigma_warn_msg += 'HadCRUT5 only has a single uncorrelated sigma; '
                 single_sigma_warn_msg += 'if you are using multiple uncorrelated sigmas (e.g. HadSST4), combine them first.'
-                warnings.warn(DeprecationWarning, single_sigma_warn_msg)
+                warnings.warn(single_sigma_warn_msg, DeprecationWarning)
             uncorrelated_uncertainty = config.get(variable, "uncorrelated_uncertainty")
 
             uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
