@@ -24,8 +24,8 @@ import xarray as xr
 import netCDF4 as nc
 
 # self-written modules (from the same directory)
-import observations as obs_module
-import kriging as krig_module
+import glomar_gridding.observations as obs_module
+import glomar_gridding.kriging as krig_module
 
 
 class ConfigParserMultiValues(OrderedDict):
@@ -51,10 +51,18 @@ def main():
         type=str,
     )
     parser.add_argument(
-        "-year_start", dest="year_start", required=False, help="start year", type=int
+        "-year_start",
+        dest="year_start",
+        required=False,
+        help="start year",
+        type=int,
     )
     parser.add_argument(
-        "-year_stop", dest="year_stop", required=False, help="end year", type=int
+        "-year_stop",
+        dest="year_stop",
+        required=False,
+        help="end year",
+        type=int,
     )
     parser.add_argument(
         "-member",
@@ -164,7 +172,9 @@ def main():
     # print(ts1)
     # read in observations for a chosen member
     obs = xr.open_dataset(
-        os.path.join(data_path, f"DCENT_ensemble_1850_2023_member_{member:03d}.nc")
+        os.path.join(
+            data_path, f"DCENT_ensemble_1850_2023_member_{member:03d}.nc"
+        )
     )
     print("loaded observations")
     # ts2 = datetime.now()
@@ -211,7 +221,9 @@ def main():
             # print(ts0)
             # read in lsat error covariance for a chosen member
             error_cov = np.load(
-                os.path.join(error_cov_dir, f"lsat_error_covariance_{member}.npz")
+                os.path.join(
+                    error_cov_dir, f"lsat_error_covariance_{member}.npz"
+                )
             )["err_cov"]
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
@@ -249,8 +261,12 @@ def main():
         ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
         # print(ncfile)
 
-        lat_dim = ncfile.createDimension("lat", len(output_lat))  # latitude axis
-        lon_dim = ncfile.createDimension("lon", len(output_lon))  # longitude axis
+        lat_dim = ncfile.createDimension(
+            "lat", len(output_lat)
+        )  # latitude axis
+        lon_dim = ncfile.createDimension(
+            "lon", len(output_lon)
+        )  # longitude axis
         time_dim = ncfile.createDimension("time", None)  # unlimited axis
 
         # Define two variables with the same names as dimensions,
@@ -276,7 +292,9 @@ def main():
 
         # Define a 3D variable to hold the data
         krig_uncert = ncfile.createVariable(
-            f"{variable}_anomaly_uncertainty", np.float32, ("time", "lat", "lon")
+            f"{variable}_anomaly_uncertainty",
+            np.float32,
+            ("time", "lat", "lon"),
         )
         krig_uncert.units = "deg C"  # degrees Kelvin
         krig_uncert.standard_name = "uncertainty"  # this is a CF standard name
@@ -301,7 +319,8 @@ def main():
             ###############################################################################
             mon_ds = obs.sel(
                 time=np.logical_and(
-                    obs.time.dt.month == current_month, obs.time.dt.year == current_year
+                    obs.time.dt.month == current_month,
+                    obs.time.dt.year == current_year,
                 )
             )
             mon_df = mon_ds.to_dataframe().reset_index()
@@ -319,7 +338,9 @@ def main():
             ec_2 = ec_1[np.nonzero(ec_1)]
             # print('Non-nan and non-zero error covariance =', ec_2, len(ec_2))
             ec_idx = np.argwhere(
-                np.logical_and(~np.isnan(error_covariance), error_covariance != 0.0)
+                np.logical_and(
+                    ~np.isnan(error_covariance), error_covariance != 0.0
+                )
             )
             print("Index of non-nan and non-zero values =", ec_idx, len(ec_idx))
 
@@ -343,10 +364,14 @@ def main():
             mon_df["lat_idx"] = lat_idx
             mon_df["lon_idx"] = lon_idx
 
-            idx_tuple = np.array([lat_idx, lon_idx])  # list(zip(lat_idx, lon_idx))
+            idx_tuple = np.array(
+                [lat_idx, lon_idx]
+            )  # list(zip(lat_idx, lon_idx))
             # print(f'{idx_tuple =}')
             mon_flat_idx = np.ravel_multi_index(
-                idx_tuple, mesh_lat.shape, order="C"
+                idx_tuple,
+                mesh_lat.shape,
+                order="C",
             )  # row-major
             # print(f'{mon_flat_idx =}') #it's the same as ec_idx
             # print(f'{sorted(mon_flat_idx) =}')
@@ -387,14 +412,14 @@ def main():
 
             grid_idx = np.array(sorted(mon_df["gridbox"]))  # sorted?
             # print(error_covariance, error_covariance.shape)
-            error_covariance = error_covariance[grid_idx[:, None], grid_idx[None, :]]
+            error_covariance = error_covariance[
+                grid_idx[:, None], grid_idx[None, :]
+            ]
             # print(np.argwhere(np.isnan(np.diag(error_covariance))))
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
             if interpolation_covariance_type == "ellipse":
-                interp_covariane_filename = (
-                    f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc"
-                )
+                interp_covariane_filename = f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc"
                 interp_covariane_filename = os.path.join(
                     interpolation_covariance_path, interp_covariane_filename
                 )

@@ -22,11 +22,12 @@ import xarray as xr
 import netCDF4 as nc
 
 # self-written modules (from the same directory)
-import observations as obs_module
-import kriging as krig_module
-from utils import days_since_by_month
+import glomar_gridding.observations as obs_module
+import glomar_gridding.kriging as krig_module
+from glomar_gridding.utils import days_since_by_month
 
 import warnings
+
 
 class ConfigParserMultiValues(OrderedDict):
     def __setitem__(self, key, value):
@@ -46,8 +47,12 @@ def _get_sst_err_cov(
     error_covariance_path: str,
     uncorrelated: xr.Dataset,
 ) -> np.ndarray:
-    err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
-    error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tas_cov"].values[0]
+    err_cov_fn = (
+        f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
+    )
+    error_cov = xr.open_dataset(
+        os.path.join(error_covariance_path, err_cov_fn)
+    )["tas_cov"].values[0]
     uncorrelated_mon = uncorrelated.sel(
         time=np.logical_and(
             uncorrelated.time.dt.month == current_month,
@@ -137,10 +142,18 @@ def main():
         type=str,
     )
     parser.add_argument(
-        "-year_start", dest="year_start", required=False, help="start year", type=int
+        "-year_start",
+        dest="year_start",
+        required=False,
+        help="start year",
+        type=int,
     )
     parser.add_argument(
-        "-year_stop", dest="year_stop", required=False, help="end year", type=int
+        "-year_stop",
+        dest="year_stop",
+        required=False,
+        help="end year",
+        type=int,
     )
     parser.add_argument(
         "-member",
@@ -181,7 +194,7 @@ def main():
         default=0,
         required=False,
         type=int,
-        help='Should the global mean be removed? - 0:no, 1:yes, 2:yes but median, 3:yes but spatial mean',
+        help="Should the global mean be removed? - 0:no, 1:yes, 2:yes but median, 3:yes but spatial mean",
         choices=[0, 1, 2, 3],
     )
 
@@ -266,12 +279,18 @@ def main():
     match variable:
         case "sst":
             print(f"Processing for variable {variable} | {hadcrut_var}")
-            if config.has_option('sst', "sampling_uncertainty"):
-                single_sigma_warn_msg = 'Option sampling_uncertainty for sst is ignored. '
-                single_sigma_warn_msg += 'HadCRUT5 only has a single uncorrelated sigma; '
-                single_sigma_warn_msg += 'if you are using multiple uncorrelated sigmas (e.g. HadSST4), combine them first.'
+            if config.has_option("sst", "sampling_uncertainty"):
+                single_sigma_warn_msg = (
+                    "Option sampling_uncertainty for sst is ignored. "
+                )
+                single_sigma_warn_msg += (
+                    "HadCRUT5 only has a single uncorrelated sigma; "
+                )
+                single_sigma_warn_msg += "if you are using multiple uncorrelated sigmas (e.g. HadSST4), combine them first."
                 warnings.warn(single_sigma_warn_msg, DeprecationWarning)
-            uncorrelated_uncertainty = config.get(variable, "uncorrelated_uncertainty")
+            uncorrelated_uncertainty = config.get(
+                variable, "uncorrelated_uncertainty"
+            )
 
             uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
 
@@ -331,7 +350,9 @@ def main():
             print("Current month and year: ", (current_month, current_year))
 
             ################
-            mon_df = yr_mo.get_group((current_year, current_month)).reset_index()
+            mon_df = yr_mo.get_group(
+                (current_year, current_month)
+            ).reset_index()
             print(f"{mon_df = }")
 
             if interpolation_covariance_type == "ellipse":
@@ -350,7 +371,9 @@ def main():
             ec_2 = ec_1[np.nonzero(ec_1)]
             print("Non-nan and non-zero error covariance =", ec_2, len(ec_2))
             ec_idx = np.argwhere(
-                np.logical_and(~np.isnan(error_covariance), error_covariance != 0.0)
+                np.logical_and(
+                    ~np.isnan(error_covariance), error_covariance != 0.0
+                )
             )
             print("Index of non-nan and non-zero values =", ec_idx, len(ec_idx))
 
@@ -410,7 +433,9 @@ def main():
 
             grid_idx = np.array(sorted(mon_df["gridbox"]))  # sorted?
             # print(error_covariance, error_covariance.shape)
-            error_covariance = error_covariance[grid_idx[:, None], grid_idx[None, :]]
+            error_covariance = error_covariance[
+                grid_idx[:, None], grid_idx[None, :]
+            ]
             # print(np.argwhere(np.isnan(np.diag(error_covariance))))
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
