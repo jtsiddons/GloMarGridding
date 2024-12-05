@@ -18,7 +18,7 @@ import pandas as pd
 import xarray as xr
 
 from sklearn.metrics.pairwise import haversine_distances
-from typing import Callable, Tuple
+from typing import Callable, Iterable, Tuple
 
 from matern_and_tm.matern_tau import tau_dist
 
@@ -146,71 +146,73 @@ def days_in_pentad(
 def read_daily_climatology(
     clim_path, doy, time_type=None, month=None, pentad=None
 ):
-    ds_dir = [x[0] for x in os.walk(clim_path)]
-    ds_dir = ds_dir[0]
-    filelist = sorted(os.listdir(ds_dir))  # _fullpath(dirname)
+    filelist = sorted(os.listdir(clim_path))  # _fullpath(dirname)
     print(filelist)
-    if time_type == "pentad":
-        pent = doy
-        day_list = [
-            1 + 5 * pent,
-            2 + 5 * pent,
-            3 + 5 * pent,
-            4 + 5 * pent,
-            5 + 5 * pent,
-        ]
-        # day_list = [doy-2, doy-1, doy, doy+1, doy+2]
-        str_list = [
-            "D"
-            + str(i).zfill(3)
-            + "-ESACCI-L4_GHRSST-SSTdepth-OSTIA-GLOB_CDR2.1-v02.0-fv01.0.nc"
-            for i in day_list
-        ]
-        print(day_list)
-        print(str_list)
-        filtered_list = [i for i in filelist if i in str_list]
-        print(filtered_list)
+    match time_type:
+        case "pentad":
+            pent = doy // 5
+            day_list = [i + 5 * pent for i in range(1, 6)]
+            # day_list = [doy-2, doy-1, doy, doy+1, doy+2]
+            str_list = [
+                "D"
+                + str(i).zfill(3)
+                + "-ESACCI-L4_GHRSST-SSTdepth-OSTIA-GLOB_CDR2.1-v02.0-fv01.0.nc"
+                for i in day_list
+            ]
+            print(day_list)
+            print(str_list)
+            filtered_list = [i for i in filelist if i in str_list]
+            print(filtered_list)
 
-        fullpath_list = [os.path.join(ds_dir, f) for f in filtered_list]
-        clim_file = xr.open_mfdataset(
-            fullpath_list, combine="nested", concat_dim="time", engine="netcdf4"
-        )
-        print(clim_file)
+            fullpath_list = [os.path.join(clim_path, f) for f in filtered_list]
+            clim_file = xr.open_mfdataset(
+                fullpath_list,
+                combine="nested",
+                concat_dim="time",
+                engine="netcdf4",
+            )
+            print(clim_file)
 
-    elif time_type == "esa_pentad":
-        if month == 2 and pentad == 6:
-            day_list = [doy - 2, doy - 1, doy]
-        elif pentad == 6 and month in [1, 3, 5, 7, 8, 10, 12]:
-            day_list = [doy - 2, doy - 1, doy, doy + 1, doy + 2, doy + 3]
-        else:
-            day_list = [doy - 2, doy - 1, doy, doy + 1, doy + 2]
+        case "esa_pentad":
+            if month == 2 and pentad == 6:
+                day_list = [doy - 2, doy - 1, doy]
+            elif pentad == 6 and month in [1, 3, 5, 7, 8, 10, 12]:
+                day_list = [doy - 2, doy - 1, doy, doy + 1, doy + 2, doy + 3]
+            else:
+                day_list = [doy - 2, doy - 1, doy, doy + 1, doy + 2]
 
-        print(pentad)
-        print(day_list)
-        str_list = [
-            "D"
-            + str(i).zfill(3)
-            + "-ESACCI-L4_GHRSST-SSTdepth-OSTIA-GLOB_CDR2.1-v02.0-fv01.0.nc"
-            for i in day_list
-        ]
-        print(day_list)
-        print(str_list)
-        filtered_list = [i for i in filelist if i in str_list]
-        print(filtered_list)
-        fullpath_list = [os.path.join(ds_dir, f) for f in filtered_list]
-        clim_file = xr.open_mfdataset(
-            fullpath_list, combine="nested", concat_dim="time", engine="netcdf4"
-        )
-        # print(clim_file)
+            print(pentad)
+            print(day_list)
+            str_list = [
+                "D"
+                + str(i).zfill(3)
+                + "-ESACCI-L4_GHRSST-SSTdepth-OSTIA-GLOB_CDR2.1-v02.0-fv01.0.nc"
+                for i in day_list
+            ]
+            print(day_list)
+            print(str_list)
+            filtered_list = [i for i in filelist if i in str_list]
+            print(filtered_list)
+            fullpath_list = [os.path.join(clim_path, f) for f in filtered_list]
+            clim_file = xr.open_mfdataset(
+                fullpath_list,
+                combine="nested",
+                concat_dim="time",
+                engine="netcdf4",
+            )
+            # print(clim_file)
 
-    elif time_type == "daily":
-        r = re.compile("D" + str(doy).zfill(3) + r"\S+.nc")
-        filtered_list = list(filter(r.match, filelist))
-        print(filtered_list)
+        case "daily":
+            r = re.compile("D" + str(doy).zfill(3) + r"\S+.nc")
+            filtered_list = list(filter(r.match, filelist))
+            print(filtered_list)
 
-        fullpath_list = [os.path.join(ds_dir, f) for f in filtered_list]
-        clim_file = xr.open_dataset(fullpath_list[0], engine="netcdf4")
-        # print(clim_file)
+            fullpath_list = [os.path.join(clim_path, f) for f in filtered_list]
+            clim_file = xr.open_dataset(fullpath_list[0], engine="netcdf4")
+            # print(clim_file)
+
+        case _:
+            raise ValueError("Unknown time_type value")
 
     return clim_file
 
@@ -219,24 +221,27 @@ def extract_clim_anom(clim_file, df):
     obs_lat = np.array(df["lat"])
     obs_lon = np.array(df["lon"])
 
-    cci_lat_idx = find_nearest(clim_file.lat, obs_lat)
-    cci_lon_idx = find_nearest(clim_file.lon, obs_lon)
+    clim_lat_idx, _ = find_nearest(clim_file.lat, obs_lat)
+    clim_lon_idx, _ = find_nearest(clim_file.lon, obs_lon)
 
-    esa_cci_clim = clim_file.values  # variables['climatology'].values
+    clim = clim_file.values  # variables['climatology'].values
     # print(esa_cci_clim)
 
-    climatology = []  # fake ship obs
-    for i in range(len(cci_lat_idx)):
-        c = esa_cci_clim[cci_lat_idx[i], cci_lon_idx[i]]
-        climatology.append(c)
-    climatology = np.hstack(climatology)
-    if climatology.any() > 200:
+    climatology = np.asarray(
+        [clim[j, i] for j, i in zip(clim_lat_idx, clim_lon_idx)]
+    )
+
+    # for i in range(len(cci_lat_idx)):
+    #     c = esa_cci_clim[cci_lat_idx[i], cci_lon_idx[i]]
+    #     climatology.append(c)
+    # climatology = np.hstack(climatology)
+    if (climatology > 200).any():
         climatology = climatology - 273.15
     # print(climatology)
     updated_df = df.copy()
     updated_df["climatology_sst"] = climatology
 
-    if pd.api.types.is_string_dtype(updated_df.sst.dtype) == True:
+    if pd.api.types.is_string_dtype(updated_df.sst.dtype):
         updated_df["sst"] = pd.to_numeric(updated_df["sst"], errors="coerce")
 
     updated_df["sst_anomaly"] = (
@@ -247,7 +252,14 @@ def extract_clim_anom(clim_file, df):
     return updated_df
 
 
-def find_values(mask_ds, lat, lon):
+# WARN: seems to be trying to apply a mask to the positions in the observation
+#       frame - concerns mask positions may be far from data, may get incorrect
+#       masking
+# INFO: Maybe improve by first adjusting obs to a grid resolution matched by the
+#       Mask?
+def find_values(
+    mask_ds: xr.Dataset, lat: Iterable[float], lon: Iterable[float]
+):
     """
     Parameters
     ----------
@@ -277,22 +289,26 @@ def find_values(mask_ds, lat, lon):
         mask_lon = mask_ds.longitude.values
         mask_lon = ((mask_lon + 540) % 360) - 180
         # print(mask_lon)
+    # Find nearest mask lat/lon value to each observation lat/lon
+    # BUG: Mask set if nearest is quite far away
+    # QUESTION: Can we guarantee that the mask is _complete_ and _uniform_?
     cci_lat_idx, grid_lat = find_nearest(mask_lat, lat)
     cci_lon_idx, grid_lon = find_nearest(mask_lon, lon)
 
-    esa_cci_mask = mask
-    water_point = []
-    for i in range(len(cci_lat_idx)):
-        wp = esa_cci_mask[cci_lat_idx[i], cci_lon_idx[i]]
-        # print(wp)
-        # cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
-        water_point.append(wp)
-    water_point = np.hstack(water_point)
+    # esa_cci_mask = mask
+    # water_point = []
+    masked: list = [mask[j, i] for j, i in zip(cci_lat_idx, cci_lon_idx)]
+    # for i in range(len(cci_lat_idx)):
+    #     wp = esa_cci_mask[cci_lat_idx[i], cci_lon_idx[i]]
+    #     # print(wp)
+    #     # cci_ = ds_masked_xr.values[cci_lat_idx[i],cci_lon_idx[i],cci_time_idx[i]] #was cci.sst_anomaly
+    #     water_point.append(wp)
+    # water_point = np.hstack(water_point)
 
-    return water_point, cci_lat_idx, cci_lon_idx, grid_lat, grid_lon
+    return masked, cci_lat_idx, cci_lon_idx, grid_lat, grid_lon
 
 
-def find_nearest(array, values):
+def find_nearest(array: Iterable, values: Iterable):
     array = np.asarray(array)
     idx_list = [(np.abs(array - value)).argmin() for value in values]
     array_values_list = array[idx_list]
@@ -301,6 +317,7 @@ def find_nearest(array, values):
     return idx_list, array_values_list
 
 
+# OPTIM: Can we speed this up by looking at unique positions and merging?
 def watermask_at_obs_locations(
     lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mask_ds_lon
 ):
@@ -314,8 +331,8 @@ def watermask_at_obs_locations(
     ]
 
     # create an array of lats and lons for the remaining ship obs
-    obs_lat = np.array(cond_df["lat"])
-    obs_lon = np.array(cond_df["lon"])
+    obs_lat = cond_df["lat"]
+    obs_lon = cond_df["lon"]
 
     # extract the CCI SST anomaly values corresponding to the obs lat/lon coordinate points
     # print(ds_masked_xr)
