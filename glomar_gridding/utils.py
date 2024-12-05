@@ -118,7 +118,7 @@ def regex_coord(
     coord : str
         Name of the coordinate matching the regex pattern.
     """
-    coords: list[str] = [str(c) for c in ds.coords]
+    coords: list[str] = [str(c) for c in ds.indexes]
     for coord in coords:
         test = coord.lower() if case_insensitive else coord
         if pattern.match(test):
