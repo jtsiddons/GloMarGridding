@@ -1,7 +1,9 @@
 from collections import OrderedDict
+from datetime import date
 from enum import IntEnum
 import netCDF4 as nc
 import numpy as np
+import polars as pl
 import re
 import xarray as xr
 from warnings import warn
@@ -126,6 +128,18 @@ def regex_coord(
         + "', '".join(coords)
         + "'."
     )
+
+
+def _daterange_by_day(year: int, day: int) -> pl.Series:
+    start = date(year, 1, day)
+    end = date(year, 12, day)
+    dates = pl.date_range(start, end, interval="1mo", eager=True, closed="both")
+    return dates
+
+
+def days_since_by_month(year: int, day: int) -> np.ndarray:
+    dates = _daterange_by_day(year, day)
+    return (dates - date(year, 1, day)).dt.total_days().to_numpy()
 
 
 def adjust_small_negative(mat: np.ndarray) -> None:

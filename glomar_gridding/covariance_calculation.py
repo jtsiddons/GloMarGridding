@@ -238,11 +238,13 @@ def plot_empirical_reconstructed_covariance(cci_mask, dat_from_eofs):
 ##################################################################
 # CREATING A COVARIANCE FROM VARIOGRAM
 ##################################################################
-# sst_flat_with_nans, lat_1d, lon_1d = read_in_data()
-def covariance_from_variogram(sst_flat_with_nans, lat_1d, lon_1d, variance):
-    cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(
-        sst_flat_with_nans, lat_1d, lon_1d
-    )
+#sst_flat_with_nans, lat_1d, lon_1d = read_in_data()
+def covariance_from_variogram(sst_flat_with_nans,
+                              lat_1d, 
+                              lon_1d, 
+                              variance, 
+                              dist_func=cov_var.getDistanceByHaversine):
+    cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(sst_flat_with_nans,lat_1d, lon_1d)
     print(cci_mask.shape)
 
     # compute pairwise distances
@@ -250,9 +252,9 @@ def covariance_from_variogram(sst_flat_with_nans, lat_1d, lon_1d, variance):
     data = {"lat": ocean_lat, "lon": ocean_lon}
     df = pd.DataFrame(data)
 
-    distance_matrix = calculate_distance_matrix(df)
-    # pd.DataFrame(squareform(pdist(df, lambda u, v: cov_var.getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
-    print("squareform(pdist) \n", distance_matrix)
+    distance_matrix = cov_var.calculate_distance_matrix(df, dist_func=dist_func)
+    #pd.DataFrame(squareform(pdist(df, lambda u, v: cov_var.getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
+    print('squareform(pdist) \n', distance_matrix)
 
     # call variogram function
     # this calculates the covariance on global grid (equivalemnt in Simon's code is "Ss" martix)
