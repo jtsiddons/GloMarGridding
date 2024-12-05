@@ -11,7 +11,7 @@ from scipy.spatial import distance_matrix
 from scipy import optimize
 
 from scipy.stats import binned_statistic
-
+from scipy.special import gamma, kv
 
 from scipy.linalg import solve
 
@@ -84,6 +84,75 @@ bscott.murphy@gmail.com
     return psill * (1.0 - np.exp(-d / (range_ / 3.0))) + nugget #this should be the correct version
 
 
+def matern_variogram_model_classic(m, d, nu=0.5):
+    '''
+    Same args as the *_variogram_model functions
+    with additional kwarg for nu/v parameter.
+
+    One can set up lambda or def functions to use different nu values 
+    that can be used as part of the kwargs of "variogram"; e.g.
+
+    def matern_nu_eq_1p5(m, d):
+        # Prefered style for pep/Python style guidelines
+        return matern_variogram_model_classic(m, d, nu=1.5)    
+    or
+    # The lazy way, but not recommended by pep style guidelines (does the same thing)
+    matern_nu_eq_1p5 = lambda m, d: matern_variogram_model_classic(m, d, nu=1.5)
+
+    1) This is called ``classic'' because if d/range_ = 1.0 and nu=0.5, it gives 1/e correlation...
+    2) This is NOT the same formulation as in GSTAT nor in papers about non-stationary anistropic
+    covariance models (aka Karspeck paper).
+    3) It is perhaps the most intitutive (because of (1)) and is used in sklearn GP and HadCRUT5 and other UKMO dataset.
+    4) nu defaults to 0.5 (exponential; used in HADSST4 and our kriging). HadCRUT5 uses 1.5.  
+    5) The "2" is inside the square root for middle and right.
+    
+    Reference; see chapter 4.2 of:
+    Rasmussen, C. E., & Williams, C. K. I. (2005). 
+    Gaussian Processes for Machine Learning. The MIT Press. 
+    https://doi.org/10.7551/mitpress/3206.001.0001
+    '''
+    psill = float(m[0])
+    range_ = float(m[1])
+    nugget = float(m[2])
+    left = 1.0/(gamma(nu)*(2.0**(nu-1)))
+    middle = (np.sqrt(2.0*nu)*d/range_)**nu
+    right = kv(nu, np.sqrt(2.0*nu)*d/range_)
+    return psill * (1.0 - left * middle * right) + nugget
+
+
+def matern_variogram_model_gstat(m, d, nu=0.5):
+    '''
+    Similar to matern_variogram_model_classic 
+    but uses the range scaling in gstat. 
+    Note: there are no square root 2 or nu in middle and right
+
+    Yields the same answer to matern_variogram_model_classic if nu==0.5
+    but are otherwise different.
+    '''
+    psill = float(m[0])
+    range_ = float(m[1])
+    nugget = float(m[2])
+    left = 1.0/(gamma(nu)*(2.0**(nu-1)))
+    middle = (d/range_)**nu
+    right = kv(nu, d/range_)
+    return psill * (1.0 - left * middle * right) + nugget
+
+
+def matern_variogram_model_karspeck(m, d, nu=0.5):
+    '''
+    Similar to matern_variogram_model_classic 
+    but uses the form in Karspeck paper  
+    Note: Note the 2 is outside the square root for middle and right
+    e-folding distance is now at d/SQRT(2) for nu=0.5
+    '''
+    psill = float(m[0])
+    range_ = float(m[1])
+    nugget = float(m[2])
+    left = 1.0/(gamma(nu)*(2.0**(nu-1)))
+    middle = (2.0*np.sqrt(nu)*d/range_)**nu
+    right = kv(nu, 2.0*np.sqrt(nu)*d/range_)
+    return psill * (1.0 - left * middle * right) + nugget
+
 
 def watermask(ds_masked_xr):
     water_mask = np.copy(ds_masked_xr.values[:,:])
@@ -134,6 +203,34 @@ def find_nearest(array, values):
     return idx_list
 
 
+def getDistanceByEuclidean(loc1, loc2, to_radians=True, earth_radius=6371):
+    '''
+    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
+    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
+
+    d = SQRT((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
+    (x_n y_n z_n) = ( Rcos(lat)cos(lon) Rcos(lat)sin(lon) Rsin(lat) )
+
+    Calculate the Euclidean distance in kilometers between two points 
+    on the earth (specified in decimal degrees)
+    
+    Input: latitude and longitude columns from Pandas dataframe (arrays of values)
+    Output: a 2D numpy array of (lat_decimal,lon_decimal) pairs
+    '''
+    lat1 = loc1[0]
+    lon1 = loc1[1]
+    lat2 = loc2[0]
+    lon2 = loc2[1]
+    if to_radians:
+        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    x1 = np.cos(lat1)*np.cos(lon1)
+    x2 = np.cos(lat2)*np.cos(lon2)
+    y1 = np.cos(lat1)*np.sin(lon1)
+    y2 = np.cos(lat2)*np.sin(lon2)
+    z1 = np.sin(lat1)
+    z2 = np.sin(lat2)
+    km = earth_radius*np.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
+    return km
 
 
 def getDistanceByHaversine(loc1, loc2, to_radians=True, earth_radius=6371):
@@ -160,19 +257,23 @@ def getDistanceByHaversine(loc1, loc2, to_radians=True, earth_radius=6371):
 
 
 
-def calculate_distance_matrix(df):
-    distance_matrix = pd.DataFrame(squareform(pdist(df, lambda u, v: getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
+def calculate_distance_matrix(df, dist_func=getDistanceByHaversine):
+    distance_matrix = pd.DataFrame(squareform(pdist(df, lambda u, v: dist_func(u,v))), index=df.index, columns=df.index)
     return distance_matrix
 
 
 
-def variogram(distance_matrix, variance):
+def variogram(distance_matrix,
+              variance,
+              nugget_=0.0,
+              range_=350.0,
+              variogram_model=exponential_variogram_model):
     #range from Dave's presentation on space length scales (in km)
-    range_ = 350 
+    # range_ = 350 
     #from researchgate - Sill of the semivariogram is equal to the variance of the random variable, at large distances, when variables become uncorrelated
     sill_ = variance 
     #nugget for now can be set to zero, it will change once we quantify the obs uncertainty better
-    nugget_ = 0 
+    # nugget_ = 0 
     
     #create m - a list containing [psill, range, nugget]
     m = [sill_, range_, nugget_]
@@ -182,9 +283,28 @@ def variogram(distance_matrix, variance):
     
     #call variogram function
     #this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix
-    obs_covariance = exponential_variogram_model(m, d)
+    obs_covariance = variogram_model(m, d)
     return obs_covariance
 
+
+def variogram_hadcrut5(distance_matrix,
+                       terrain='lnd',
+                       nugget_=0.0):
+    assert terrain in ['lnd', 'sea'], 'terrain must be lnd or sea.'
+    hadcrut5_covariance_parms = {
+        'lnd': {'sigma': 1.2, 'r': 1300.0, 'v': 1.5},
+        'sea': {'sigma': 0.6, 'r': 1300.0, 'v': 1.5}, 
+        }
+    variogram_parms = hadcrut5_covariance_parms[terrain]
+    return variogram(distance_matrix, 
+                     variogram_parms['sigma']**2.0,
+                     nugget_=nugget_,
+                     range_=variogram_parms['r'],
+                     variogram_model=lambda m, d: matern_variogram_model_classic(m, d, nu=variogram_parms['v']))
+
+def variogram_to_covariance(variogram, sigma):
+    covariance = sigma ** 2 - variogram
+    return covariance
 """
 ######################
 # read in the observational data

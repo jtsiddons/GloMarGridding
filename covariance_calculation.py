@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy import signal
 import numpy.polynomial.polynomial as poly
 from netCDF4 import Dataset
@@ -229,7 +230,11 @@ def plot_empirical_reconstructed_covariance(cci_mask, dat_from_eofs):
 # CREATING A COVARIANCE FROM VARIOGRAM
 ##################################################################
 #sst_flat_with_nans, lat_1d, lon_1d = read_in_data()
-def covariance_from_variogram(sst_flat_with_nans,lat_1d, lon_1d,variance):
+def covariance_from_variogram(sst_flat_with_nans,
+                              lat_1d, 
+                              lon_1d, 
+                              variance, 
+                              dist_func=cov_var.getDistanceByHaversine):
     cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(sst_flat_with_nans,lat_1d, lon_1d)
     print(cci_mask.shape)
 
@@ -238,7 +243,7 @@ def covariance_from_variogram(sst_flat_with_nans,lat_1d, lon_1d,variance):
     data = {'lat': ocean_lat, 'lon': ocean_lon}
     df = pd.DataFrame(data, columns=['lat', 'lon'])
 
-    distance_matrix = cov_var.calculate_distance_matrix(df)
+    distance_matrix = cov_var.calculate_distance_matrix(df, dist_func=dist_func)
     #pd.DataFrame(squareform(pdist(df, lambda u, v: cov_var.getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
     print('squareform(pdist) \n', distance_matrix)
 
