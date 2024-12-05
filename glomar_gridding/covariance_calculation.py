@@ -165,13 +165,17 @@ def reconstruct_covariance_from_eofs(
         sst_flat_with_nans, lat_1d, lon_1d
     )
 
-    ipc, PCs, EOFs = calculate_pca_and_eof(cci_mask, chosen_ipc=True)
+    ipc, PCs, EOFs = calculate_pca_and_eof(cci_mask, chosen_ipc=chosen_ipc)
 
-    EOF_recons = np.ones((ipc, len(lat) * len(lon))) * -999.0
+    # QUESTION: should lat/lons here be inputs, or output of mask_land_and_ice?
+    EOF_recons = np.ones((ipc, len(ocean_lat) * len(ocean_lon))) * -999.0
     for i in range(ipc):
         EOF_recons[i, ocean_points] = EOFs[i, :]
     EOF_recons = np.ma.masked_values(
-        np.reshape(EOF_recons, (ipc, len(lat), len(lon)), order="C"), -999.0
+        np.reshape(
+            EOF_recons, (ipc, len(ocean_lat), len(ocean_lon)), order="C"
+        ),
+        -999.0,
     )
     print("Reconstructed", EOF_recons.shape)
 
@@ -244,7 +248,7 @@ def covariance_from_variogram(sst_flat_with_nans, lat_1d, lon_1d, variance):
     # compute pairwise distances
     # or distance matrix using pandas
     data = {"lat": ocean_lat, "lon": ocean_lon}
-    df = pd.DataFrame(data, columns=["lat", "lon"])
+    df = pd.DataFrame(data)
 
     distance_matrix = calculate_distance_matrix(df)
     # pd.DataFrame(squareform(pdist(df, lambda u, v: cov_var.getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
