@@ -3,6 +3,8 @@
 Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography Centre.  
 Currently only available to project collaborators.
 
+Part of the NOC Surface Processes _GloMar_ suite of libraries and datasets.
+
 ## Installation
 
 Clone the repository
@@ -15,9 +17,9 @@ Create virtual environment and install dependencies. We recommend using [`uv`](h
 
 ```bash
 cd /path/to/glomar_gridding
-uv venv --python 3.11
+uv venv --python 3.11  # Recommended python version
 source .venv/bin/activate  # Assuming bash or zsh
-uv sync
+uv sync  # Install dependencies
 ```
 
 ### Install as a dependency
