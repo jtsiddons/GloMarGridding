@@ -1,17 +1,17 @@
-from typing import TypeVar
+from collections.abc import Callable
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
+from warnings import warn
 
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
+from scipy.spatial.distance import pdist, squareform
 
+from scipy.special import gamma, kv
 
 from math import radians
 
 
-Numeric = TypeVar("Numeric", float, np.ndarray)
-
-
+@dataclass(frozen=True)
 class Variogram:
     """Place holder"""
 
@@ -20,6 +20,7 @@ class Variogram:
         raise NotImplementedError("Not implemented for base Variogram class")
 
 
+@dataclass(frozen=True)
 class LinearVariogram(Variogram):
     """
     Linear model
@@ -30,9 +31,8 @@ class LinearVariogram(Variogram):
     nugget : float | np.ndarray
     """
 
-    def __init__(self, slope: Numeric, nugget: Numeric) -> None:
-        self.slope = slope
-        self.nugget = nugget
+    slope: float | np.ndarray
+    nugget: float | np.ndarray
 
     def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
         """Fit the LinearVariogram model to a distance matrix"""
@@ -47,32 +47,31 @@ def linear_variogram_model(m, d):
     from: Code by Benjamin S. Murphy and the PyKrige Developers
     bscott.murphy@gmail.com
     """
+    warn(
+        "'linear_variogram_model' is deprecated. Use "
+        + "LinearVariogram(slope, nugget).fit(distance_matrix)",
+        DeprecationWarning,
+    )
     slope = float(m[0])
     nugget = float(m[1])
     return slope * d + nugget
 
 
+@dataclass(frozen=True)
 class PowerVariogram(Variogram):
     """
     Power model
 
     Parameters
     ----------
-    scale : Numeric
-    exponent : Numeric
-    nugget : Numeric
+    scale : float | np.ndarray
+    exponent : float | np.ndarray
+    nugget : float | np.ndarray
     """
 
-    def __init__(
-        self,
-        scale: Numeric,
-        exponent: Numeric,
-        nugget: Numeric,
-    ) -> None:
-        self.scale = scale
-        self.exponent = exponent
-        self.nugget = nugget
-        return None
+    scale: float | np.ndarray
+    exponent: float | np.ndarray
+    nugget: float | np.ndarray
 
     def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
         """Fit the PowerVariogram model to a distance matrix"""
@@ -89,32 +88,32 @@ def power_variogram_model(m, d):
     from: Code by Benjamin S. Murphy and the PyKrige Developers
     bscott.murphy@gmail.com
     """
+    warn(
+        "'power_variogram_model' is deprecated. Use "
+        + "PowerVariogram(scale, exponent, nugget).fit(distance_matrix)",
+        DeprecationWarning,
+    )
     scale = float(m[0])
     exponent = float(m[1])
     nugget = float(m[2])
     return scale * d**exponent + nugget
 
 
+@dataclass(frozen=True)
 class GaussianVariogram(Variogram):
     """
     Gaussian Model
 
     Parameters
     ----------
-    psill : Numeric
-    range : Numeric
-    nugget : Numeric
+    psill : float | np.ndarray
+    range : float | np.ndarray
+    nugget : float | np.ndarray
     """
 
-    def __init__(
-        self,
-        psill: Numeric,
-        range: Numeric,
-        nugget: Numeric,
-    ) -> None:
-        self.psill = psill
-        self.range = range
-        self.nugget = nugget
+    psill: float | np.ndarray
+    range: float | np.ndarray
+    nugget: float | np.ndarray
 
     def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
         """Fit the GaussianVariogram model to a distance matrix"""
@@ -141,6 +140,11 @@ def gaussian_variogram_model(m, d):
     from: Code by Benjamin S. Murphy and the PyKrige Developers
     bscott.murphy@gmail.com
     """
+    warn(
+        "'gaussian_variogram_model' is deprecated. Use "
+        + "GaussianVariogram(psill, range, nugget).fit(distance_matrix)",
+        DeprecationWarning,
+    )
     psill = float(m[0])
     range_ = float(m[1])
     nugget = float(m[2])
@@ -149,26 +153,21 @@ def gaussian_variogram_model(m, d):
     )
 
 
+@dataclass(frozen=True)
 class ExponentialVariogram(Variogram):
     """
     Exponential Model
 
     Parameters
     ----------
-    psill : Numeric
-    range : Numeric
-    nugget : Numeric
+    psill : float | np.ndarray
+    range : float | np.ndarray
+    nugget : float | np.ndarray
     """
 
-    def __init__(
-        self,
-        psill: Numeric,
-        range: Numeric,
-        nugget: Numeric,
-    ) -> None:
-        self.psill = psill
-        self.range = range
-        self.nugget = nugget
+    psill: float | np.ndarray
+    range: float | np.ndarray
+    nugget: float | np.ndarray
 
     def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
         """Fit the ExponentialVariogram model to a distance matrix"""
@@ -186,6 +185,11 @@ def exponential_variogram_model(m, d):
     from: Code by Benjamin S. Murphy and the PyKrige Developers
     bscott.murphy@gmail.com
     """
+    warn(
+        "'exponential_variogram_model' is deprecated. Use "
+        + "ExponentialVariogram(psill, range, nugget).fit(distance_matrix)",
+        DeprecationWarning,
+    )
     psill = float(m[0])
     range_ = float(m[1])
     nugget = float(m[2])
@@ -193,6 +197,81 @@ def exponential_variogram_model(m, d):
     return (
         psill * (1.0 - np.exp(-d / (range_ / 3.0))) + nugget
     )  # this should be the correct version
+
+
+@dataclass(frozen=True)
+class MaternVariogram(Variogram):
+    """
+    Matern Models
+
+    Parameters
+    ----------
+    psill : float | np.ndarray
+    range : float | np.ndarray
+    nugget : float | np.ndarray
+    nu : float | np.ndarray
+    method : str
+        One of "classic", "gstat", or "karspeck"
+    """
+
+    psill: float | np.ndarray
+    range: float | np.ndarray
+    nugget: float | np.ndarray
+    nu: float | np.ndarray = 0.5
+    method: str = "classic"
+
+    @property
+    def _left(self):
+        return 1.0 / (gamma(self.nu) * np.power(2.0, self.nu - 1.0))
+
+    def _middle(self, distance_matrix: np.ndarray) -> np.ndarray:
+        match self.method.lower():
+            case "classic":
+                return np.power(
+                    np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
+                    self.nu,
+                )
+            case "gstat":
+                return np.power(distance_matrix / self.range, self.nu)
+            case "karspeck":
+                return np.power(
+                    2.0 * np.sqrt(self.nu) * distance_matrix / self.range,
+                    self.nu,
+                )
+            case _:
+                raise ValueError("Unexpected 'method' value")
+
+    def _right(self, distance_matrix: np.ndarray) -> np.ndarray:
+        match self.method.lower():
+            case "classic":
+                return kv(
+                    self.nu,
+                    np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
+                )
+            case "gstat":
+                return kv(self.nu, distance_matrix / self.range)
+            case "karspeck":
+                return kv(
+                    self.nu,
+                    2.0 * np.sqrt(self.nu) * distance_matrix / self.range,
+                )
+            case _:
+                raise ValueError("Unexpected 'method' value")
+
+    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+        """Fit the MaternVariogram model to a distance matrix"""
+        return (
+            self.psill
+            * (
+                1
+                - (
+                    self._left
+                    * self._middle(distance_matrix)
+                    * self._right(distance_matrix)
+                )
+            )
+            + self.nugget
+        )
 
 
 def matern_variogram_model_classic(m, d, nu=0.5):
@@ -222,6 +301,12 @@ def matern_variogram_model_classic(m, d, nu=0.5):
     Gaussian Processes for Machine Learning. The MIT Press.
     https://doi.org/10.7551/mitpress/3206.001.0001
     """
+    warn(
+        "'matern_variogram_model_classic' is deprecated. Use "
+        + "MaternVariogram(psill, range, nugget, nu, method='classic')"
+        + ".fit(distance_matrix)",
+        DeprecationWarning,
+    )
     psill = float(m[0])
     range_ = float(m[1])
     nugget = float(m[2])
@@ -240,6 +325,12 @@ def matern_variogram_model_gstat(m, d, nu=0.5):
     Yields the same answer to matern_variogram_model_classic if nu==0.5
     but are otherwise different.
     """
+    warn(
+        "'matern_variogram_model_gstat' is deprecated. Use "
+        + "MaternVariogram(psill, range, nugget, nu, method='gstat')"
+        + ".fit(distance_matrix)",
+        DeprecationWarning,
+    )
     psill = float(m[0])
     range_ = float(m[1])
     nugget = float(m[2])
@@ -256,6 +347,12 @@ def matern_variogram_model_karspeck(m, d, nu=0.5):
     Note: Note the 2 is outside the square root for middle and right
     e-folding distance is now at d/SQRT(2) for nu=0.5
     """
+    warn(
+        "'matern_variogram_model_karspeck' is deprecated. Use "
+        + "MaternVariogram(psill, range, nugget, nu, method='karspeck')"
+        + ".fit(distance_matrix)",
+        DeprecationWarning,
+    )
     psill = float(m[0])
     range_ = float(m[1])
     nugget = float(m[2])
@@ -317,7 +414,12 @@ def find_nearest(array, values):
     return idx_list
 
 
-def getDistanceByEuclidean(loc1, loc2, to_radians=True, earth_radius=6371):
+def getDistanceByEuclidean(
+    loc1: tuple[float, float],
+    loc2: tuple[float, float],
+    to_radians=True,
+    earth_radius=6371,
+) -> float:
     """
     https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
     https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
@@ -349,7 +451,12 @@ def getDistanceByEuclidean(loc1, loc2, to_radians=True, earth_radius=6371):
     return km
 
 
-def getDistanceByHaversine(loc1, loc2, to_radians=True, earth_radius=6371):
+def getDistanceByHaversine(
+    loc1: tuple[float, float],
+    loc2: tuple[float, float],
+    to_radians=True,
+    earth_radius=6371,
+) -> float:
     """
     Calculate the great circle distance in kilometers between two points
     on the earth (specified in decimal degrees)
@@ -405,32 +512,33 @@ def variogram(
     d = distance_matrix
 
     # call variogram function
-    # this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix
+    # this calculates the covariance between the observations only (equivalemnt in Simon's code is "S" martix)
     obs_covariance = variogram_model(m, d)
     return obs_covariance
 
 
-def variogram_hadcrut5(distance_matrix, terrain="lnd", nugget_=0.0):
-    assert terrain in ["lnd", "sea"], "terrain must be lnd or sea."
+def variogram_hadcrut5(
+    distance_matrix, terrain="lnd", nugget_=0.0, method: str = "classic"
+):
+    if terrain not in ["lnd", "sea"]:
+        raise ValueError("terrain must be lnd or sea.")
     hadcrut5_covariance_parms = {
         "lnd": {"sigma": 1.2, "r": 1300.0, "v": 1.5},
         "sea": {"sigma": 0.6, "r": 1300.0, "v": 1.5},
     }
     variogram_parms = hadcrut5_covariance_parms[terrain]
-    return variogram(
-        distance_matrix,
-        variogram_parms["sigma"] ** 2.0,
-        nugget_=nugget_,
-        range_=variogram_parms["r"],
-        variogram_model=lambda m, d: matern_variogram_model_classic(
-            m, d, nu=variogram_parms["v"]
-        ),
-    )
+
+    return MaternVariogram(
+        psill=np.power(variogram_parms["sigma"], 2.0),
+        range=variogram_parms["r"],
+        nugget=nugget_,
+        nu=variogram_parms["v"],
+        method=method,
+    ).fit(distance_matrix)
 
 
-def variogram_to_covariance(variogram, sigma):
-    covariance = sigma**2 - variogram
-    return covariance
+def variogram_to_covariance(variogram, variance):
+    return variance - variogram
 
 
 """
