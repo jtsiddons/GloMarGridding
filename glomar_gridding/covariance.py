@@ -21,6 +21,7 @@ def _preprocess(x, lon_bnds, lat_bnds):
     return x.sel(lon=slice(*lon_bnds), lat=slice(*lat_bnds))
 
 
+# WARN: Specific function - maybe pass a list of patterns?
 def read_in_covariance_file(
     path: str,
     month: int,
@@ -49,7 +50,8 @@ def read_in_covariance_file(
 
     if len(filtered_list) > 1:
         warn(
-            f"Found multiple files in {path}. Taking first. All files: {', '.join(filtered_list)}"
+            f"Found multiple files in {path}. Taking first. All files: "
+            + ", ".join(filtered_list)
         )
 
     return xr.open_dataset(
@@ -63,9 +65,7 @@ def get_covariance(
     cov_var_name: str = "covariance",
 ) -> np.ndarray:
     ds = read_in_covariance_file(path, month)
-    covariance = ds.variables[cov_var_name].values
-    print(covariance)
-    return covariance
+    return ds.variables[cov_var_name].values
 
 
 def read_single_file(
