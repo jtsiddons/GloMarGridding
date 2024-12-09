@@ -268,7 +268,7 @@ def kriging_simple(
     G = G @ Ss
     print(f'{G =}')
     dz_squared = (np.diag(cci_covariance - G))
-    adjust_small_negative(dz_squared)
+    dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     print(f'{dz =}')
     dz[np.isnan(dz)] = 0.0
@@ -321,7 +321,7 @@ def kriging_ordinary(
 
     G = G @ Ss
     dz_squared = (np.diag(cci_covariance - G) - alpha)
-    adjust_small_negative(dz_squared)
+    dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
 
