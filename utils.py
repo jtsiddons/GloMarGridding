@@ -47,6 +47,9 @@ def adjust_small_negative(mat: np.ndarray[float]) -> None:
           Derived from the diagonal of the matrix
     """
     small_negative_check = np.logical_and(np.isclose(mat, 0, atol=1e-08), mat < 0.0)
+    # Calls from kriging_ordinary and kriging_simple use np.diag
+    # np.diag returns an immutable view of the array; .copy is required. See:
+    # https://numpy.org/doc/2.1/reference/generated/numpy.diagonal.html#numpy.diagonal
     ans = mat.copy()
     if small_negative_check.any():
         warn("Small negative vals are detected. Setting to 0.")
