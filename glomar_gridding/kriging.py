@@ -60,7 +60,7 @@ def kriging(
     obs : np.ndarray[float]
         All point observations/measurements for the chosen date.
     interp_cov : np.ndarray[float]
-        Interpolation covariance of all output grid points (each point in time and all points
+        interpolation covariance of all output grid points (each point in time and all points
         against each other).
     error_cov : np.ndarray[float]
         Measurement/Error covariance matrix.
@@ -241,7 +241,7 @@ def kriging_simple(
     S: np.ndarray,
     Ss: np.ndarray,
     grid_obs: np.ndarray,
-    cci_covariance: np.ndarray,
+    interp_cov: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging
@@ -256,8 +256,8 @@ def kriging_simple(
         Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
         Gridded measurements (all measurement points averaged onto the output gridboxes).
-    cci_covariance : np.ndarray[float]
-        Covariance of all grid points (each point in time and all points
+    interp_cov : np.ndarray[float]
+        interpolation covariance of all output grid points (each point in time and all points
         against each other).
 
     Returns
@@ -276,7 +276,7 @@ def kriging_simple(
 
     G = G @ Ss
     print(f"{G =}")
-    dz_squared = np.diag(cci_covariance - G)
+    dz_squared = np.diag(interp_cov - G)
     adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     print(f"{dz =}")
@@ -290,7 +290,7 @@ def kriging_ordinary(
     S: np.ndarray,
     Ss: np.ndarray,
     grid_obs: np.ndarray,
-    cci_covariance: np.ndarray,
+    interp_cov: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Ordinary Kriging
@@ -305,8 +305,8 @@ def kriging_ordinary(
         Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
         Gridded measurements (all measurement points averaged onto the output gridboxes).
-    cci_covariance : np.ndarray[float]
-        Covariance of all grid points (each point in time and all points
+    interp_cov : np.ndarray[float]
+        Interpolation covariance of all output grid points (each point in time and all points
         against each other).
 
     Returns
@@ -317,7 +317,6 @@ def kriging_ordinary(
     dz : np.ndarray[float]
         Uncertainty associated with the ordinary kriging.
     """
-
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = Ss.shape
     S = np.block([[S, np.ones((N, 1))], [np.ones((1, N)), 0]])
@@ -329,7 +328,7 @@ def kriging_ordinary(
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz_squared = np.diag(cci_covariance - G) - alpha
+    dz_squared = np.diag(interp_cov - G) - alpha
     adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
