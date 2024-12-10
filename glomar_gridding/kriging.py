@@ -451,94 +451,94 @@ def kriging_main(
     )
 
 
-def krige_for_esa_values_only(
-    iid, uind, W, x_obs, cci_covariance, bias=False, clim=False
-):
-    # this basicallt removes the R matrix (which is the obs covariance that has noise, uncertainty etc) as we use actuall ESA CCI SST anomaly values that we take as ground truth and therefore we assume they have no uncertainty or bias
-    """
-    Returns arrays of krigged observations and anomalies for all grid points in the domain
-
-    Parameters
-    ----------
-    iid (list) - ID of all measurement points for the chosen date
-    x_obs (list) - all point observations for the chosen date
-    clim (list) - climatology values for all observation points
-    bias (list) - bias for all observation points
-    covx (array) - measurement covariance matrix
-    cci_covariance (array) - covariance of all CCI grid points (each point in time and all points against each other)
-    df (dataframe) - dataframe containing all information and observations for a chosen date
-
-    Returns
-    -------
-    Full set of values for the whole domain derived from observation points using Simple Kriging
-    Uncertainty associated using Simple Kriging
-    Full set of values for the whole domain derived from observation points using Ordinary Kriging
-    Uncertainty associated using Ordinary Kriging
-    """
-    # So Now we can get to the part where we krige the grid
-    # bias = np.array(bias)
-    # bias[np.isnan(bias)] = 0
-    if iid.ndim > 1:
-        iid = np.squeeze(iid)
-    print("iid", iid)
-    print("uind", uind)
-    _, ia, _ = intersect_mtlb(iid, uind)
-    ia = ia.astype(int)
-    print("ia", ia)
-
-    # ICOADS obs
-    sst_obs = W @ x_obs  # - clim[ia] - bias[ia]
-    print("SST OBS", sst_obs)
-
-    # S is the spatial covariance between all "measured" grid points
-    covar = np.copy(cci_covariance)
-    S = covar[ia[:, None], ia[None, :]]
-    print("S", S)
-
-    # Ss is the covariance between to be "predicted" grid points (i.e. all) and "measured" points
-    Ss = covar[ia, :]
-    print("Ss", Ss)
-
-    # G is the weight vector for Simple Kriging
-    G = np.transpose(Ss) @ np.linalg.inv(S)
-    z_obs_sk = G @ sst_obs
-    print("G", G)
-    print("z obs sk", z_obs_sk)
-    CG = G @ Ss
-    print("CG", CG)
-    diagonal = np.diag(covar - CG)
-    # diagonal[abs(diagonal) < 1e-15] = 0.0
-    dz_sk = np.sqrt(diagonal)
-    dz_sk[np.isnan(dz_sk)] = 0.0
-    print("dz_sk", dz_sk)
-    print("Simple Kriging Done")
-
-    # Now we will convert to ordinary kriging
-    S_ = np.concatenate((S, np.ones((len(ia), 1))), axis=1)
-    S = np.concatenate((S_, np.ones((1, len(ia) + 1))), axis=0)
-    # add a Lagrangian multiplier
-    S[-1, -1] = 0
-
-    Ss = np.concatenate((Ss, np.ones((1, len(iid)))), axis=0)
-
-    G = np.transpose(Ss) @ np.linalg.inv(np.matrix(S))
-    CG = G @ Ss
-
-    sst_obs0 = np.append(sst_obs, 0)
-    z_obs_ok = np.transpose(G @ sst_obs0)
-
-    alpha = G[:, -1]
-
-    diagonal = (np.diag(covar - CG)).reshape(-1, 1)
-    dz_ok = np.sqrt(diagonal - alpha)
-
-    print("Ordinary Kriging Done")
-    # get rid of resulting double brackets
-    a = np.squeeze(np.asarray(z_obs_sk))
-    b = np.squeeze(np.asarray(dz_sk))
-    c = np.squeeze(np.asarray(z_obs_ok))
-    d = np.squeeze(np.asarray(dz_ok))
-    return a, b, c, d
+# def krige_for_esa_values_only(
+#     iid, uind, W, x_obs, cci_covariance, bias=False, clim=False
+# ):
+#     # this basicallt removes the R matrix (which is the obs covariance that has noise, uncertainty etc) as we use actuall ESA CCI SST anomaly values that we take as ground truth and therefore we assume they have no uncertainty or bias
+#     """
+#     Returns arrays of krigged observations and anomalies for all grid points in the domain
+#
+#     Parameters
+#     ----------
+#     iid (list) - ID of all measurement points for the chosen date
+#     x_obs (list) - all point observations for the chosen date
+#     clim (list) - climatology values for all observation points
+#     bias (list) - bias for all observation points
+#     covx (array) - measurement covariance matrix
+#     cci_covariance (array) - covariance of all CCI grid points (each point in time and all points against each other)
+#     df (dataframe) - dataframe containing all information and observations for a chosen date
+#
+#     Returns
+#     -------
+#     Full set of values for the whole domain derived from observation points using Simple Kriging
+#     Uncertainty associated using Simple Kriging
+#     Full set of values for the whole domain derived from observation points using Ordinary Kriging
+#     Uncertainty associated using Ordinary Kriging
+#     """
+#     # So Now we can get to the part where we krige the grid
+#     # bias = np.array(bias)
+#     # bias[np.isnan(bias)] = 0
+#     if iid.ndim > 1:
+#         iid = np.squeeze(iid)
+#     print("iid", iid)
+#     print("uind", uind)
+#     _, ia, _ = intersect_mtlb(iid, uind)
+#     ia = ia.astype(int)
+#     print("ia", ia)
+#
+#     # ICOADS obs
+#     sst_obs = W @ x_obs  # - clim[ia] - bias[ia]
+#     print("SST OBS", sst_obs)
+#
+#     # S is the spatial covariance between all "measured" grid points
+#     covar = np.copy(cci_covariance)
+#     S = covar[ia[:, None], ia[None, :]]
+#     print("S", S)
+#
+#     # Ss is the covariance between to be "predicted" grid points (i.e. all) and "measured" points
+#     Ss = covar[ia, :]
+#     print("Ss", Ss)
+#
+#     # G is the weight vector for Simple Kriging
+#     G = np.transpose(Ss) @ np.linalg.inv(S)
+#     z_obs_sk = G @ sst_obs
+#     print("G", G)
+#     print("z obs sk", z_obs_sk)
+#     CG = G @ Ss
+#     print("CG", CG)
+#     diagonal = np.diag(covar - CG)
+#     # diagonal[abs(diagonal) < 1e-15] = 0.0
+#     dz_sk = np.sqrt(diagonal)
+#     dz_sk[np.isnan(dz_sk)] = 0.0
+#     print("dz_sk", dz_sk)
+#     print("Simple Kriging Done")
+#
+#     # Now we will convert to ordinary kriging
+#     S_ = np.concatenate((S, np.ones((len(ia), 1))), axis=1)
+#     S = np.concatenate((S_, np.ones((1, len(ia) + 1))), axis=0)
+#     # add a Lagrangian multiplier
+#     S[-1, -1] = 0
+#
+#     Ss = np.concatenate((Ss, np.ones((1, len(iid)))), axis=0)
+#
+#     G = np.transpose(Ss) @ np.linalg.inv(np.matrix(S))
+#     CG = G @ Ss
+#
+#     sst_obs0 = np.append(sst_obs, 0)
+#     z_obs_ok = np.transpose(G @ sst_obs0)
+#
+#     alpha = G[:, -1]
+#
+#     diagonal = (np.diag(covar - CG)).reshape(-1, 1)
+#     dz_ok = np.sqrt(diagonal - alpha)
+#
+#     print("Ordinary Kriging Done")
+#     # get rid of resulting double brackets
+#     a = np.squeeze(np.asarray(z_obs_sk))
+#     b = np.squeeze(np.asarray(dz_sk))
+#     c = np.squeeze(np.asarray(z_obs_ok))
+#     d = np.squeeze(np.asarray(dz_ok))
+#     return a, b, c, d
 
 
 def get_spatial_mean(grid_obs: np.ndarray, covx: np.ndarray) -> float:
