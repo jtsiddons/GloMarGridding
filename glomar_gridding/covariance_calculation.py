@@ -134,7 +134,7 @@ def calculate_pca_and_eof(cci_mask, chosen_ipc=True):
     skpca.fit(cci_mask)
 
     style.use("fivethirtyeight")
-    f, ax = plt.subplots(figsize=(6, 6))
+    _, ax = plt.subplots(figsize=(6, 6))
     ax.plot(skpca.explained_variance_ratio_[0:10] * 100)
     ax.plot(skpca.explained_variance_ratio_[0:10] * 100, "ro")
     plt.show()
@@ -229,7 +229,7 @@ def plot_empirical_reconstructed_covariance(cci_mask, dat_from_eofs):
         im = ax.imshow(np.flipud(cov_data[i]), vmin=-0.7, vmax=1.0)
         # cb_ax = fig.add_axes([0.83, 0.1, 0.02, 0.8])
     fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    cbar_ax = fig.add_axes((0.85, 0.15, 0.05, 0.7))
     fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, cax=cbar_ax)
     # plt.tight_layout()
     plt.show()
