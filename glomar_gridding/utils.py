@@ -1,12 +1,16 @@
 from collections import OrderedDict
+from collections.abc import Iterable
 from datetime import date
 from enum import IntEnum
+from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
 import polars as pl
 import re
 import xarray as xr
 from warnings import warn
+
+_XR_Data = TypeVar("_XR_Data", xr.DataArray, xr.Dataset)
 
 
 class MonthName(IntEnum):
@@ -163,3 +167,24 @@ def adjust_small_negative(mat: np.ndarray) -> None:
         print(mat[small_negative_check])
         mat[small_negative_check] = 0.0
     return None
+
+
+def find_nearest(
+    array: Iterable,
+    values: Iterable,
+) -> tuple[list[int], np.ndarray]:
+    idx_list = [(np.abs(array - value)).argmin() for value in values]
+    array_values_list = np.array(array)[idx_list]
+    # print(values)
+    # print(array_values_list)
+    return idx_list, array_values_list
+
+
+def select_bounds(
+    x: _XR_Data,
+    lon_bnds: tuple[float, float] = (-180.0, 180.0),
+    lat_bnds: tuple[float, float] = (-90.0, 90.0),
+    lon_var: str = "lon",
+    lat_var: str = "lat",
+) -> _XR_Data:
+    return x.sel({lon_var: slice(*lon_bnds), lat_var: slice(*lat_bnds)})

@@ -308,15 +308,6 @@ def find_values(
     return masked, cci_lat_idx, cci_lon_idx, grid_lat, grid_lon
 
 
-def find_nearest(array: Iterable, values: Iterable):
-    array = np.asarray(array)
-    idx_list = [(np.abs(array - value)).argmin() for value in values]
-    array_values_list = array[idx_list]
-    # print(values)
-    # print(array_values_list)
-    return idx_list, array_values_list
-
-
 # OPTIM: Can we speed this up by looking at unique positions and merging?
 def watermask_at_obs_locations(
     lon_bnds, lat_bnds, df, mask_ds, mask_ds_lat, mask_ds_lon
