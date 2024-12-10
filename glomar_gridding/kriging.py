@@ -6,33 +6,9 @@
 from typing import Literal
 import numpy as np
 
-from utils import adjust_small_negative
+from utils import adjust_small_negative, intersect_mtlb
 
 KrigMethod = Literal["simple", "ordinary"]
-
-
-def intersect_mtlb(a, b):
-    """
-    Returns data common between two arrays, a and b, in a sorted order and index vectors for a and b arrays
-    Reproduces behaviour of Matlab's intersect function
-
-    Parameters
-    ----------
-    a (array) - 1-D array
-    b (array) - 1-D array
-
-    Returns
-    -------
-    1-D array, c, of common values found in two arrays, a and b, sorted in order
-    List of indices, where the common values are located, for array a
-    List of indices, where the common values are located, for array b
-    """
-    a1, ia = np.unique(a, return_index=True)
-    b1, ib = np.unique(b, return_index=True)
-    aux = np.concatenate((a1, b1))
-    aux.sort()
-    c = aux[:-1][aux[1:] == aux[:-1]]
-    return c, ia[np.isin(a1, c)], ib[np.isin(b1, c)]
 
 
 def kriging(
