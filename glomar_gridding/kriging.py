@@ -60,12 +60,13 @@ def kriging(
     obs : np.ndarray[float]
         All point observations/measurements for the chosen date.
     interp_cov : np.ndarray[float]
-        interpolation covariance of all output grid points (each point in time and all points
-        against each other).
+        interpolation covariance of all output grid points (each point in time
+        and all points against each other).
     error_cov : np.ndarray[float]
         Measurement/Error covariance matrix.
     remove_obs_mean: int
-        Should the mean or median from grib_obs be removed and added back onto grib_obs?
+        Should the mean or median from grib_obs be removed and added back onto
+        grib_obs?
         0 = No (default action)
         1 = the mean is removed
         2 = the median is removed
@@ -73,7 +74,8 @@ def kriging(
     obs_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
     method : KrigMethod
-        The kriging method to use to fill in the output grid. One of "simple" or "ordinary".
+        The kriging method to use to fill in the output grid. One of "simple"
+        or "ordinary".
 
     Returns
     -------
@@ -83,7 +85,6 @@ def kriging(
     dz : np.ndarray[float]
         Uncertainty associated with the chosen kriging method.
     """
-
     if obs_bias is not None:
         print("With bias")
         grid_obs = weights @ (obs - obs_bias)
@@ -93,23 +94,27 @@ def kriging(
     if len(grid_obs) > 1:
         grid_obs = np.squeeze(grid_obs)
 
-    assert remove_obs_mean in [0, 1, 2, 3], "Unknown remove_obs_mean value"
-    grid_obs_av = None
-    if remove_obs_mean == 1:
-        grid_obs_av = np.ma.average(grid_obs)
-        grid_obs = grid_obs - grid_obs_av
-    elif remove_obs_mean == 2:
-        grid_obs_av = np.ma.median(grid_obs)
-        grid_obs = grid_obs - grid_obs_av
-    elif remove_obs_mean == 3:
-        grid_obs_av = get_spatial_mean(grid_obs, error_cov)
-        grid_obs = grid_obs - grid_obs_av
+    match remove_obs_mean:
+        case 0:
+            grid_obs_av = None
+        case 1:
+            grid_obs_av = np.ma.average(grid_obs)
+            grid_obs = grid_obs - grid_obs_av
+        case 2:
+            grid_obs_av = np.ma.median(grid_obs)
+            grid_obs = grid_obs - grid_obs_av
+        case 3:
+            grid_obs_av = get_spatial_mean(grid_obs, error_cov)
+            grid_obs = grid_obs - grid_obs_av
+        case _:
+            raise ValueError("Unknown 'remove_obs_mean' value")
 
     print(f"{grid_obs.shape = }")
 
     if error_cov.shape == interp_cov.shape:
         print(
-            "Error covariance supplied is of the same size as interpolation covariance, subsetting to indices of observation grids"
+            "Error covariance supplied is of the same size as interpolation "
+            + "covariance, subsetting to indices of observation grids"
         )
         error_cov = error_cov[obs_idx[:, None], obs_idx[None, :]]
 
@@ -126,17 +131,18 @@ def kriging(
     Ss = np.asarray(interp_cov[obs_idx, :])
     print(f"{Ss =}, {Ss.shape =}")
 
-    if method.lower() == "simple":
-        print("Performing Simple Kriging")
-        z_obs, dz = kriging_simple(S, Ss, grid_obs, interp_cov)
-    elif method.lower() == "ordinary":
-        print("Performing Ordinary Kriging")
-        z_obs, dz = kriging_ordinary(S, Ss, grid_obs, interp_cov)
-    else:
-        raise NotImplementedError(
-            f"Kriging method {method} is not implemented. "
-            'Expected one of "simple" or "ordinary"'
-        )
+    match method.lower():
+        case "simple":
+            print("Performing Simple Kriging")
+            z_obs, dz = kriging_simple(S, Ss, grid_obs, interp_cov)
+        case "ordinary":
+            print("Performing Ordinary Kriging")
+            z_obs, dz = kriging_ordinary(S, Ss, grid_obs, interp_cov)
+        case _:
+            raise NotImplementedError(
+                f"Kriging method {method} is not implemented. "
+                'Expected one of "simple" or "ordinary"'
+            )
 
     if grid_obs_av is not None:
         z_obs = z_obs + grid_obs_av
@@ -214,8 +220,8 @@ def get_unmasked_obs_indices(
     unique_obs_idx: np.ndarray,
 ) -> np.ndarray:
     """
-    Get grid indices with observations from un-masked grid-box indices and unique
-    grid-box indices with observations.
+    Get grid indices with observations from un-masked grid-box indices and
+    unique grid-box indices with observations.
 
     Parameters
     ----------
@@ -255,10 +261,11 @@ def kriging_simple(
     Ss : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
-        Gridded measurements (all measurement points averaged onto the output gridboxes).
+        Gridded measurements (all measurement points averaged onto the output
+        gridboxes).
     interp_cov : np.ndarray[float]
-        interpolation covariance of all output grid points (each point in time and all points
-        against each other).
+        interpolation covariance of all output grid points (each point in time
+        and all points against each other).
 
     Returns
     -------
@@ -304,10 +311,11 @@ def kriging_ordinary(
     Ss : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
     grid_obs : np.ndarray[float]
-        Gridded measurements (all measurement points averaged onto the output gridboxes).
+        Gridded measurements (all measurement points averaged onto the output
+        gridboxes).
     interp_cov : np.ndarray[float]
-        Interpolation covariance of all output grid points (each point in time and all points
-        against each other).
+        Interpolation covariance of all output grid points (each point in time
+        and all points against each other).
 
     Returns
     -------
@@ -339,7 +347,9 @@ def kriging_ordinary(
 
 def result_reshape_2d(result_1d, iid, grid_2d):
     """
-    Returns reshaped krigged output array, from 1-D into 2-D reproducing Matlab's functionality (going over all rows first, before moving onto columns)
+    Returns reshaped krigged output array, from 1-D into 2-D reproducing
+    Matlab's functionality (going over all rows first, before moving onto
+    columns)
 
     Parameters
     ----------
@@ -354,17 +364,18 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     result_1d = result_1d.astype("float")
     grid_2d = grid_2d.astype("float")
 
-    if grid_2d.ndim > 1:
-        grid_2d_flat = grid_2d.flatten()
+    if grid_2d.ndim != 2:
+        raise ValueError(
+            f"'grid_2d' should be 2 dimensional, got {grid_2d.ndim}"
+        )
+    # Vector of length product grid_2d.shape
+    landmask = grid_2d.flatten()
 
-    to_modify = np.zeros(grid_2d_flat.shape)
+    to_modify = np.zeros(landmask.shape)
 
     if iid.ndim > 1:
         iid = np.squeeze(iid)
     indexes = iid
-
-    landmask = np.copy(grid_2d_flat)
-    # print(landmask)
 
     if ~np.isnan(landmask).any():
         landmask = landmask.astype("float")
@@ -379,12 +390,8 @@ def result_reshape_2d(result_1d, iid, grid_2d):
     return result_2d
 
 
-def watermask(ds_masked):
-    try:
-        water_mask = np.copy(ds_masked.variables["landmask"][:, :])
-    except KeyError:
-        # water_mask = np.copy(ds_masked.variables['land_sea_mask'][:,:])
-        water_mask = np.copy(ds_masked.variables["landice_sea_mask"][:, :])
+def watermask(ds_masked, var_name: str):
+    water_mask = np.copy(ds_masked.variables[var_name][:, :])
     """
     water_mask[~np.isnan(water_mask)] = 1
     water_mask[np.isnan(water_mask)] = 0
@@ -395,7 +402,7 @@ def watermask(ds_masked):
         np.where(water_mask.flatten() == 1)
     )  # this idx is returned as a row-major
     # water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1)) #this idx is returned as a column-major
-    print(f"{water_idx=}")
+    print(f"{water_idx = }")
     return water_mask, water_idx
 
 
@@ -546,20 +553,19 @@ def get_spatial_mean(grid_obs: np.ndarray, covx: np.ndarray) -> float:
     Get spatial mean accounting for auto-correlation.
 
     Parameters
-    ==========
-
+    ----------
     grid_obs : np.ndarray
         Vector containing observations
     covx : np.ndarray
         Observation covariance matrix
 
     Returns
-    =======
+    -------
     spatial_mean : float
         The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
 
     Reference
-    =========
+    ---------
     https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
     """
     n = len(grid_obs)
