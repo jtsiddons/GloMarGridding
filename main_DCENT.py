@@ -419,7 +419,7 @@ def main():
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
             if interpolation_covariance_type == "ellipse":
-                interp_covariane_filename = f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc"
+                interp_covariane_filename = f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped_0_360.nc"
                 interp_covariane_filename = os.path.join(
                     interpolation_covariance_path, interp_covariane_filename
                 )
