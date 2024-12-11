@@ -5,6 +5,7 @@ from enum import IntEnum
 from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
+import pandas as pd
 import polars as pl
 import re
 import xarray as xr
