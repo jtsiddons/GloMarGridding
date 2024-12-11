@@ -252,13 +252,50 @@ def read_daily_climatology(
 
 
 def extract_clim_anom(
-    clim_array: xr.DataArray, df: pd.DataFrame
+    clim_array: xr.DataArray,
+    df: pd.DataFrame,
+    var_col: str = "sst",
+    is_temperature: bool = True,
+    clim_lat_name: str = "lat",
+    clim_lon_name: str = "lon",
 ) -> pd.DataFrame:
+    """
+    Merge a climatology to an observational dataframe and compute an anomaly
+    against that climatology for an observed variable.
+
+    Parameters
+    ----------
+    clim_array : xarray.DataArray
+        xarray DataArray containing the climatology values
+    df : pandas.DataFrame
+        Observational DataFrame containing the values we want to compute the
+        anomaly for.
+    var_col : str
+        Variable column name in the observational DataFrame to compute the
+        anomaly from. Is used to name the additional columns in the output
+        DataFrame. The anomaly column will be "`var_col`_anomaly" and the
+        climatology values are joined as "climatology_`var_col`".
+    is_temperature : bool
+        Ensure temperature values are converted from degrees Kelvin to
+        degrees Celcius
+    clim_lat_name : str
+        Name of the latitude coordinate in the climatology DataArray.
+    clim_lon_name
+        Name of the longitude coordinate in the climatology DataArray.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        The input observational DataFrame with additional climatology and
+        anomaly columns for the `var_col` input, named using the variable
+        name: The anomaly column will be "`var_col`_anomaly" and the
+        climatology values are joined as "climatology_`var_col`".
+    """
     obs_lat = np.array(df["lat"])
     obs_lon = np.array(df["lon"])
 
-    clim_lat_idx, _ = find_nearest(clim_array.lat, obs_lat)
-    clim_lon_idx, _ = find_nearest(clim_array.lon, obs_lon)
+    clim_lat_idx, _ = find_nearest(clim_array[anom_lat_name], obs_lat)
+    clim_lon_idx, _ = find_nearest(clim_array[anom_lon_name], obs_lon)
 
     climatology = np.asarray(
         [clim_array.values[j, i] for j, i in zip(clim_lat_idx, clim_lon_idx)]
@@ -268,19 +305,22 @@ def extract_clim_anom(
     #     c = esa_cci_clim[cci_lat_idx[i], cci_lon_idx[i]]
     #     climatology.append(c)
     # climatology = np.hstack(climatology)
-    if (climatology > 200).any():
+    if is_temperature and (climatology > 200).any():
+        # Degrees Kelvin to Degrees Celcius
         climatology = climatology - 273.15
     # print(climatology)
     updated_df: pd.DataFrame = df.copy()
-    updated_df["climatology_sst"] = climatology
+    updated_df[f"climatology_{var_col}"] = climatology
 
     if pd.api.types.is_string_dtype(updated_df.sst.dtype):
-        updated_df["sst"] = pd.to_numeric(updated_df["sst"], errors="coerce")
+        updated_df[var_col] = pd.to_numeric(
+            updated_df[var_col], errors="coerce"
+        )
 
-    updated_df["sst_anomaly"] = (
-        updated_df["sst"] - updated_df["climatology_sst"]
+    updated_df[f"{var_col}_anomaly"] = (
+        updated_df[var_col] - updated_df[f"climatology_{var_col}"]
     )
-    updated_df = updated_df.loc[updated_df["sst_anomaly"].notna()]
+    updated_df = updated_df.loc[updated_df[f"{var_col}_anomaly"].notna()]
 
     return updated_df
 
