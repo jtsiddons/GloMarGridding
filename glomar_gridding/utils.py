@@ -216,3 +216,16 @@ def intersect_mtlb(a, b):
     aux.sort()
     c = aux[:-1][aux[1:] == aux[:-1]]
     return c, ia[np.isin(a1, c)], ib[np.isin(b1, c)]
+
+
+def check_cols(
+    df: pd.DataFrame | pl.DataFrame,
+    cols: Iterable[str],
+) -> None:
+    """Check that all columns in a list of columns are in a DataFrame"""
+    missing_cols = [c for c in cols if c not in df.columns]
+    if missing_cols:
+        raise ValueError(
+            "DataFrame is missing required columns: " + ", ".join(missing_cols)
+        )
+    return None
