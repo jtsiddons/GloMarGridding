@@ -331,8 +331,13 @@ def extract_clim_anom(
 # INFO: Maybe improve by first adjusting obs to a grid resolution matched by the
 #       Mask?
 def find_values(
-    mask_ds: xr.Dataset, lat: Iterable[float], lon: Iterable[float]
-):
+    mask_ds: xr.Dataset,
+    lat: Iterable[float],
+    lon: Iterable[float],
+    mask_var: str = "landmask",
+    lon_var: str = "lon",
+    lat_var: str = "lat",
+) -> tuple[np.ndarray, list[int], list[int], np.ndarray, np.ndarray]:
     """
     Parameters
     ----------
@@ -346,32 +351,24 @@ def find_values(
     -------
     Dataframe with added anomalies for each observation point
     """
-    try:
-        mask = mask_ds.variables["landmask"].values
-        # print(mask)
-        mask_lat = mask_ds.lat.values
-        # print(mask_lat)
-        mask_lon = mask_ds.lon.values
-        mask_lon = ((mask_lon + 540) % 360) - 180
-        # print(mask_lon)
-    except KeyError:
-        # mask = mask_ds.variables['land_sea_mask'].values
-        mask = mask_ds.variables["landice_sea_mask"].values
-        # print(mask)
-        mask_lat = mask_ds.latitude.values
-        # print(mask_lat)
-        mask_lon = mask_ds.longitude.values
-        mask_lon = ((mask_lon + 540) % 360) - 180
-        # print(mask_lon)
+    mask = mask_ds.variables[mask_var].values
+    # print(mask)
+    mask_lat = mask_ds.coords[lat_var].values
+    # print(mask_lat)
+    mask_lon = mask_ds.coords[lon_var].values
+    mask_lon = ((mask_lon + 540) % 360) - 180
+
     # Find nearest mask lat/lon value to each observation lat/lon
     # BUG: Mask set if nearest is quite far away
     # QUESTION: Can we guarantee that the mask is _complete_ and _uniform_?
-    cci_lat_idx, grid_lat = find_nearest(mask_lat, lat)
-    cci_lon_idx, grid_lon = find_nearest(mask_lon, lon)
+    mask_lat_idx, grid_lat = find_nearest(mask_lat, lat)
+    mask_lon_idx, grid_lon = find_nearest(mask_lon, lon)
 
     # esa_cci_mask = mask
     # water_point = []
-    masked: list = [mask[j, i] for j, i in zip(cci_lat_idx, cci_lon_idx)]
+    masked: np.ndarray = np.array(
+        [mask[j, i] for j, i in zip(mask_lat_idx, mask_lon_idx)]
+    )
     # for i in range(len(cci_lat_idx)):
     #     wp = esa_cci_mask[cci_lat_idx[i], cci_lon_idx[i]]
     #     # print(wp)
@@ -380,7 +377,7 @@ def find_values(
     #     water_point.append(wp)
     # water_point = np.hstack(water_point)
 
-    return masked, cci_lat_idx, cci_lon_idx, grid_lat, grid_lon
+    return masked, mask_lat_idx, mask_lon_idx, grid_lat, grid_lon
 
 
 # OPTIM: Can we speed this up by looking at unique positions and merging?
