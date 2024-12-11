@@ -14,13 +14,14 @@ import math
 
 # data handling tools
 import pandas as pd
+import polars as pl
 import xarray as xr
 
 from sklearn.metrics.pairwise import haversine_distances
 from collections.abc import Callable, Iterable
 
 from matern_and_tm.matern_tau import tau_dist
-from .utils import find_nearest, select_bounds
+from .utils import check_cols, find_nearest, select_bounds
 
 
 _MONTH_31: list[int] = [1, 3, 5, 7, 8, 10, 12]
@@ -787,124 +788,148 @@ def get_weights(df: pd.DataFrame) -> np.ndarray:
 #     return covx, W
 
 
-# TODO: Refactor - This will eventually be an ID-based assignment
-# NOTE: Adds bias uncertainty for ship/buoy. Tries to identify indices that
-#       correspond to ship or buoy by comparing multiple columns from
-#       final proc ICOADS data.
-# QUESTION: Do we have cross terms here, or is it just diagonal components?
-# WARN: Seems to incorrectly use columns that are string type as integer, I
-#       don't think anything will be correctly identified or assigned here.
-# NOTE: Correlated component, ship id the factor of correlation
 def bias_uncertainty(
     df: pd.DataFrame,
     covx: np.ndarray,
-    sig_bs: float,
-    sig_bb: float,
+    group_col: str,
+    bias_val_col: str,
 ) -> np.ndarray:
     """
     Returns measurements covariance matrix updated by adding bias uncertainty to
-    the measurements
+    the measurements based on a grouping within the observational data.
+
+    These are the correlated components.
 
     Parameters
     ----------
-    vessel_ii (int) - information on the measuring vessel
-    vessel_id (int) - ID of the measuring vessel (for ship and buoys)
-    type_id (int) -
-    sig_bs (float) - sigma related to the bias for ship measurements
-    sig_bb (float) - sigma related to the bias for the buoy measurements
-    covx (array) - measurement covariance matrix
+    df : pandas.DataFrame
+        Observational DataFrame including group information and bias uncertainty
+        values for each grouping. It is assumed that a single bias uncertainty
+        value applies to the whole group, and is applied as cross terms in the
+        covariance matrix (plus to the diagonal).
+    covx : numpy.ndarray
+        Measurement covariance matrix.
+    group_col : str
+        Name of the column that can be used to partition the observational
+        DataFrame.
+    bias_val_col : str
+        Name of the column containing bias uncertainty values for each of
+        the groups identified by 'group_col'. It is assumed that a single bias
+        uncertainty value applies to the whole group, and is applied as cross
+        terms in the covariance matrix (plus to the diagonal).
 
     Returns
     -------
     Measurement covariance matrix updated by including bias uncertainty of the
     measurements
     """
-    try:
-        # NOTE: string column
-        type_id = np.array(df["orig_id"])
-        # type_id = np.array(df['type_id'])
-    except:
-        # NOTE: string column
-        type_id = np.array(df["id.type"])
-    # NOTE: string column
-    vessel_id = np.array(df["id"])
-    # NOTE: integer column
-    vessel_ii = np.array(df["ii"])
-    # print('type id', type_id)
-    # print('vessel id', vessel_id)
-    # print('vessel ii', vessel_ii)
+    check_cols(df, [group_col, bias_val_col])
+    # NOTE: polars is easier for this analysis!
+    pl_df = (
+        pl.from_pandas(df)
+        .select(group_col, bias_val_col)
+        .with_row_index("index")
+        .group_by(group_col)
+        # NOTE: It is expected that the bias value should be the same for all
+        #       records within the same group
+        .agg(pl.col("index"), pl.col(bias_val_col).first())
+    )
+    for row in pl_df.rows(named=True):
+        if row[bias_val_col] is None:
+            print(f"Group {row[group_col]} has no bias uncertainty value set")
+            continue
+        # INFO: Adding cross-terms to covariance
+        inds = np.ix_(row["index"], row["index"])
+        covx[inds] = covx[inds] + row[bias_val_col]
 
-    # Finally the hard bit, the bias uncertainty, mainly because the ID's are
-    # quite bad!
-    # Okay those with ii == 2 just add the bias uncertainty to the diagonal
-    p = [
-        i
-        for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
-        if vessel == 2 and id_ == 0
-    ]
-    for k in range(len(p)):
-        covx[p[k], p[k]] = covx[p[k], p[k]] + sig_bs**2
-
-    p = [
-        i
-        for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
-        if vessel == 2 and id_ == 1
-    ]
-    for k in range(len(p)):
-        covx[p[k], p[k]] = covx[p[k], p[k]] + sig_bb**2
-
-    # Just a quick check on the buoy data that all
-    # measurement_covariance(sig_ms, sig_mb, sig_bs, sig_bb, cond_df,
-    #                        flattened_idx, lat, lon)
-    # the ii's are 3
-    p = [
-        i
-        for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
-        if id_ == 1 and vessel != 3
-    ]
-    if len(p) > 0:
-        print(
-            "Warning there are %d BUOY measurements that are not classed as 3\n",
-            len(p),
-        )
-
-    I = [i for i, id_ in enumerate(type_id) if id_ == 1]
-    UVID = np.unique(vessel_id[I])
-    # print('UVID', UVID)
-    for u in range(len(UVID)):
-        p = [
-            i
-            for i, (id_, vid_) in enumerate(zip(type_id, vessel_id))
-            if id_ == 1 and vid_ == UVID[u]
-        ]
-        row_idx = p
-        col_idx = p
-        # covx[p,p] = covx[p,p] + sig_bb ** 2
-        covx[np.ix_(row_idx, col_idx)] = (
-            covx[np.ix_(row_idx, col_idx)] + sig_bb**2
-        )
-
-    II = [
-        i
-        for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
-        if id_ == 0 and vessel != 2
-    ]
-    UVID = np.unique(vessel_id[II])
-    # print('UVID', UVID)
-    for u in range(len(UVID)):
-        q = [
-            i
-            for i, (id_, vid_) in enumerate(zip(type_id, vessel_id))
-            if id_ == 0 and vid_ == UVID[u]
-        ]
-        # covx[p[k],p[k]] = covx[p[k],p[k]] + sig_bb ** 2
-        row_idx = q
-        col_idx = q
-        covx[np.ix_(row_idx, col_idx)] = (
-            covx[np.ix_(row_idx, col_idx)] + sig_bs**2
-        )
-    # print('covx', covx)
     return covx
+    #
+    # try:
+    #     # NOTE: string column
+    #     type_id = np.array(df["orig_id"])
+    #     # type_id = np.array(df['type_id'])
+    # except:
+    #     # NOTE: string column
+    #     type_id = np.array(df["id.type"])
+    # # NOTE: string column
+    # vessel_id = np.array(df["id"])
+    # # NOTE: integer column
+    # vessel_ii = np.array(df["ii"])
+    # # print('type id', type_id)
+    # # print('vessel id', vessel_id)
+    # # print('vessel ii', vessel_ii)
+    #
+    # # Finally the hard bit, the bias uncertainty, mainly because the ID's are
+    # # quite bad!
+    # # Okay those with ii == 2 just add the bias uncertainty to the diagonal
+    # p = [
+    #     i
+    #     for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
+    #     if vessel == 2 and id_ == 0
+    # ]
+    # for k in range(len(p)):
+    #     covx[p[k], p[k]] = covx[p[k], p[k]] + sig_bs**2
+    #
+    # p = [
+    #     i
+    #     for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
+    #     if vessel == 2 and id_ == 1
+    # ]
+    # for k in range(len(p)):
+    #     covx[p[k], p[k]] = covx[p[k], p[k]] + sig_bb**2
+    #
+    # # Just a quick check on the buoy data that all
+    # # measurement_covariance(sig_ms, sig_mb, sig_bs, sig_bb, cond_df,
+    # #                        flattened_idx, lat, lon)
+    # # the ii's are 3
+    # p = [
+    #     i
+    #     for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
+    #     if id_ == 1 and vessel != 3
+    # ]
+    # if len(p) > 0:
+    #     print(
+    #         "Warning there are %d BUOY measurements that are not classed as 3\n",
+    #         len(p),
+    #     )
+    #
+    # I = [i for i, id_ in enumerate(type_id) if id_ == 1]
+    # UVID = np.unique(vessel_id[I])
+    # # print('UVID', UVID)
+    # for u in range(len(UVID)):
+    #     p = [
+    #         i
+    #         for i, (id_, vid_) in enumerate(zip(type_id, vessel_id))
+    #         if id_ == 1 and vid_ == UVID[u]
+    #     ]
+    #     row_idx = p
+    #     col_idx = p
+    #     # covx[p,p] = covx[p,p] + sig_bb ** 2
+    #     covx[np.ix_(row_idx, col_idx)] = (
+    #         covx[np.ix_(row_idx, col_idx)] + sig_bb**2
+    #     )
+    #
+    # II = [
+    #     i
+    #     for i, (vessel, id_) in enumerate(zip(vessel_ii, type_id))
+    #     if id_ == 0 and vessel != 2
+    # ]
+    # UVID = np.unique(vessel_id[II])
+    # # print('UVID', UVID)
+    # for u in range(len(UVID)):
+    #     q = [
+    #         i
+    #         for i, (id_, vid_) in enumerate(zip(type_id, vessel_id))
+    #         if id_ == 0 and vid_ == UVID[u]
+    #     ]
+    #     # covx[p[k],p[k]] = covx[p[k],p[k]] + sig_bb ** 2
+    #     row_idx = q
+    #     col_idx = q
+    #     covx[np.ix_(row_idx, col_idx)] = (
+    #         covx[np.ix_(row_idx, col_idx)] + sig_bs**2
+    #     )
+    # # print('covx', covx)
+    # return covx
 
 
 # def correlated_uncertainty(df):
