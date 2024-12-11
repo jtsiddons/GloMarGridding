@@ -20,7 +20,7 @@ import xarray as xr
 from sklearn.metrics.pairwise import haversine_distances
 from collections.abc import Callable, Iterable
 
-from matern_and_tm.matern_tau import tau_dist
+from matern_and_tm import tau_dist
 from .utils import check_cols, find_nearest, select_bounds
 
 
