@@ -294,8 +294,8 @@ def extract_clim_anom(
     obs_lat = np.array(df["lat"])
     obs_lon = np.array(df["lon"])
 
-    clim_lat_idx, _ = find_nearest(clim_array[anom_lat_name], obs_lat)
-    clim_lon_idx, _ = find_nearest(clim_array[anom_lon_name], obs_lon)
+    clim_lat_idx, _ = find_nearest(clim_array[clim_lat_name], obs_lat)
+    clim_lon_idx, _ = find_nearest(clim_array[clim_lon_name], obs_lon)
 
     climatology = np.asarray(
         [clim_array.values[j, i] for j, i in zip(clim_lat_idx, clim_lon_idx)]
