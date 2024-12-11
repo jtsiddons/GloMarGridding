@@ -106,8 +106,9 @@ def main():
         default=0,
         required=False,
         type=int,
-        help="Should the global mean be removed? - 0:no, 1:yes, 2:yes but median",
-        choices=[0, 1, 2],
+        help="Should the global mean be removed? - 0:no, 1:yes, "
+        + "2:yes but median, 3:yes but spatial mean",
+        choices=[0, 1, 2, 3],
     )
 
     args = parser.parse_args()
