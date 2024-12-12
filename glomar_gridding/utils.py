@@ -30,16 +30,18 @@ class MonthName(IntEnum):
 
 
 def add_empty_layers(
-    nc_variables: list[nc.Variable] | nc.Variable,
-    timestamps: list[int] | int,
+    nc_variables: Iterable[nc.Variable] | nc.Variable,
+    timestamps: Iterable[int] | int,
     shape: tuple[int, int],
 ) -> None:
     empty = np.zeros(shape=shape).astype(np.float32)
     nc_variables = (
-        [nc_variables] if not isinstance(nc_variables, list) else nc_variables
+        [nc_variables]
+        if not isinstance(nc_variables, Iterable)
+        else nc_variables
     )
     timestamps = (
-        [timestamps] if not isinstance(timestamps, list) else timestamps
+        [timestamps] if not isinstance(timestamps, Iterable) else timestamps
     )
     for variable in nc_variables:
         for timestamp in timestamps:
@@ -61,7 +63,7 @@ class ConfigParserMultiValues(OrderedDict):
 
 def match_coord(
     ds: xr.Dataset,
-    candidate_names: list[str] | str,
+    candidate_names: Iterable[str] | str,
     case_insensitive: bool = True,
 ) -> str:
     """
@@ -84,7 +86,9 @@ def match_coord(
     coord : str
         Name of the coordinate matching any candidate.
     """
-    if isinstance(candidate_names, str):
+    if isinstance(candidate_names, str) or not isinstance(
+        candidate_names, Iterable
+    ):
         candidate_names = [candidate_names]
     coords: list[str] = [str(c) for c in ds.coords]
     for coord in coords:
