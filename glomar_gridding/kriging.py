@@ -258,8 +258,8 @@ def kriging_simple(
     print(f"{z_obs =}")
 
     G = G @ Ss
-    print(f'{G =}')
-    dz_squared = (np.diag(cci_covariance - G))
+    print(f"{G =}")
+    dz_squared = np.diag(interp_cov - G)
     dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     print(f"{dz =}")
@@ -312,7 +312,7 @@ def kriging_ordinary(
     z_obs = G @ grid_obs
 
     G = G @ Ss
-    dz_squared = (np.diag(cci_covariance - G) - alpha)
+    dz_squared = np.diag(interp_cov - G) - alpha
     dz_squared = adjust_small_negative(dz_squared)
     dz = np.sqrt(dz_squared)
     # dz[np.isnan(dz)] = 0.0
