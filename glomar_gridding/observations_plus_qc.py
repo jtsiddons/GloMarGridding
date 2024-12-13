@@ -225,7 +225,14 @@ def load_icoads_obs(
     return obs_df.to_pandas()
 
 
-def MAT_heigh_adj(height_path, year, height_member):
+def MAT_heigh_adj(
+    height_path: str, year: int, height_member: int
+) -> pd.DataFrame:
+    warn(
+        "MAT_heigh_adj is deprecated, use MAT_add_height_adjustment "
+        + "which will merge and apply the adjustment to an input Frame.",
+        DeprecationWarning,
+    )
     # height_path is to Richard's gzip files with 200 members
     ds_dir = [x[0] for x in os.walk(height_path)][0]  # os.walk(path)
     print(ds_dir)
