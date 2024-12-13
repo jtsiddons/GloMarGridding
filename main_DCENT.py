@@ -7,13 +7,11 @@
 
 # global
 import os
-import os.path
 from datetime import datetime
 
 # argument parser
 import argparse
 from configparser import ConfigParser
-from collections import OrderedDict
 
 # math tools
 import numpy as np
@@ -26,18 +24,7 @@ import netCDF4 as nc
 # self-written modules (from the same directory)
 import glomar_gridding.observations as obs_module
 import glomar_gridding.kriging as krig_module
-
-
-class ConfigParserMultiValues(OrderedDict):
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):
-        return value.splitlines()
+from glomar_gridding.utils import ConfigParserMultiValues
 
 
 def main():
@@ -354,7 +341,9 @@ def main():
             print("-----------------")
             # since we're not using any landmask for this run
             # the line below:
-            # cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon)
+            # cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
+            #     lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon
+            # )
             # mon_flat_idx = cond_df['flattened_idx'][:]
             # can be substituted with:
             lat_idx, grid_lat = obs_module.find_nearest(output_lat, mon_df.lat)
@@ -400,7 +389,8 @@ def main():
                 gridbox_count_np, gridbox_id_np, water_mask
             )
 
-            # need to either add weights (which will be just 1 everywhere as obs are gridded)
+            # need to either add weights (which will be just 1 everywhere as obs
+            # are gridded)
             # krige obs onto gridded field
             _, W = obs_module.dist_weight(
                 mon_df,

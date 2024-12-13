@@ -11,7 +11,6 @@ import os
 # argument parser
 import argparse
 from configparser import ConfigParser
-from collections import OrderedDict
 
 # math tools
 import numpy as np
@@ -24,21 +23,9 @@ import netCDF4 as nc
 # self-written modules (from the same directory)
 import glomar_gridding.observations as obs_module
 import glomar_gridding.kriging as krig_module
-from glomar_gridding.utils import days_since_by_month
+from glomar_gridding.utils import days_since_by_month, ConfigParserMultiValues
 
 import warnings
-
-
-class ConfigParserMultiValues(OrderedDict):
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):
-        return value.splitlines()
 
 
 def _get_sst_err_cov(
