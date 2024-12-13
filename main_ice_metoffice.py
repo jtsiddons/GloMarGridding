@@ -248,8 +248,9 @@ def main():
             print(monthly.index)
 
             # print(current_month)
-            obs_df = obs_qc_module.main(
+            obs_df = obs_qc_module.load_icoads_obs(
                 data_path,
+                "sst",
                 qc_path,
                 qc_path_2,
                 year=current_year,
