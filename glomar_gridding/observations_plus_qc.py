@@ -1,6 +1,6 @@
 # global
 import os
-import os.path
+from warnings import warn
 
 # IMPORTANT: Environmental Variables to limit Numpy
 os.environ["OMP_NUM_THREADS"] = "16"
@@ -9,6 +9,8 @@ os.environ["MKL_NUM_THREADS"] = "16"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "16"
 os.environ["NUMEXPR_NUM_THREADS"] = "16"
 
+# IMPORTANT: Environmental Variables to limit Polars Threads
+os.environ["POLARS_MAX_THREADS"] = "16"
 
 # math tools
 import numpy as np
@@ -19,24 +21,28 @@ import polars as pl
 import xarray as xr
 
 
-def is_single_item_list(list_to_check):
-    # Check that list is not empty
-    try:
-        _ = list_to_check[0]
-    except IndexError:
-        return False
-    # Return true if list has a single element
-    try:
-        _ = list_to_check[1]
-    except IndexError:
-        return True
-    # Return False if more than one element
-    return False
+# def is_single_item_list(list_to_check):
+#     # Check that list is not empty
+#     try:
+#         _ = list_to_check[0]
+#     except IndexError:
+#         return False
+#     # Return true if list has a single element
+#     try:
+#         _ = list_to_check[1]
+#     except IndexError:
+#         return True
+#     # Return False if more than one element
+#     return False
 
 
 def read_in_data(
-    data_path, year=False, month=False, obs=False, subdirectories=False
-):
+    data_path,
+    year: int,
+    month: int,
+    obs: bool = False,
+    subdirectories: bool = False,
+) -> list[str]:
     ds_dir = [x[0] for x in os.walk(data_path)]  # os.walk(path)
     # print(ds_dir)
     if obs is True and subdirectories is False:
@@ -52,7 +58,8 @@ def read_in_data(
         # filtered_list = list(filter(r.match, fdef rmse(predictions, targets):
 
         # for multiple months
-        # (when processing MetOffice pentads, there might be need for a few days from before/after main month
+        # (when processing MetOffice pentads, there might be need for a few days
+        # from before/after main month
         mon_list = [month - 1, month, month + 1]
         str_list = [
             str(year) + "_" + str(i).zfill(2) + ".csv" for i in mon_list
@@ -106,7 +113,7 @@ def read_in_data(
             # print(filtered_list)
 
             # for multiple months
-            # (when processing MetOffice pentads, there might be need for a few days from before/after main month
+            # (when processing MetOffice pentads, there might be need for a few days from before/after main month)
             mon_list = [month - 1, month, month + 1]
             str_list = [
                 str(year) + "_" + str(i).zfill(2) + ".feather" for i in mon_list
@@ -234,42 +241,16 @@ def MAT_heigh_adj(
         DeprecationWarning,
     )
     # height_path is to Richard's gzip files with 200 members
-    ds_dir = [x[0] for x in os.walk(height_path)][0]  # os.walk(path)
-    print(ds_dir)
-    filelist = sorted(os.listdir(ds_dir))  # _fullpath(dirname)
-    print(filelist)
-    chosen_filename = ["MAT_hgt_" + str(year) + "_t10m.csv.gz"]
-    filtered_list = [i for i in filelist if i in chosen_filename]
-    print(filtered_list)
-    height_file = [os.path.join(ds_dir, f) for f in filtered_list][0]
-    print(height_file)
-    height_df = pd.read_csv(height_file)
-    print(height_df)
-    columns = ["uid", "end " + str(height_member)]
-    print(columns)
-    height_df = height_df[columns]
-    print(height_df)
+    height_file = os.path.join(height_path, f"MAT_hgt_{year}_t10m.csv.gz")
+    columns = ["uid", f"end {height_member}"]
+    height_df = pd.read_csv(height_file, usecols=columns)
     return height_df
 
 
-def MAT_qc(qc_path, year, month):
-    # qc_path is to Richard's qc files
-    ds_dir = [x[0] for x in os.walk(qc_path)][0]  # os.walk(path)
-    # print(ds_dir)
-    filelist = sorted(os.listdir(ds_dir))  # _fullpath(dirname)
-    # print(filelist)
-    chosen_filename = ["MAT_QC_" + str(year) + ".csv"]
-    filtered_list = [i for i in filelist if i in chosen_filename]
-    # print(filtered_list)
-    fullpath_list = [os.path.join(ds_dir, f) for f in filtered_list]
-    # print(fullpath_list)
-    qc_dir = fullpath_list[0]
-    # print(qc_dir)
-    # data_df = pd.read_csv(fullpath_list[0])
+def MAT_qc(qc_path: str, year: int, month: int) -> pd.DataFrame:
+    qc_file = os.path.join(qc_path, f"MAT_QC_{year}.csv")
 
-    qc_df = pd.read_csv(qc_dir)
-    # print(qc_df.columns.to_list())
-    qc_columns = [
+    qc_columns: list[str] = [
         "buddy",
         "clim_mat",
         "hardlimit_mat",
@@ -278,10 +259,10 @@ def MAT_qc(qc_path, year, month):
     ]
     data_columns = ["uid"]
     needed_columns = qc_columns + data_columns
-    # print(needed_columns)
-    qc_df = qc_df[needed_columns]
+    qc_df = pd.read_csv(qc_file, usecols=needed_columns)
+    # qc_df = qc_df.loc[needed_columns]
     # print(qc_df)
-    qc_df = qc_df[
+    qc_df = qc_df.loc[
         (qc_df["buddy"] == 0)
         & (qc_df["clim_mat"] == 0)
         & (qc_df["hardlimit_mat"] == 0)
@@ -680,7 +661,6 @@ def TAO_match_climatology_to_obs(climatology, obs_df):
     obs_df["lat_idx"], obs_df["lon_idx"] = find_latlon_idx(
         climatology, obs_lat, obs_lon
     )
-    cci_clim = []  # ESA CCI climatology values
 
     print(len(climatology.time.values))
     if len(climatology.time.values) == 365:
@@ -712,6 +692,11 @@ def TAO_match_climatology_to_obs(climatology, obs_df):
             np.array(obs_df.lat_idx),
             np.array(obs_df.lon_idx),
         ]
+    else:
+        raise ValueError(
+            "Climatology must be either Daily or Pentad. Cannot infer format "
+            + "from length of time values"
+        )
     print(selected)
 
     if selected.any() > 273.15:
