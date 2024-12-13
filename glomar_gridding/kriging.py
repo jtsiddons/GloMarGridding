@@ -67,8 +67,7 @@ def kriging(
     else:
         grid_obs = weights @ obs
 
-    if len(grid_obs) > 1:
-        grid_obs = np.squeeze(grid_obs)
+    grid_obs = np.squeeze(grid_obs) if len(grid_obs) > 1 else grid_obs
 
     match remove_obs_mean:
         case 0:
@@ -148,18 +147,20 @@ def unmasked_kriging(
     unmask_idx : np.ndarray[int]
         Indices of all un-masked points for chosen date.
     unique_obs_idx : np.ndarray[int]
-        Unique indices of all measurement points for a chosen date, representative of the indices of gridboxes, which have => 1 measurement.
+        Unique indices of all measurement points for a chosen date,
+        representative of the indices of gridboxes, which have => 1 measurement.
     weights : np.ndarray[float]
         Weight matrix (inverse of counts of observations).
     obs : np.ndarray[float]
         All point observations/measurements for the chosen date.
     interp_cov : np.ndarray[float]
-        Interpolation covariance of all output grid points (each point in time and all points
+        Interpolation covariance of all output grid points (each point in time
+        and all points
         against each other).
     error_cov : np.ndarray[float]
         Measurement/Error covariance matrix.
     remove_obs_mean: int
-        Should the mean or median from grib_obs be removed and added back onto grib_obs?
+        Should the mean or median from obs be removed and added back onto obs?
         0 = No (default action)
         1 = the mean is removed
         2 = the median is removed
@@ -167,7 +168,8 @@ def unmasked_kriging(
     obs_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
     method : KrigMethod
-        The kriging method to use to fill in the output grid. One of "simple" or "ordinary".
+        The kriging method to use to fill in the output grid. One of "simple"
+        or "ordinary".
 
     Returns
     -------
@@ -377,7 +379,8 @@ def watermask(ds_masked, var_name: str):
     water_idx = np.asarray(
         np.where(water_mask.flatten() == 1)
     )  # this idx is returned as a row-major
-    # water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1)) #this idx is returned as a column-major
+    # water_idx = np.asarray(np.where(water_mask.flatten(order='F') == 1))
+    # this idx is returned as a column-major
     print(f"{water_idx = }")
     return water_mask, water_idx
 
@@ -391,19 +394,16 @@ def kriging_main(
     W,
     bias=False,
     kriging_method: KrigMethod = "simple",
+    anomaly_var: str = "sst_anomaly",
+    mask_var: str = "landmask",
 ):
-    try:
-        obs = cond_df["sst_anomaly"].values  # cond_df['cci_anomalies'].values
-    except KeyError:
-        obs = cond_df["obs_anomalies"].values
-    """
-    print('CHECK BIAS AND SST HAVE SAME LENGHT')
-    print(len(obs))
-    print(len(bias))
-    """
+    obs = cond_df[anomaly_var].values  # cond_df['cci_anomalies'].values
+    # print('CHECK BIAS AND SST HAVE SAME LENGHT')
+    # print(len(obs))
+    # print(len(bias))
     # print('1 - DONE')
     # water_mask, water_idx = watermask(ds, ds_var, timestep)
-    water_mask, water_idx = watermask(ds_masked)
+    water_mask, water_idx = watermask(ds_masked, var_name=mask_var)
     obs_idx = flattened_idx
     unique_obs_idx = np.unique(obs_idx)
     # print('2 - DONE')
@@ -437,9 +437,13 @@ def kriging_main(
 # def krige_for_esa_values_only(
 #     iid, uind, W, x_obs, cci_covariance, bias=False, clim=False
 # ):
-#     # this basicallt removes the R matrix (which is the obs covariance that has noise, uncertainty etc) as we use actuall ESA CCI SST anomaly values that we take as ground truth and therefore we assume they have no uncertainty or bias
+#     # this basicallt removes the R matrix (which is the obs covariance that
+#     # has noise, uncertainty etc) as we use actuall ESA CCI SST anomaly values
+#     # that we take as ground truth and therefore we assume they have no
+#     # uncertainty or bias
 #     """
-#     Returns arrays of krigged observations and anomalies for all grid points in the domain
+#     Returns arrays of krigged observations and anomalies for all grid points
+#     in the domain
 #
 #     Parameters
 #     ----------
@@ -448,14 +452,18 @@ def kriging_main(
 #     clim (list) - climatology values for all observation points
 #     bias (list) - bias for all observation points
 #     covx (array) - measurement covariance matrix
-#     cci_covariance (array) - covariance of all CCI grid points (each point in time and all points against each other)
-#     df (dataframe) - dataframe containing all information and observations for a chosen date
+#     cci_covariance (array) - covariance of all CCI grid points (each point in
+#            time and all points against each other)
+#     df (dataframe) - dataframe containing all information and observations for
+#            a chosen date
 #
 #     Returns
 #     -------
-#     Full set of values for the whole domain derived from observation points using Simple Kriging
+#     Full set of values for the whole domain derived from observation points
+#     using Simple Kriging
 #     Uncertainty associated using Simple Kriging
-#     Full set of values for the whole domain derived from observation points using Ordinary Kriging
+#     Full set of values for the whole domain derived from observation points
+#     using Ordinary Kriging
 #     Uncertainty associated using Ordinary Kriging
 #     """
 #     # So Now we can get to the part where we krige the grid
@@ -478,7 +486,8 @@ def kriging_main(
 #     S = covar[ia[:, None], ia[None, :]]
 #     print("S", S)
 #
-#     # Ss is the covariance between to be "predicted" grid points (i.e. all) and "measured" points
+#     # Ss is the covariance between to be "predicted" grid points (i.e. all)
+#     # and "measured" points
 #     Ss = covar[ia, :]
 #     print("Ss", Ss)
 #
