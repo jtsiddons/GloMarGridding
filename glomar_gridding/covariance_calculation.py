@@ -1,3 +1,8 @@
+"""
+Functions for computing covariance matrices or analysing covariance matrices.
+"""
+
+from collections.abc import Callable
 import numpy as np
 
 from sklearn.decomposition import PCA
@@ -13,6 +18,8 @@ from .covariance_variogram import (
     getDistanceByHaversine,
 )
 
+
+# QUESTION: Can I delete this triple quote section?
 
 ###############################################################
 # DATA READ-IN
@@ -66,21 +73,27 @@ def read_in_data():
 #################################################################
 # DATA PREPROCESSING IN TERMS OF LAND/OCEAN MASK
 #################################################################
-def mask_land_and_ice(sst_flat_with_nans, lat_1d, lon_1d):
-    # in main three_step_kriging code pentad_1d_time comes already transposed so first line is not necessary
-    # however, if you're running it only from this file and not use three_step kriging (so you use read_in_data function, the sst_flat_with_nans needs to be transposed)
+def mask_land_and_ice(
+    sst_flat_with_nans: np.ndarray,
+    lat_1d: np.ndarray,
+    lon_1d: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # in main three_step_kriging code pentad_1d_time comes already transposed so
+    # first line is not necessary
+    # however, if you're running it only from this file and not use three_step
+    # kriging (so you use read_in_data function, the sst_flat_with_nans needs to
+    # be transposed)
     # it only works when you have (space,time) order of dimensions
-    cci_mask = np.copy(sst_flat_with_nans)  # .T)
+    cci_mask = np.copy(sst_flat_with_nans).T  # .T)
 
-    # cci_mask = np.copy(sst_flat_with_nans)
-    for line in cci_mask:
-        mask = np.isnan(line).any()
-        line[mask] = np.nan
+    # # cci_mask = np.copy(sst_flat_with_nans)
+    # for line in cci_mask:
+    #     mask = np.isnan(line).any()
+    #     line[mask] = np.nan
 
     # Mask the land points
-    cci_mask = cci_mask.T
     cci_mask = np.ma.masked_array(cci_mask, np.isnan(cci_mask))
-    land = cci_mask.sum(0).mask
+    land = cci_mask.sum(axis=0).mask
     ocean_points = ~land
     print(cci_mask.shape)
     # keep only oceanic grid-points
@@ -95,7 +108,8 @@ def mask_land_and_ice(sst_flat_with_nans, lat_1d, lon_1d):
     return cci_mask, ocean_points, ocean_lat, ocean_lon
 
 
-# in order to get same result as in Matlab (or three_step_kriging.py you need to transpose matrix for covariance calculation
+# in order to get same result as in Matlab (or three_step_kriging.py you need to
+# transpose matrix for covariance calculation)
 # plt.imshow(np.flipud(np.cov(cci_mask.T)))
 # plt.colorbar()
 # plt.clim(-0.7,1)
@@ -105,10 +119,12 @@ def mask_land_and_ice(sst_flat_with_nans, lat_1d, lon_1d):
 ######################################################
 # COVARIANCE ON ORIGINAL EMPIRICAL DATASET
 ######################################################
-def calculate_empirical_covariance(sst_flat_with_nans, lat_1d, lon_1d):
-    cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(
-        sst_flat_with_nans, lat_1d, lon_1d
-    )
+def calculate_empirical_covariance(
+    sst_flat_with_nans: np.ndarray,
+    lat_1d: np.ndarray,
+    lon_1d: np.ndarray,
+) -> np.ndarray:
+    cci_mask, _, _, _ = mask_land_and_ice(sst_flat_with_nans, lat_1d, lon_1d)
     print("cci mask shape", cci_mask.shape)
     covariance_empirical = np.cov(cci_mask.T)
     return covariance_empirical
@@ -127,7 +143,10 @@ def calculate_empirical_covariance(sst_flat_with_nans, lat_1d, lon_1d):
 #####################################################
 # EOF AND PCA ON ORIGINAL EMPIRICAL DATASET
 #####################################################
-def calculate_pca_and_eof(cci_mask, chosen_ipc=True):
+def calculate_pca_and_eof(
+    cci_mask: np.ndarray,
+    chosen_ipc: int | None = None,
+) -> tuple[int, np.ndarray, np.ndarray]:
     # instantiates the PCA object
     skpca = PCA()
     # fit
@@ -139,23 +158,21 @@ def calculate_pca_and_eof(cci_mask, chosen_ipc=True):
     ax.plot(skpca.explained_variance_ratio_[0:10] * 100, "ro")
     plt.show()
 
-    if chosen_ipc:
-        # set to what number of modes you want
-        ipc = chosen_ipc
-    else:
-        # keep number of PC sufficient to explain 70 % of the original variance
-        print(
-            "Number of PCs has not been specified by the user, set to variance ratio over 70%"
-        )
-        ipc = np.where(skpca.explained_variance_ratio_.cumsum() >= 0.70)[0][0]
+    ipc = (
+        chosen_ipc
+        if chosen_ipc is not None
+        else np.where(skpca.explained_variance_ratio_.cumsum() >= 0.70)[0][0]
+    )
     print("ipc", ipc)
 
-    # The Principal Components (PCs) are obtained by using the transform method of the pca object (skpca)
+    # The Principal Components (PCs) are obtained by using the transform method
+    # of the pca object (skpca)
     PCs = skpca.transform(cci_mask)
     PCs = PCs[:, :ipc]
     print("PCs", PCs.shape)
 
-    # The Empirical Orthogonal Functions (EOFs) are contained in the components_ attribute of the pca object (skpca)
+    # The Empirical Orthogonal Functions (EOFs) are contained in the components_
+    # attribute of the pca object (skpca)
     EOFs = skpca.components_
     EOFs = EOFs[:ipc, :]
     print("EOFs", EOFs.shape)
@@ -163,8 +180,11 @@ def calculate_pca_and_eof(cci_mask, chosen_ipc=True):
 
 
 def reconstruct_covariance_from_eofs(
-    sst_flat_with_nans, lat_1d, lon_1d, chosen_ipc=True
-):
+    sst_flat_with_nans: np.ndarray,
+    lat_1d: np.ndarray,
+    lon_1d: np.ndarray,
+    chosen_ipc: int | None = None,
+) -> np.ndarray:
     cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(
         sst_flat_with_nans, lat_1d, lon_1d
     )
@@ -216,23 +236,27 @@ print(diff)
 ################################################################
 # PLOTTING FUNCTION FOR COMPARISON FOR EOF RECONSTRUCTION
 ################################################################
-def plot_empirical_reconstructed_covariance(cci_mask, dat_from_eofs):
+def plot_empirical_reconstructed_covariance(
+    cci_mask: np.ndarray,
+    dat_from_eofs: np.ndarray,
+) -> None:
     orig_cov = np.cov(cci_mask.T)
     rec_cov = np.cov(dat_from_eofs.T)
     diff_cov = orig_cov - rec_cov
     cov_data = [orig_cov, rec_cov, diff_cov]
-    fig, axes = plt.subplots(nrows=1, ncols=3)
+    fig, axes = plt.subplots(nrows=1, ncols=len(cov_data))
     fig.suptitle(
-        "Original CCI SST anomaly covariance (1), covariance using reconstructed data from 3 EOFs (2), and difference (1-2)"
+        "Original CCI SST anomaly covariance (1), covariance using "
+        + "reconstructed data from 3 EOFs (2), and difference (1-2)"
     )
+    cbar_ax = fig.add_axes((0.85, 0.15, 0.05, 0.7))
     for i, ax in enumerate(axes.flat):
         im = ax.imshow(np.flipud(cov_data[i]), vmin=-0.7, vmax=1.0)
-        # cb_ax = fig.add_axes([0.83, 0.1, 0.02, 0.8])
+        if i == len(axes.flat) - 1:
+            fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, cax=cbar_ax)
     fig.subplots_adjust(right=0.8)
-    cbar_ax = fig.add_axes((0.85, 0.15, 0.05, 0.7))
-    fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, cax=cbar_ax)
-    # plt.tight_layout()
-    plt.show()
+    fig.show()
+    return None
 
 
 # data_xr = xr.DataArray(orig_cov)
@@ -244,28 +268,29 @@ def plot_empirical_reconstructed_covariance(cci_mask, dat_from_eofs):
 ##################################################################
 # sst_flat_with_nans, lat_1d, lon_1d = read_in_data()
 def covariance_from_variogram(
-    sst_flat_with_nans,
-    lat_1d,
-    lon_1d,
-    variance,
-    dist_func=getDistanceByHaversine,
-):
-    cci_mask, ocean_points, ocean_lat, ocean_lon = mask_land_and_ice(
+    sst_flat_with_nans: np.ndarray,
+    lat_1d: np.ndarray,
+    lon_1d: np.ndarray,
+    variance: np.ndarray,
+    dist_func: Callable = getDistanceByHaversine,
+) -> np.ndarray:
+    _, _, ocean_lat, ocean_lon = mask_land_and_ice(
         sst_flat_with_nans, lat_1d, lon_1d
     )
-    print(cci_mask.shape)
 
     # compute pairwise distances
     # or distance matrix using pandas
-    data = {"lat": ocean_lat, "lon": ocean_lon}
-    df = pd.DataFrame(data)
+    df = pd.DataFrame({"lat": ocean_lat, "lon": ocean_lon})
 
-    distance_matrix = calculate_distance_matrix(df, dist_func=dist_func)
-    # pd.DataFrame(squareform(pdist(df, lambda u, v: cov_var.getDistanceByHaversine(u,v))), index=df.index, columns=df.index)
+    distance_matrix: np.ndarray = calculate_distance_matrix(
+        df, dist_func=dist_func
+    )
     print("squareform(pdist) \n", distance_matrix)
 
     # call variogram function
-    # this calculates the covariance on global grid (equivalemnt in Simon's code is "Ss" martix)
-    # "S" matrix in Simon's code is calculated using same m,d parameters but for the observation points distance matrix (not all ocean points)
-    covariance_variogram = variogram(distance_matrix, variance)
+    # this calculates the covariance on global grid (equivalent in Simon's code
+    # is "Ss" martix)
+    # "S" matrix in Simon's code is calculated using same m,d parameters but for
+    # the observation points distance matrix (not all ocean points)
+    covariance_variogram: np.ndarray = variogram(distance_matrix, variance)
     return covariance_variogram
