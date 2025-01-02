@@ -15,7 +15,7 @@ import pandas as pd
 from .covariance_variogram import (
     variogram,
     calculate_distance_matrix,
-    getDistanceByHaversine,
+    haversine_distance,
 )
 
 
@@ -272,7 +272,7 @@ def covariance_from_variogram(
     lat_1d: np.ndarray,
     lon_1d: np.ndarray,
     variance: np.ndarray,
-    dist_func: Callable = getDistanceByHaversine,
+    dist_func: Callable = haversine_distance,
 ) -> np.ndarray:
     _, _, ocean_lat, ocean_lon = mask_land_and_ice(
         sst_flat_with_nans, lat_1d, lon_1d

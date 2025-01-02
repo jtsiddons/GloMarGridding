@@ -421,7 +421,7 @@ def find_nearest(array, values):
     return idx_list
 
 
-def getDistanceByEuclidean(
+def euclidean_distance(
     loc1: tuple[float, float],
     loc2: tuple[float, float],
     to_radians=True,
@@ -459,7 +459,7 @@ def getDistanceByEuclidean(
     return km
 
 
-def getDistanceByHaversine(
+def haversine_distance(
     loc1: tuple[float, float],
     loc2: tuple[float, float],
     to_radians=True,
@@ -491,12 +491,11 @@ def getDistanceByHaversine(
     return km
 
 
-def calculate_distance_matrix(df, dist_func=getDistanceByHaversine):
-    distance_matrix = pd.DataFrame(
-        squareform(pdist(df, lambda u, v: dist_func(u, v))),
-        index=df.index,
-        columns=df.index,
-    )
+def calculate_distance_matrix(
+    df: pd.DataFrame,
+    dist_func: Callable = haversine_distance,
+) -> np.ndarray:
+    distance_matrix = squareform(pdist(df, lambda u, v: dist_func(u, v)))
     return distance_matrix
 
 
