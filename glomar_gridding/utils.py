@@ -1,3 +1,5 @@
+"""Utility functions for GlomarGridding"""
+
 from collections import OrderedDict
 from collections.abc import Iterable
 from datetime import date
@@ -199,10 +201,29 @@ def select_bounds(
     return x.sel({lon_var: slice(*lon_bnds), lat_var: slice(*lat_bnds)})
 
 
+def select_bounds_3d(
+    x: _XR_Data,
+    lon_bnds: tuple[float, float] = (-180.0, 180.0),
+    lat_bnds: tuple[float, float] = (-90.0, 90.0),
+    depth_bnds: tuple[float, float] = (-100, 0),
+    lon_var: str = "lon",
+    lat_var: str = "lat",
+    depth_var: str = "depth",
+) -> _XR_Data:
+    return x.sel(
+        {
+            lon_var: slice(*lon_bnds),
+            lat_var: slice(*lat_bnds),
+            depth_var: slice(*depth_bnds),
+        }
+    )
+
+
 def intersect_mtlb(a, b):
     """
-    Returns data common between two arrays, a and b, in a sorted order and index vectors for a and b arrays
-    Reproduces behaviour of Matlab's intersect function
+    Returns data common between two arrays, a and b, in a sorted order and index
+    vectors for a and b arrays Reproduces behaviour of Matlab's intersect
+    function.
 
     Parameters
     ----------
