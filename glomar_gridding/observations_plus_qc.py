@@ -279,8 +279,8 @@ def MAT_main(
     icoads_qc_path: str,
     icoads_qc_path_2: str,
     qc_path: str,
-    year: str,
-    month: str,
+    year: int,
+    month: int,
 ) -> pd.DataFrame:
     obs_df = load_icoads_obs(
         obs_path, "at", icoads_qc_path, icoads_qc_path_2, year, month
