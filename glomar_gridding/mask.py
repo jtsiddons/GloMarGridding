@@ -53,12 +53,12 @@ def mask_array(
     mask: xr.DataArray,
     varname: str,
     mask_varname: str = "mask",
-    mask_coords: list[str] = ["latitude", "longitude"],
-    grid_coords: list[str] = ["latitude", "longitude"],
     mask_value: Any = True,
     masked_value: Any = np.nan,
 ) -> xr.DataArray:
-    # TODO: Check grid and mask have aligned coordinates
+    """Apply a mask to a DataArray"""
+    # Check that the grid and mask are aligned
+    xr.align(grid, mask, join="exact")
 
     masked_idx = mask[mask_varname] == mask_value
     grid[varname][masked_idx] = masked_value
@@ -71,12 +71,13 @@ def mask_dataset(
     mask: xr.DataArray,
     varnames: str | list[str],
     mask_varname: str = "mask",
-    mask_coords: list[str] = ["latitude", "longitude"],
-    dataset_coords: list[str] = ["latitude", "longitude"],
     mask_value: Any = True,
     masked_value: Any = np.nan,
 ) -> xr.Dataset:
-    # TODO: Check grid and mask have aligned coordinates
+    """Apply a mask to a DataSet"""
+    # Check that the grid and mask are aligned
+    xr.align(dataset, mask, join="exact")
+
     varnames = [varnames] if isinstance(varnames, str) else varnames
     masked_idx = mask[mask_varname] == mask_value
     for var in varnames:
