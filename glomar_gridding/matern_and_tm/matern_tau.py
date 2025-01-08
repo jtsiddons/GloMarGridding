@@ -157,7 +157,7 @@ def tau_dist(df: pd.DataFrame) -> np.matrix:
     return np.exp(-tau)
 
 
-def tau_unit_test():
+def _tau_unit_test():
     Lx = 1000.0
     Ly = 250.0
     theta = np.pi / 4
