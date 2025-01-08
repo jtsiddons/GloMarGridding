@@ -36,7 +36,11 @@ def kriging(
     Parameters
     ----------
     obs_idx : np.ndarray[int]
-        Grid indices with observations.
+        Grid indices with observations. It is expected that this should be an
+        ordering that lines up with the 1st dimension of weights. If
+        `observations.dist_weights` or `observations.get_weights` was used to
+        get the weights then this is the ordering of
+        `sorted(df["gridbox"].unique())`, which is a sorting on lat and lon
     weights : np.ndarray[float]
         Weight matrix (inverse of counts of observations).
     obs : np.ndarray[float]
