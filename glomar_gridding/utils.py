@@ -193,30 +193,11 @@ def find_nearest(
 
 def select_bounds(
     x: _XR_Data,
-    lon_bnds: tuple[float, float] = (-180.0, 180.0),
-    lat_bnds: tuple[float, float] = (-90.0, 90.0),
-    lon_var: str = "lon",
-    lat_var: str = "lat",
+    bnds: list[tuple[float, float]] = [(-90, 90), (-180, 180)],
+    vars: list[str] = ["lat", "lon"],
 ) -> _XR_Data:
-    return x.sel({lon_var: slice(*lon_bnds), lat_var: slice(*lat_bnds)})
-
-
-def select_bounds_3d(
-    x: _XR_Data,
-    lon_bnds: tuple[float, float] = (-180.0, 180.0),
-    lat_bnds: tuple[float, float] = (-90.0, 90.0),
-    depth_bnds: tuple[float, float] = (-100, 0),
-    lon_var: str = "lon",
-    lat_var: str = "lat",
-    depth_var: str = "depth",
-) -> _XR_Data:
-    return x.sel(
-        {
-            lon_var: slice(*lon_bnds),
-            lat_var: slice(*lat_bnds),
-            depth_var: slice(*depth_bnds),
-        }
-    )
+    bnd_map: dict[str, slice] = {b: slice(*v) for b, v in zip(vars, bnds)}
+    return x.sel(bnd_map)
 
 
 def intersect_mtlb(a, b):
