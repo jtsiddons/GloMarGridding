@@ -34,22 +34,9 @@ def _get_sst_err_cov(
     error_covariance_path: str,
     uncorrelated: xr.Dataset,
 ) -> np.ndarray:
-    err_cov_fn = (
-        f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
-    )
-    error_cov = xr.open_dataset(
-        os.path.join(error_covariance_path, err_cov_fn)
-    )["tas_cov"].values[0]
-    uncorrelated_mon = uncorrelated.sel(
-        time=np.logical_and(
-            uncorrelated.time.dt.month == current_month,
-            uncorrelated.time.dt.year == current_year,
-        )
-    )["tas_unc"].values
-    joined_mon = uncorrelated_mon * uncorrelated_mon
-    unc_1d = np.reshape(joined_mon, (2592, 1))
-    covariance2 = np.diag(np.reshape(unc_1d, (2592)))
-    return error_cov + covariance2
+    err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
+    error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tas_cov"].values[0]
+    return error_cov
 
 
 def _get_lsat_err_cov(
