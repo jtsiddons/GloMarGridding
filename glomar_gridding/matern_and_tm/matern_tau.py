@@ -16,7 +16,11 @@ from shapely.geometry import Point
 from ..utils import check_cols
 
 
-def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
+def latlon2ne(
+    latlons: np.ndarray,
+    latlons_in_rads: bool = False,
+    latlon0: tuple[float, float] = (0.0, 180.0),
+) -> np.ndarray:
     """
     Compute Northing and Easting from Latitude and Longitude
 
@@ -63,7 +67,7 @@ def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
     return pos
 
 
-def paired_vector_dist(yx):
+def paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     """
     Input:
     (N, 2) array
@@ -73,7 +77,7 @@ def paired_vector_dist(yx):
     return yx[:, None, :] - yx
 
 
-def Ls2sigma(Lx, Ly, theta):  # noqa: N802
+def Ls2sigma(Lx: float, Ly: float, theta: float) -> np.ndarray:  # noqa: N802
     """
     Lx, Ly - anistropic variogram length scales
     theta - angle relative to lines of constant latitude
@@ -86,7 +90,11 @@ def Ls2sigma(Lx, Ly, theta):  # noqa: N802
     return sigma
 
 
-def compute_tau(dE, dN, sigma):
+def compute_tau(
+    dE: np.ndarray,
+    dN: np.ndarray,
+    sigma: np.ndarray,
+) -> np.ndarray:
     """
     Eq.15 in Karspeck paper
     but it is standard formulation to the
@@ -98,7 +106,7 @@ def compute_tau(dE, dN, sigma):
     return np.sqrt(dx_vec.T @ np.linalg.inv(sigma) @ dx_vec)
 
 
-def compute_tau_wrapper(dyx, sigma):
+def compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     """Wrapper function for computing tau"""
     DE = dyx[:, :, 1]
     DN = dyx[:, :, 0]
@@ -110,7 +118,7 @@ def compute_tau_wrapper(dyx, sigma):
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist(df: pd.DataFrame) -> np.matrix:
+def tau_dist(df: pd.DataFrame) -> np.ndarray:
     """
     Compute the tau/Mahalanobis matrix for all records within a gridbox
 
@@ -149,7 +157,7 @@ def tau_dist(df: pd.DataFrame) -> np.matrix:
     check_cols(df, required_cols)
     # Get northing and easting
     lat0, lon0 = df[["gridcell_lat", "gridcell_lon"]].values[0]
-    latlons = df[["lat", "lon"]].values
+    latlons = np.asarray(df[["lat", "lon"]].values)
     ne = latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
     paired_dist = paired_vector_dist(ne)
 
@@ -179,7 +187,7 @@ def _tau_unit_test():
         {"lat": lats2.flatten().tolist(), "lon": lons2.flatten().tolist()}
     )
     print(df)
-    pos = df[["lat", "lon"]].to_numpy()
+    pos = np.asarray(df[["lat", "lon"]].values)
     print(pos)
     pos2 = latlon2ne(pos, latlons_in_rads=False, latlon0=latlon0)
     print(pos2)
