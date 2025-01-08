@@ -3,6 +3,8 @@ Functions for computing covariance using Matern Tau.
 
 This requires geopandas, which may not be avail
 by default
+
+Author: Steven Chan (@stchan)
 """
 
 import pandas as pd
@@ -16,6 +18,8 @@ from ..utils import check_cols
 
 def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
     """
+    Compute Northing and Easting from Latitude and Longitude
+
     latlons -- a (N, 2) (numpy) array of latlons
     By GIS and netcdf as well as sklearn convention
     [X, 0] = lat
@@ -47,11 +51,12 @@ def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
     proj4 = "+proj=tmerc +lat_0=" + str(latlon0[0])
     proj4 += " +lon_0=" + str(latlon0[1])
     proj4 += " +k=0.9996 +x_0=0 +y_0=0 +units=km"
-    df1 = gpd.GeoDataFrame(
+    df1: gpd.GeoDataFrame = gpd.GeoDataFrame(
         df0,
         crs="EPSG:4326",
         geometry=gpd.points_from_xy(df0["lon"], df0["lat"]),
-    ).to_crs(proj4)
+    )
+    df1.to_crs(proj4, inplace=True)
     df1["easting"] = df1.geometry.x
     df1["northing"] = df1.geometry.y
     pos = df1[["northing", "easting"]].to_numpy()
@@ -68,7 +73,7 @@ def paired_vector_dist(yx):
     return yx[:, None, :] - yx
 
 
-def Ls2sigma(Lx, Ly, theta):
+def Ls2sigma(Lx, Ly, theta):  # noqa: N802
     """
     Lx, Ly - anistropic variogram length scales
     theta - angle relative to lines of constant latitude
@@ -94,6 +99,7 @@ def compute_tau(dE, dN, sigma):
 
 
 def compute_tau_wrapper(dyx, sigma):
+    """Wrapper function for computing tau"""
     DE = dyx[:, :, 1]
     DN = dyx[:, :, 0]
 
