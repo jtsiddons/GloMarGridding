@@ -725,7 +725,6 @@ def get_weights(df: pd.DataFrame) -> np.ndarray:
     Parameters
     ----------
     df : pandas.DataFrame
-    df : pandas.DataFrame
         The observation DataFrame, containing the columns required for
         computation of the distance matrix. Contains the "gridbox" column which
         indicates the gridbox for a given observation. The index of the
