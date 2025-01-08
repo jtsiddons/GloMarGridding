@@ -1,4 +1,6 @@
 """
+Functions for computing covariance using Matern Tau.
+
 This requires geopandas, which may not be avail
 by default
 """
