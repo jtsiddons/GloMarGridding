@@ -236,3 +236,31 @@ def check_cols(
             "DataFrame is missing required columns: " + ", ".join(missing_cols)
         )
     return None
+
+
+def filter_bounds(
+    df: pd.DataFrame,
+    bounds: list[tuple[float, float]],
+    bound_cols: list[str],
+    closed: str = "left",
+) -> pd.DataFrame:
+    if len(bounds) != len(bound_cols):
+        raise ValueError("Length of 'bounds' must equal length of 'bound_cols'")
+    df["_cond_"] = True
+    for col, (lbound, ubound) in zip(bound_cols, bounds):
+        match closed.lower():
+            case "left":
+                df["_cond_"] = df["_cond_"] & (lbound <= df[col] < ubound)
+            case "right":
+                df["_cond_"] = df["_cond_"] & (lbound < df[col] <= ubound)
+            case "both":
+                df["_cond_"] = df["_cond_"] & (lbound <= df[col] <= ubound)
+            case "none":
+                df["_cond_"] = df["_cond_"] & (lbound < df[col] < ubound)
+            case _:
+                raise ValueError(
+                    "Unexpected 'closed' value. "
+                    + "Expected one of 'left', 'right', 'both', 'none'."
+                )
+
+    return df.loc[df["_cond_"]].drop(columns="_cond_")
