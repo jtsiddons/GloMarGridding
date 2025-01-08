@@ -447,30 +447,46 @@ def watermask_at_obs_locations(
 # TODO: Docstring
 def obs_covariance(
     df: pd.DataFrame,
-    sig_ms: float,
-    sig_mb: float,
-    data_type_col: str = "data_type",
+    group_col: str = "data_type",
+    obs_sig_col: str | None = None,
+    obs_sig_map: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
-    Calculates the covariance matrix of the measurements (obervations)
+    Calculates the covariance matrix of the measurements (obervations). This
+    is the uncorrelated component of the covariance.
 
     Parameters
     ----------
-    n_ship (int) - number of ship observations
-    n_buoy (int) - number pf buoy observations
-    sig_ms (float) - sigma parameter for the ship observations
-    sig_mb (float) - sigma parameter for the buoy observations
+    df : pandas.DataFrame
+        The observational DataFrame containing values to group by.
+    group_col : str
+        Name of the group column to use to set observational sigma values.
+    obs_sig_col : str | None
+        Name of the column containing observational sigma values. If set and
+        present in the DataFrame, then this column is used as the diagonal of
+        the returned covariance matrix.
+    obs_sig_map : dict[str, float] | None
+        Mapping between group and observational sigma values used to define
+        the diagonal of the returned covariance matrix.
 
     Returns
     -------
     A single covariance matrix of measurements for ship observations and buoy
     observations
     """
-    s = pd.Series(np.zeros(len(df)))
-    s = s.where(df[data_type_col] == "ship", sig_ms**2)
-    s = s.where(df[data_type_col] == "buoy", sig_mb**2)
-    if any(s == 0):
-        warn("Non ship/buoy platform types detected")
+    if obs_sig_col is not None and obs_sig_col in df.columns:
+        return np.diag(df.ix[:, obs_sig_col])
+
+    obs_sig_map = obs_sig_map or {}
+    data_types: pl.Series = pl.from_pandas(df.ix[:, group_col])
+    s = data_types.replace_strict(
+        {k: v**2 for k, v in obs_sig_map.items()}, default=0.0
+    )
+    if s.eq(0.0).all():
+        warn("No values in obs_covariance set")
+    elif s.eq(0.0).any():
+        warn("Some values in obs_covariance not set")
+
     return np.diag(s)
 
     # try:
@@ -828,7 +844,8 @@ def bias_uncertainty(
     df: pd.DataFrame,
     covx: np.ndarray,
     group_col: str,
-    bias_val_col: str,
+    bias_val_col: str | None = None,
+    bias_val_map: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
     Returns measurements covariance matrix updated by adding bias uncertainty to
@@ -848,22 +865,40 @@ def bias_uncertainty(
     group_col : str
         Name of the column that can be used to partition the observational
         DataFrame.
-    bias_val_col : str
+    bias_val_col : str | None
         Name of the column containing bias uncertainty values for each of
         the groups identified by 'group_col'. It is assumed that a single bias
         uncertainty value applies to the whole group, and is applied as cross
         terms in the covariance matrix (plus to the diagonal).
+    bias_val_map : dict[str, float] | None
+        Mapping between values in the group_col and bias uncertainty values,
+        if bias_val_col is not in the DataFrame.
 
     Returns
     -------
     Measurement covariance matrix updated by including bias uncertainty of the
     measurements
     """
-    check_cols(df, [group_col, bias_val_col])
+    check_cols(df, [group_col])
+
+    pl_df = pl.from_pandas(df)
+    bias_val_col = bias_val_col or "_bias_uncert"
+    bias_val_map = bias_val_map or {}
+
+    if bias_val_col not in pl_df.columns:
+        pl_df = pl_df.with_columns(
+            pl.col(group_col)
+            .replace_strict(bias_val_map, default=0.0)
+            .alias(bias_val_col)
+        )
+        if pl_df[bias_val_col].eq(0.0).all():
+            warn("No bias uncertainty values set")
+        elif pl_df[bias_val_col].eq(0.0).any():
+            warn("Some bias uncertainty values not set")
+
     # NOTE: polars is easier for this analysis!
     pl_df = (
-        pl.from_pandas(df)
-        .select(group_col, bias_val_col)
+        pl_df.select(group_col, bias_val_col)
         .with_row_index("index")
         .group_by(group_col)
         # NOTE: It is expected that the bias value should be the same for all
@@ -991,7 +1026,6 @@ def bias_uncertainty(
 # QUESTION: Do the indices of obs_covariance and that from dist_weight line up?
 def measurement_covariance(
     df: pd.DataFrame,
-    flattened_idx: np.ndarray,
     sig_ms: float,
     sig_mb: float,
     sig_bs: float,
@@ -999,7 +1033,8 @@ def measurement_covariance(
 ) -> tuple[np.ndarray, np.ndarray]:
     # covx = correlated_uncertainty(df)
     # just the basic covariance for number of ship and buoy
-    covx1 = obs_covariance(df, sig_ms, sig_mb)
+    obs_bias_map = {"ship": sig_ms, "buoy": sig_mb}
+    covx1 = obs_covariance(df, group_col="data_type", obs_sig_map=obs_bias_map)
     # print(covx1, covx1.shape)
     # adding the weights (no of obs in each grid) + importance based on distance
     # scaled by range and scale (values adapted from the power point
@@ -1024,7 +1059,13 @@ def measurement_covariance(
     dist, weights = dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     # print(covx1, covx1.shape)
-    covx1 = bias_uncertainty(df, covx1, sig_bs, sig_bb)
+    bias_uncert_map = {"ship": sig_bs, "buoy": sig_bb}
+    covx1 = bias_uncertainty(
+        df,
+        covx1,
+        group_col="data_type",
+        bias_val_map=bias_uncert_map,
+    )
     # print(covx2, covx2.shape)
     return covx1, weights
 
@@ -1340,7 +1381,9 @@ def TAO_measurement_covariance(
     print(f"{df = }")
     df.insert(0, "data_type", "buoy")
     print(f"{df = }")
-    covx1 = obs_covariance(df, sig_ms, sig_mb)
+    covx1 = obs_covariance(
+        df, group_col="data_type", obs_sig_map={"ship": sig_ms, "buoy": sig_mb}
+    )
     # print(covx1, covx1.shape)
     # adding the weights (no of obs in each grid) + importance based on distance
     # scaled by range and scale (values adapted from the power point
