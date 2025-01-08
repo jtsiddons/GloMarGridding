@@ -11,6 +11,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from shapely.geometry import Point
 
+from ..utils import check_cols
+
 
 def latlon2ne(latlons, latlons_in_rads=False, latlon0=(0.0, 180.0)):
     """
@@ -129,6 +131,16 @@ def tau_dist(df: pd.DataFrame) -> np.matrix:
         A matrix of dimension n x n where n is the number of rows in `df` and
         is the tau/Mahalanobis distance.
     """
+    required_cols = [
+        "gridcell_lat",
+        "gridcell_lon",
+        "gridcell_lx",
+        "gridcell_ly",
+        "gridcell_theta",
+        "lat",
+        "lon",
+    ]
+    check_cols(df, required_cols)
     # Get northing and easting
     lat0, lon0 = df[["gridcell_lat", "gridcell_lon"]].values[0]
     latlons = df[["lat", "lon"]].values
