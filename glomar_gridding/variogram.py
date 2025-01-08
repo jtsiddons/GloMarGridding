@@ -10,6 +10,8 @@ from scipy.special import gamma, kv
 
 from math import radians
 
+from .utils import find_nearest
+
 
 @dataclass(frozen=True)
 class Variogram:
@@ -39,6 +41,7 @@ class LinearVariogram(Variogram):
         return self.slope * distance_matrix + self.nugget
 
 
+# DELETE: deprecated
 def linear_variogram_model(m, d):
     """
     Linear model
@@ -80,6 +83,7 @@ class PowerVariogram(Variogram):
         )
 
 
+# DELETE: deprecated
 def power_variogram_model(m, d):
     """
     Power model
@@ -132,6 +136,7 @@ class GaussianVariogram(Variogram):
         )
 
 
+# DELETE: deprecated
 def gaussian_variogram_model(m, d):
     """
     Gaussian model
@@ -177,6 +182,7 @@ class ExponentialVariogram(Variogram):
         )
 
 
+# DELETE: deprecated
 def exponential_variogram_model(m, d):
     """
     Exponential model
@@ -274,6 +280,7 @@ class MaternVariogram(Variogram):
         )
 
 
+# DELETE: deprecated
 def matern_variogram_model_classic(m, d, nu=0.5):
     """
     Same args as the *_variogram_model functions
@@ -320,6 +327,7 @@ def matern_variogram_model_classic(m, d, nu=0.5):
     return psill * (1.0 - left * middle * right) + nugget
 
 
+# DELETE: deprecated
 def matern_variogram_model_gstat(m, d, nu=0.5):
     """
     Similar to matern_variogram_model_classic
@@ -344,6 +352,7 @@ def matern_variogram_model_gstat(m, d, nu=0.5):
     return psill * (1.0 - left * middle * right) + nugget
 
 
+# DELETE: deprecated
 def matern_variogram_model_karspeck(m, d, nu=0.5):
     """
     Similar to matern_variogram_model_classic
@@ -366,6 +375,7 @@ def matern_variogram_model_karspeck(m, d, nu=0.5):
     return psill * (1.0 - left * middle * right) + nugget
 
 
+# DELETE: duplicates mask function
 def watermask(ds_masked_xr):
     water_mask = np.copy(ds_masked_xr.values[:, :])
     water_mask[~np.isnan(water_mask)] = 1
@@ -378,6 +388,7 @@ def watermask(ds_masked_xr):
     return water_idx
 
 
+# TODO: Move to grid or utils
 def find_values(ds_masked_xr, lat, lon, timestep):
     """
     Parameters
@@ -392,12 +403,13 @@ def find_values(ds_masked_xr, lat, lon, timestep):
     -------
     Dataframe with added anomalies for each observation point
     """
-    cci_lat_idx = find_nearest(ds_masked_xr.lat, lat)
+    cci_lat_idx, _ = find_nearest(ds_masked_xr.lat, lat)
     print(ds_masked_xr.lat, cci_lat_idx)
+    # BUG:
     # problem with this right here (see email to Liz and Richard) - for both
     # lat and lon
     # see: https://stackoverflow.com/questions/40592630/get-coordinates-of-non-nan-values-of-xarray-dataset
-    cci_lon_idx = find_nearest(ds_masked_xr.lon, lon)
+    cci_lon_idx, _ = find_nearest(ds_masked_xr.lon, lon)
     print(ds_masked_xr.lon, cci_lon_idx)
     cci_vals = []  # fake ship obs
     for i in range(len(cci_lat_idx)):
@@ -413,12 +425,6 @@ def find_values(ds_masked_xr, lat, lon, timestep):
     cci_lat_idx = np.delete(cci_lat_idx, to_remove)
     cci_lon_idx = np.delete(cci_lon_idx, to_remove)
     return cci_vals, cci_lat_idx, cci_lon_idx
-
-
-def find_nearest(array, values):
-    array = np.asarray(array)
-    idx_list = [(np.abs(array - value)).argmin() for value in values]
-    return idx_list
 
 
 def euclidean_distance(
@@ -499,6 +505,7 @@ def calculate_distance_matrix(
     return distance_matrix
 
 
+# DELETE: Use class objects
 def variogram(
     distance_matrix: np.ndarray,
     variance: np.ndarray,
