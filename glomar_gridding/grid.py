@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from .utils import find_nearest, select_bounds, select_bounds_3d
+from .utils import filter_bounds, find_nearest, select_bounds
 
 
 @dataclass
@@ -31,16 +31,15 @@ class GridBounds3d(GridBounds):
     top: float
 
 
-# TODO: Ensure indices map correctly (row or column major ordering)
-# TODO: Detect row/column major ordering from the DataArray and use the same
 def align_to_grid(
     obs: pd.DataFrame,
     grid: xr.DataArray,
-    grid_latname: str = "latitude",
-    grid_lonname: str = "longitude",
-    obs_latname: str = "lat",
-    obs_lonname: str = "lon",
-    bounds: GridBounds | None = None,
+    grid_coords: list[str] = ["latitude", "longitude"],
+    obs_coords: list[str] = ["lat", "lon"],
+    sort: bool = True,
+    bounds: list[tuple[float, float]] | None = None,
+    add_grid_pts: bool = True,
+    grid_prefix: str = "grid_",
 ) -> pd.DataFrame:
     """
     Align an observation dataframe to a grid defined by an xarray DataArray.
@@ -60,162 +59,56 @@ def align_to_grid(
         grid.
     grid : xarray.DataArray
         Contains the grid coordinates to map observations to.
-    grid_latname : str
-        Name of the latitude coordinate in the input grid DataArray.
-    grid_lonname : str
-        Name of the longitude coordinate in the input grid DataArray.
-    obs_latname : str
-        Name of the column containing latitude values in the input
-        observational DataFrame.
-    obs_lonname : str
-        Name of the column containing longitude values in the input
-        observational DataFrame.
-    bounds : GridBounds | None
-        An optional object of type `GridBounds` which contains boundary values
-        in the `west`, `east`, `south`, and `north` attributes. This will also
-        be used to filter the observations (observations outside of the bounds
-        will be excluded from the interpolation).
-
-    Returns
-    -------
-    obs : pandas.DataFrame
-        Containing additional `grid_lon`, `grid_lat`, and `grid_idx` values
-        indicating the longitude, latitude, and grid index of the observation
-        respectively. The DataFrame is also sorted (ascendingly) by the
-        `grid_idx` columns for consistency with the gridding functions.
-    """
-    if bounds is not None:
-        grid = select_bounds(
-            grid,
-            (bounds.west, bounds.east),
-            (bounds.south, bounds.north),
-            grid_lonname,
-            grid_latname,
-        )
-        obs = obs.loc[
-            (bounds.west <= obs[obs_lonname] < bounds.east)
-            & (bounds.south <= obs[obs_latname] < bounds.north)
-        ]
-
-    grid_lats = grid.coords[grid_latname].values
-    grid_lons = grid.coords[grid_lonname].values
-    grid_size = grid.shape
-
-    grid_lat_idx, obs_to_grid_lat = find_nearest(grid_lats, obs[obs_latname])
-    grid_lon_idx, obs_to_grid_lon = find_nearest(grid_lons, obs[obs_lonname])
-
-    flattened_idx = np.ravel_multi_index(
-        ([grid_lat_idx, grid_lon_idx]),
-        grid_size,
-        order="C",  # row-major
-    )
-
-    obs["grid_lat"] = obs_to_grid_lat
-    obs["grid_lon"] = obs_to_grid_lon
-    obs["grid_idx"] = flattened_idx
-    obs.sort_values(by="grid_idx", inplace=True, ascending=True)
-
-    return obs
-
-
-# TODO: Ensure indices map correctly (row or column major ordering)
-# TODO: Detect row/column major ordering from the DataArray and use the same
-def align_to_grid_3d(
-    obs: pd.DataFrame,
-    grid: xr.DataArray,
-    grid_latname: str = "latitude",
-    grid_lonname: str = "longitude",
-    grid_depthname: str = "depth",
-    obs_latname: str = "lat",
-    obs_lonname: str = "lon",
-    obs_depthname: str = "depth",
-    bounds: GridBounds3d | None = None,
-) -> pd.DataFrame:
-    """
-    Align an observation dataframe to a 3d grid defined by an xarray DataArray.
-
-    Maps observations to the nearest grid-point, and sorts the data by the
-    1d index of the DataArray in a row-major format.
-
-    The grid defined by the latitude and longitude coordinates of the input
-    DataArray is then used as the output grid of the Gridding process.
-
-    Parameters
-    ----------
-    obs : pandas.DataFrame
-        The observational DataFrame containing positional data with latitude,
-        longitude values within the `obs_latname` and `obs_lonname` columns
-        respectively. Observations are mapped to the nearest grid-point in the
+    grid_coords : list[str]
+        Names of the coordinates in the input grid DataArray used to define the
         grid.
-    grid : xarray.DataArray
-        Contains the grid coordinates to map observations to.
-    grid_latname : str
-        Name of the latitude coordinate in the input grid DataArray.
-    grid_lonname : str
-        Name of the longitude coordinate in the input grid DataArray.
-    grid_depthname : str
-        Name of the depth coordinate in the input grid DataArray.
-    obs_latname : str
-        Name of the column containing latitude values in the input observational
-        DataFrame.
-    obs_lonname : str
-        Name of the column containing longitude values in the input
+    obs_coords : list[str]
+        Names of the column containing positional values in the input
         observational DataFrame.
-    obs_depthname : str
-        Name of the column containing depth values in the input observational
-        DataFrame.
-    bounds : GridBounds3d | None
-        An optional object of type `GridBounds3d` which contains boundary values
-        in the `west`, `east`, `south`, `north`, `bottom`, and `top` attributes.
-        This will also be used to filter the observations (observations outside
-        of the bounds will be excluded from the interpolation).
+    sort : bool
+        Sort the observational DataFrame by the grid index
+    bounds : list[tuple[float, float]] | None
+        Optionally filter the grid and DataFrame to fall within spatial bounds.
+        This list must have the same size and ordering as `obs_coords` and
+        `grid_coords` arguments.
+    add_grid_pts : bool
+        Add the grid positional information to the observational DataFrame.
+    grid_prefix : str
+        Prefix to use for the new grid columns in the observational DataFrame.
 
     Returns
     -------
     obs : pandas.DataFrame
-        Containing additional `grid_lon`, `grid_lat`, and `grid_idx` values
-        indicating the longitude, latitude, and grid index of the observation
+        Containing additional `grid_*`, and `grid_idx` values
+        indicating the positions and grid index of the observation
         respectively. The DataFrame is also sorted (ascendingly) by the
         `grid_idx` columns for consistency with the gridding functions.
     """
     if bounds is not None:
-        grid = select_bounds_3d(
-            grid,
-            (bounds.west, bounds.east),
-            (bounds.south, bounds.north),
-            (bounds.bottom, bounds.top),
-            grid_lonname,
-            grid_latname,
-            grid_depthname,
-        )
-        obs = obs.loc[
-            (bounds.west <= obs[obs_lonname] < bounds.east)
-            & (bounds.south <= obs[obs_latname] < bounds.north)
-            & (bounds.bottom <= obs[obs_depthname] < bounds.top)
-        ]
+        grid = select_bounds(grid, bounds, grid_coords)
+        obs = filter_bounds(obs, bounds, obs_coords)
 
-    grid_lats = grid.coords[grid_latname].values
-    grid_lons = grid.coords[grid_lonname].values
-    grid_depths = grid.coords[grid_depthname].values
     grid_size = grid.shape
 
-    grid_lat_idx, obs_to_grid_lat = find_nearest(grid_lats, obs[obs_latname])
-    grid_lon_idx, obs_to_grid_lon = find_nearest(grid_lons, obs[obs_lonname])
-    grid_depth_idx, obs_to_grid_depth = find_nearest(
-        grid_depths, obs[obs_depthname]
-    )
+    grid_idx: list[list[int]] = []
+    obs_to_grid_pos: list[np.ndarray] = []
+    for i, (grid_coord, obs_coord) in enumerate(zip(grid_coords, obs_coords)):
+        grid_pos = grid.coords[grid_coord].values
+        grid_idx[i], obs_to_grid_pos[i] = find_nearest(grid_pos, obs[obs_coord])
 
     flattened_idx = np.ravel_multi_index(
-        ([grid_lat_idx, grid_lon_idx, grid_depth_idx]),
+        grid_idx,
         grid_size,
         order="C",  # row-major
     )
 
-    obs["grid_lat"] = obs_to_grid_lat
-    obs["grid_lon"] = obs_to_grid_lon
-    obs["grid_depth"] = obs_to_grid_depth
-    obs["grid_idx"] = flattened_idx
-    obs.sort_values(by="grid_idx", inplace=True, ascending=True)
+    obs[grid_prefix + "idx"] = flattened_idx
+    if add_grid_pts:
+        for grid_pos, obs_coord in zip(obs_to_grid_pos, obs_coords):
+            obs[grid_prefix + obs_coord] = grid_pos
+
+    if sort:
+        obs.sort_values(by="grid_idx", inplace=True, ascending=True)
 
     return obs
 
