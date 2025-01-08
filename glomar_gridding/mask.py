@@ -13,11 +13,11 @@ def mask_observations(
     mask: xr.DataArray,
     varnames: str | list[str],
     mask_varname: str = "mask",
+    masked_value: Any = np.nan,
+    mask_value: Any = True,
     mask_coords: list[str] = ["latitude", "longitude"],
     obs_coords: list[str] = ["lat", "lon"],
-    mask_value: Any = True,
     drop: bool = False,
-    masked_value: Any = np.nan,
     mask_grid_prefix: str = "_mask_grid_",
 ) -> pd.DataFrame:
     """Mask observations in a DataFrame subject to a mask DataArray"""
@@ -40,11 +40,11 @@ def mask_observations(
     obs[mask_varname] = [
         mask[mask_varname].values[i] for i in obs[grid_idx_name]
     ]
-    obs.drop(columns=[grid_idx_name], inplace=True)
-    if drop:
-        return obs.loc[obs[mask_varname] == mask_value]
     for var in varnames:
         obs[var][obs[mask_varname] == mask_value] = masked_value
+    if drop:
+        return obs.loc[obs[mask_varname] == mask_value]
+    obs.drop(columns=[grid_idx_name], inplace=True)
     return obs
 
 
