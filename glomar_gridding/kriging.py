@@ -1,6 +1,12 @@
+"""
+Functions for performing Kriging.
+
+Interpolation using a Gaussian Process. Available methods are Simple and
+Ordinary Kriging.
+"""
 ################
 # by A. Faulkner
-# for python version 3.0 and up
+# for python version >= 3.11
 ################
 
 from typing import Literal

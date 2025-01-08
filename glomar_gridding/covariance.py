@@ -1,3 +1,4 @@
+"""Functions for reading and loading covariance matrices from NetCDF files"""
 #
 # by A. Faulkner
 # for python version 3.0 and up
