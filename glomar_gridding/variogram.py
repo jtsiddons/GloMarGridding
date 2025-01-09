@@ -210,6 +210,40 @@ class MaternVariogram(Variogram):
     """
     Matern Models
 
+    Same args as the Variogram classes with additional nu, method parameters.
+
+    Classic
+    -------
+    1) This is called ``classic'' because if d/range_ = 1.0 and nu=0.5, it gives
+       1/e correlation...
+    2) This is NOT the same formulation as in GSTAT nor in papers about
+       non-stationary anistropic covariance models (aka Karspeck paper).
+    3) It is perhaps the most intitutive (because of (1)) and is used in sklearn
+       GP and HadCRUT5 and other UKMO dataset.
+    4) nu defaults to 0.5 (exponential; used in HADSST4 and our kriging).
+       HadCRUT5 uses 1.5.
+    5) The "2" is inside the square root for middle and right.
+
+    Reference; see chapter 4.2 of:
+    Rasmussen, C. E., & Williams, C. K. I. (2005).
+    Gaussian Processes for Machine Learning. The MIT Press.
+    https://doi.org/10.7551/mitpress/3206.001.0001
+
+    GeoStatic
+    ---------
+    Similar to Classic MaternVariogram model but uses the range scaling in
+    gstat.
+    Note: there are no square root 2 or nu in middle and right
+
+    Yields the same answer to Classic MaternVariogram if nu==0.5
+    but are otherwise different.
+
+    Karspeck
+    --------
+    Similar to Classic MaternVariogram model but uses the form in Karspeck paper
+    Note: Note the 2 is outside the square root for middle and right
+    e-folding distance is now at d/SQRT(2) for nu=0.5
+
     Parameters
     ----------
     psill : float | np.ndarray
