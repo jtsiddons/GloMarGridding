@@ -603,7 +603,10 @@ def variogram_hadcrut5(
     ).fit(distance_matrix)
 
 
-def variogram_to_covariance(variogram, variance):
+def variogram_to_covariance(
+    variogram: np.ndarray,
+    variance: np.ndarray,
+) -> np.ndarray:
     return variance - variogram
 
 
