@@ -92,9 +92,12 @@ def align_to_grid(
 
     grid_idx: list[list[int]] = []
     obs_to_grid_pos: list[np.ndarray] = []
-    for i, (grid_coord, obs_coord) in enumerate(zip(grid_coords, obs_coords)):
+    for grid_coord, obs_coord in zip(grid_coords, obs_coords):
         grid_pos = grid.coords[grid_coord].values
-        grid_idx[i], obs_to_grid_pos[i] = find_nearest(grid_pos, obs[obs_coord])
+        _grid_idx, _obs_to_grid_pos = find_nearest(grid_pos, obs[obs_coord])
+        grid_idx.append(_grid_idx)
+        obs_to_grid_pos.append(_obs_to_grid_pos)
+        del _grid_idx, _obs_to_grid_pos
 
     flattened_idx = np.ravel_multi_index(
         grid_idx,
