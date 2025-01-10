@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Literal
 import numpy as np
 import pandas as pd
 from warnings import warn
