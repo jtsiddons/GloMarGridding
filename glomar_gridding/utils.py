@@ -63,9 +63,10 @@ class ConfigParserMultiValues(OrderedDict):
         return value.splitlines()
 
 
+# DELETE: Unused
 def match_coord(
     ds: xr.Dataset,
-    candidate_names: Iterable[str] | str,
+    candidate_names: list[str] | str,
     case_insensitive: bool = True,
 ) -> str:
     """
@@ -88,9 +89,7 @@ def match_coord(
     coord : str
         Name of the coordinate matching any candidate.
     """
-    if isinstance(candidate_names, str) or not isinstance(
-        candidate_names, Iterable
-    ):
+    if isinstance(candidate_names, str):
         candidate_names = [candidate_names]
     coords: list[str] = [str(c) for c in ds.coords]
     for coord in coords:
@@ -104,6 +103,7 @@ def match_coord(
     )
 
 
+# DELETE: Unused
 def regex_coord(
     ds: xr.Dataset,
     pattern: re.Pattern,
@@ -227,7 +227,7 @@ def intersect_mtlb(a, b):
 
 def check_cols(
     df: pd.DataFrame | pl.DataFrame,
-    cols: Iterable[str],
+    cols: list[str],
 ) -> None:
     """Check that all columns in a list of columns are in a DataFrame"""
     missing_cols = [c for c in cols if c not in df.columns]
