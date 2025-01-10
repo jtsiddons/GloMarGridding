@@ -554,6 +554,10 @@ def variogram(
     range_: float = 350.0,
     variogram_model: Callable = exponential_variogram_model,
 ) -> np.ndarray:
+    warn(
+        "'variogram' is deprecated. Use one of the `Varigram` sub classes.",
+        DeprecationWarning,
+    )
     # range from Dave's presentation on space length scales (in km)
     # range_ = 350
     # from researchgate - Sill of the semivariogram is equal to the variance of
