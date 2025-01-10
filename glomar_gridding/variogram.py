@@ -205,6 +205,9 @@ def exponential_variogram_model(m, d):
     )  # this should be the correct version
 
 
+MaternModel = Literal["classic", "gstat", "karspeck"]
+
+
 @dataclass(frozen=True)
 class MaternVariogram(Variogram):
     """
@@ -250,7 +253,7 @@ class MaternVariogram(Variogram):
     range : float | np.ndarray
     nugget : float | np.ndarray
     nu : float | np.ndarray
-    method : str
+    method : MaternModel
         One of "classic", "gstat", or "karspeck"
     """
 
@@ -258,7 +261,7 @@ class MaternVariogram(Variogram):
     range: float | np.ndarray
     nugget: float | np.ndarray
     nu: float | np.ndarray = 0.5
-    method: str = "classic"
+    method: MaternModel = "classic"
 
     @property
     def _left(self):
