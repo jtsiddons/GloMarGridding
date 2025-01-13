@@ -8,6 +8,7 @@ Author: Steven Chan (@stchan)
 """
 
 import pandas as pd
+import polars as pl
 import geopandas as gpd
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -118,7 +119,7 @@ def compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist(df: pd.DataFrame) -> np.ndarray:
+def tau_dist(df: pl.DataFrame) -> np.ndarray:
     """
     Compute the tau/Mahalanobis matrix for all records within a gridbox
 
@@ -132,7 +133,7 @@ def tau_dist(df: pd.DataFrame) -> np.ndarray:
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         The observational DataFrame, containing positional information for each
         observation ("lat", "lon"), gridbox specific positional information
         ("gridcell_lat", "gridcell_lon"), and ellipse length-scale parameters
@@ -156,15 +157,15 @@ def tau_dist(df: pd.DataFrame) -> np.ndarray:
     ]
     check_cols(df, required_cols)
     # Get northing and easting
-    lat0, lon0 = df[["gridcell_lat", "gridcell_lon"]].values[0]
-    latlons = np.asarray(df[["lat", "lon"]].values)
+    lat0, lon0 = df.select(["gridcell_lat", "gridcell_lon"]).row(1)
+    latlons = np.asarray(df.select(["lat", "lon"]).to_numpy())
     ne = latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
     paired_dist = paired_vector_dist(ne)
 
     # Get sigma
-    Lx, Ly, theta = df[["gridcell_lx", "gridcell_ly", "gridcell_theta"]].values[
-        0
-    ]
+    Lx, Ly, theta = df.select(
+        ["gridcell_lx", "gridcell_ly", "gridcell_theta"]
+    ).row(1)
     sigma = Ls2sigma(Lx, Ly, theta)
 
     tau = compute_tau_wrapper(paired_dist, sigma)
