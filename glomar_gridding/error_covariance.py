@@ -45,7 +45,7 @@ def uncorrelated_components(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         The observational DataFrame containing values to group by.
     group_col : str
         Name of the group column to use to set observational sigma values.
@@ -109,7 +109,7 @@ def correlated_components(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         Observational DataFrame including group information and bias uncertainty
         values for each grouping. It is assumed that a single bias uncertainty
         value applies to the whole group, and is applied as cross terms in the
@@ -189,7 +189,7 @@ def dist_weight(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         The observation DataFrame, containing the columns required for
         computation of the distance matrix. Contains the "gridbox" column which
         indicates the gridbox for a given observation. The index of the
@@ -197,7 +197,7 @@ def dist_weight(
         matrix/weights.
     dist_fn : Callable | None
         The function used to compute a distance matrix for all points in a given
-        grid-cell. Takes as input a pandas.DataFrame as first argument. Any
+        grid-cell. Takes as input a polars.DataFrame as first argument. Any
         other arguments should be constant over all gridboxes, or can be a
         look-up table that can use values in the DataFrame to specify values
         specific to a gridbox. The function should return a numpy matrix, which
@@ -268,7 +268,7 @@ def get_weights(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         The observation DataFrame, containing the columns required for
         computation of the distance matrix. Contains the "gridbox" column which
         indicates the gridbox for a given observation. The index of the

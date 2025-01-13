@@ -26,7 +26,7 @@ def haversine_gaussian(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         Observations, required columns are "lat" and "lon" representing
         latitude and longitude respectively.
     R : float
