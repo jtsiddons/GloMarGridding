@@ -584,7 +584,10 @@ def variogram(
 
 
 def variogram_hadcrut5(
-    distance_matrix, terrain="lnd", nugget_=0.0, method: str = "classic"
+    distance_matrix,
+    terrain="lnd",
+    nugget_=0.0,
+    method: MaternModel = "classic",
 ):
     if terrain not in ["lnd", "sea"]:
         raise ValueError("terrain must be lnd or sea.")
