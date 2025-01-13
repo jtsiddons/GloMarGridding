@@ -157,7 +157,7 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
     ]
     check_cols(df, required_cols)
     # Get northing and easting
-    lat0, lon0 = df.select(["gridcell_lat", "gridcell_lon"]).row(1)
+    lat0, lon0 = df.select(["gridcell_lat", "gridcell_lon"]).row(0)
     latlons = np.asarray(df.select(["lat", "lon"]).to_numpy())
     ne = latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
     paired_dist = paired_vector_dist(ne)
@@ -165,7 +165,7 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
     # Get sigma
     Lx, Ly, theta = df.select(
         ["gridcell_lx", "gridcell_ly", "gridcell_theta"]
-    ).row(1)
+    ).row(0)
     sigma = Ls2sigma(Lx, Ly, theta)
 
     tau = compute_tau_wrapper(paired_dist, sigma)
