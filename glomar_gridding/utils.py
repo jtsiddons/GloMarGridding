@@ -16,6 +16,12 @@ from warnings import warn
 _XR_Data = TypeVar("_XR_Data", xr.DataArray, xr.Dataset)
 
 
+class ColumnNotFoundError(Exception):
+    """Error class for Column Not Being Found"""
+
+    pass
+
+
 class MonthName(IntEnum):
     JANUARY = 1
     FEBRUARY = 2
@@ -232,7 +238,7 @@ def check_cols(
     """Check that all columns in a list of columns are in a DataFrame"""
     missing_cols = [c for c in cols if c not in df.columns]
     if missing_cols:
-        raise ValueError(
+        raise ColumnNotFoundError(
             "DataFrame is missing required columns: " + ", ".join(missing_cols)
         )
     return None
