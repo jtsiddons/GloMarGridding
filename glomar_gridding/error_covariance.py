@@ -174,10 +174,10 @@ def correlated_components(
 
 def dist_weight(
     df: pl.DataFrame,
-    dist_fn: Callable | None,
+    dist_fn: Callable,
     gridbox_idx: str = "gridbox_idx",
     **dist_kwargs,
-) -> tuple[np.ndarray | None, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute the distance and weight matrices over gridboxes for an input Frame.
 
@@ -185,7 +185,8 @@ def dist_weight(
     computation of the distances between positions in the same gridbox using any
     distance metric.
 
-    Set dist_fn to None to just compute weights.
+    The weightings from this function are for the gridbox mean of the
+    observations within a gridbox.
 
     Parameters
     ----------
@@ -195,7 +196,7 @@ def dist_weight(
         indicates the gridbox for a given observation. The index of the
         DataFrame should match the index ordering for the output distance
         matrix/weights.
-    dist_fn : Callable | None
+    dist_fn : Callable
         The function used to compute a distance matrix for all points in a given
         grid-cell. Takes as input a polars.DataFrame as first argument. Any
         other arguments should be constant over all gridboxes, or can be a
@@ -215,7 +216,7 @@ def dist_weight(
 
     Returns
     -------
-    dist : numpy.matrix | None
+    dist : numpy.matrix
         The distance matrix, which contains the same number of rows and columns
         as rows in the input DataFrame df. The values in the matrix are 0 if the
         indices of the row/column are for observations from different gridboxes,
@@ -247,24 +248,27 @@ def dist_weight(
 
     # Initialise
     weights = np.zeros((_n_gridboxes, _n_obs))
-    dist = np.zeros((_n_obs, _n_obs)) if dist_fn is not None else None
+    dist = np.zeros((_n_obs, _n_obs))
 
     for i, gridbox_df in enumerate(df.partition_by(gridbox_idx)):
         gridbox_idcs = gridbox_df.get_column("_index").to_list()
         idcs_array = np.ix_(gridbox_idcs, gridbox_idcs)
 
         weights[i, gridbox_idcs] = 1 / gridbox_df.height
-        if dist_fn is not None and dist is not None:
-            dist[idcs_array] = dist_fn(gridbox_df, **dist_kwargs)
+        dist[idcs_array] = dist_fn(gridbox_df, **dist_kwargs)
 
     return dist, weights
 
 
 def get_weights(
     df: pl.DataFrame,
+    gridbox_idx: str = "gridbox_idx",
 ) -> np.ndarray:
     """
     Get just the weight matrices over gridboxes for an input Frame.
+
+    The weightings from this function are for the gridbox mean of the
+    observations within a gridbox.
 
     Parameters
     ----------
@@ -273,6 +277,8 @@ def get_weights(
         computation of the distance matrix. Contains the "gridbox" column which
         indicates the gridbox for a given observation. The index of the
         DataFrame should match the index ordering for the output weights.
+    gridbox_idx : str
+        Name of the column containing the gridbox index from the output grid.
 
     Returns
     -------
@@ -285,5 +291,13 @@ def get_weights(
         rows of weights are in a sorted order of the gridbox. Should this be
         incorrect, one should re-arrange the rows after calling this function.
     """
-    _, weights = dist_weight(df, dist_fn=None)
-    return weights
+    weights = (
+        df.with_row_index("_index")
+        .with_columns((1 / pl.len().over(gridbox_idx)).alias("_weight"))
+        .select(["_index", gridbox_idx, "_weight"])
+        .pivot(on=gridbox_idx, index="_index", values="_weight")
+        .drop("_index")
+    )
+    return (
+        weights.select(sorted(weights.columns, key=int)).to_numpy().transpose()
+    )
