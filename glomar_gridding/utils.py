@@ -238,10 +238,15 @@ def check_cols(
     cols: list[str],
 ) -> None:
     """Check that all columns in a list of columns are in a DataFrame"""
+    # Get name of function that is calling this
+    calling_func = str(inspect.stack()[1][3])
+
     missing_cols = [c for c in cols if c not in df.columns]
     if missing_cols:
         raise ColumnNotFoundError(
-            "DataFrame is missing required columns: " + ", ".join(missing_cols)
+            calling_func
+            + ": DataFrame is missing required columns: "
+            + ", ".join(missing_cols)
         )
     return None
 
