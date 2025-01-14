@@ -4,6 +4,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from datetime import date
 from enum import IntEnum
+import inspect
 from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
