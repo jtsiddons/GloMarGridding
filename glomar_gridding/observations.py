@@ -1051,11 +1051,7 @@ def measurement_covariance(
         "gridcell_ly",
         "gridcell_theta",
     ]
-    cols_miss = [c for c in required_cols if c not in df]
-    if cols_miss:
-        raise ValueError(
-            f"Missing columns required for tau computation: {cols_miss}"
-        )
+    check_cols(df, required_cols)
     dist, weights = dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     # print(covx1, covx1.shape)
