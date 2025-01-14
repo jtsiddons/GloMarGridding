@@ -7,11 +7,11 @@ from enum import IntEnum
 from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
-import pandas as pd
 import polars as pl
 import re
 import xarray as xr
 from warnings import warn
+from polars._typing import ClosedInterval
 
 _XR_Data = TypeVar("_XR_Data", xr.DataArray, xr.Dataset)
 
@@ -199,10 +199,12 @@ def find_nearest(
 
 def select_bounds(
     x: _XR_Data,
-    bnds: list[tuple[float, float]] = [(-90, 90), (-180, 180)],
-    vars: list[str] = ["lat", "lon"],
+    bounds: list[tuple[float, float]] = [(-90, 90), (-180, 180)],
+    variables: list[str] = ["lat", "lon"],
 ) -> _XR_Data:
-    bnd_map: dict[str, slice] = {b: slice(*v) for b, v in zip(vars, bnds)}
+    bnd_map: dict[str, slice] = {
+        b: slice(*v) for b, v in zip(variables, bounds)
+    }
     return x.sel(bnd_map)
 
 
@@ -232,7 +234,7 @@ def intersect_mtlb(a, b):
 
 
 def check_cols(
-    df: pd.DataFrame | pl.DataFrame,
+    df: pl.DataFrame,
     cols: list[str],
 ) -> None:
     """Check that all columns in a list of columns are in a DataFrame"""
@@ -245,28 +247,47 @@ def check_cols(
 
 
 def filter_bounds(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     bounds: list[tuple[float, float]],
     bound_cols: list[str],
-    closed: str = "left",
-) -> pd.DataFrame:
+    closed: ClosedInterval | list[ClosedInterval] = "left",
+) -> pl.DataFrame:
+    """
+    Filter a polars DataFrame based on a set of lower and upper bounds.
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        The data to be filtered by the bounds
+    bounds : list[tuple[float, float]]
+        A list of tuples containing lower and upper bounds for a column
+    bound_cols : list[str]
+        A list of column names to be filtered by the bounds, the length of
+        the bounds list must equal the length of the bound_cols list.
+    closed : str | list[str]
+        One of "both", "left", "right", "none" indicating the closedness of
+        the bounds. If the input is a single instance then all bounds will have
+        that closedness.
+    """
     if len(bounds) != len(bound_cols):
         raise ValueError("Length of 'bounds' must equal length of 'bound_cols'")
-    df["_cond_"] = True
-    for col, (lbound, ubound) in zip(bound_cols, bounds):
-        match closed.lower():
-            case "left":
-                df["_cond_"] = df["_cond_"] & (lbound <= df[col] < ubound)
-            case "right":
-                df["_cond_"] = df["_cond_"] & (lbound < df[col] <= ubound)
-            case "both":
-                df["_cond_"] = df["_cond_"] & (lbound <= df[col] <= ubound)
-            case "none":
-                df["_cond_"] = df["_cond_"] & (lbound < df[col] < ubound)
-            case _:
-                raise ValueError(
-                    "Unexpected 'closed' value. "
-                    + "Expected one of 'left', 'right', 'both', 'none'."
-                )
 
-    return df.loc[df["_cond_"]].drop(columns="_cond_")
+    if not isinstance(closed, list):
+        closed = [closed for _ in range(len(bounds))]
+
+    if len(closed) != len(bounds):
+        raise ValueError(
+            "Length of 'closed' must equal length of 'bounds', "
+            + "or be a single value."
+        )
+
+    check_cols(df, bound_cols)
+
+    # Dynamically build the filter condition
+    condition: pl.Expr = pl.col(bound_cols[0]).is_between(
+        *bounds[0], closed=closed[0]
+    )
+    for bound, col, close in zip(bounds[1:], bound_cols[1:], closed[1:]):
+        condition = condition & (pl.col(col).is_between(*bound, closed=close))
+
+    return df.filter(condition)

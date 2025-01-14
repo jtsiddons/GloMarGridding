@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 import numpy as np
-import pandas as pd
+import polars as pl
 from warnings import warn
 
 from scipy.spatial.distance import pdist, squareform
@@ -536,13 +536,13 @@ def haversine_distance(
 
 
 def calculate_distance_matrix(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     dist_func: Callable = haversine_distance,
     lat_col: str = "lat",
     lon_col: str = "lon",
 ) -> np.ndarray:
     distance_matrix = squareform(
-        pdist(df[[lat_col, lon_col]], lambda u, v: dist_func(u, v))
+        pdist(df.select([lat_col, lon_col]), lambda u, v: dist_func(u, v))
     )
     return distance_matrix
 

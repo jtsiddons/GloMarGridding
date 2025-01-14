@@ -2,14 +2,17 @@
 
 from typing import Any
 from warnings import warn
-import pandas as pd
 import numpy as np
+import polars as pl
 import xarray as xr
+
+from glomar_gridding.utils import check_cols
+
 from .grid import align_to_grid
 
 
 def mask_observations(
-    obs: pd.DataFrame,
+    obs: pl.DataFrame,
     mask: xr.DataArray,
     varnames: str | list[str],
     mask_varname: str = "mask",
@@ -19,9 +22,11 @@ def mask_observations(
     obs_coords: list[str] = ["lat", "lon"],
     drop: bool = False,
     mask_grid_prefix: str = "_mask_grid_",
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """Mask observations in a DataFrame subject to a mask DataArray"""
     varnames = [varnames] if isinstance(varnames, str) else varnames
+    check_cols(obs, varnames)
+
     grid_idx_name = mask_grid_prefix + "idx"
     if grid_idx_name in obs.columns:
         warn(
@@ -40,12 +45,18 @@ def mask_observations(
     obs[mask_varname] = [
         mask[mask_varname].values[i] for i in obs[grid_idx_name]
     ]
-    for var in varnames:
-        obs[var][obs[mask_varname] == mask_value] = masked_value
+    mask_map: dict = {mask_value: masked_value}
+    obs = obs.with_columns(
+        [
+            pl.col(mask_varname)
+            .replace_strict(mask_map, default=pl.col(var))
+            .alias(var)
+            for var in varnames
+        ]
+    )
     if drop:
-        return obs.loc[obs[mask_varname] == mask_value]
-    obs.drop(columns=[grid_idx_name], inplace=True)
-    return obs
+        return obs.filter(pl.col(mask_varname).eq(mask_value))
+    return obs.drop([grid_idx_name], strict=True)
 
 
 def mask_array(
@@ -84,3 +95,23 @@ def mask_dataset(
         dataset[var][masked_idx] = masked_value
 
     return dataset
+
+
+def mask_from_obs(
+    obs: pl.DataFrame,
+    coords: str | list[str],
+    datetime_col: str,
+    value_col: str,
+) -> pl.DataFrame:
+    """Compute a mask from observations"""
+    if isinstance(coords, str):
+        coords = [coords]
+    x = obs.select([*coords, datetime_col, value_col]).pivot(
+        on=datetime_col, index=coords, values=value_col
+    )
+    return x.select(
+        [
+            *coords,
+            pl.all_horizontal(pl.exclude(*coords).is_null()).alias("mask"),
+        ]
+    )

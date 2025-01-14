@@ -3,7 +3,7 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 import numpy as np
-import pandas as pd
+import polars as pl
 import xarray as xr
 
 from .utils import filter_bounds, find_nearest, select_bounds
@@ -32,7 +32,7 @@ class GridBounds3d(GridBounds):
 
 
 def align_to_grid(
-    obs: pd.DataFrame,
+    obs: pl.DataFrame,
     grid: xr.DataArray,
     grid_coords: list[str] = ["latitude", "longitude"],
     obs_coords: list[str] = ["lat", "lon"],
@@ -40,7 +40,7 @@ def align_to_grid(
     bounds: list[tuple[float, float]] | None = None,
     add_grid_pts: bool = True,
     grid_prefix: str = "grid_",
-) -> pd.DataFrame:
+) -> pl.DataFrame:
     """
     Align an observation dataframe to a grid defined by an xarray DataArray.
 
@@ -52,7 +52,7 @@ def align_to_grid(
 
     Parameters
     ----------
-    obs : pandas.DataFrame
+    obs : polars.DataFrame
         The observational DataFrame containing positional data with latitude,
         longitude values within the `obs_latname` and `obs_lonname` columns
         respectively. Observations are mapped to the nearest grid-point in the
@@ -111,7 +111,7 @@ def align_to_grid(
             obs[grid_prefix + obs_coord] = grid_pos
 
     if sort:
-        obs.sort_values(by="grid_idx", inplace=True, ascending=True)
+        obs = obs.sort("grid_idx", descending=False)
 
     return obs
 
