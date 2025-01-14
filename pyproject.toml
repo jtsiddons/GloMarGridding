@@ -117,4 +117,5 @@ Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
 dev = [
     "bpython>=0.24",
     "ipykernel>=6.29.5",
+    "pytest>=8.3.4",
 ]
