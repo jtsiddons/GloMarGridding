@@ -11,11 +11,13 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from matplotlib import style
 import pandas as pd
+import xarray as xr
 
-from .covariance_variogram import (
-    variogram,
+from .variogram import (
+    ExponentialVariogram,
     calculate_distance_matrix,
     haversine_distance,
+    variogram_to_covariance,
 )
 
 
@@ -292,5 +294,10 @@ def covariance_from_variogram(
     # is "Ss" martix)
     # "S" matrix in Simon's code is calculated using same m,d parameters but for
     # the observation points distance matrix (not all ocean points)
-    covariance_variogram: np.ndarray = variogram(distance_matrix, variance)
-    return covariance_variogram
+    # covariance_variogram: np.ndarray = variogram(distance_matrix, variance)
+    covariance_variogram = ExponentialVariogram(
+        psill=variance,
+        nugget=0.0,
+        range=350.0,
+    ).fit(distance_matrix)
+    return variogram_to_covariance(covariance_variogram, variance)
