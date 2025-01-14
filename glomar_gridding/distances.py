@@ -11,10 +11,11 @@ import numpy as np
 import polars as pl
 from sklearn.metrics.pairwise import haversine_distances
 
-from glomar_gridding.utils import check_cols
-from glomar_gridding.matern_and_tm import tau_dist  # noqa: F401
+from .utils import check_cols
+from .matern_and_tm import tau_dist  # noqa: F401
 
 
+# NOTE: This is a Variogram result
 def haversine_gaussian(
     df: pl.DataFrame,
     R: float = 6371.0,
@@ -46,7 +47,7 @@ def haversine_gaussian(
     check_cols(df, ["lat", "lon"])
     pos = np.radians(df.select(["lat", "lon"]).to_numpy())
     C = haversine_distances(pos) * R
-    C = np.exp(-(C**2) / r**2)
+    C = np.exp(-(np.pow(C, 2)) / np.pow(r, 2))
     return s / 2 * C
 
 
