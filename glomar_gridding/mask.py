@@ -20,6 +20,7 @@ def mask_observations(
     mask_value: Any = True,
     mask_coords: list[str] = ["latitude", "longitude"],
     obs_coords: list[str] = ["lat", "lon"],
+    align_to_mask: bool = False,
     drop: bool = False,
     mask_grid_prefix: str = "_mask_grid_",
 ) -> pl.DataFrame:
@@ -40,7 +41,7 @@ def mask_observations(
         obs_coords=obs_coords,
         grid_prefix=mask_grid_prefix,
         sort=False,
-        add_grid_pts=False,
+        add_grid_pts=align_to_mask,
     )
     obs[mask_varname] = [
         mask[mask_varname].values[i] for i in obs[grid_idx_name]
