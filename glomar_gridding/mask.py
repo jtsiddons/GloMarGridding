@@ -115,3 +115,12 @@ def mask_from_obs(
             pl.all_horizontal(pl.exclude(*coords).is_null()).alias("mask"),
         ]
     )
+
+
+def mask_from_obs_array(
+    obs: np.ndarray,
+    datetime_idx: int,
+) -> np.ndarray:
+    A = np.isnan(obs)
+    mask = A.all(axis=datetime_idx)
+    return mask
