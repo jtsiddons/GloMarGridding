@@ -1,34 +1,11 @@
 """Functions for creating grids and mapping observations to a grid"""
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 import numpy as np
 import polars as pl
 import xarray as xr
 
 from .utils import filter_bounds, find_nearest, select_bounds
-
-
-@dataclass
-class GridBounds:
-    """Class for simple grid bounds"""
-
-    west: float
-    east: float
-    south: float
-    north: float
-
-
-@dataclass
-class GridBounds3d(GridBounds):
-    """Class for simple grid bounds"""
-
-    west: float
-    east: float
-    south: float
-    north: float
-    bottom: float
-    top: float
 
 
 def align_to_grid(
@@ -118,72 +95,42 @@ def align_to_grid(
 
 def grid_from_resolution(
     resolution: float | list[float],
-    bounds: GridBounds,
-    coord_names: tuple[str, str],
+    bounds: list[tuple[float, float]],
+    coord_names: list[str],
 ) -> xr.DataArray:
+    """
+    Generate a grid from a resolution value, or a list of resolutions for
+    given boundaries and coordinate names.
+
+    Note that all list inputs must have the same length, the ordering of values
+    in the lists is assumed align.
+
+    Parameters
+    ----------
+    resolution : float | list[float]
+        Resolution of the grid. Can be a single resolution value that will be
+        applied to all coordinates, or a list of values mapping a resolution
+        value to each of the coordinates.
+    bounds : list[tuple[float, float]]
+        A list of bounds of the form `(lower_bound, upper_bound)` indicating
+        the bounding box of the returned grid
+    coord_names : list[str]
+        List of coordinate names
+
+    Returns
+    -------
+    grid : xarray.DataArray:
+        The grid defined by the resolution and bounding box.
+    """
     if not isinstance(resolution, Iterable):
-        resolution = [resolution, resolution]
-    return _grid_from_resolution_2d(resolution, bounds, coord_names)
-
-
-def grid_from_resolution_3d(
-    resolution: float | list[float],
-    bounds: GridBounds3d,
-    coord_names: tuple[str, str, str],
-) -> xr.DataArray:
-    if not isinstance(resolution, Iterable):
-        resolution = [resolution, resolution, resolution]
-    return _grid_from_resolution_3d(resolution, bounds, coord_names)
-
-
-def grid_from_pos(
-    lats: np.ndarray,
-    lons: np.ndarray,
-    lat_name: str = "latitude",
-    lon_name: str = "longitude",
-) -> xr.DataArray:
-    coords = xr.Coordinates({lat_name: lats, lon_name: lons})
-    return xr.DataArray(coords=coords)
-
-
-def grid_from_pos_3d(
-    lats: np.ndarray,
-    lons: np.ndarray,
-    depths: np.ndarray,
-    lat_name: str = "latitude",
-    lon_name: str = "longitude",
-    depth_name: str = "depth",
-) -> xr.DataArray:
-    coords = xr.Coordinates(
-        {lat_name: lats, lon_name: lons, depth_name: depths}
-    )
-    return xr.DataArray(coords=coords)
-
-
-def _grid_from_resolution_2d(
-    resolution: list[float],
-    bounds: GridBounds,
-    coord_names: tuple[str, str],
-) -> xr.DataArray:
-    lat_name, lon_name = coord_names
-
-    lat_res, lon_res, *_ = resolution
-    lat_coords = np.arange(bounds.west, bounds.east, lat_res)
-    lon_coords = np.arange(bounds.south, bounds.north, lon_res)
-    return grid_from_pos(lat_coords, lon_coords, lat_name, lon_name)
-
-
-def _grid_from_resolution_3d(
-    resolution: list[float],
-    bounds: GridBounds3d,
-    coord_names: tuple[str, str, str],
-) -> xr.DataArray:
-    lat_name, lon_name, depth_name = coord_names
-
-    lat_res, lon_res, depth_res, *_ = resolution
-    lat_coords = np.arange(bounds.west, bounds.east, lat_res)
-    lon_coords = np.arange(bounds.south, bounds.north, lon_res)
-    depth_coords = np.arange(bounds.bottom, bounds.top, depth_res)
-    return grid_from_pos_3d(
-        lat_coords, lon_coords, depth_coords, lat_name, lon_name, depth_name
-    )
+        resolution = [resolution for _ in range(len(bounds))]
+    if len(resolution) != len(coord_names) or len(bounds) != len(coord_names):
+        raise ValueError("Input lists must have the same length")
+    coords = {
+        c_name: np.arange(lbound, ubound, res)
+        for c_name, (lbound, ubound), res in zip(
+            coord_names, bounds, resolution
+        )
+    }
+    grid = xr.DataArray(coords=coords)
+    return grid
