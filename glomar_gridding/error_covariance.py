@@ -296,6 +296,7 @@ def get_weights(
         .with_columns((1 / pl.len().over(gridbox_idx)).alias("_weight"))
         .select(["_index", gridbox_idx, "_weight"])
         .pivot(on=gridbox_idx, index="_index", values="_weight")
+        .sort("_index")
         .drop("_index")
     )
     return (
