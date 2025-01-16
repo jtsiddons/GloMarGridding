@@ -6,9 +6,8 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
+from glomar_gridding.grid import align_to_grid
 from glomar_gridding.utils import check_cols
-
-from .grid import align_to_grid
 
 
 def mask_observations(
@@ -24,7 +23,50 @@ def mask_observations(
     drop: bool = False,
     mask_grid_prefix: str = "_mask_grid_",
 ) -> pl.DataFrame:
-    """Mask observations in a DataFrame subject to a mask DataArray"""
+    """
+    Mask observations in a DataFrame subject to a mask DataArray.
+
+    Parameters
+    ----------
+    obs : polars.DataFrame
+        Observational DataFrame to be masked by postitions in the mask
+        DataArray.
+    mask : xarray.DataArray
+        Array containing vlaues used to mask the observational DataFrame.
+    varnames : str | list[str]
+        Columns in the observational DataFrame to apply the mask to.
+    mask_varname : str
+        Name of the mask variable in the mask DataArray.
+    masked_value : Any
+        Value indicating masked values in the DataArray.
+    mask_value : Any
+        Value to set masked values to in the observational DataFrame.
+    mask_coords : list[str]
+        A list of coordinate names in the mask DataArray. These coordinates are
+        mapped onto the observational DataFrame in order to apply the mask. The
+        ordering of the coordinate names in this list must match those in the
+        obs_coords list.
+    obs_coords : list[str]
+        A list of coordinate names in the observational DataFrame. Used to map
+        the mask DataArray to the observational DataFrame. The order must align
+        with the coordinates of the mask DataArray.
+    align_to_mask : bool
+        Optionally align the observational DataFrame to the mask DataArray.
+        This essentially sets the mask's grid as the output grid for
+        interpolation.
+    drop : bool
+        Drop masked values in the observational DataFrame.
+    mask_grid_prefix : str
+        Prefix to use for the mask gridbox index column in the observational
+        DataFrame.
+
+    Returns
+    -------
+    obs : polars.DataFrame
+        Input polars.DataFrame containing additional column named by the
+        mask_varname argument, indicating records that are masked. Masked values
+        are dropped if the drop argument is set to True.
+    """
     varnames = [varnames] if isinstance(varnames, str) else varnames
     check_cols(obs, varnames)
 
@@ -65,10 +107,34 @@ def mask_array(
     mask: xr.DataArray,
     varname: str,
     mask_varname: str = "mask",
-    mask_value: Any = True,
     masked_value: Any = np.nan,
+    mask_value: Any = True,
 ) -> xr.DataArray:
-    """Apply a mask to a DataArray"""
+    """
+    Apply a mask to a DataArray
+
+    Parameters
+    ----------
+    grid : xarray.DataArray
+        Observational DataArray to be masked by postitions in the mask
+        DataArray.
+    mask : xarray.DataArray
+        Array containing vlaues used to mask the observational DataFrame.
+    varname : str
+        Name of the variable in the observational DataArray to apply the mask
+        to.
+    mask_varname : str
+        Name of the mask variable in the mask DataArray.
+    masked_value : Any
+        Value indicating masked values in the DataArray.
+    mask_value : Any
+        Value to set masked values to in the observational DataFrame.
+
+    Returns
+    -------
+    grid : xarray.DataArray
+        Input xarray.DataArray with the variable masked by the mask DataArray.
+    """
     # Check that the grid and mask are aligned
     xr.align(grid, mask, join="exact")
 
@@ -83,10 +149,34 @@ def mask_dataset(
     mask: xr.DataArray,
     varnames: str | list[str],
     mask_varname: str = "mask",
-    mask_value: Any = True,
     masked_value: Any = np.nan,
+    mask_value: Any = True,
 ) -> xr.Dataset:
-    """Apply a mask to a DataSet"""
+    """
+    Apply a mask to a DataSet
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Observational Dataset to be masked by postitions in the mask
+        DataArray.
+    mask : xarray.DataArray
+        Array containing vlaues used to mask the observational DataFrame.
+    varnames : str | list[str]
+        A list containing the names of  variables in the observational Dataser
+        to apply the mask to.
+    mask_varname : str
+        Name of the mask variable in the mask DataArray.
+    masked_value : Any
+        Value indicating masked values in the DataArray.
+    mask_value : Any
+        Value to set masked values to in the observational DataFrame.
+
+    Returns
+    -------
+    grid : xarray.Dataset
+        Input xarray.Dataset with the variables masked by the mask DataArray.
+    """
     # Check that the grid and mask are aligned
     xr.align(dataset, mask, join="exact")
 
@@ -98,13 +188,41 @@ def mask_dataset(
     return dataset
 
 
-def mask_from_obs(
+def mask_from_obs_frame(
     obs: pl.DataFrame,
     coords: str | list[str],
     datetime_col: str,
     value_col: str,
 ) -> pl.DataFrame:
-    """Compute a mask from observations"""
+    """
+    Compute a mask from observations.
+
+    Positions defined by the "coords" values that do not have any observations,
+    at any datetime value in the "datetime_col", for the "value_col" field are
+    masked.
+
+    An example use-case would be to identify land positions from sst records.
+
+    Parameters
+    ----------
+    obs : polars.DataFrame
+        DataFrame constaining observations over space and time. The values in
+        the "value_col" field will be used to define the mask.
+    coords : str | list[str]
+        A list of columns containing the coordinates used to define the mask.
+        For example ["lat", "lon"].
+    datetime_col : str
+        Name of the datetime column. Any positions that contain no records at
+        any datetime value are masked.
+    value_col : str
+        Name of the column containing values from which the mask will be
+        defined.
+
+    Returns
+    -------
+    polars.DataFrame containing coordinate columns and a Boolean "mask" column
+    indicating positions that contain no observations and would be a mask value.
+    """
     if isinstance(coords, str):
         coords = [coords]
     x = obs.select([*coords, datetime_col, value_col]).pivot(
@@ -122,6 +240,29 @@ def mask_from_obs_array(
     obs: np.ndarray,
     datetime_idx: int,
 ) -> np.ndarray:
+    """
+    Infer a mask from an input array. Mask values are those where all values
+    are NaN along the time dimension.
+
+    An example use-case would be to infer land-points from a SST data array.
+
+    Parameters
+    ----------
+    obs : numpy.ndarray
+        Array containing the observation values. Records that are numpy.nan
+        will count towards the mask, if all values in the datetime dimension
+        are numpy.nan.
+    datetime_idx : int
+        The index of the datetime, or grouping, dimension. If all records at
+        a point along this dimension are NaN then this point will be masked.
+
+    Returns
+    -------
+    mask : numpy.ndarray
+        A boolean array with dimension reduced along the datetime dimension.
+        A True value indicates that all values along the datetime dimension
+        for this index are numpy.nan and are masked.
+    """
     A = np.isnan(obs)
     mask = A.all(axis=datetime_idx)
     return mask
