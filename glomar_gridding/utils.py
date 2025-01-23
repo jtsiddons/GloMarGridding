@@ -273,7 +273,8 @@ def filter_bounds(
     closed : str | list[str]
         One of "both", "left", "right", "none" indicating the closedness of
         the bounds. If the input is a single instance then all bounds will have
-        that closedness.
+        that closedness. If it is a list of closed values then its length must
+        match the length of the bounds list.
     """
     if len(bounds) != len(bound_cols):
         raise ValueError("Length of 'bounds' must equal length of 'bound_cols'")
