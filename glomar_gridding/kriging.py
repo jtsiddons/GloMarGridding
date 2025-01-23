@@ -541,9 +541,12 @@ def kriging_main(
 #     return a, b, c, d
 
 
-def get_spatial_mean(grid_obs: np.ndarray, covx: np.ndarray) -> float:
+def get_spatial_mean(
+    grid_obs: np.ndarray,
+    covx: np.ndarray,
+) -> float:
     """
-    Get spatial mean accounting for auto-correlation.
+    Compute the spatial mean accounting for auto-correlation.
 
     Parameters
     ----------
