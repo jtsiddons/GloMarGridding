@@ -147,8 +147,8 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
         is the tau/Mahalanobis distance.
     """
     required_cols = [
-        "gridcell_lat",
         "gridcell_lon",
+        "gridcell_lat",
         "gridcell_lx",
         "gridcell_ly",
         "gridcell_theta",
@@ -172,34 +172,34 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
     return np.exp(-tau)
 
 
-def _tau_unit_test():
-    Lx = 1000.0
-    Ly = 250.0
-    theta = np.pi / 4
-    sigma = Ls2sigma(Lx, Ly, theta)
-    print(sigma)
-    latlon0 = (10.0, -35.0)
-    # df = pd.DataFrame({'lat': [7.0, 12.0, -1.0, 20.0],
-    #                    'lon': [-32.0, -24.5, -27.0, -40.0]})
-    lats = np.linspace(latlon0[0] - 10, latlon0[0] + 10, 21)
-    lons = np.linspace(latlon0[1] - 10, latlon0[1] + 10, 21)
-    lons2, lats2 = np.meshgrid(lons, lats)
-    df = pd.DataFrame(
-        {"lat": lats2.flatten().tolist(), "lon": lons2.flatten().tolist()}
-    )
-    print(df)
-    pos = np.asarray(df[["lat", "lon"]].values)
-    print(pos)
-    pos2 = latlon2ne(pos, latlons_in_rads=False, latlon0=latlon0)
-    print(pos2)
-    df["northing"] = pos2[:, 0]
-    df["easting"] = pos2[:, 1]
-    paired_dis_mat = paired_vector_dist(pos2)
-    print("dis_Y:")
-    print(paired_dis_mat[:, :, 0])
-    print("dis_X:")
-    print(paired_dis_mat[:, :, 1])
-    tau_mat = compute_tau_wrapper(paired_dis_mat, sigma)
-    print("tau:")
-    print(tau_mat)
-    return {"tau": tau_mat, "sigma": sigma, "grid": df}
+# def _tau_unit_test():
+#     Lx = 1000.0
+#     Ly = 250.0
+#     theta = np.pi / 4
+#     sigma = Ls2sigma(Lx, Ly, theta)
+#     print(sigma)
+#     latlon0 = (10.0, -35.0)
+#     # df = pd.DataFrame({'lat': [7.0, 12.0, -1.0, 20.0],
+#     #                    'lon': [-32.0, -24.5, -27.0, -40.0]})
+#     lats = np.linspace(latlon0[0] - 10, latlon0[0] + 10, 21)
+#     lons = np.linspace(latlon0[1] - 10, latlon0[1] + 10, 21)
+#     lons2, lats2 = np.meshgrid(lons, lats)
+#     df = pd.DataFrame(
+#         {"lat": lats2.flatten().tolist(), "lon": lons2.flatten().tolist()}
+#     )
+#     print(df)
+#     pos = np.asarray(df[["lat", "lon"]].values)
+#     print(pos)
+#     pos2 = latlon2ne(pos, latlons_in_rads=False, latlon0=latlon0)
+#     print(pos2)
+#     df["northing"] = pos2[:, 0]
+#     df["easting"] = pos2[:, 1]
+#     paired_dis_mat = paired_vector_dist(pos2)
+#     print("dis_Y:")
+#     print(paired_dis_mat[:, :, 0])
+#     print("dis_X:")
+#     print(paired_dis_mat[:, :, 1])
+#     tau_mat = compute_tau_wrapper(paired_dis_mat, sigma)
+#     print("tau:")
+#     print(tau_mat)
+#     return {"tau": tau_mat, "sigma": sigma, "grid": df}
