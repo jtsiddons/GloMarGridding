@@ -26,55 +26,59 @@ from .variogram import (
 ###############################################################
 # DATA READ-IN
 ###############################################################
-"""
-def _preprocess(x, lon_bnds, lat_bnds):
-    return x.sel(lon=slice(*lon_bnds), lat=slice(*lat_bnds))
+# def _preprocess(x, lon_bnds, lat_bnds):
+#     return x.sel(lon=slice(*lon_bnds), lat=slice(*lat_bnds))
+#
+# lon_west  = -98
+# lon_east  = 20
+# lat_south = 0
+# lat_north = 68
+# # extract the latitude and longitude boundaries from user input
+# lon_bnds, lat_bnds = (lon_west, lon_east), (lat_south, lat_north)
+# print(lon_bnds, lat_bnds)
+#
+# adding a pre-processing function to subselect only that region when extracting
+# the data from the path
+# partial_func = partial(_preprocess, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
 
-lon_west  = -98
-lon_east  = 20
-lat_south = 0
-lat_north = 68
-#extract the latitude and longitude boundaries from user input
-lon_bnds, lat_bnds = (lon_west, lon_east), (lat_south, lat_north)
-print(lon_bnds, lat_bnds)
 
-#adding a pre-processing function to subselect only that region when extracting the data from the path
-partial_func = partial(_preprocess, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
-"""
-
-
-"""
-def read_in_data():
-    #load data
-    #path = sys.argv[1]
-    path = '/noc/mpoc/surface_data/ESA_CCI1deg_pent/ANOMALY/*.nc'
-    ds = xr.open_mfdataset(str(path), combine='nested', concat_dim='time', engine="netcdf4") #preprocess=partial_func, engine="netcdf4")
-    print(ds)
-    
-    sst  = ds.variables['sst_anomaly']
-    lat  = ds.variables['lat'][:].values
-    lon  = ds.variables['lon'][:].values
-    ds.close()
-
-    gridlon, gridlat = np.meshgrid(lon, lat)
-    print(gridlat)
-    print(gridlon)
-    lat_1d = gridlat.flatten(order='C') #same order of reshaping for lat,lon and data
-    lon_1d = gridlon.flatten(order='C') #same order of reshaping for lat, lon and data
-    
-    nt,nlat,nlon = sst.shape    
-    print(nt, nlat, nlon)
-    
-    sst_= sst.to_numpy()
-
-    sst_flat_with_nans = sst_.reshape((nt, nlat*nlon), order='C') #same rder of reshaping for lat,lon and data
-    return sst_flat_with_nans, lat_1d, lon_1d
-"""
+# def read_in_data():
+#     # load data
+#     # path = sys.argv[1]
+#     path = "/noc/mpoc/surface_data/ESA_CCI1deg_pent/ANOMALY/*.nc"
+#     ds = xr.open_mfdataset(
+#         str(path), combine="nested", concat_dim="time", engine="netcdf4"
+#     )  # preprocess=partial_func, engine="netcdf4")
+#     print(ds)
+#
+#     sst = ds.variables["sst_anomaly"]
+#     lat = ds.variables["lat"][:].values
+#     lon = ds.variables["lon"][:].values
+#     ds.close()
+#
+#     gridlon, gridlat = np.meshgrid(lon, lat)
+#     print(gridlat)
+#     print(gridlon)
+#     lat_1d = gridlat.flatten(
+#         order="C"
+#     )  # same order of reshaping for lat,lon and data
+#     lon_1d = gridlon.flatten(
+#         order="C"
+#     )  # same order of reshaping for lat, lon and data
+#
+#     nt, nlat, nlon = sst.shape
+#     print(nt, nlat, nlon)
+#
+#     sst_flat_with_nans = sst.to_numpy().reshape(
+#         (nt, nlat * nlon), order="C"
+#     )  # same rder of reshaping for lat,lon and data
+#     return lat_1d, lon_1d, sst_flat_with_nans
 
 
 #################################################################
 # DATA PREPROCESSING IN TERMS OF LAND/OCEAN MASK
 #################################################################
+# DELETE: Mask - see mask.mask_from_obs
 def mask_land_and_ice(
     sst_flat_with_nans: np.ndarray,
     lat_1d: np.ndarray,

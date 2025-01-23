@@ -380,10 +380,8 @@ def result_reshape_2d(result_1d, iid, grid_2d):
 
 def watermask(ds_masked, var_name: str):
     water_mask = np.copy(ds_masked.variables[var_name][:, :])
-    """
-    water_mask[~np.isnan(water_mask)] = 1
-    water_mask[np.isnan(water_mask)] = 0
-    """
+    # water_mask[~np.isnan(water_mask)] = 1
+    # water_mask[np.isnan(water_mask)] = 0
 
     # print(np.shape(water_mask))
     water_idx = np.asarray(
