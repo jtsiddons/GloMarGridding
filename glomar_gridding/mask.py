@@ -111,7 +111,10 @@ def mask_array(
     mask_value: Any = True,
 ) -> xr.DataArray:
     """
-    Apply a mask to a DataArray
+    Apply a mask to a DataArray.
+
+    The grid and mask must already align for this function to work. An error
+    will be raised if the coordinate systems cannot be aligned.
 
     Parameters
     ----------
@@ -153,7 +156,10 @@ def mask_dataset(
     mask_value: Any = True,
 ) -> xr.Dataset:
     """
-    Apply a mask to a DataSet
+    Apply a mask to a DataSet.
+
+    The grid and mask must already align for this function to work. An error
+    will be raised if the coordinate systems cannot be aligned.
 
     Parameters
     ----------
