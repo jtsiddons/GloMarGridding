@@ -17,22 +17,26 @@ import yaml
 import numpy as np
 
 # timing tools
-from calendar import isleap, monthrange
+from calendar import isleap
 
 # import datetime as dt
-from datetime import timedelta
+from datetime import date, timedelta
 from netCDF4 import date2num
 
 # data handling tools
-import pandas as pd
 import netCDF4 as nc
+import pandas as pd
 import polars as pl
+import xarray as xr
 
 # self-written modules (from the same directory)
-import glomar_gridding.covariance as cov_module
+from glomar_gridding.distances import haversine_gaussian
+from glomar_gridding.mask import mask_observations
+from glomar_gridding.climatology import match_climatology
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
-import glomar_gridding.kriging as krig_module
+import glomar_gridding.kriging as krig
+import glomar_gridding.error_covariance as err_cov
 
 # PyCOADS functions
 from PyCOADS.processing.solar import is_daytime
@@ -151,25 +155,95 @@ def _initialise_ncfile(
     return lon, lat, time, krig_anom, krig_uncert, grid_obs
 
 
+def _load_covariance(
+    path: str,
+    month: int,
+    cov_var_name: str = "covariance",
+) -> np.ndarray:
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Covariance path: {path} not found")
+    filename: str = f"covariance_{month:02d}.nc"
+    filename = os.path.join(path, filename)
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"Covariance file: {filename} not found")
+
+    return xr.open_dataset(filename, engine="netcdf4")[cov_var_name].values
+
+
+def _load_landmask(path: str, month: int) -> xr.DataArray:
+    return xr.DataArray()
+
+
+def _load_observations(
+    path: str,
+    qc_path: str,
+    qc_tracked_path: str,
+    qc_mat: str,
+    year: int,
+    month: int,
+) -> pl.DataFrame:
+    return pl.DataFrame()
+
+
+def _add_height_adjustment(
+    df: pl.DataFrame,
+    height_adjustment_path: str,
+    year: int,
+    adjusted_height: int,
+    height_member: int,
+    mat_col: str = "obs_anomalies",
+) -> pl.DataFrame:
+    return pl.DataFrame()
+
+
+def _measurement_covariance(
+    df: pl.DataFrame,
+    sig_ms: float,
+    sig_mb: float,
+    sig_bs: float,
+    sig_bb: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    obs_bias_map = {"ship": sig_ms, "buoy": sig_mb}
+    covx1 = err_cov.uncorrelated_components(
+        df, group_col="data_type", obs_sig_map=obs_bias_map
+    )
+    dist, weights = err_cov.dist_weight(df, dist_fn=haversine_gaussian)
+    covx1 = covx1 + dist
+    del dist
+    # print(covx1, covx1.shape)
+    bias_uncert_map = {"ship": sig_bs, "buoy": sig_bb}
+    covx1 = covx1 + err_cov.correlated_components(
+        df,
+        group_col="data_type",
+        bias_sig_map=bias_uncert_map,
+    )
+    return covx1, weights
+
+
+def _get_pentad_range(current_date: date) -> tuple[date, date]:
+    current_year = current_date.year
+    if isleap(current_year):
+        fake_non_leap_year = 2003
+        current_date = current_date.replace(year=fake_non_leap_year)
+        start_date = (current_date - timedelta(days=2)).replace(
+            year=current_year
+        )
+        end_date = (current_date + timedelta(days=2)).replace(year=current_year)
+    else:
+        start_date = current_date - timedelta(days=2)
+        end_date = current_date + timedelta(days=2)
+    return start_date, end_date
+
+
 def main():  # noqa: D103
     config, year_start, year_stop, height_member, method = _parse_args(parser)
 
-    # load config options from ini file
-    # this is done using an ini config file, which is located in the same direcotry as the python code
-    # instantiate
-
-    print(config)
-
-    # read values from auxiliary_files section
-    # for string use config.get
-    # for boolean use config.getboolean
-    # for int use config.getint
-    # for float use config.getfloat
-    # for list (multiple options for same key) use config.getlist
-
     # location of MAT climatology
     climatology = config.get("climatology", {}).get("path")
-    metoffice_climatology = config.get("observations", "metoffice_climatology")
+    # NOTE: just used for pentad date values for alignment
+    metoffice_climatology = config.get("climatology", {}).get(
+        "metoffice_climatology"
+    )
 
     # set boundaries for the domain
     lon_west: float = config.get("domain", {}).get("west", -180.0)
@@ -184,29 +258,33 @@ def main():  # noqa: D103
     sig_bb: float = config.get("parameters", {}).get("sig_bb")
 
     # location of the ICOADS observation files
-    data_path: str = config.get("observations", {}).get("path")
+    data_dir: str = config.get("observations", {}).get("path")
 
-    height_adjustment_path: str | None = None
+    height_adjustment_dir: str | None = None
     adjusted_height: int | None = None
     if height_member > 0:
-        height_adjustment_path = config.get("parameters", {}).get(
+        height_adjustment_dir = config.get("parameters", {}).get(
             "height_adjustments"
         )
         adjusted_height = config.get("parameters", {}).get("adjusted_height")
 
     # location og QC flags in GROUPS subdirectories
     qc_mat = config.get("observations", {}).get("qc")
-    qc_path = config.get("observations", {}).get("icoads_qc_flags")
-    qc_path_2 = config.get("observations", {}).get("icoads_qc_flags_tracked")
+    qc_dir = config.get("observations", {}).get("icoads_qc_flags")
+    qc_dir_tracked = config.get("observations", {}).get(
+        "icoads_qc_flags_tracked"
+    )
 
     # path where the covariance(s) is/are located
     # if single covariance, then full path
     # if several different covariances, then path to directory
-    cov_dir = config.get("covariance", {}).get("path")
+    cov_dir: str = config.get("covariance", {}).get("path")
+    ellipse_param_dir: str = config.get("covariance", {}).get(
+        "ellipse_parameters"
+    )
+    mask_dir: str = config.get("mask", {}).get("path")
 
-    output_directory = config.get("covariance", {}).get("output")
-
-    ellipse_param_path = config.get("covariance", {}).get("ellipse_parameters")
+    output_dir: str = config.get("covariance", {}).get("output")
 
     bnds = [lon_west, lon_east, lat_south, lat_north]
     # extract the latitude and longitude boundaries from user input
@@ -225,29 +303,35 @@ def main():  # noqa: D103
     clim = climatology.t10m_clim_day
     print(clim)
     del climatology
-    # while doing pentad processing, this will set "mid-pentads" dates for the year
+    # while doing pentad processing, this will set "mid-pentads" dates for the
+    # year
     pentad_climatology = obs_module.read_climatology(
         metoffice_climatology, lat_south, lat_north, lon_west, lon_east
     )
     clim_times = pentad_climatology.time
     print(clim_times)
     del pentad_climatology
-    # climatology2 = np.broadcast_to(mask_ds.landmask.values > 0, climatology.climatology.values.shape)
+    # climatology2 = np.broadcast_to(
+    #     mask_ds.landmask.values > 0, climatology.climatology.values.shape
+    # )
 
     year_list = range(year_start, year_stop + 1)
     month_list = range(1, 13, 1)
 
     for current_year in year_list:
         # add MetOffice pentads here
-        yr_rng = pd.date_range("1970/01/03", "1970/12/31", freq="5D")
+        yr_rng = pl.date_range(
+            date(1970, 1, 3), date(1970, 12, 31), interval="5d", eager=True
+        ).alias("dates")
 
-        times2 = [j.replace(year=current_year) for j in yr_rng]
-        print(times2)
-        times_series = pd.Series(times2)
-        by_month = list(
-            times_series.groupby(times_series.map(lambda x: x.month))
+        by_month_frame = (
+            yr_rng.dt.replace(year=current_year)
+            .to_frame()
+            .group_by(pl.col("dates").dt.month().alias("month"))
+            .agg("dates")
         )
-        print(by_month)
+        by_month = {month: dates for month, dates in by_month_frame.rows()}
+        del by_month_frame
 
         try:
             ncfile.close()  # make sure dataset is not already open.
@@ -257,7 +341,6 @@ def main():  # noqa: D103
         except Exception as e:  # Unknown Error
             raise e
 
-        ncfilename = str(output_directory)
         ncfilename = f"{current_year}_{method}_kriged_MAT"
         if height_member:
             # QUESTION: why not the adjusted height value in the filename?
@@ -265,7 +348,7 @@ def main():  # noqa: D103
         # if adjusted_height:
         #     ncfilename += f"_height_{adjusted_height:.2f}m"
         ncfilename += ".nc"
-        ncfilename = os.path.join(output_directory, ncfilename)
+        ncfilename = os.path.join(output_dir, ncfilename)
 
         ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
         # print(ncfile)
@@ -282,62 +365,48 @@ def main():  # noqa: D103
         for current_month in month_list:
             # print(current_month)
 
-            idx, monthly = by_month[current_month - 1]
+            monthly = by_month[current_month - 1]
 
             print(monthly)
-            print(idx)
-            print(monthly.index)
             print("Current month and year: ", (current_month, current_year))
 
-            # covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
-            covariance = cov_module.get_covariance(cov_dir, month=current_month)
+            # covariance = cov_module.get_covariance(cov_dir, month=current_month)
+            covariance = _load_covariance(cov_dir, current_month)
             print(covariance)
             diag_ind = np.diag_indices_from(covariance)
             covariance[diag_ind] = covariance[diag_ind] * 1.01 + 0.005
             print(covariance)
 
             # WARN: Should this be a landmask file rather than covariance?
-            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
-                cov_dir, month=current_month
-            )
+            mask_ds = _load_landmask(mask_dir, month=current_month)
             print(mask_ds)
 
             # read in observations and QC
-            obs_df = obs_qc_module.MAT_main(
-                data_path,
-                qc_path,
-                qc_path_2,
+            obs_df = _load_observations(
+                data_dir,
+                qc_dir,
+                qc_dir_tracked,
                 qc_mat,
                 year=current_year,
                 month=current_month,
             )
-            day_night = pl.from_pandas(
-                obs_df.loc["uid", "datetime", "lon", "lat"]
-            )  # required cols for is_daytime
-            day_night = day_night.pipe(is_daytime)
-            obs_df = obs_df.merge(
-                day_night.select(["uid", "is_daytime"]).to_pandas(), on="uid"
-            )
-            del day_night
-
-            # filter day (1) or night(0)
-            obs_df = obs_df[obs_df["is_daytime"] == 0]
+            obs_df = obs_df.pipe(is_daytime).filter(pl.col("is_daytime").eq(0))
             print(obs_df)  # [['local_datetime', 'is_daytime']])
             # read in climatology here
             # match with obs against DOY
             print(clim)
             # obs_df = obs_qc_module.MAT_match_climatology(obs_df, clim)
-            obs_df = obs_qc_module.MAT_match_climatology_to_obs(clim, obs_df)
+            obs_df: pl.DataFrame = match_climatology(clim, obs_df)
 
             # merge on the height adjustment
             if (
                 height_member > 0
                 and adjusted_height is not None
-                and height_adjustment_path is not None
+                and height_adjustment_dir is not None
             ):
-                obs_df = obs_qc_module.MAT_add_height_adjustment(
+                obs_df = _add_height_adjustment(
                     obs_df,
-                    height_adjustment_path=height_adjustment_path,
+                    height_adjustment_path=height_adjustment_dir,
                     year=current_year,
                     adjusted_height=adjusted_height,
                     height_member=height_member,
@@ -345,15 +414,15 @@ def main():  # noqa: D103
                 )
 
             print(obs_df)
-            print(obs_df.columns.values)
+            print(obs_df.columns)
 
             # read in ellipse parameters file corresponding to the processed file
             month_ellipse_param = obs_qc_module.ellipse_param(
-                ellipse_param_path, month=current_month, var="MAT"
+                ellipse_param_dir, month=current_month, var="MAT"
             )
 
             # list of dates for each year
-            _, month_range = monthrange(current_year, current_month)
+            # _, month_range = monthrange(current_year, current_month)
             # print(month_range)
 
             # if we do MetOffice processing:
@@ -364,51 +433,22 @@ def main():  # noqa: D103
                 timestep = pentad_idx
                 current_date = pentad_date
 
-                if isleap(current_year):
-                    fake_non_leap_year = 1970
-                    current_date = current_date.replace(year=fake_non_leap_year)
-                    start_date = current_date - timedelta(days=2)
-                    end_date = current_date + timedelta(days=2)
-                    start_date = start_date.replace(year=current_year)
-                    end_date = end_date.replace(year=current_year)
-                    print("----------")
-                    print("timestep", timestep)
-                    print("current date", current_date)
-                    print("start date", start_date)
-                    print("end date", end_date)
-                    print("----------")
-                    day_df = obs_df.loc[
-                        (obs_df["datetime"] >= str(start_date))
-                        & (obs_df["datetime"] <= str(end_date))
-                    ]
-                else:
-                    start_date = current_date - timedelta(days=2)
-                    end_date = current_date + timedelta(days=2)
-                    print("----------")
-                    print("timestep", timestep)
-                    print("current date", current_date)
-                    print("start date", start_date)
-                    print("end date", end_date)
-                    print("----------")
-                    day_df = obs_df.loc[
-                        (obs_df["datetime"] >= str(start_date))
-                        & (obs_df["datetime"] <= str(end_date))
-                    ]
-
-                print(f"{day_df =}")
+                start_date, end_date = _get_pentad_range(current_date)
+                day_df = obs_df.filter(
+                    pl.col("datetime").is_between(
+                        start_date, end_date, closed="both"
+                    )
+                )
 
                 # calculate flattened idx based on the ESA landmask file
                 # which is compatible with the ESA-derived covariance
                 # mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-                cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
-                    lon_bnds,
-                    lat_bnds,
+
+                day_df = mask_observations(
                     day_df,
                     mask_ds,
-                    mask_ds_lat,
-                    mask_ds_lon,
+                    varnames="at",
                 )
-                cond_df.reset_index(drop=True, inplace=True)
 
                 # plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
                 # lons = plotting_df['lon']
@@ -448,35 +488,35 @@ def main():  # noqa: D103
                 # #plt.show()
                 # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
 
-                day_flat_idx = cond_df["flattened_idx"][:]
+                # day_flat_idx = day_df.get_column(["flattened_idx")
 
                 # match gridded observations to ellipse parameters
-                cond_df = obs_module.match_ellipse_parameters_to_gridded_obs(
-                    month_ellipse_param, cond_df, mask_ds
+                day_df = obs_module.match_ellipse_parameters_to_gridded_obs(
+                    month_ellipse_param, day_df, mask_ds
                 )
 
-                cond_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
-                gridbox_counts = cond_df["gridbox"].value_counts()
+                day_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
+                gridbox_counts = day_df["gridbox"].value_counts()
                 gridbox_count_np = gridbox_counts.to_numpy()
                 gridbox_id_np = gridbox_counts.index.to_numpy()
                 del gridbox_counts
                 water_mask = np.copy(
                     mask_ds.variables["landice_sea_mask"][:, :]
                 )
-                grid_obs_2d = krig_module.result_reshape_2d(
+                grid_obs_2d = krig.result_reshape_2d(
                     gridbox_count_np, gridbox_id_np, water_mask
                 )
 
-                obs_covariance, W = obs_module.measurement_covariance(
-                    cond_df, day_flat_idx, sig_ms, sig_mb, sig_bs, sig_bb
+                obs_covariance, W = _measurement_covariance(
+                    day_df, sig_ms, sig_mb, sig_bs, sig_bb
                 )
                 print(obs_covariance)
                 print(W)
 
                 # krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(
+                anom, uncert = krig.kriging_main(
                     covariance,
-                    cond_df,
+                    day_df,
                     mask_ds,
                     day_flat_idx,
                     obs_covariance,

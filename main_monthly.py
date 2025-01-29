@@ -8,6 +8,10 @@
 # global
 import os
 
+import xarray as xr
+
+from glomar_gridding.mask import mask_observations
+
 # IMPORTANT: Environmental Variables to limit Numpy
 os.environ["OMP_NUM_THREADS"] = "16"
 os.environ["OPENBLAS_NUM_THREADS"] = "16"
@@ -27,13 +31,15 @@ from netCDF4 import date2num
 
 # data handling tools
 import pandas as pd
+import polars as pl
 import netCDF4 as nc
 
 # self-written modules (from the same directory)
-import glomar_gridding.covariance as cov_module
+import glomar_gridding.covariance as cov
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
-import glomar_gridding.kriging as krig_module
+import glomar_gridding.kriging as krig
+from glomar_gridding.climatology import join_climatology_by_doy
 from glomar_gridding.utils import ConfigParserMultiValues
 
 
@@ -140,10 +146,15 @@ def main():
     print(lon_bnds, lat_bnds)
 
     # land-water-mask for observations
-    water_mask_dir = config.get("covariance", "covariance_path")
-    mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
-        water_mask_dir, month=1
-    )
+    # WARN: Should this not be a landmask file rather than covariance?
+    water_mask_path = config.get("covariance", "covariance_path")
+    mask_file = os.path.join(water_mask_path)
+    mask_ds = xr.DataArray(mask_file)
+    mask_ds_lat = mask_ds.coords["lat"]
+    mask_ds_lon = mask_ds.coords["lon"]
+    # mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
+    #     water_mask_path, month=1
+    # )
     """
     water_mask_file = config.getlist('landmask', 'land_mask')
     print(water_mask_file)
@@ -167,9 +178,7 @@ def main():
 
     year_list = list(range(int(year_start), int(year_stop) + 1, 1))
     month_list = list(range(1, 13, 1))
-    for i in range(len(year_list)):
-        current_year = year_list[i]
-
+    for current_year in year_list:
         print(climatology)
         try:
             ncfile.close()  # make sure dataset is not already open.
@@ -222,27 +231,29 @@ def main():
         lat[:] = mask_ds_lat  # ds.lat.values
         lon[:] = mask_ds_lon  # ds.lon.values
 
-        for j in range(len(month_list)):
-            current_month = month_list[j]
+        for timestep, current_month in enumerate(month_list):
             # print(current_month)
-            obs_df = obs_qc_module.load_icoads_obs(
-                data_path,
-                "sst",
-                qc_path,
-                qc_path_2,
-                year=current_year,
-                month=current_month,
+            obs_df = pl.from_pandas(
+                obs_qc_module.load_icoads_obs(
+                    data_path,
+                    "sst",
+                    qc_path,
+                    qc_path_2,
+                    year=current_year,
+                    month=current_month,
+                )
             )
             # print(obs_df.columns.values)
-            mon_df = obs_df
 
+            # ERROR: I/O.
             # covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
-            covariance = cov_module.get_covariance(cov_dir, month=current_month)
-            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
-                water_mask_dir, month=current_month
+            covariance = cov.get_covariance(cov_dir, month=current_month)
+            mask_ds, mask_ds_lat, mask_ds_lon = cov.get_landmask(
+                # NOTE: water_mask_path is a covariance path...
+                water_mask_path,
+                month=current_month,
             )
 
-            timestep = j
             current_date = datetime(current_year, current_month, 15)
             print("----------")
             print("timestep", timestep)
@@ -254,15 +265,14 @@ def main():
 
             # add climatology value and calculate the SST anomaly
             # mon_df = obs_module.extract_clim_anom(esa_climatology, mon_df)
-            mon_df = obs_qc_module.SST_match_climatology_to_obs(
-                esa_climatology, mon_df
-            )
+            obs_df = join_climatology_by_doy(obs_df, esa_climatology)
             # calculate flattened idx based on the ESA landmask file
             # which is compatible with the ESA-derived covariance
             # mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-            cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
-                lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon
-            )
+            # cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
+            #     lon_bnds, lat_bnds, obs_df, mask_ds, mask_ds_lat, mask_ds_lon
+            # )
+            cond_df = mask_observations(obs_df, mask_ds, varnames=["sst"])
 
             # print(cond_df.columns.values)
             # print(cond_df[['lat', 'lon', 'flattened_idx', 'sst', 'climatology_sst', 'sst_anomaly']])
@@ -311,11 +321,11 @@ def main():
             fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
             """
 
-            mon_flat_idx = cond_df["flattened_idx"][:]
+            mon_flat_idx = cond_df.get_column("flattened_idx")
 
+            # TODO: General measurement_covariance function (error covariance)
             obs_covariance, W = obs_module.measurement_covariance(
                 cond_df,
-                mon_flat_idx,
                 sig_ms=1.27,
                 sig_mb=0.23,
                 sig_bs=1.47,
@@ -325,7 +335,7 @@ def main():
             # print(W)
 
             # krige obs onto gridded field
-            anom, uncert = krig_module.kriging_main(
+            anom, uncert = krig.kriging_main(
                 covariance,
                 mask_ds,
                 cond_df,
@@ -387,7 +397,7 @@ def main():
         # close the Dataset.
         ncfile.close()
         print("Dataset is closed!")
-        STOP
+        raise Exception("STOP")
 
 
 if __name__ == "__main__":

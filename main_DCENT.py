@@ -23,7 +23,7 @@ import netCDF4 as nc
 
 # self-written modules (from the same directory)
 import glomar_gridding.observations as obs_module
-import glomar_gridding.kriging as krig_module
+import glomar_gridding.kriging as krig
 from glomar_gridding.utils import ConfigParserMultiValues
 
 
@@ -385,7 +385,7 @@ def main():
             gridbox_id_np = gridbox_counts.index.to_numpy()
             del gridbox_counts
             water_mask = np.copy(mesh_lat)
-            grid_obs_2d = krig_module.result_reshape_2d(
+            grid_obs_2d = krig.result_reshape_2d(
                 gridbox_count_np, gridbox_id_np, water_mask
             )
 
@@ -418,7 +418,7 @@ def main():
                     "covariance"
                 ].values
 
-            anom, uncert = krig_module.kriging(
+            anom, uncert = krig.kriging(
                 grid_idx,
                 W,
                 np.asarray(mon_df[variable].values),

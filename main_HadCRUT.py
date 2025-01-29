@@ -22,7 +22,7 @@ import netCDF4 as nc
 
 # self-written modules (from the same directory)
 import glomar_gridding.observations as obs_module
-import glomar_gridding.kriging as krig_module
+import glomar_gridding.kriging as krig
 from glomar_gridding.utils import days_since_by_month, ConfigParserMultiValues
 
 import warnings
@@ -34,8 +34,12 @@ def _get_sst_err_cov(
     error_covariance_path: str,
     uncorrelated: xr.Dataset,
 ) -> np.ndarray:
-    err_cov_fn = f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
-    error_cov = xr.open_dataset(os.path.join(error_covariance_path, err_cov_fn))["tas_cov"].values[0]
+    err_cov_fn = (
+        f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
+    )
+    error_cov = xr.open_dataset(
+        os.path.join(error_covariance_path, err_cov_fn)
+    )["tas_cov"].values[0]
     return error_cov
 
 
@@ -105,7 +109,7 @@ def _initialise_ncfile(
     return lon, lat, time, krig_anom, krig_uncert, grid_obs
 
 
-def main():
+def main():  # noqa: D103
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-config",
@@ -397,7 +401,7 @@ def main():
             gridbox_id_np = gridbox_counts.index.to_numpy()
             del gridbox_counts
             water_mask = np.copy(mesh_lat)
-            grid_obs_2d = krig_module.result_reshape_2d(
+            grid_obs_2d = krig.result_reshape_2d(
                 gridbox_count_np, gridbox_id_np, water_mask
             )
 
@@ -416,7 +420,7 @@ def main():
 
             print(mon_df)
 
-            anom, uncert = krig_module.kriging(
+            anom, uncert = krig.kriging(
                 grid_idx,
                 W,
                 mon_df[hadcrut_var].values,

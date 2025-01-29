@@ -35,10 +35,10 @@ import pandas as pd
 import netCDF4 as nc
 
 # self-written modules (from the same directory)
-import glomar_gridding.covariance as cov_module
+import glomar_gridding.covariance as cov
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
-import glomar_gridding.kriging as krig_module
+import glomar_gridding.kriging as krig
 from glomar_gridding.utils import ConfigParserMultiValues
 
 
@@ -253,13 +253,13 @@ def main():
             # print(obs_df.columns.values)
 
             # covariance = cov_module.read_in_covarance_file(cov_dir, month=current_month)
-            covariance = cov_module.get_covariance(cov_dir, month=current_month)
+            covariance = cov.get_covariance(cov_dir, month=current_month)
             print(covariance)
             diag_ind = np.diag_indices_from(covariance)
             covariance[diag_ind] = covariance[diag_ind] * 1.02 + 0.005
             print(covariance)
 
-            mask_ds, mask_ds_lat, mask_ds_lon = cov_module.get_landmask(
+            mask_ds, mask_ds_lat, mask_ds_lon = cov.get_landmask(
                 cov_dir, month=current_month
             )
 
@@ -382,7 +382,7 @@ def main():
                 water_mask = np.copy(
                     mask_ds.variables["landice_sea_mask"][:, :]
                 )
-                grid_obs_2d = krig_module.result_reshape_2d(
+                grid_obs_2d = krig.result_reshape_2d(
                     gridbox_count_np, gridbox_id_np, water_mask
                 )
 
@@ -393,7 +393,7 @@ def main():
                 # print(W)
 
                 # krige obs onto gridded field
-                anom, uncert = krig_module.kriging_main(
+                anom, uncert = krig.kriging_main(
                     covariance,
                     cond_df,
                     mask_ds,
