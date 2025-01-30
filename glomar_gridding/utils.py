@@ -1,8 +1,9 @@
 """Utility functions for GlomarGridding"""
 
+from calendar import isleap
 from collections import OrderedDict
 from collections.abc import Iterable
-from datetime import date
+from datetime import date, timedelta
 from enum import IntEnum
 import inspect
 from typing import TypeVar
@@ -298,3 +299,44 @@ def filter_bounds(
         condition = condition & (pl.col(col).is_between(*bound, closed=close))
 
     return df.filter(condition)
+
+
+# TODO: get pentad convention
+def get_pentad_range(centre_date: date) -> tuple[date, date]:
+    """
+    Get the start and date of a pentad centred at a centre date. If the
+    pentad includes the leap date of 29th Feb then the pentad will include
+    6 days. This follows the ***** pentad convention.
+
+    The start and end date are first calculated from a non-leap year.
+
+    If the centre date value is 29th Feb then the pentad will be a pentad
+    starting on 27th Feb and ending on 2nd March.
+
+    Parameters
+    ----------
+    centre_date : datetime.date
+        The centre date of the pentad. The start date will be 2 days before this
+        date, and the end date will be 2 days after.
+
+    Returns
+    -------
+    start_date : datetime.date
+        Two days before centre_date
+    end_date : datetime.date
+        Two days after centre_date
+    """
+    centre_year = centre_date.year
+    if isleap(centre_year) and not (
+        centre_date.month == 2 and centre_date.day == 29
+    ):
+        fake_non_leap_year = 2003
+        current_date = centre_date.replace(year=fake_non_leap_year)
+        start_date = (current_date - timedelta(days=2)).replace(
+            year=centre_year
+        )
+        end_date = (current_date + timedelta(days=2)).replace(year=centre_year)
+    else:
+        start_date = centre_date - timedelta(days=2)
+        end_date = centre_date + timedelta(days=2)
+    return start_date, end_date
