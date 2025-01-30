@@ -33,6 +33,7 @@ import xarray as xr
 from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.mask import mask_observations
 from glomar_gridding.climatology import match_climatology
+from glomar_gridding.interpolation_covariance import load_covariance
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
 import glomar_gridding.kriging as krig
@@ -153,21 +154,6 @@ def _initialise_ncfile(
     grid_obs.standard_name = "Number of observations within each gridcell"
 
     return lon, lat, time, krig_anom, krig_uncert, grid_obs
-
-
-def _load_covariance(
-    path: str,
-    month: int,
-    cov_var_name: str = "covariance",
-) -> np.ndarray:
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Covariance path: {path} not found")
-    filename: str = f"covariance_{month:02d}.nc"
-    filename = os.path.join(path, filename)
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(f"Covariance file: {filename} not found")
-
-    return xr.open_dataset(filename, engine="netcdf4")[cov_var_name].values
 
 
 def _load_landmask(path: str, month: int) -> xr.DataArray:
@@ -371,7 +357,7 @@ def main():  # noqa: D103
             print("Current month and year: ", (current_month, current_year))
 
             # covariance = cov_module.get_covariance(cov_dir, month=current_month)
-            covariance = _load_covariance(cov_dir, current_month)
+            covariance = load_covariance(cov_dir, current_month)
             print(covariance)
             diag_ind = np.diag_indices_from(covariance)
             covariance[diag_ind] = covariance[diag_ind] * 1.01 + 0.005
