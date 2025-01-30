@@ -34,10 +34,13 @@ from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.mask import mask_observations
 from glomar_gridding.climatology import match_climatology
 from glomar_gridding.interpolation_covariance import load_covariance
+from glomar_gridding.utils import get_pentad_range
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
 import glomar_gridding.kriging as krig
 import glomar_gridding.error_covariance as err_cov
+
+from .noc_helpers import add_height_adjustment
 
 # PyCOADS functions
 from PyCOADS.processing.solar import is_daytime
@@ -171,17 +174,6 @@ def _load_observations(
     return pl.DataFrame()
 
 
-def _add_height_adjustment(
-    df: pl.DataFrame,
-    height_adjustment_path: str,
-    year: int,
-    adjusted_height: int,
-    height_member: int,
-    mat_col: str = "obs_anomalies",
-) -> pl.DataFrame:
-    return pl.DataFrame()
-
-
 def _measurement_covariance(
     df: pl.DataFrame,
     sig_ms: float,
@@ -204,21 +196,6 @@ def _measurement_covariance(
         bias_sig_map=bias_uncert_map,
     )
     return covx1, weights
-
-
-def _get_pentad_range(current_date: date) -> tuple[date, date]:
-    current_year = current_date.year
-    if isleap(current_year):
-        fake_non_leap_year = 2003
-        current_date = current_date.replace(year=fake_non_leap_year)
-        start_date = (current_date - timedelta(days=2)).replace(
-            year=current_year
-        )
-        end_date = (current_date + timedelta(days=2)).replace(year=current_year)
-    else:
-        start_date = current_date - timedelta(days=2)
-        end_date = current_date + timedelta(days=2)
-    return start_date, end_date
 
 
 def main():  # noqa: D103
@@ -390,7 +367,7 @@ def main():  # noqa: D103
                 and adjusted_height is not None
                 and height_adjustment_dir is not None
             ):
-                obs_df = _add_height_adjustment(
+                obs_df = add_height_adjustment(
                     obs_df,
                     height_adjustment_path=height_adjustment_dir,
                     year=current_year,
@@ -419,7 +396,7 @@ def main():  # noqa: D103
                 timestep = pentad_idx
                 current_date = pentad_date
 
-                start_date, end_date = _get_pentad_range(current_date)
+                start_date, end_date = get_pentad_range(current_date)
                 day_df = obs_df.filter(
                     pl.col("datetime").is_between(
                         start_date, end_date, closed="both"
