@@ -41,7 +41,7 @@ covariance:
   # path: "/noc/mpoc/surface_data/stchan/data2/kriging_tests/test_data_2p5_mask_sst_cov_4_aga_1p0_T0p25/covariance_01_v_eq_0p5_Atlantic_Ocean_1p0_T0p25.nc"
   path: "/noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/world/global_covariance_{month:02d}.nc"
   # path: "/noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/atlantic/month_covariance/atlantic_january_covariance.nc"
-  ellipse_parameters: "/noc/mpoc/surface_data/stchan/data2/kriging_tests/Global_With_Poles_UKMO_Grid/underlying_ellipses"
+  ellipse_path: "/noc/mpoc/surface_data/stchan/data2/kriging_tests/Global_With_Poles_UKMO_Grid/underlying_ellipses/Global_With_Poles_{month:02d}_1.0_85.5.nc"
 
 mask:
   # path: "/noc/mpoc/surface_data/stchan/data2/kriging_tests/test_data_2p5_mask_sst_cov_4_aga_1p0_T0p25/1985/data_sample_01_Atlantic_Ocean_1p0_T0p25.nc"
