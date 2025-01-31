@@ -1,5 +1,10 @@
+"""Internal module containing functions used by NOC"""
+
 import polars as pl
 import os
+import xarray as xr
+
+from glomar_gridding.utils import check_cols
 
 
 def add_height_adjustment(
