@@ -17,10 +17,9 @@ import yaml
 import numpy as np
 
 # timing tools
-from calendar import isleap
 
 # import datetime as dt
-from datetime import date, timedelta
+from datetime import date
 from netCDF4 import date2num
 
 # data handling tools
@@ -35,12 +34,13 @@ from glomar_gridding.mask import mask_observations
 from glomar_gridding.climatology import match_climatology
 from glomar_gridding.interpolation_covariance import load_covariance
 from glomar_gridding.utils import get_pentad_range
+from glomar_gridding.io import load_array, load_dataset
 import glomar_gridding.observations as obs_module
 import glomar_gridding.observations_plus_qc as obs_qc_module
 import glomar_gridding.kriging as krig
 import glomar_gridding.error_covariance as err_cov
 
-from .noc_helpers import add_height_adjustment
+from .noc_helpers import add_height_adjustment, merge_ellipse_params
 
 # PyCOADS functions
 from PyCOADS.processing.solar import is_daytime
@@ -157,10 +157,6 @@ def _initialise_ncfile(
     grid_obs.standard_name = "Number of observations within each gridcell"
 
     return lon, lat, time, krig_anom, krig_uncert, grid_obs
-
-
-def _load_landmask(path: str, month: int) -> xr.DataArray:
-    return xr.DataArray()
 
 
 def _load_observations(
@@ -334,14 +330,18 @@ def main():  # noqa: D103
             print("Current month and year: ", (current_month, current_year))
 
             # covariance = cov_module.get_covariance(cov_dir, month=current_month)
-            covariance = load_covariance(cov_dir, current_month)
+            covariance: np.ndarray = load_covariance(
+                cov_dir, month=current_month
+            )
             print(covariance)
+            # INFO: Adjust diagonal to ensure positive definiteness
             diag_ind = np.diag_indices_from(covariance)
             covariance[diag_ind] = covariance[diag_ind] * 1.01 + 0.005
             print(covariance)
 
-            # WARN: Should this be a landmask file rather than covariance?
-            mask_ds = _load_landmask(mask_dir, month=current_month)
+            mask_ds: xr.DataArray = load_array(
+                mask_dir, var="mask", month=current_month
+            )
             print(mask_ds)
 
             # read in observations and QC
@@ -380,8 +380,8 @@ def main():  # noqa: D103
             print(obs_df.columns)
 
             # read in ellipse parameters file corresponding to the processed file
-            month_ellipse_param = obs_qc_module.ellipse_param(
-                ellipse_param_dir, month=current_month, var="MAT"
+            month_ellipse_param = load_dataset(
+                ellipse_param_dir, month=current_month
             )
 
             # list of dates for each year
@@ -397,7 +397,7 @@ def main():  # noqa: D103
                 current_date = pentad_date
 
                 start_date, end_date = get_pentad_range(current_date)
-                day_df = obs_df.filter(
+                pentad_df = obs_df.filter(
                     pl.col("datetime").is_between(
                         start_date, end_date, closed="both"
                     )
@@ -407,10 +407,12 @@ def main():  # noqa: D103
                 # which is compatible with the ESA-derived covariance
                 # mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
 
-                day_df = mask_observations(
-                    day_df,
+                # Align the observations to the mask
+                pentad_df = mask_observations(
+                    pentad_df,
                     mask_ds,
                     varnames="at",
+                    align_to_mask=True,
                 )
 
                 # plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
@@ -451,15 +453,13 @@ def main():  # noqa: D103
                 # #plt.show()
                 # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
 
-                # day_flat_idx = day_df.get_column(["flattened_idx")
+                # day_flat_idx = day_df.get_column(["flattened_idx"])
 
                 # match gridded observations to ellipse parameters
-                day_df = obs_module.match_ellipse_parameters_to_gridded_obs(
-                    month_ellipse_param, day_df, mask_ds
-                )
+                pentad_df = merge_ellipse_params(month_ellipse_param, pentad_df)
 
-                day_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
-                gridbox_counts = day_df["gridbox"].value_counts()
+                pentad_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
+                gridbox_counts = pentad_df["gridbox"].value_counts()
                 gridbox_count_np = gridbox_counts.to_numpy()
                 gridbox_id_np = gridbox_counts.index.to_numpy()
                 del gridbox_counts
@@ -471,7 +471,7 @@ def main():  # noqa: D103
                 )
 
                 obs_covariance, W = _measurement_covariance(
-                    day_df, sig_ms, sig_mb, sig_bs, sig_bb
+                    pentad_df, sig_ms, sig_mb, sig_bs, sig_bb
                 )
                 print(obs_covariance)
                 print(W)
@@ -479,7 +479,7 @@ def main():  # noqa: D103
                 # krige obs onto gridded field
                 anom, uncert = krig.kriging_main(
                     covariance,
-                    day_df,
+                    pentad_df,
                     mask_ds,
                     day_flat_idx,
                     obs_covariance,

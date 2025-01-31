@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
+import os
 from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
