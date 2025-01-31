@@ -55,3 +55,48 @@ def add_height_adjustment(
         (pl.col(mat_col) - pl.col(hadj_col)).alias(mat_col)
     ).drop(hadj_col)
     return df
+
+
+def merge_ellipse_params(
+    ellipse_monthly_array: xr.Dataset,
+    df: pl.DataFrame,
+) -> pl.DataFrame:
+    """
+    Join an xarray.Dataset containing NOC ellipse parameters to an observation
+    dataframe.
+
+    Parameters
+    ----------
+    ellipse_monthly_array : xarray.Dataset
+        The Dataset containing the ellipse parameters, which are the following
+        parameters defining the ellipse at a given gridcell lat/lon:
+            - "lx": the length of the major axis
+            - "ly": the length of the minor axis
+            - "theta": the angle of the ellipse positive such that a value of
+              0 would represent an ellipse with the major axis aligned
+              east-west.
+    df : polars.DataFrame
+        The observational dataframe, containing "gridcell_lat" and
+        "gridcell_lon" columns used to join the ellipse parameters.
+
+    Returns
+    -------
+    df : polars.DataFrame
+        With additional columns "gridcell_lx", "gridcell_lx", "gridcell_theta"
+        containing the ellipse parameters for a given gridcell.
+    """
+    required_cols = ["gridcell_lat", "gridcell_lon"]
+    check_cols(df, required_cols)
+    ellipse_df = pl.from_pandas(
+        ellipse_monthly_array.to_dataframe().reset_index(drop=False)
+    )
+
+    df = df.join(
+        ellipse_df,
+        left_on=["gridcell_lat", "gridcell_lon"],
+        right_on=["latitude", "longitude"],
+    )
+    df = df.rename(
+        {"lx": "gridcell_lx", "ly": "gridcell_ly", "theta": "gridcell_theta"}
+    )
+    return df
