@@ -3,9 +3,9 @@ Functions for computing (components of) the interpolation covariance matrix
 used for the interpolation step.
 """
 
-import os
-import xarray as xr
 import numpy as np
+
+from glomar_gridding.io import load_array
 
 
 def load_covariance(
@@ -32,15 +32,4 @@ def load_covariance(
         A numpy matrix containing the covariance matrix loaded from the netCDF
         file determined by the input arguments.
     """
-    if os.path.isfile(path):
-        filename = path
-    elif kwargs:
-        if not os.path.isdir(os.path.dirname(path)):
-            raise FileNotFoundError(f"Covariance path: {path} not found")
-        filename = path.format(**kwargs)
-        if not os.path.isfile(filename):
-            raise FileNotFoundError(f"Covariance file: {filename} not found")
-    else:
-        raise FileNotFoundError("Cannot determine filename")
-
-    return xr.open_dataset(filename, engine="netcdf4")[cov_var_name].values
+    return load_array(path, cov_var_name, **kwargs).values
