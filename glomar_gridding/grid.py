@@ -82,10 +82,14 @@ def align_to_grid(
         order="C",  # row-major
     )
 
-    obs[grid_prefix + "idx"] = flattened_idx
+    obs = obs.with_columns(pl.Series(grid_prefix + "idx", flattened_idx))
     if add_grid_pts:
-        for grid_pos, obs_coord in zip(obs_to_grid_pos, obs_coords):
-            obs[grid_prefix + obs_coord] = grid_pos
+        obs = obs.with_columns(
+            [
+                pl.Series(grid_prefix + obs_coord, grid_pos)
+                for grid_pos, obs_coord in zip(obs_to_grid_pos, obs_coords)
+            ]
+        )
 
     if sort:
         obs = obs.sort("grid_idx", descending=False)
