@@ -1,10 +1,47 @@
 """Internal module containing functions used by NOC"""
 
+from warnings import warn
 import polars as pl
 import os
+import glob
 import xarray as xr
 
 from glomar_gridding.utils import check_cols
+
+
+def _get_clim_qc(var: str) -> list[str]:
+    match var:
+        case "at":
+            return [
+                "noval_at",
+                "hardlim_at",
+                "nonorm_at",
+                "clim_at",
+            ]
+        case "sst":
+            return [
+                "noval_sst",
+                "hardlim_sst",
+                "nonorm_sst",
+                "clim_sst",
+                "freez_sst",
+            ]
+        case "slp":
+            return [
+                "noval_slp",
+                "clim_slp",
+                "nonorm_slp",
+            ]
+        case "dpt":
+            return [
+                "noval_dpt",
+                "clim_dpt",
+                "nonorm_dpt",
+                "ssat",
+            ]
+        case _:
+            warn(f"No climatological qc columns for {var}")
+            return []
 
 
 def add_height_adjustment(
@@ -105,3 +142,133 @@ def merge_ellipse_params(
         {"lx": "gridcell_lx", "ly": "gridcell_ly", "theta": "gridcell_theta"}
     )
     return df
+
+
+def read_groups(
+    path: str,
+    schema: dict[str, pl.DataType] | None = None,
+    **kwargs,
+) -> pl.DataFrame:
+    """
+    Read a series of feather files identified by a format string and globbing.
+
+    Parameters
+    ----------
+    path : str
+        Path to the files. Can include named format blocks and globbing.
+    **kwargs
+        Keywords indicating replacements for the format strings
+    """
+    if kwargs:
+        path = path.format(**kwargs)
+    files: list[str] = glob.glob(path)
+    if not files:
+        warn(f"No files found from {path = }")
+        if schema:
+            return pl.DataFrame(schema=schema)
+        return pl.DataFrame()
+
+    if not schema:
+
+        def _reader(file) -> pl.DataFrame:
+            return pl.read_ipc(file, memory_map=False)
+    else:
+
+        def _reader(file) -> pl.DataFrame:
+            return pl.read_ipc(
+                file,
+                memory_map=False,
+                columns=list(schema.keys()),
+            ).cast(schema)
+
+    return pl.concat(map(_reader, files), how="diagonal")
+
+
+def load_icoads(
+    path: str,
+    qc_path: str,
+    var: str,
+    year: int,
+    month: int,
+) -> pl.DataFrame:
+    """
+    Load the ICOADS data from output of PyCOADS for the given year and month.
+
+    Parameters
+    ----------
+    path : str
+        Path to the main input data, which includes the climatological columns.
+        The value `path` can contain format replacements for "year" and "month",
+        the values for which are replaced with the year and month arguments.
+    qc_path : str
+        Path to the tracking and duplicate qc flags. Can contain formats
+        for "year" and "month".
+    var : str
+        Name of the variable to extract data for. Also used to identify
+        climatological qc columns.
+    year : int
+        Year of the data. Used as the replacement value in the format strings
+        for path, qc_path.
+    month : int
+        Month of the data. Used as the replacement value in the format strings
+        for path, qc_path.
+
+    Returns
+    -------
+    df : polars.DataFrame
+        The ICOADS data plus climatological, duplicate, and track QC flags.
+    """
+    clim_qc_cols = _get_clim_qc(var)
+    data_columns = {
+        "yr": pl.UInt16,
+        "mo": pl.UInt8,
+        "dy": pl.UInt8,
+        "hr": pl.Float32,
+        "lat": pl.Float32,
+        "lon": pl.Float32,
+        var: pl.Float32,
+        "ii": pl.UInt8,
+        "id": pl.String,
+        "uid": pl.String,
+        "dck": pl.UInt16,
+    }
+    data_columns = data_columns.update({k: pl.Boolean for k in clim_qc_cols})
+    qc_columns = {
+        "uid": pl.String,
+        "dck": pl.UInt16,
+        "datetime": pl.Datetime,
+        "local_datetime": pl.Datetime,
+        "orig_id": pl.String,
+        "data_type": pl.String,
+        "any_flag": pl.Boolean,
+        "point_dup_flag": pl.UInt8,
+        "track_dup_flag": pl.Boolean,
+    }
+
+    df = read_groups(path, data_columns, year=year, month=month)
+    qc_df = read_groups(qc_path, qc_columns, year=year, month=month)
+
+    if qc_df.height == 0:
+        raise ValueError("No data, or don't have the flags")
+    else:
+        qc_df = qc_df.filter(~pl.any_horizontal(qc_columns))
+        # print(qc_df)
+
+        # when merging with FINAL_PROC datafiles, which are not pre-appended
+        qc_df = qc_df.with_columns(pl.col("uid").str.slice(-6).name.keep())
+
+        # extra bit to check for duplicates in uid
+        if qc_df["uid"].is_duplicated().any():
+            raise ValueError("Data contains duplicated UIDs.")
+        # duplicate_values = qc_df["uid"].is_duplicated()
+        # print(duplicate_values[duplicate_values== True])
+        # remove duplicate values in uid column
+        qc_df.drop("dck", strict=True)
+        qc_df = qc_df.filter(
+            ~pl.col("any_flag")
+            & pl.col("point_dup_flag").le(1)
+            & ~pl.col("track_dup_flag")
+        )
+        # print('QC DF', qc_df) #.columns)
+
+    return df.join(qc_df, on="uid", how="inner").sort("datetime")
