@@ -10,13 +10,10 @@ import os
 
 # argument parser
 import argparse
-
 import yaml
 
 # math tools
 import numpy as np
-
-# timing tools
 
 # import datetime as dt
 from datetime import date
@@ -29,14 +26,15 @@ import polars as pl
 import xarray as xr
 
 # self-written modules (from the same directory)
+from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.mask import mask_observations
-from glomar_gridding.climatology import match_climatology
+from glomar_gridding.climatology import join_climatology_by_doy
 from glomar_gridding.interpolation_covariance import load_covariance
+from glomar_gridding.matern_and_tm.matern_tau import tau_dist
 from glomar_gridding.utils import get_pentad_range
 from glomar_gridding.io import load_array, load_dataset
 import glomar_gridding.observations as obs_module
-import glomar_gridding.observations_plus_qc as obs_qc_module
 import glomar_gridding.kriging as krig
 import glomar_gridding.error_covariance as err_cov
 
@@ -181,7 +179,7 @@ def _measurement_covariance(
     covx1 = err_cov.uncorrelated_components(
         df, group_col="data_type", obs_sig_map=obs_bias_map
     )
-    dist, weights = err_cov.dist_weight(df, dist_fn=haversine_gaussian)
+    dist, weights = err_cov.dist_weight(df, dist_fn=tau_dist)
     covx1 = covx1 + dist
     del dist
     # print(covx1, covx1.shape)
@@ -330,6 +328,7 @@ def main():  # noqa: D103
             print("Current month and year: ", (current_month, current_year))
 
             # covariance = cov_module.get_covariance(cov_dir, month=current_month)
+            # interpolation covariance
             covariance: np.ndarray = load_covariance(
                 cov_dir, month=current_month
             )
@@ -359,7 +358,7 @@ def main():  # noqa: D103
             # match with obs against DOY
             print(clim)
             # obs_df = obs_qc_module.MAT_match_climatology(obs_df, clim)
-            obs_df: pl.DataFrame = match_climatology(clim, obs_df)
+            obs_df: pl.DataFrame = join_climatology_by_doy(obs_df, clim)
 
             # merge on the height adjustment
             if (
@@ -389,12 +388,8 @@ def main():  # noqa: D103
             # print(month_range)
 
             # if we do MetOffice processing:
-            for pentad_idx, pentad_date in enumerate(monthly):
-                print(pentad_date)
-                print(pentad_idx)
-
-                timestep = pentad_idx
-                current_date = pentad_date
+            for timestep, current_date in enumerate(monthly):
+                print(f"Doing iteration {timestep} for date {current_date}")
 
                 start_date, end_date = get_pentad_range(current_date)
                 pentad_df = obs_df.filter(
@@ -458,34 +453,38 @@ def main():  # noqa: D103
                 # match gridded observations to ellipse parameters
                 pentad_df = merge_ellipse_params(month_ellipse_param, pentad_df)
 
-                pentad_df["gridbox"] = day_flat_idx  # .values.reshape(-1)
-                gridbox_counts = pentad_df["gridbox"].value_counts()
-                gridbox_count_np = gridbox_counts.to_numpy()
-                gridbox_id_np = gridbox_counts.index.to_numpy()
+                gridbox_counts = pentad_df["grid_idx"].value_counts()
+                grid_obs_2d: np.ndarray = assign_to_grid(
+                    gridbox_counts["count"].to_numpy(),
+                    gridbox_counts["grid_idx"].to_numpy(),
+                    mask_ds["landice_sea_mask"],
+                ).values
                 del gridbox_counts
-                water_mask = np.copy(
-                    mask_ds.variables["landice_sea_mask"][:, :]
-                )
-                grid_obs_2d = krig.result_reshape_2d(
-                    gridbox_count_np, gridbox_id_np, water_mask
-                )
 
+                # Error Covariance
                 obs_covariance, W = _measurement_covariance(
                     pentad_df, sig_ms, sig_mb, sig_bs, sig_bb
                 )
-                print(obs_covariance)
-                print(W)
 
                 # krige obs onto gridded field
-                anom, uncert = krig.kriging_main(
-                    covariance,
-                    pentad_df,
-                    mask_ds,
-                    day_flat_idx,
-                    obs_covariance,
-                    W,
-                    kriging_method=method,
+                grid_idx_with_obs = (
+                    pentad_df["grid_idx"].unique().sort().to_numpy()
                 )
+
+                anom, uncert = krig.kriging(
+                    obs_idx=grid_idx_with_obs,
+                    weights=W,
+                    obs=pentad_df["anomaly"].to_numpy(),
+                    interp_cov=covariance,
+                    error_cov=obs_covariance,
+                    method=method,
+                )
+                anom = assign_to_grid(
+                    anom, grid_idx_with_obs, mask_ds["landice_sea_mask"]
+                ).values
+                uncert = assign_to_grid(
+                    uncert, grid_idx_with_obs, mask_ds["landice_sea_mask"]
+                ).values
                 print("Kriging done, saving output")
 
                 # fig = plt.figure(figsize=(10, 5))
@@ -514,16 +513,16 @@ def main():  # noqa: D103
                 )  # ordinary_kriging
                 grid_obs[timestep, :, :] = grid_obs_2d.astype(np.float32)
                 print("-- Wrote data")
-                print(pentad_idx, pentad_date)
+                print(timestep, current_date)
 
         # Write time
         # pd.date_range takes month/day/year as input dates
-        clim_times_updated = [
+        clim_times_current_year = [
             j.replace(year=current_year)
             for j in pd.to_datetime(clim_times.data)
         ]
-        print(clim_times_updated)
-        dates_ = pd.Series(clim_times_updated)
+        print(clim_times_current_year)
+        dates_ = pd.Series(clim_times_current_year)
         dates = dates_.dt.to_pydatetime()  # Here it becomes date
         print("pydate", dates)
 
