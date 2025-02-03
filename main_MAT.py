@@ -1,47 +1,41 @@
-#!/usr/bin/env python
+#!/usr/bin/env python  # noqa: D100
 
 ################
 # by A. Faulkner
 # for python version 3.0 and up
 ################
 
-# global
-import os
-
 # argument parser
 import argparse
-import yaml
-
-# math tools
-import numpy as np
-
-# import datetime as dt
+import os
 from datetime import date
-from netCDF4 import date2num
-
-# data handling tools
 import netCDF4 as nc
-import pandas as pd
+import numpy as np
 import polars as pl
 import xarray as xr
-
-# self-written modules (from the same directory)
-from glomar_gridding.grid import assign_to_grid
-from glomar_gridding.distances import haversine_gaussian
-from glomar_gridding.mask import mask_observations
-from glomar_gridding.climatology import join_climatology_by_doy
-from glomar_gridding.interpolation_covariance import load_covariance
-from glomar_gridding.matern_and_tm.matern_tau import tau_dist
-from glomar_gridding.utils import get_pentad_range
-from glomar_gridding.io import load_array, load_dataset
-import glomar_gridding.observations as obs_module
-import glomar_gridding.kriging as krig
-import glomar_gridding.error_covariance as err_cov
-
-from .noc_helpers import add_height_adjustment, merge_ellipse_params
+import yaml
+from netCDF4 import date2num
 
 # PyCOADS functions
 from PyCOADS.processing.solar import is_daytime
+
+import glomar_gridding.error_covariance as err_cov
+import glomar_gridding.kriging as krig
+import glomar_gridding.observations as obs_module
+from glomar_gridding.climatology import join_climatology_by_doy
+from glomar_gridding.grid import assign_to_grid
+from glomar_gridding.interpolation_covariance import load_covariance
+from glomar_gridding.io import load_array, load_dataset
+from glomar_gridding.mask import mask_observations
+from glomar_gridding.matern_and_tm.matern_tau import tau_dist
+from glomar_gridding.utils import get_pentad_range
+
+# NOC Specific Helper Fucntions
+from .noc_helpers import (
+    add_height_adjustment,
+    merge_ellipse_params,
+    load_icoads,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -69,7 +63,7 @@ parser.add_argument(
     "-height_member",
     dest="height_member",
     required=False,
-    help="height member: if height member is 0, no height adjustment is performed.",
+    help="height member: if height member is 0, no height adjustment is added.",
     type=int,
     default=0,
 )
@@ -157,17 +151,6 @@ def _initialise_ncfile(
     return lon, lat, time, krig_anom, krig_uncert, grid_obs
 
 
-def _load_observations(
-    path: str,
-    qc_path: str,
-    qc_tracked_path: str,
-    qc_mat: str,
-    year: int,
-    month: int,
-) -> pl.DataFrame:
-    return pl.DataFrame()
-
-
 def _measurement_covariance(
     df: pl.DataFrame,
     sig_ms: float,
@@ -176,20 +159,20 @@ def _measurement_covariance(
     sig_bb: float,
 ) -> tuple[np.ndarray, np.ndarray]:
     obs_bias_map = {"ship": sig_ms, "buoy": sig_mb}
-    covx1 = err_cov.uncorrelated_components(
+    cov = err_cov.uncorrelated_components(
         df, group_col="data_type", obs_sig_map=obs_bias_map
     )
     dist, weights = err_cov.dist_weight(df, dist_fn=tau_dist)
-    covx1 = covx1 + dist
+    cov = cov + dist
     del dist
     # print(covx1, covx1.shape)
     bias_uncert_map = {"ship": sig_bs, "buoy": sig_bb}
-    covx1 = covx1 + err_cov.correlated_components(
+    cov = cov + err_cov.correlated_components(
         df,
         group_col="data_type",
         bias_sig_map=bias_uncert_map,
     )
-    return covx1, weights
+    return cov, weights
 
 
 def main():  # noqa: D103
@@ -226,11 +209,7 @@ def main():  # noqa: D103
         adjusted_height = config.get("parameters", {}).get("adjusted_height")
 
     # location og QC flags in GROUPS subdirectories
-    qc_mat = config.get("observations", {}).get("qc")
     qc_dir = config.get("observations", {}).get("icoads_qc_flags")
-    qc_dir_tracked = config.get("observations", {}).get(
-        "icoads_qc_flags_tracked"
-    )
 
     # path where the covariance(s) is/are located
     # if single covariance, then full path
@@ -262,10 +241,13 @@ def main():  # noqa: D103
     del climatology
     # while doing pentad processing, this will set "mid-pentads" dates for the
     # year
+    # Do we need this if we are computing later
     pentad_climatology = obs_module.read_climatology(
         metoffice_climatology, lat_south, lat_north, lon_west, lon_east
     )
-    clim_times = pentad_climatology.time
+    clim_times = (
+        pl.from_numpy(pentad_climatology.time).to_series().cast(pl.Datetime)
+    )
     print(clim_times)
     del pentad_climatology
     # climatology2 = np.broadcast_to(
@@ -288,7 +270,7 @@ def main():  # noqa: D103
             .agg("dates")
         )
         by_month = {month: dates for month, dates in by_month_frame.rows()}
-        del by_month_frame
+        del by_month_frame, yr_rng
 
         try:
             ncfile.close()  # make sure dataset is not already open.
@@ -327,7 +309,6 @@ def main():  # noqa: D103
             print(monthly)
             print("Current month and year: ", (current_month, current_year))
 
-            # covariance = cov_module.get_covariance(cov_dir, month=current_month)
             # interpolation covariance
             covariance: np.ndarray = load_covariance(
                 cov_dir, month=current_month
@@ -344,11 +325,10 @@ def main():  # noqa: D103
             print(mask_ds)
 
             # read in observations and QC
-            obs_df = _load_observations(
+            obs_df = load_icoads(
                 data_dir,
                 qc_dir,
-                qc_dir_tracked,
-                qc_mat,
+                var="at",
                 year=current_year,
                 month=current_month,
             )
@@ -378,7 +358,8 @@ def main():  # noqa: D103
             print(obs_df)
             print(obs_df.columns)
 
-            # read in ellipse parameters file corresponding to the processed file
+            # read in ellipse parameters file corresponding to the processed
+            # file
             month_ellipse_param = load_dataset(
                 ellipse_param_dir, month=current_month
             )
@@ -399,9 +380,6 @@ def main():  # noqa: D103
                 )
 
                 # calculate flattened idx based on the ESA landmask file
-                # which is compatible with the ESA-derived covariance
-                # mask_ds, mask_ds_lat, mask_ds_lon = obs_module.landmask(water_mask_file, lat_south,lat_north, lon_west,lon_east)
-
                 # Align the observations to the mask
                 pentad_df = mask_observations(
                     pentad_df,
@@ -410,44 +388,126 @@ def main():  # noqa: D103
                     align_to_mask=True,
                 )
 
-                # plotting_df = cond_df[['lon', 'lat', 'sst', 'climatology_sst', 'sst_anomaly']]
-                # lons = plotting_df['lon']
-                # lats = plotting_df['lat']
-                # ssts = plotting_df['sst']
-                # clims = plotting_df['climatology_sst']
-                # anoms = plotting_df['sst_anomaly']
+                # plotting_df = cond_df[
+                #     ["lon", "lat", "sst", "climatology_sst", "sst_anomaly"]
+                # ]
+                # lons = plotting_df["lon"]
+                # lats = plotting_df["lat"]
+                # ssts = plotting_df["sst"]
+                # clims = plotting_df["climatology_sst"]
+                # anoms = plotting_df["sst_anomaly"]
                 #
-                # skwargs = {'s': 2, 'c': 'red'}
+                # skwargs = {"s": 2, "c": "red"}
                 # fig = plt.figure(figsize=(10, 5))
                 # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                # cp.projected_scatter(fig, ax, lons, lats, skwargs=skwargs, title='ICOADS locations - '+str(pentad_idx)+' pentad '+ str(current_year)+' year')
-                # #plt.show()
-                # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%spoints.png' % (str(current_year), str(pentad_idx)))
+                # cp.projected_scatter(
+                #     fig,
+                #     ax,
+                #     lons,
+                #     lats,
+                #     skwargs=skwargs,
+                #     title="ICOADS locations - "
+                #     + str(pentad_idx)
+                #     + " pentad "
+                #     + str(current_year)
+                #     + " year",
+                # )
+                # # plt.show()
+                # fig.savefig(
+                #     "/noc/users/agfaul/ellipse_kriging/%s_%spoints.png"
+                #     % (str(current_year), str(pentad_idx))
+                # )
                 #
-                # skwargs = {'s': 2, 'c': ssts, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                # ckwargs = {'label': 'SST [deg C]'}
+                # skwargs = {
+                #     "s": 2,
+                #     "c": ssts,
+                #     "cmap": plt.cm.get_cmap("coolwarm"),
+                #     "clim": (-10, 14),
+                # }
+                # ckwargs = {"label": "SST [deg C]"}
                 # fig = plt.figure(figsize=(10, 5))
                 # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                # cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS measured SST -' +str(pentad_idx)+ ' pentad ' + str(current_year)+' year', land_col='darkolivegreen')
-                # #plt.show()
-                # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%ssst.png' % (str(current_year), str(pentad_idx)))
+                # cp.projected_scatter(
+                #     fig,
+                #     ax,
+                #     lons,
+                #     lats,
+                #     add_colorbar=True,
+                #     skwargs=skwargs,
+                #     ckwargs=ckwargs,
+                #     title="ICOADS measured SST -"
+                #     + str(pentad_idx)
+                #     + " pentad "
+                #     + str(current_year)
+                #     + " year",
+                #     land_col="darkolivegreen",
+                # )
+                # # plt.show()
+                # fig.savefig(
+                #     "/noc/users/agfaul/ellipse_kriging/%s_%ssst.png"
+                #     % (str(current_year), str(pentad_idx))
+                # )
                 #
-                # skwargs = {'s': 2, 'c': clims, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                # ckwargs = {'label': 'SST [deg C]'}
+                # skwargs = {
+                #     "s": 2,
+                #     "c": clims,
+                #     "cmap": plt.cm.get_cmap("coolwarm"),
+                #     "clim": (-10, 14),
+                # }
+                # ckwargs = {"label": "SST [deg C]"}
                 # fig = plt.figure(figsize=(10, 5))
                 # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                # cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ESA CCI climatology - '+str(pentad_idx)+' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                # #plt.show()
-                # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sclim.png' % (str(current_year), str(pentad_idx)))
+                # cp.projected_scatter(
+                #     fig,
+                #     ax,
+                #     lons,
+                #     lats,
+                #     add_colorbar=True,
+                #     skwargs=skwargs,
+                #     ckwargs=ckwargs,
+                #     title="ESA CCI climatology - "
+                #     + str(pentad_idx)
+                #     + " pentad "
+                #     + str(current_year)
+                #     + " year",
+                #     land_col="darkolivegreen",
+                # )
+                # # plt.show()
+                # fig.savefig(
+                #     "/noc/users/agfaul/ellipse_kriging/%s_%sclim.png"
+                #     % (str(current_year), str(pentad_idx))
+                # )
                 #
-                # skwargs = {'s': 2, 'c': anoms, 'cmap': plt.cm.get_cmap('coolwarm'), 'clim': (-10, 14)}
-                # ckwargs = {'label': 'SST [deg C]'}
+                # skwargs = {
+                #     "s": 2,
+                #     "c": anoms,
+                #     "cmap": plt.cm.get_cmap("coolwarm"),
+                #     "clim": (-10, 14),
+                # }
+                # ckwargs = {"label": "SST [deg C]"}
                 # fig = plt.figure(figsize=(10, 5))
                 # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                # cp.projected_scatter(fig, ax, lons, lats, add_colorbar=True, skwargs=skwargs, ckwargs=ckwargs, title='ICOADS SST anomalies - '+str(pentad_idx)+ ' pentad '+ str(current_year)+' year', land_col='darkolivegreen')
-                # #plt.show()
-                # fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%sanom.png' % (str(current_year), str(pentad_idx)))
-
+                # cp.projected_scatter(
+                #     fig,
+                #     ax,
+                #     lons,
+                #     lats,
+                #     add_colorbar=True,
+                #     skwargs=skwargs,
+                #     ckwargs=ckwargs,
+                #     title="ICOADS SST anomalies - "
+                #     + str(pentad_idx)
+                #     + " pentad "
+                #     + str(current_year)
+                #     + " year",
+                #     land_col="darkolivegreen",
+                # )
+                # # plt.show()
+                # fig.savefig(
+                #     "/noc/users/agfaul/ellipse_kriging/%s_%sanom.png"
+                #     % (str(current_year), str(pentad_idx))
+                # )
+                #
                 # day_flat_idx = day_df.get_column(["flattened_idx"])
 
                 # match gridded observations to ellipse parameters
@@ -488,20 +548,36 @@ def main():  # noqa: D103
                 print("Kriging done, saving output")
 
                 # fig = plt.figure(figsize=(10, 5))
-                # img_extent = (-180., 180., -90., 90.)
+                # img_extent = (-180.0, 180.0, -90.0, 90.0)
                 # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                # ax.set_extent([-180., 180., -90., 90.], crs=ccrs.PlateCarree())
-                # ax.add_feature(cfeature.LAND, color='darkolivegreen')
+                # ax.set_extent(
+                #     [-180.0, 180.0, -90.0, 90.0], crs=ccrs.PlateCarree()
+                # )
+                # ax.add_feature(cfeature.LAND, color="darkolivegreen")
                 # ax.coastlines()
-                # m = plt.imshow(np.flipud(obs_ok_2d), origin='upper', extent=img_extent, transform=ccrs.PlateCarree()) #, cmap=plt.cm.get_cmap('coolwarm'))
+                # m = plt.imshow(
+                #     np.flipud(obs_ok_2d),
+                #     origin="upper",
+                #     extent=img_extent,
+                #     transform=ccrs.PlateCarree(),
+                # )  # , cmap=plt.cm.get_cmap('coolwarm'))
                 # fig.colorbar(m)
                 # plt.clim(-4, 4)
                 # gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True)
                 # gl.xlabels_top = False
                 # gl.ylabels_right = False
-                # ax.set_title('Kriged SST anomalies ' +str(pentad_idx)+' pentad '+str(current_year)+' year')
+                # ax.set_title(
+                #     "Kriged SST anomalies "
+                #     + str(pentad_idx)
+                #     + " pentad "
+                #     + str(current_year)
+                #     + " year"
+                # )
                 # plt.show()
-                # #fig.savefig('/noc/users/agfaul/ellipse_kriging/%s_%skriged.png' % (str(current_year), str(pentad_idx)))
+                # fig.savefig(
+                #     "/noc/users/agfaul/ellipse_kriging/%s_%skriged.png"
+                #     % (str(current_year), str(pentad_idx))
+                # )
 
                 # Write the data.
                 # This writes each time slice to the netCDF
@@ -517,21 +593,9 @@ def main():  # noqa: D103
 
         # Write time
         # pd.date_range takes month/day/year as input dates
-        clim_times_current_year = [
-            j.replace(year=current_year)
-            for j in pd.to_datetime(clim_times.data)
-        ]
-        print(clim_times_current_year)
-        dates_ = pd.Series(clim_times_current_year)
-        dates = dates_.dt.to_pydatetime()  # Here it becomes date
-        print("pydate", dates)
+        dates = clim_times.dt.replace(year=current_year)
 
-        times = date2num(dates, time.units)
-
-        print("==== Times to be saved ====")
-        print(times)
-
-        time[:] = times
+        time[:] = date2num(dates, time.units)
         print(time)
         # first print the Dataset object to see what we've got
         print(ncfile)
