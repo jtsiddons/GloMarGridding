@@ -12,7 +12,7 @@ Ordinary Kriging.
 from typing import Literal
 import numpy as np
 
-from utils import adjust_small_negative, intersect_mtlb
+from .utils import adjust_small_negative, intersect_mtlb
 
 KrigMethod = Literal["simple", "ordinary"]
 
