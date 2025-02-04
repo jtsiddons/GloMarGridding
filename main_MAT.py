@@ -541,7 +541,6 @@ def main():  # noqa: D103
                     error_cov=obs_covariance,
                     method=method,
                 )
-                # WARN: Incorrect - need the grid_idx for unmasked points!
                 mask_idx = np.asarray(
                     np.where(mask_ds["landice_sea_mask"].values.flatten() == 1)
                 )
