@@ -275,7 +275,7 @@ def main():  # noqa: C901, D103
     hadcrut_var: str = "tos" if variable == "sst" else "tas"
 
     # path to output directory
-    output_directory: str = config.get("HadCRUT", "output_dir")
+    output_directory: str = config.get("output", {}).get("path")
     output_directory = os.path.join(output_directory, hadcrut_var)
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
