@@ -1,9 +1,9 @@
 #!/usr/bin/env python  # noqa: D100
+"""
+Script to run Kriging for MAT from ICOADS data.
 
-################
-# by A. Faulkner
-# for python version 3.0 and up
-################
+By A. Faulkner for python version 3.0 and up.
+"""
 
 # argument parser
 import argparse
