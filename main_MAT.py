@@ -26,7 +26,7 @@ from glomar_gridding.climatology import join_climatology_by_doy
 from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.interpolation_covariance import load_covariance
 from glomar_gridding.io import load_array, load_dataset
-from glomar_gridding.mask import mask_observations
+from glomar_gridding.mask import mask_observations, get_mask_idx
 from glomar_gridding.matern_and_tm.matern_tau import tau_dist
 from glomar_gridding.utils import get_pentad_range
 
@@ -320,7 +320,7 @@ def main():  # noqa: D103
             print(covariance)
 
             mask_ds: xr.DataArray = load_array(
-                mask_dir, var="mask", month=current_month
+                mask_dir, var="landice_sea_mask", month=current_month
             )
             print(mask_ds)
 
@@ -385,7 +385,6 @@ def main():  # noqa: D103
                     pentad_df,
                     mask_ds,
                     varnames="at",
-                    mask_varname="landice_sea_mask",
                     mask_value=0,
                     align_to_mask=True,
                 )
@@ -519,7 +518,7 @@ def main():  # noqa: D103
                 grid_obs_2d: np.ndarray = assign_to_grid(
                     gridbox_counts["count"].to_numpy(),
                     gridbox_counts["grid_idx"].to_numpy(),
-                    mask_ds["landice_sea_mask"],
+                    mask_ds,
                 ).values
                 del gridbox_counts
 
@@ -541,15 +540,13 @@ def main():  # noqa: D103
                     error_cov=obs_covariance,
                     method=method,
                 )
-                mask_idx = np.asarray(
-                    np.where(mask_ds["landice_sea_mask"].values.flatten() == 1)
+                water_idx = get_mask_idx(
+                    mask_ds,
+                    mask_val=1,
+                    masked=True,
                 )
-                anom = assign_to_grid(
-                    anom, mask_idx, mask_ds["landice_sea_mask"]
-                ).values
-                uncert = assign_to_grid(
-                    uncert, mask_idx, mask_ds["landice_sea_mask"]
-                ).values
+                anom = assign_to_grid(anom, water_idx, mask_ds).values
+                uncert = assign_to_grid(uncert, water_idx, mask_ds).values
                 print("Kriging done, saving output")
 
                 # fig = plt.figure(figsize=(10, 5))

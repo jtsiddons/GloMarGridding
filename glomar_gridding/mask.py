@@ -85,20 +85,22 @@ def mask_observations(
         sort=False,
         add_grid_pts=align_to_mask,
     )
-    obs[mask_varname] = [
-        mask[mask_varname].values[i] for i in obs[grid_idx_name]
-    ]
+    obs = obs.with_columns(
+        pl.Series(
+            "mask", [mask[mask_varname].values[i] for i in obs[grid_idx_name]]
+        )
+    )
     mask_map: dict = {mask_value: masked_value}
     obs = obs.with_columns(
         [
-            pl.col(mask_varname)
+            pl.col("mask")
             .replace_strict(mask_map, default=pl.col(var))
             .alias(var)
             for var in varnames
         ]
     )
     if drop:
-        return obs.filter(pl.col(mask_varname).eq(mask_value))
+        return obs.filter(pl.col("mask").eq(mask_value))
     return obs.drop([grid_idx_name], strict=True)
 
 
@@ -106,7 +108,6 @@ def mask_array(
     grid: xr.DataArray,
     mask: xr.DataArray,
     varname: str,
-    mask_varname: str = "mask",
     masked_value: Any = np.nan,
     mask_value: Any = True,
 ) -> xr.DataArray:
@@ -126,8 +127,6 @@ def mask_array(
     varname : str
         Name of the variable in the observational DataArray to apply the mask
         to.
-    mask_varname : str
-        Name of the mask variable in the mask DataArray.
     masked_value : Any
         Value indicating masked values in the DataArray.
     mask_value : Any
@@ -141,7 +140,7 @@ def mask_array(
     # Check that the grid and mask are aligned
     xr.align(grid, mask, join="exact")
 
-    masked_idx = mask[mask_varname] == mask_value
+    masked_idx = np.unravel_index(get_mask_idx(mask, mask_value), mask.shape)
     grid[varname][masked_idx] = masked_value
 
     return grid
@@ -151,7 +150,6 @@ def mask_dataset(
     dataset: xr.Dataset,
     mask: xr.DataArray,
     varnames: str | list[str],
-    mask_varname: str = "mask",
     masked_value: Any = np.nan,
     mask_value: Any = True,
 ) -> xr.Dataset:
@@ -171,8 +169,6 @@ def mask_dataset(
     varnames : str | list[str]
         A list containing the names of  variables in the observational Dataser
         to apply the mask to.
-    mask_varname : str
-        Name of the mask variable in the mask DataArray.
     masked_value : Any
         Value indicating masked values in the DataArray.
     mask_value : Any
@@ -187,7 +183,7 @@ def mask_dataset(
     xr.align(dataset, mask, join="exact")
 
     varnames = [varnames] if isinstance(varnames, str) else varnames
-    masked_idx = mask[mask_varname] == mask_value
+    masked_idx = np.unravel_index(get_mask_idx(mask, mask_value), mask.shape)
     for var in varnames:
         dataset[var][masked_idx] = masked_value
 
@@ -272,3 +268,33 @@ def mask_from_obs_array(
     A = np.isnan(obs)
     mask = A.all(axis=datetime_idx)
     return mask
+
+
+def get_mask_idx(
+    mask: xr.DataArray,
+    mask_val: Any = np.nan,
+    masked: bool = True,
+) -> np.ndarray:
+    """
+    Get the 1d indices of masked values from a mask array.
+
+    Parameters
+    ----------
+    mask : xarray.DataArray
+        The mask array, containing values indicated a masked value.
+    mask_val : Any
+        The value that indicates the position should be masked.
+    masked : bool
+        Return indices where values in the mask array equal this value. If set
+        to False it will return indices where values are not equal to the mask
+        value. Can be used to get unmasked indices if this value is set to
+        False.
+
+    Returns
+    -------
+    An array of integers indicating the indices which are masked.
+    """
+    if masked:
+        return np.argwhere((mask.values).flatten(order="C") == mask_val)
+    else:
+        return np.argwhere((mask.values).flatten(order="C") != mask_val)

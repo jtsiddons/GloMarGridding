@@ -404,7 +404,7 @@ def main():  # noqa: C901, D103
             )
             print("Index of non-nan and non-zero values =", ec_idx, len(ec_idx))
 
-            _, mesh_lat = np.meshgrid(output_lon, output_lat)
+            # _, mesh_lat = np.meshgrid(output_lon, output_lat)
             # print(mesh_lat, mesh_lat.shape)
             # print(mesh_lon, mesh_lon.shape)
             # print(mon_ds[variable].values.squeeze().shape)
