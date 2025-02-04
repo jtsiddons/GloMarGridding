@@ -20,8 +20,8 @@ from netCDF4 import date2num
 from PyCOADS.processing.solar import is_daytime
 
 import glomar_gridding.error_covariance as err_cov
-import glomar_gridding.kriging as krig
-import glomar_gridding.observations as obs_module
+from glomar_gridding.kriging import kriging
+from glomar_gridding.observations import read_climatology
 from glomar_gridding.climatology import join_climatology_by_doy
 from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.interpolation_covariance import load_covariance
@@ -30,7 +30,7 @@ from glomar_gridding.mask import mask_observations
 from glomar_gridding.matern_and_tm.matern_tau import tau_dist
 from glomar_gridding.utils import get_pentad_range
 
-# NOC Specific Helper Fucntions
+# NOC Specific Helper Functions
 from .noc_helpers import (
     add_height_adjustment,
     merge_ellipse_params,
@@ -232,7 +232,7 @@ def main():  # noqa: D103
     print(output_lat)
     print(output_lon)
 
-    climatology = obs_module.read_climatology(
+    climatology = read_climatology(
         climatology, lat_north, lat_south, lon_west, lon_east
     )
     print(climatology)
@@ -242,7 +242,7 @@ def main():  # noqa: D103
     # while doing pentad processing, this will set "mid-pentads" dates for the
     # year
     # Do we need this if we are computing later
-    pentad_climatology = obs_module.read_climatology(
+    pentad_climatology = read_climatology(
         metoffice_climatology, lat_south, lat_north, lon_west, lon_east
     )
     clim_times = (
@@ -385,6 +385,8 @@ def main():  # noqa: D103
                     pentad_df,
                     mask_ds,
                     varnames="at",
+                    mask_varname="landice_sea_mask",
+                    mask_value=0,
                     align_to_mask=True,
                 )
 
@@ -531,7 +533,7 @@ def main():  # noqa: D103
                     pentad_df["grid_idx"].unique().sort().to_numpy()
                 )
 
-                anom, uncert = krig.kriging(
+                anom, uncert = kriging(
                     obs_idx=grid_idx_with_obs,
                     weights=W,
                     obs=pentad_df["anomaly"].to_numpy(),
@@ -539,11 +541,15 @@ def main():  # noqa: D103
                     error_cov=obs_covariance,
                     method=method,
                 )
+                # WARN: Incorrect - need the grid_idx for unmasked points!
+                mask_idx = np.asarray(
+                    np.where(mask_ds["landice_sea_mask"].values.flatten() == 1)
+                )
                 anom = assign_to_grid(
-                    anom, grid_idx_with_obs, mask_ds["landice_sea_mask"]
+                    anom, mask_idx, mask_ds["landice_sea_mask"]
                 ).values
                 uncert = assign_to_grid(
-                    uncert, grid_idx_with_obs, mask_ds["landice_sea_mask"]
+                    uncert, mask_idx, mask_ds["landice_sea_mask"]
                 ).values
                 print("Kriging done, saving output")
 

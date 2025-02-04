@@ -498,8 +498,8 @@ def main():  # noqa: C901, D103
             print(grid_obs_2d)
 
             # reshape output into 2D
-            anom = np.reshape(anom, mesh_lat.shape)
-            uncert = np.reshape(uncert, mesh_lat.shape)
+            anom = np.reshape(anom, output_grid.shape)
+            uncert = np.reshape(uncert, output_grid.shape)
 
             # Write the data.
             # This writes each time slice to the netCDF
