@@ -262,10 +262,6 @@ def main():  # noqa: C901, D103
     lat_south: float = config.get("domain", {}).get("south", -90.0)
     lat_north: float = config.get("domain", {}).get("north", 90.0)
 
-    # extract the latitude and longitude boundaries from user input
-    lon_bnds, lat_bnds = (lon_west, lon_east), (lat_south, lat_north)
-    print(lon_bnds, lat_bnds)
-
     output_grid: xr.DataArray = grid_from_resolution(
         resolution=5.0,
         bounds=[
