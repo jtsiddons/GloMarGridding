@@ -319,10 +319,10 @@ def main():  # noqa: D103
             covariance[diag_ind] = covariance[diag_ind] * 1.01 + 0.005
             print(covariance)
 
-            mask_ds: xr.DataArray = load_array(
+            mask: xr.DataArray = load_array(
                 mask_dir, var="landice_sea_mask", month=current_month
             )
-            print(mask_ds)
+            print(mask)
 
             # read in observations and QC
             obs_df = load_icoads(
@@ -383,7 +383,7 @@ def main():  # noqa: D103
                 # Align the observations to the mask
                 pentad_df = mask_observations(
                     pentad_df,
-                    mask_ds,
+                    mask,
                     varnames="at",
                     mask_value=0,
                     align_to_mask=True,
@@ -518,7 +518,7 @@ def main():  # noqa: D103
                 grid_obs_2d: np.ndarray = assign_to_grid(
                     gridbox_counts["count"].to_numpy(),
                     gridbox_counts["grid_idx"].to_numpy(),
-                    mask_ds,
+                    mask,
                 ).values
                 del gridbox_counts
 
@@ -541,12 +541,12 @@ def main():  # noqa: D103
                     method=method,
                 )
                 water_idx = get_mask_idx(
-                    mask_ds,
+                    mask,
                     mask_val=1,
                     masked=True,
                 )
-                anom = assign_to_grid(anom, water_idx, mask_ds).values
-                uncert = assign_to_grid(uncert, water_idx, mask_ds).values
+                anom = assign_to_grid(anom, water_idx, mask).values
+                uncert = assign_to_grid(uncert, water_idx, mask).values
                 print("Kriging done, saving output")
 
                 # fig = plt.figure(figsize=(10, 5))
