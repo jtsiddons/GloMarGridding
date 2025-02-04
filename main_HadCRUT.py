@@ -58,10 +58,9 @@ parser.add_argument(
 parser.add_argument(
     "-member",
     dest="member",
-    required=False,
+    required=True,
     help="ensemble member: required argument",
     type=int,
-    default=0,
 )
 parser.add_argument(
     "-variable",
@@ -114,12 +113,18 @@ def _parse_args(parser) -> tuple[dict, dict, int, int, int, str, str, str, int]:
     if not var_config:
         raise ValueError(f"Cannot get variable configuration for {variable}")
 
+    member = args.member
+    if member < 1 or member > 200:
+        raise ValueError(
+            f"Ensemble member must be between 1 and 200, got {member}"
+        )
+
     return (
         config,
         var_config,
         year_start,
         year_stop,
-        args.member,
+        member,
         variable,
         args.method,
         args.interpolation,
@@ -154,7 +159,10 @@ def _get_lsat_err_cov(
 def _get_obs_groups(
     data_path: str,
     var: str,
+    **kwargs,
 ) -> dict[tuple[object, ...], pl.DataFrame]:
+    if kwargs:
+        data_path = data_path.format(**kwargs)
     if not os.path.isfile(data_path):
         raise FileNotFoundError(f"Cannot find observations file {data_path}.")
     obs = pl.from_pandas(
@@ -294,7 +302,7 @@ def main():  # noqa: C901, D103
         print(interp_covariance)
 
     data_path: str = var_config.get("observations", "")
-    yr_mo = _get_obs_groups(data_path, hadcrut_var)
+    yr_mo = _get_obs_groups(data_path, hadcrut_var, member=member)
 
     error_covariance_path: str = var_config.get("error_covariance", "")
 

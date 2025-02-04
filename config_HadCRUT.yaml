@@ -10,8 +10,10 @@ domain:
   endyear: !!int 2023
 
 sst:
-  observations: "/noc/mpoc/surface_data/HadSST4_extra/HadSST.4.0.1.0_median.nc"
-  distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_euclidean.npy"
+  # observations: "/noc/mpoc/surface_data/HadSST4_extra/HadSST.4.0.1.0_median.nc"
+  observations: "/noc/mpoc/surface_data/HadSST4_extra/og_ensemble/HadSST.4.0.1.0_ensemble_member_{member}.nc"
+  distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_haversine.npy"
+  # distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_euclidean.npy"
   ellipse_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances"
   error_covariance: "/noc/mpoc/surface_data/HadCRUT5_extra/error_cov"
   uncorrelated_uncertainty: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated.nc"
@@ -22,8 +24,10 @@ sst:
 
 
 lsat:
-  observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
-  distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
+  # observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
+  observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/non_infilled_ensemble/CRUTEM.5.0.2.0.anomalies.{member}.nc"
+  distance_interpolation_covariance: "/noc/mpoc/surface_data/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_haversine.npy"
+  # distance_interpolation_covariance: "/noc/mpoc/surface_data/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
   ellipse_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances"
   error_covariance: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated_dummy"
 
@@ -32,4 +36,4 @@ lsat:
   matern: !!float 1.5
 
 output:
-  path: "/noc/mpoc/surface/agfaul/HadCRUT/output/ellipse"
+  path: "/noc/mpoc/surface/josidd/HadCRUT/output/ellipse"
