@@ -153,7 +153,7 @@ def _init_logging() -> None:
 
     reload(logging)  # Clear the logging from cdm_reader_mapper
     logging.basicConfig(
-        format="%(levelname)s at %(asctime)s : %(message)s",
+        format="\n%(levelname)s at %(asctime)s : %(message)s\n",
         level=logging.DEBUG,
     )
     logging.captureWarnings(True)
@@ -311,7 +311,9 @@ def main():  # noqa: C901, D103
 
     # path to output directory
     output_directory: str = config.get("output", {}).get("path")
-    output_directory = os.path.join(output_directory, hadcrut_var)
+    output_directory = os.path.join(
+        output_directory, interpolation_covariance_type, hadcrut_var
+    )
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     print(f"{output_directory = }")
