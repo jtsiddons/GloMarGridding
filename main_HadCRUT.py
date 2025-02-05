@@ -9,6 +9,9 @@ Modified by J. Siddons. Requires python >= 3.11
 # global
 import os
 
+if "POLARS_MAX_THREADS" not in os.environ:
+    os.environ["POLARS_MAX_THREADS"] = "16"
+
 # argument parser
 import argparse
 import yaml
