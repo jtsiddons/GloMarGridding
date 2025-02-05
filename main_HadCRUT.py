@@ -3,6 +3,7 @@
 Script to run Kriging for HadCRUT.
 
 By A. Faulkner for python version 3.0 and up.
+Modified by J. Siddons. Requires python >= 3.11
 """
 
 # global
@@ -30,10 +31,9 @@ from glomar_gridding.error_covariance import get_weights
 from glomar_gridding.kriging import kriging
 from glomar_gridding.utils import days_since_by_month, init_logging
 
-import warnings
-
 # Debugging
 import logging
+import warnings
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -208,7 +208,6 @@ def _initialise_ncfile(
     time = ncfile.createVariable("time", np.float32, ("time",))
     time.units = f"days since {current_year}-01-15"
     time.long_name = "time"
-    # print(time)
 
     # Define a 3D variable to hold the data
     # note: unlimited dimension is leftmost
@@ -250,17 +249,8 @@ def main():  # noqa: C901, D103
         remove_obs_mean,
     ) = _parse_args(parser)
 
-    # ===== MODIFIED =====
-    # parce existing config file
     logging.info("Loaded configuration")
-    print(config)
-
-    # read values from auxiliary_files section
-    # for string use config.get
-    # for boolean use config.getboolean
-    # for int use config.getint
-    # for float use config.getfloat
-    # for list (multiple options for same key) use config.getlist
+    print(f"{config = }")
 
     # set boundaries for the domain
     lon_west: float = config.get("domain", {}).get("west", -180.0)
@@ -304,7 +294,7 @@ def main():  # noqa: C901, D103
     if interpolation_covariance_type == "distance":
         interp_covariance = np.load(interpolation_covariance_path)
         logging.info("loaded interpolation covariance")
-        print(interp_covariance)
+        print(f"{interp_covariance = }")
 
     data_path: str = var_config.get("observations", "")
     yr_mo = _get_obs_groups(data_path, hadcrut_var, member=member)
@@ -344,8 +334,8 @@ def main():  # noqa: C901, D103
                     error_covariance_path, "HadCRUT.5.0.2.0.uncorrelated.npz"
                 )
             )["err_cov"]
-            print("loaded error covariance")
-            print(error_cov)
+            logging.info("loaded error covariance")
+            print(f"{error_cov = }")
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_lsat_err_cov(year, month, error_cov)
@@ -371,7 +361,6 @@ def main():  # noqa: C901, D103
         ncfilename = os.path.join(output_directory, ncfilename)
 
         ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
-        # print(ncfile)
 
         lon, lat, time, krig_anom, krig_uncert, grid_obs = _initialise_ncfile(
             ncfile, output_lon, output_lat, current_year, variable
@@ -405,7 +394,7 @@ def main():  # noqa: C901, D103
                     )
                 )["covariance"].values
                 logging.info("Loaded ellipse interpolation covariance")
-                # print(interp_covariance)
+                print(f"{interp_covariance = }")
 
             error_covariance = get_error_cov(current_year, current_month)
             logging.info("Got Error Covariance")
@@ -421,52 +410,11 @@ def main():  # noqa: C901, D103
             )
             print("Index of non-nan and non-zero values =", ec_idx, len(ec_idx))
 
-            # _, mesh_lat = np.meshgrid(output_lon, output_lat)
-            # print(mesh_lat, mesh_lat.shape)
-            # print(mesh_lon, mesh_lon.shape)
-            # print(mon_ds[variable].values.squeeze().shape)
-            print("-----------------")
-            # since we're not using any landmask for this run
-            # the line below:
-            # cond_df, obs_flat_idx = obs_module.watermask_at_obs_locations(
-            #     lon_bnds, lat_bnds, mon_df, mask_ds, mask_ds_lat, mask_ds_lon
-            # )
-            # mon_flat_idx = cond_df['flattened_idx'][:]
-            # can be substituted with:
             mon_df = align_to_grid(
                 mon_df, output_grid, grid_coords=["lat", "lon"]
             )
             logging.info("Aligned observations to output grid")
-            # lat_idx, grid_lat = obs_module.find_nearest(
-            #     output_lat, mon_df.get_column("lat")
-            # )
-            # lon_idx, grid_lon = obs_module.find_nearest(
-            #     output_lon, mon_df.get_column("lon")
-            # )
-            #
-            # mon_df = mon_df.with_columns(
-            #     [
-            #         pl.Series("grid_lat", grid_lat),
-            #         pl.Series("grid_lon", grid_lon),
-            #         pl.Series("lat_idx", lat_idx),
-            #         pl.Series("lon_idx", lon_idx),
-            #     ]
-            # )
-            #
-            # idx_tuple = (lat_idx, lon_idx)
-            # # print(f'{idx_tuple =}')
-            # mon_flat_idx = np.ravel_multi_index(
-            #     idx_tuple, mesh_lat.shape, order="C"
-            # )  # row-major
-            # print(f'{mon_flat_idx =}') #it's the same as ec_idx
-            # print(f'{sorted(mon_flat_idx) =}')
 
-            # diff = sorted(mon_flat_idx) - np.unique(mon_flat_idx)
-            # diff results in 0s as unique idx is the same as sorted
-            # mon_flat_idx
-
-            # mon_df["gridbox"] = mon_flat_idx
-            # # print(mon_df)
             error_cov_diag_at_obs = pl.Series(
                 "error_covariance_diagonal",
                 np.diag(error_covariance)[mon_df.get_column("grid_idx")],
@@ -486,20 +434,16 @@ def main():  # noqa: C901, D103
                 output_grid,
             )
             logging.info("Got grid_idx counts")
-            # need to either add weights (which will be just 1 everywhere as
-            # obs are gridded)
+            # need to either add weights (which will be just 1 or 0 everywhere
+            # as obs are gridded)
             # krige obs onto gridded field
             W = get_weights(mon_df)
             logging.info("Got Weights")
-            # print(W)
 
             grid_idx = mon_df.get_column("grid_idx").to_numpy()
-            # print(error_covariance, error_covariance.shape)
             error_covariance = error_covariance[
                 grid_idx[:, None], grid_idx[None, :]
             ]
-            # print(np.argwhere(np.isnan(np.diag(error_covariance))))
-            # print(f'{error_covariance =}, {error_covariance.shape =}')
 
             logging.info("Starting Kriging")
             anom, uncert = kriging(
@@ -512,12 +456,12 @@ def main():  # noqa: C901, D103
                 remove_obs_mean=remove_obs_mean,
             )
             logging.info("Kriging done, saving output")
-            print(anom)
+            print(f"{anom = }")
             print(f"{np.all(np.isnan(anom)) = }")
             print(f"{np.any(np.isnan(anom)) = }")
             print("-" * 10)
-            print(uncert)
-            print(grid_obs_2d)
+            print(f"{uncert = }")
+            print(f"{grid_obs_2d = }")
 
             # reshape output into 2D
             anom = np.reshape(anom, output_grid.shape)
@@ -536,12 +480,11 @@ def main():  # noqa: C901, D103
         # write time
         time[:] = days_since_by_month(current_year, 15)
 
-        print(time)
+        print(f"{time = }")
         # first print the Dataset object to see what we've got
-        print(ncfile)
         # close the Dataset.
         ncfile.close()
-        print("Dataset is closed!")
+        logging.info("Dataset is closed!")
 
 
 if __name__ == "__main__":
