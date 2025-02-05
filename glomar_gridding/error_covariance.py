@@ -175,7 +175,7 @@ def correlated_components(
 def dist_weight(
     df: pl.DataFrame,
     dist_fn: Callable,
-    gridbox_idx: str = "gridbox_idx",
+    grid_idx: str = "grid_idx",
     **dist_kwargs,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -192,7 +192,7 @@ def dist_weight(
     ----------
     df : polars.DataFrame
         The observation DataFrame, containing the columns required for
-        computation of the distance matrix. Contains the "gridbox" column which
+        computation of the distance matrix. Contains the "grid_idx" column which
         indicates the gridbox for a given observation. The index of the
         DataFrame should match the index ordering for the output distance
         matrix/weights.
@@ -240,7 +240,7 @@ def dist_weight(
     #           Ensures consistency between runs if the frame ordering gets
     #           shuffled in some way.
     # QUESTION: Maybe sort by "flattened_idx", then no need to sort obs?
-    gridboxes = sorted(df[gridbox_idx].unique())
+    gridboxes = sorted(df[grid_idx].unique())
     _n_gridboxes = len(gridboxes)
     _n_obs = df.height
 
@@ -250,7 +250,7 @@ def dist_weight(
     weights = np.zeros((_n_gridboxes, _n_obs))
     dist = np.zeros((_n_obs, _n_obs))
 
-    for i, gridbox_df in enumerate(df.partition_by(gridbox_idx)):
+    for i, gridbox_df in enumerate(df.partition_by(grid_idx)):
         gridbox_idcs = gridbox_df.get_column("_index").to_list()
         idcs_array = np.ix_(gridbox_idcs, gridbox_idcs)
 
@@ -262,7 +262,7 @@ def dist_weight(
 
 def get_weights(
     df: pl.DataFrame,
-    gridbox_idx: str = "gridbox_idx",
+    grid_idx: str = "grid_idx",
 ) -> np.ndarray:
     """
     Get just the weight matrices over gridboxes for an input Frame.
@@ -274,10 +274,10 @@ def get_weights(
     ----------
     df : polars.DataFrame
         The observation DataFrame, containing the columns required for
-        computation of the distance matrix. Contains the "gridbox" column which
+        computation of the distance matrix. Contains the "grid_idx" column which
         indicates the gridbox for a given observation. The index of the
         DataFrame should match the index ordering for the output weights.
-    gridbox_idx : str
+    grid_idx : str
         Name of the column containing the gridbox index from the output grid.
 
     Returns
@@ -293,9 +293,9 @@ def get_weights(
     """
     weights = (
         df.with_row_index("_index")
-        .with_columns((1 / pl.len().over(gridbox_idx)).alias("_weight"))
-        .select(["_index", gridbox_idx, "_weight"])
-        .pivot(on=gridbox_idx, index="_index", values="_weight")
+        .with_columns((1 / pl.len().over(grid_idx)).alias("_weight"))
+        .select(["_index", grid_idx, "_weight"])
+        .pivot(on=grid_idx, index="_index", values="_weight")
         .sort("_index")
         .drop("_index")
     )
