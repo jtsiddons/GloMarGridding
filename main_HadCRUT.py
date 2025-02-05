@@ -223,9 +223,9 @@ def _initialise_ncfile(
     # Define a 3D variable to hold the data
     # note: unlimited dimension is leftmost
     krig_anom = ncfile.createVariable(
-        f"{variable}_anomaly", np.float32, ("time", "lat", "lon")
+        f"{variable}_anomaly_unperturbed", np.float32, ("time", "lat", "lon")
     )
-    krig_anom.standard_name = f"{variable} anomaly"
+    krig_anom.standard_name = f"unperturbed {variable} anomaly"
     krig_anom.units = "deg C"  # degrees Kelvin
 
     # Define a 3D variable to hold the data
@@ -243,7 +243,14 @@ def _initialise_ncfile(
     grid_obs.units = ""  # degrees Kelvin
     grid_obs.standard_name = "Number of observations within each gridcell"
 
-    return lon, lat, time, krig_anom, krig_uncert, grid_obs
+    # Define a 3D variable to hold the epsilon perturbation value
+    krig_epsilon = ncfile.createVariable(
+        f"{variable}_epsilon", np.float32, ("time", "lat", "lon")
+    )
+    krig_epsilon.standard_name = f"{variable} perturbation epsilon"
+    krig_epsilon.units = "deg C"  # degrees Kelvin
+
+    return lon, lat, time, krig_anom, krig_uncert, grid_obs, krig_epsilon
 
 
 def main():  # noqa: C901, D103
@@ -385,8 +392,10 @@ def main():  # noqa: C901, D103
 
         ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
 
-        lon, lat, time, krig_anom, krig_uncert, grid_obs = _initialise_ncfile(
-            ncfile, output_lon, output_lat, current_year, variable
+        lon, lat, time, krig_anom, krig_uncert, grid_obs, krig_epsilon = (
+            _initialise_ncfile(
+                ncfile, output_lon, output_lat, current_year, variable
+            )
         )
         logging.info(f"Initialised output file for {current_year = }")
 
@@ -512,9 +521,6 @@ def main():  # noqa: C901, D103
             logging.info("Kriging done for random draw")
             logging.info("Computing and applying epsilon to the kriged output")
             epsilon = simulated_anom - y
-            # reshape output into 2D
-            anom = anom + epsilon
-            anom = np.reshape(anom, output_grid.shape)
 
             print(f"{anom = }")
             print(f"{np.all(np.isnan(anom)) = }")
@@ -523,13 +529,17 @@ def main():  # noqa: C901, D103
             print(f"{uncert = }")
             print(f"{grid_obs_2d = }")
 
+            # reshape output into 2D
+            anom = np.reshape(anom, output_grid.shape)
             uncert = np.reshape(uncert, output_grid.shape)
+            epsilon = np.reshape(epsilon, output_grid.shape)
             logging.info("Reshaped kriging outputs")
 
             # Write the data.
             # This writes each time slice to the netCDF
             krig_anom[timestep, :, :] = anom  # ordinary_kriging
             krig_uncert[timestep, :, :] = uncert  # ordinary_kriging
+            krig_epsilon[timestep, :, :] = epsilon  # ordinary_kriging
             grid_obs[timestep, :, :] = grid_obs_2d.astype(np.float32)
             logging.info(
                 f"Wrote data for {current_year = }, {current_month = }"
