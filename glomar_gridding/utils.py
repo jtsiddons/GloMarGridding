@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
+import logging
 import os
 from typing import TypeVar
 import netCDF4 as nc
@@ -341,3 +342,16 @@ def get_pentad_range(centre_date: date) -> tuple[date, date]:
         start_date = centre_date - timedelta(days=2)
         end_date = centre_date + timedelta(days=2)
     return start_date, end_date
+
+
+def init_logging() -> None:
+    """Initialise the logger"""
+    from importlib import reload
+
+    reload(logging)  # Clear the logging from cdm_reader_mapper
+    logging.basicConfig(
+        format="\n%(levelname)s at %(asctime)s : %(message)s\n",
+        level=logging.DEBUG,
+    )
+    logging.captureWarnings(True)
+    return None

@@ -28,7 +28,7 @@ from glomar_gridding.grid import (
 )
 from glomar_gridding.error_covariance import get_weights
 from glomar_gridding.kriging import kriging
-from glomar_gridding.utils import days_since_by_month
+from glomar_gridding.utils import days_since_by_month, init_logging
 
 import warnings
 
@@ -136,30 +136,6 @@ def _parse_args(parser) -> tuple[dict, dict, int, int, int, str, str, str, int]:
     )
 
 
-def _init_logging() -> None:
-    """
-    Initialise the logger
-
-    Parameters
-    ----------
-    file : str
-        File to log output to.
-
-    Returns
-    -------
-    None
-    """
-    from importlib import reload
-
-    reload(logging)  # Clear the logging from cdm_reader_mapper
-    logging.basicConfig(
-        format="\n%(levelname)s at %(asctime)s : %(message)s\n",
-        level=logging.DEBUG,
-    )
-    logging.captureWarnings(True)
-    return None
-
-
 def _get_sst_err_cov(
     current_year: int,
     current_month: int,
@@ -261,7 +237,7 @@ def _initialise_ncfile(
 
 
 def main():  # noqa: C901, D103
-    _init_logging()
+    init_logging()
     (
         config,
         var_config,
