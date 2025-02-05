@@ -71,6 +71,10 @@ def kriging(
     dz : np.ndarray[float]
         Uncertainty associated with the chosen kriging method.
     """
+    if obs is None or interp_cov is None:
+        raise ValueError(
+            "Observations and interpolation covariance must be supplied"
+        )
     if obs_bias is not None:
         print("With bias")
         grid_obs = weights @ (obs - obs_bias)

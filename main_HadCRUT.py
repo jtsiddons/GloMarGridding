@@ -24,8 +24,6 @@ import yaml
 # math tools
 import numpy as np
 
-np.random.seed(12345)
-
 # data handling tools
 import polars as pl
 import xarray as xr
@@ -40,10 +38,14 @@ from glomar_gridding.grid import (
 from glomar_gridding.error_covariance import get_weights
 from glomar_gridding.kriging import kriging
 from glomar_gridding.utils import days_since_by_month, init_logging
+from glomar_gridding.perturbation import scipy_mv_normal_draw
 
 # Debugging
 import logging
 import warnings
+
+np.random.seed(12345)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -370,7 +372,7 @@ def main():  # noqa: C901, D103
             interpolation_covariance_type == "distance"
             and interp_covariance is not None
         ):
-            y = np.random.multivariate_normal(
+            y = scipy_mv_normal_draw(
                 np.zeros(interp_covariance.shape[0]),
                 interp_covariance,
             )
@@ -415,7 +417,7 @@ def main():  # noqa: C901, D103
                     )
                 )["covariance"].values
                 logging.info("Loaded ellipse interpolation covariance")
-                y = np.random.multivariate_normal(
+                y = scipy_mv_normal_draw(
                     np.zeros(interp_covariance.shape[0]),
                     interp_covariance,
                 )
@@ -443,7 +445,7 @@ def main():  # noqa: C901, D103
                 logging.error("Failed to get interp_covariance or y. Skipping")
                 continue
             y_obs = y[mon_df.get_column("grid_idx")]
-            y_obs_prime: np.ndarray = y_obs + np.random.multivariate_normal(
+            y_obs_prime: np.ndarray = y_obs + scipy_mv_normal_draw(
                 np.zeros(error_covariance.shape[0]),
                 error_covariance,
             )
