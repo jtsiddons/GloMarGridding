@@ -22,7 +22,6 @@ sst:
   sigma: !!float 0.6
   matern: !!float 1.5
 
-
 lsat:
   # observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
   observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/non_infilled_ensemble/CRUTEM.5.0.2.0.anomalies.{member}.nc"
@@ -36,4 +35,4 @@ lsat:
   matern: !!float 1.5
 
 output:
-  path: "/noc/mpoc/surface/josidd/HadCRUT/output/ellipse"
+  path: "/noc/mpoc/surface/josidd/git/kriging_fork/scratch/HadCRUT/output"
