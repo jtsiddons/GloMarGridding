@@ -38,7 +38,7 @@ parser.add_argument(
     dest="config",
     required=False,
     default=os.path.join(os.path.dirname(__file__), "config_HadCRUT.ini"),
-    help="Path to INI file containing configuration settings",
+    help="Path to yaml file containing configuration settings",
     type=str,
 )
 parser.add_argument(
@@ -101,7 +101,8 @@ parser.add_argument(
 
 def _parse_args(parser) -> tuple[dict, dict, int, int, int, str, str, str, int]:
     args = parser.parse_args()
-    config: dict = yaml.safe_load(args.config)
+    with open(args.config, "r") as io:
+        config: dict = yaml.safe_load(io)
     year_start: int = args.year_start or config.get("domain", {}).get(
         "startyear", 1850
     )
