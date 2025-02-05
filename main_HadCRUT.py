@@ -437,17 +437,12 @@ def main():  # noqa: C901, D103
             )
             print("Index of non-nan and non-zero values =", ec_idx, len(ec_idx))
 
-            mon_df = align_to_grid(
-                mon_df, output_grid, grid_coords=["lat", "lon"]
-            )
-
             if y is None or interp_covariance is None:
                 logging.error("Failed to get interp_covariance or y. Skipping")
                 continue
-            y_obs = y[mon_df.get_column("grid_idx")]
-            y_obs_prime: np.ndarray = y_obs + scipy_mv_normal_draw(
-                np.zeros(error_covariance.shape[0]),
-                error_covariance,
+
+            mon_df = align_to_grid(
+                mon_df, output_grid, grid_coords=["lat", "lon"]
             )
             logging.info("Aligned observations to output grid")
 
@@ -477,9 +472,17 @@ def main():  # noqa: C901, D103
             logging.info("Got Weights")
 
             grid_idx = mon_df.get_column("grid_idx").to_numpy()
+
+            # Sub-sample error covariance at observation points
             error_covariance = error_covariance[
                 grid_idx[:, None], grid_idx[None, :]
             ]
+            # Draw simulated observations
+            y_obs = y[mon_df.get_column("grid_idx")]
+            y_obs_prime: np.ndarray = y_obs + scipy_mv_normal_draw(
+                np.zeros(error_covariance.shape[0]),
+                error_covariance,
+            )
 
             logging.info("Starting Kriging for observations")
             # Kriging the observations for the ensemble member

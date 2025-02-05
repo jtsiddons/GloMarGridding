@@ -62,8 +62,7 @@ def scipy_mv_normal_draw(  # noqa: C901
         draw = np.random.multivariate_normal(loc, cov, size=ndraws)
         return draw[0] if ndraws == 1 else draw
     except np.linalg.LinAlgError as e:
-        if e.args != "SVD did not converge":
-            raise e
+        pass
     except Exception as e:
         raise e
 
@@ -77,6 +76,7 @@ def scipy_mv_normal_draw(  # noqa: C901
     if any_complex(v):
         raise ValueError("v is complex")
     if np.any(w < 0):
+        raise Exception("STOP")
         most_neg_eigval = np.min(w)
         largest_eig_val = np.max(w)
         rtol_check = np.abs(most_neg_eigval) / largest_eig_val
@@ -87,8 +87,7 @@ def scipy_mv_normal_draw(  # noqa: C901
         )
         if rtol_check >= eigen_rtol:
             raise ValueError("Negative eigenvalues are unexpectedly large.")
-        while np.any(w < 0):
-            w[w < 0] += eigen_fudge
+        w[w < eigen_fudge] = eigen_fudge
 
     cov2 = stats.Covariance.from_eigendecomposition((w, v))
 
@@ -98,5 +97,7 @@ def scipy_mv_normal_draw(  # noqa: C901
     # this behavior is consistent with size > 1 which yields (size, len(loc2))
     # but is INCONSISTENT with behavior when cov is a
     # valid numpy array ---> shape is (len(loc2),)
-    draw = np.random.multivariate_normal(loc, cov2.covariance, size=ndraws)
+
+    draw = stats.multivariate_normal.rvs(mean=loc, cov=cov2, size=ndraws)
+    # draw = np.random.multivariate_normal(loc, cov2.covariance, size=ndraws)
     return draw[0] if ndraws == 1 else draw
