@@ -137,7 +137,7 @@ def grid_from_resolution(
             coord_names, bounds, resolution
         )
     }
-    grid = xr.DataArray(coords=coords)
+    grid = xr.DataArray(coords=xr.Coordinates(coords))
     return grid
 
 
