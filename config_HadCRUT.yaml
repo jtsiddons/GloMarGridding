@@ -25,8 +25,8 @@ sst:
 lsat:
   # observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
   observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/non_infilled_ensemble/CRUTEM.5.0.2.0.anomalies.{member}.nc"
-  distance_interpolation_covariance: "/noc/mpoc/surface_data/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_haversine.npy"
-  # distance_interpolation_covariance: "/noc/mpoc/surface_data/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
+  distance_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_haversine.npy"
+  # distance_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
   ellipse_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances"
   error_covariance: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated_dummy"
 
