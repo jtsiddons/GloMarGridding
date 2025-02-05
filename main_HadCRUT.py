@@ -3,7 +3,12 @@
 Script to run Kriging for HadCRUT.
 
 By A. Faulkner for python version 3.0 and up.
-Modified by J. Siddons. Requires python >= 3.11
+Modified by J. Siddons (2025-01). Requires python >= 3.11.
+
+Encodes the uncertainty from the sampling into the gridded field for the
+ensemble. This is done by generating a simulated field and observations and
+computing a simulated gridded field.
+See: https://doi.org/10.1029/2019JD032361
 """
 
 # global
@@ -92,7 +97,6 @@ parser.add_argument(
     help='Interpolation covariance - one of "distance" or "ellipse"',
     choices=["distance", "ellipse"],
 )
-
 parser.add_argument(
     "-remove_obs_mean",
     dest="remove_obs_mean",
@@ -294,6 +298,7 @@ def main():  # noqa: C901, D103
     interpolation_covariance_path: str = var_config.get(
         f"{interpolation_covariance_type}_interpolation_covariance", ""
     )
+    interp_covariance = None
     if interpolation_covariance_type == "distance":
         interp_covariance = np.load(interpolation_covariance_path)
         logging.info("loaded interpolation covariance")
@@ -357,6 +362,14 @@ def main():  # noqa: C901, D103
         except Exception as e:  # Unknown Error
             raise e
 
+        # Draw from N(0, interp_covariance)
+        y = None
+        if (
+            interpolation_covariance_type == "distance"
+            and interp_covariance is not None
+        ):
+            y = np.random.multivariate_normal(0, interp_covariance)
+
         ncfilename = f"{current_year}_kriged"
         if member:
             ncfilename += f"_member_{member:03d}"
@@ -397,6 +410,7 @@ def main():  # noqa: C901, D103
                     )
                 )["covariance"].values
                 logging.info("Loaded ellipse interpolation covariance")
+                y = np.random.multivariate_normal(0, interp_covariance)
                 print(f"{interp_covariance = }")
 
             error_covariance = get_error_cov(current_year, current_month)
@@ -415,6 +429,14 @@ def main():  # noqa: C901, D103
 
             mon_df = align_to_grid(
                 mon_df, output_grid, grid_coords=["lat", "lon"]
+            )
+
+            if y is None or interp_covariance is None:
+                logging.error("Failed to get interp_covariance or y. Skipping")
+                continue
+            y_obs = y[mon_df.get_column("grid_idx")]
+            y_obs_prime: np.ndarray = y_obs + np.random.multivariate_normal(
+                0, error_covariance
             )
             logging.info("Aligned observations to output grid")
 
@@ -448,7 +470,8 @@ def main():  # noqa: C901, D103
                 grid_idx[:, None], grid_idx[None, :]
             ]
 
-            logging.info("Starting Kriging")
+            logging.info("Starting Kriging for observations")
+            # Kriging the observations for the ensemble member
             anom, uncert = kriging(
                 grid_idx,
                 W,
@@ -458,7 +481,27 @@ def main():  # noqa: C901, D103
                 method=method,
                 remove_obs_mean=remove_obs_mean,
             )
-            logging.info("Kriging done, saving output")
+            logging.info("Kriging done for observations")
+
+            # Kriging for the random drawn observations for perturbations
+            logging.info("Starting Kriging for random draw")
+            # This generates a _simiulated_ gridded field
+            simulated_anom, _ = kriging(
+                grid_idx,
+                W,
+                y_obs_prime,
+                interp_covariance,
+                error_covariance,
+                method="simple",
+                remove_obs_mean=remove_obs_mean,
+            )
+            logging.info("Kriging done for random draw")
+            logging.info("Computing and applying epsilon to the kriged output")
+            epsilon = simulated_anom - y
+            # reshape output into 2D
+            anom = anom + epsilon
+            anom = np.reshape(anom, output_grid.shape)
+
             print(f"{anom = }")
             print(f"{np.all(np.isnan(anom)) = }")
             print(f"{np.any(np.isnan(anom)) = }")
@@ -466,8 +509,6 @@ def main():  # noqa: C901, D103
             print(f"{uncert = }")
             print(f"{grid_obs_2d = }")
 
-            # reshape output into 2D
-            anom = np.reshape(anom, output_grid.shape)
             uncert = np.reshape(uncert, output_grid.shape)
             logging.info("Reshaped kriging outputs")
 
