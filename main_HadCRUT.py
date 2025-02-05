@@ -32,6 +32,9 @@ from glomar_gridding.utils import days_since_by_month
 
 import warnings
 
+# Debugging
+import logging
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-config",
@@ -248,6 +251,7 @@ def main():  # noqa: C901, D103
 
     # ===== MODIFIED =====
     # parce existing config file
+    logging.info("Loaded configuration")
     print(config)
 
     # read values from auxiliary_files section
@@ -273,8 +277,9 @@ def main():  # noqa: C901, D103
     )
     output_lat: np.ndarray = output_grid.coords["lat"].values
     output_lon: np.ndarray = output_grid.coords["lon"].values
-    print(f"{output_lat =}")
-    print(f"{output_lon =}")
+    logging.info("Initialised Output Grid")
+    print(f"{output_lat = }")
+    print(f"{output_lon = }")
 
     # what variable is being processed
     hadcrut_var: str = "tos" if variable == "sst" else "tas"
@@ -295,11 +300,12 @@ def main():  # noqa: C901, D103
     )
     if interpolation_covariance_type == "distance":
         interp_covariance = np.load(interpolation_covariance_path)
-        print("loaded interpolation covariance")
+        logging.info("loaded interpolation covariance")
         print(interp_covariance)
 
     data_path: str = var_config.get("observations", "")
     yr_mo = _get_obs_groups(data_path, hadcrut_var, member=member)
+    logging.info("Loaded Observations")
 
     error_covariance_path: str = var_config.get("error_covariance", "")
 
@@ -367,6 +373,7 @@ def main():  # noqa: C901, D103
         lon, lat, time, krig_anom, krig_uncert, grid_obs = _initialise_ncfile(
             ncfile, output_lon, output_lat, current_year, variable
         )
+        logging.info(f"Initialised output file for {current_year = }")
 
         # Write latitudes, longitudes.
         # Note: the ":" is necessary in these "write" statements
@@ -394,6 +401,7 @@ def main():  # noqa: C901, D103
                         f"covariance_{current_month:02d}_v_eq_1p5_{variable}_clipped.nc",
                     )
                 )["covariance"].values
+                logging.info("Loaded ellipse interpolation covariance")
                 # print(interp_covariance)
 
             error_covariance = get_error_cov(current_year, current_month)
@@ -424,6 +432,7 @@ def main():  # noqa: C901, D103
             mon_df = align_to_grid(
                 mon_df, output_grid, grid_coords=["lat", "lon"]
             )
+            logging.info("Aligned observations to output grid")
             # lat_idx, grid_lat = obs_module.find_nearest(
             #     output_lat, mon_df.get_column("lat")
             # )
@@ -463,7 +472,7 @@ def main():  # noqa: C901, D103
                 pl.col("error_covariance_diagonal").is_not_nan()
                 & pl.col("error_covariance_diagonal").is_not_null()
             )
-            print(mon_df)
+            logging.info("Added error covariance diagonal to the observations")
 
             # count obs per grid for output
             gridbox_counts = mon_df["grid_idx"].value_counts()
@@ -472,10 +481,12 @@ def main():  # noqa: C901, D103
                 gridbox_counts["grid_idx"].to_numpy(),
                 output_grid,
             )
+            logging.info("Got grid_idx counts")
             # need to either add weights (which will be just 1 everywhere as
             # obs are gridded)
             # krige obs onto gridded field
             W = get_weights(mon_df)
+            logging.info("Got Weights")
             # print(W)
 
             grid_idx = mon_df.get_column("grid_idx").to_numpy()
@@ -486,8 +497,7 @@ def main():  # noqa: C901, D103
             # print(np.argwhere(np.isnan(np.diag(error_covariance))))
             # print(f'{error_covariance =}, {error_covariance.shape =}')
 
-            print(mon_df)
-
+            logging.info("Starting Kriging")
             anom, uncert = kriging(
                 grid_idx,
                 W,
@@ -497,7 +507,7 @@ def main():  # noqa: C901, D103
                 method=method,
                 remove_obs_mean=remove_obs_mean,
             )
-            print("Kriging done, saving output")
+            logging.info("Kriging done, saving output")
             print(anom)
             print(uncert)
             print(grid_obs_2d)
@@ -505,14 +515,16 @@ def main():  # noqa: C901, D103
             # reshape output into 2D
             anom = np.reshape(anom, output_grid.shape)
             uncert = np.reshape(uncert, output_grid.shape)
+            logging.info("Reshaped kriging outputs")
 
             # Write the data.
             # This writes each time slice to the netCDF
             krig_anom[timestep, :, :] = anom  # ordinary_kriging
             krig_uncert[timestep, :, :] = uncert  # ordinary_kriging
             grid_obs[timestep, :, :] = grid_obs_2d.astype(np.float32)
-            print("-- Wrote data")
-            print(timestep, current_month)
+            logging.info(
+                f"Wrote data for {current_year = }, {current_month = }"
+            )
 
         # write time
         time[:] = days_since_by_month(current_year, 15)
