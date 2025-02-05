@@ -118,16 +118,16 @@ def merge_ellipse_params(
               0 would represent an ellipse with the major axis aligned
               east-west.
     df : polars.DataFrame
-        The observational dataframe, containing "gridcell_lat" and
-        "gridcell_lon" columns used to join the ellipse parameters.
+        The observational dataframe, containing "grid_lat" and
+        "grid_lon" columns used to join the ellipse parameters.
 
     Returns
     -------
     df : polars.DataFrame
-        With additional columns "gridcell_lx", "gridcell_lx", "gridcell_theta"
+        With additional columns "grid_lx", "grid_lx", "grid_theta"
         containing the ellipse parameters for a given gridcell.
     """
-    required_cols = ["gridcell_lat", "gridcell_lon"]
+    required_cols = ["grid_lat", "grid_lon"]
     check_cols(df, required_cols)
     ellipse_df = pl.from_pandas(
         ellipse_monthly_array.to_dataframe().reset_index(drop=False)
@@ -135,12 +135,10 @@ def merge_ellipse_params(
 
     df = df.join(
         ellipse_df,
-        left_on=["gridcell_lat", "gridcell_lon"],
+        left_on=["grid_lat", "grid_lon"],
         right_on=["latitude", "longitude"],
     )
-    df = df.rename(
-        {"lx": "gridcell_lx", "ly": "gridcell_ly", "theta": "gridcell_theta"}
-    )
+    df = df.rename({"lx": "grid_lx", "ly": "grid_ly", "theta": "grid_theta"})
     return df
 
 

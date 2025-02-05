@@ -136,9 +136,8 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
     df : polars.DataFrame
         The observational DataFrame, containing positional information for each
         observation ("lat", "lon"), gridbox specific positional information
-        ("gridcell_lat", "gridcell_lon"), and ellipse length-scale parameters
-        used for computation of `sigma` ("gridcell_lx", "gridcell_ly",
-        "gridcell_theta").
+        ("grid_lat", "grid_lon"), and ellipse length-scale parameters used for
+        computation of `sigma` ("grid_lx", "grid_ly", "grid_theta").
 
     Returns
     -------
@@ -147,25 +146,23 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
         is the tau/Mahalanobis distance.
     """
     required_cols = [
-        "gridcell_lon",
-        "gridcell_lat",
-        "gridcell_lx",
-        "gridcell_ly",
-        "gridcell_theta",
+        "grid_lon",
+        "grid_lat",
+        "grid_lx",
+        "grid_ly",
+        "grid_theta",
         "lat",
         "lon",
     ]
     check_cols(df, required_cols)
     # Get northing and easting
-    lat0, lon0 = df.select(["gridcell_lat", "gridcell_lon"]).row(0)
+    lat0, lon0 = df.select(["grid_lat", "grid_lon"]).row(0)
     latlons = np.asarray(df.select(["lat", "lon"]).to_numpy())
     ne = latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
     paired_dist = paired_vector_dist(ne)
 
     # Get sigma
-    Lx, Ly, theta = df.select(
-        ["gridcell_lx", "gridcell_ly", "gridcell_theta"]
-    ).row(0)
+    Lx, Ly, theta = df.select(["grid_lx", "grid_ly", "grid_theta"]).row(0)
     sigma = Ls2sigma(Lx, Ly, theta)
 
     tau = compute_tau_wrapper(paired_dist, sigma)
