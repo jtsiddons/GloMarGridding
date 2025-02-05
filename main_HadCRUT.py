@@ -432,6 +432,7 @@ def main():  # noqa: C901, D103
                 # print(interp_covariance)
 
             error_covariance = get_error_cov(current_year, current_month)
+            logging.info("Got Error Covariance")
             print(f"{error_covariance = }")
 
             ec_1 = error_covariance[~np.isnan(error_covariance)]
@@ -536,6 +537,9 @@ def main():  # noqa: C901, D103
             )
             logging.info("Kriging done, saving output")
             print(anom)
+            print(f"{np.all(np.isnan(anom)) = }")
+            print(f"{np.any(np.isnan(anom)) = }")
+            print("-" * 10)
             print(uncert)
             print(grid_obs_2d)
 
