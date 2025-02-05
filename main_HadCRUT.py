@@ -24,6 +24,8 @@ import yaml
 # math tools
 import numpy as np
 
+np.random.seed(12345)
+
 # data handling tools
 import polars as pl
 import xarray as xr
@@ -368,7 +370,10 @@ def main():  # noqa: C901, D103
             interpolation_covariance_type == "distance"
             and interp_covariance is not None
         ):
-            y = np.random.multivariate_normal(0, interp_covariance)
+            y = np.random.multivariate_normal(
+                np.zeros(interp_covariance.shape[0]),
+                interp_covariance,
+            )
 
         ncfilename = f"{current_year}_kriged"
         if member:
@@ -410,7 +415,10 @@ def main():  # noqa: C901, D103
                     )
                 )["covariance"].values
                 logging.info("Loaded ellipse interpolation covariance")
-                y = np.random.multivariate_normal(0, interp_covariance)
+                y = np.random.multivariate_normal(
+                    np.zeros(interp_covariance.shape[0]),
+                    interp_covariance,
+                )
                 print(f"{interp_covariance = }")
 
             error_covariance = get_error_cov(current_year, current_month)
@@ -436,7 +444,8 @@ def main():  # noqa: C901, D103
                 continue
             y_obs = y[mon_df.get_column("grid_idx")]
             y_obs_prime: np.ndarray = y_obs + np.random.multivariate_normal(
-                0, error_covariance
+                np.zeros(error_covariance.shape[0]),
+                error_covariance,
             )
             logging.info("Aligned observations to output grid")
 
