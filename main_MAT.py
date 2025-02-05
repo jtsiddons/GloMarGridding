@@ -1,8 +1,9 @@
-#!/usr/bin/env python  # noqa: D100
+#!/usr/bin/env python
 """
 Script to run Kriging for MAT from ICOADS data.
 
 By A. Faulkner for python version 3.0 and up.
+Modified by J. Siddons, requires python >= 3.11.
 """
 
 # argument parser
@@ -21,8 +22,10 @@ from PyCOADS.processing.solar import is_daytime
 
 import glomar_gridding.error_covariance as err_cov
 from glomar_gridding.kriging import kriging
-from glomar_gridding.observations import read_climatology
-from glomar_gridding.climatology import join_climatology_by_doy
+from glomar_gridding.climatology import (
+    join_climatology_by_doy,
+    read_climatology,
+)
 from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.interpolation_covariance import load_covariance
 from glomar_gridding.io import load_array, load_dataset
@@ -234,7 +237,7 @@ def main():  # noqa: D103
     print(output_lon)
 
     climatology = read_climatology(
-        climatology, lat_north, lat_south, lon_west, lon_east
+        climatology, lat_south, lat_north, lon_west, lon_east
     )
     print(climatology)
     clim = climatology.t10m_clim_day

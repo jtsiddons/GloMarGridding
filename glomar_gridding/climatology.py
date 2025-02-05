@@ -2,7 +2,8 @@
 
 import polars as pl
 import xarray as xr
-from glomar_gridding.utils import find_nearest
+from glomar_gridding.utils import find_nearest, select_bounds
+from glomar_gridding.io import load_dataset
 
 
 def join_climatology_by_doy(
@@ -137,3 +138,50 @@ def join_climatology_by_doy(
     )
 
     return obs_df.drop_nulls()
+
+
+def read_climatology(
+    clim_path: str,
+    min_lat: float = -90,
+    max_lat: float = 90,
+    min_lon: float = -180,
+    max_lon: float = 180,
+    lat_var: str = "lat",
+    lon_var: str = "lon",
+    **kwargs,
+) -> xr.Dataset:
+    """
+    Load a climatology dataset from a netCDF file.
+
+    Parameters
+    ----------
+    clim_path : str
+        Path to the climatology file. Can contain format blocks to be replaced
+        by the values passed to kwargs.
+    min_lat : float
+        Minimum latitude to load.
+    max_lat : float
+        Maximum latitude to load.
+    min_lon : float
+        Minimum longitude to load.
+    max_lon : float
+        Maximum longitude to load.
+    lat_var : str
+        Name of the latitude variable.
+    lon_var : str
+        Name of the longitude variable.
+    **kwargs
+        Replacement values for the climatology path.
+
+    Returns
+    -------
+    clim_ds : xarray.Dataset
+        Containing the climatology bounded by the min/max arguments provided.
+    """
+    clim_ds = xr.load_dataset(clim_path, **kwargs)
+    clim_ds = select_bounds(
+        clim_ds,
+        bounds=[(min_lat, max_lat), (min_lon, max_lon)],
+        variables=[lat_var, lon_var],
+    )
+    return clim_ds
