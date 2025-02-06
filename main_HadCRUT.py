@@ -44,7 +44,8 @@ from glomar_gridding.perturbation import scipy_mv_normal_draw
 import logging
 import warnings
 
-np.random.seed(12345)
+MULTI: int = 4
+ADDER: int = 71
 
 
 parser = argparse.ArgumentParser()
@@ -121,6 +122,11 @@ parser.add_argument(
 )
 
 
+def _set_seed(ensemble: int, multi: int = MULTI, adder: int = ADDER) -> None:
+    np.random.seed(ensemble * multi + adder)
+    return None
+
+
 def _parse_args(
     parser,
 ) -> tuple[dict, dict, int, int, int, str, str, str, int, str | None]:
@@ -143,6 +149,7 @@ def _parse_args(
         raise ValueError(
             f"Ensemble member must be between 1 and 200, got {member}"
         )
+    _set_seed(member)
 
     return (
         config,
