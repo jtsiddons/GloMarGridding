@@ -261,7 +261,22 @@ def _initialise_ncfile(
     krig_epsilon.standard_name = f"{variable} perturbation epsilon"
     krig_epsilon.units = "deg C"  # degrees Kelvin
 
-    return lon, lat, time, krig_anom, krig_uncert, grid_obs, krig_epsilon
+    krig_anom_perturbed = ncfile.createVariable(
+        f"{variable}_anomaly_perturbed", np.float32, ("time", "lat", "lon")
+    )
+    krig_anom_perturbed.standard_name = f"perturbed {variable} anomaly"
+    krig_anom_perturbed.units = "deg C"  # degrees Kelvin
+
+    return (
+        lon,
+        lat,
+        time,
+        krig_anom,
+        krig_uncert,
+        grid_obs,
+        krig_epsilon,
+        krig_anom_perturbed,
+    )
 
 
 def main():  # noqa: C901, D103
@@ -405,10 +420,17 @@ def main():  # noqa: C901, D103
 
         ncfile = nc.Dataset(ncfilename, mode="w", format="NETCDF4_CLASSIC")
 
-        lon, lat, time, krig_anom, krig_uncert, grid_obs, krig_epsilon = (
-            _initialise_ncfile(
-                ncfile, output_lon, output_lat, current_year, variable
-            )
+        (
+            lon,
+            lat,
+            time,
+            krig_anom,
+            krig_uncert,
+            grid_obs,
+            krig_epsilon,
+            krig_anom_perturbed,
+        ) = _initialise_ncfile(
+            ncfile, output_lon, output_lat, current_year, variable
         )
         logging.info(f"Initialised output file for {current_year = }")
 
@@ -546,11 +568,15 @@ def main():  # noqa: C901, D103
             anom = np.reshape(anom, output_grid.shape)
             uncert = np.reshape(uncert, output_grid.shape)
             epsilon = np.reshape(epsilon, output_grid.shape)
+            anom_perturbed = anom + epsilon
             logging.info("Reshaped kriging outputs")
 
             # Write the data.
             # This writes each time slice to the netCDF
             krig_anom[timestep, :, :] = anom  # ordinary_kriging
+            krig_anom_perturbed[timestep, :, :] = (
+                anom_perturbed  # ordinary_kriging
+            )
             krig_uncert[timestep, :, :] = uncert  # ordinary_kriging
             krig_epsilon[timestep, :, :] = epsilon  # ordinary_kriging
             grid_obs[timestep, :, :] = grid_obs_2d.astype(np.float32)
