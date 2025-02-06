@@ -111,9 +111,19 @@ parser.add_argument(
     + "2:yes but median, 3:yes but spatial mean",
     choices=[0, 1, 2, 3],
 )
+parser.add_argument(
+    "-log_file",
+    dest="log_file",
+    type=str,
+    required=False,
+    default=None,
+    help="File to send logs. If not set will display logs on stdout",
+)
 
 
-def _parse_args(parser) -> tuple[dict, dict, int, int, int, str, str, str, int]:
+def _parse_args(
+    parser,
+) -> tuple[dict, dict, int, int, int, str, str, str, int, str | None]:
     args = parser.parse_args()
     with open(args.config, "r") as io:
         config: dict = yaml.safe_load(io)
@@ -144,6 +154,7 @@ def _parse_args(parser) -> tuple[dict, dict, int, int, int, str, str, str, int]:
         args.method,
         args.interpolation,
         args.remove_obs_mean,
+        args.log_file,
     )
 
 
@@ -254,7 +265,6 @@ def _initialise_ncfile(
 
 
 def main():  # noqa: C901, D103
-    init_logging()
     (
         config,
         var_config,
@@ -265,7 +275,10 @@ def main():  # noqa: C901, D103
         method,
         interpolation_covariance_type,
         remove_obs_mean,
+        log_file,
     ) = _parse_args(parser)
+
+    init_logging(log_file)
 
     logging.info("Loaded configuration")
     print(f"{config = }")

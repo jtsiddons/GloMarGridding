@@ -344,14 +344,32 @@ def get_pentad_range(centre_date: date) -> tuple[date, date]:
     return start_date, end_date
 
 
-def init_logging() -> None:
-    """Initialise the logger"""
+def init_logging(file: str | None = None) -> None:
+    """
+    Initialise the logger
+
+    Parameters
+    ----------
+    file : str | None
+        File to send log messages to. If set to None (default) then print log
+        messages to STDout
+    """
     from importlib import reload
 
     reload(logging)  # Clear the logging from cdm_reader_mapper
-    logging.basicConfig(
-        format="\n%(levelname)s at %(asctime)s : %(message)s\n",
-        level=logging.DEBUG,
-    )
+    if file is None:
+        logging.basicConfig(
+            format="\n%(levelname)s at %(asctime)s : %(message)s\n",
+            level=logging.INFO,
+        )
+    else:
+        logging.basicConfig(
+            filename=file,
+            filemode="a",
+            encoding="utf-8",
+            format="%(levelname)s at %(asctime)s : %(message)s",
+            level=logging.INFO,
+        )
+
     logging.captureWarnings(True)
     return None
