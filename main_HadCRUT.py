@@ -122,8 +122,8 @@ parser.add_argument(
 )
 
 
-def _set_seed(ensemble: int, multi: int = MULTI, adder: int = ADDER) -> None:
-    np.random.seed(ensemble * multi + adder)
+def _set_seed(ensemble: int, year: int):
+    np.random.seed(ensemble * (10**4) + year)
     return None
 
 
@@ -149,7 +149,6 @@ def _parse_args(
         raise ValueError(
             f"Ensemble member must be between 1 and 200, got {member}"
         )
-    _set_seed(member)
 
     return (
         config,
@@ -401,6 +400,10 @@ def main():  # noqa: C901, D103
     month_list = range(1, 13)
 
     for current_year in year_list:
+        # Set the seed based on the ensemble member and year combination for
+        # reproducibility
+        np.random.seed(_set_seed(member, current_year))
+
         try:
             ncfile.close()  # make sure dataset is not already open.
         except (NameError, RuntimeError):
