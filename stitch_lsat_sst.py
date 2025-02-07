@@ -180,8 +180,8 @@ def main() -> None:  # noqa: D103
         [
             pl.col("grid_idx"),
             pl.col("time"),
-            pl.min_horizontal(
-                pl.max_horizontal(
+            pl.max_horizontal(
+                pl.min_horizontal(
                     1 - pl.col("sic") + pl.col("sea_fraction"),
                     pl.lit(1),
                 ),
