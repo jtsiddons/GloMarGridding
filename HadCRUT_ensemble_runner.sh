@@ -11,7 +11,7 @@ source ./.venv/bin/activate
 for ensemble in {1..200}; do
     echo "==============================="
     echo "Doing ensemble member $ensemble"
-    ./main_HadCRUT.py -config $config_file -year_start $syr -year_stop $eyr -member $ensemble -variable "sst" -log_file "$log_file"
+    ./main_HadCRUT.py -config $config_file -year_start $syr -year_stop $eyr -member $ensemble -variable "lsat" -log_file "$log_file" -interpolation "distance"
     echo "==============================="
     echo ""
     echo ""
