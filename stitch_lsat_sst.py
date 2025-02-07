@@ -139,7 +139,7 @@ def main() -> None:  # noqa: D103
     year_start: int = config.get("domain", {}).get("startyear", 1850)
     year_end: int = config.get("domain", {}).get("endyear", 2024)
 
-    sea_area_fraction = load_array(sea_area_fraction_path, "sea_area_fraction")
+    sea_area_fraction = load_array(sea_area_fraction_path, "sea_fraction")
 
     lon_west: float = config.get("domain", {}).get("west", -180.0)
     lon_east: float = config.get("domain", {}).get("east", 180.0)
