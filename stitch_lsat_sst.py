@@ -23,9 +23,10 @@ from glomar_gridding.grid import (
     grid_from_resolution,
 )
 from glomar_gridding.io import load_array, load_dataset
+from glomar_gridding.utils import days_since_by_month
 
 CONFIG_PATH: str = os.path.join(os.path.dirname(__file__), "config_stitch.yaml")
-ENSEMBLES: list[int] = list(range(1, 11))
+ENSEMBLES: list[int] = list(range(1, 201))
 
 
 def _align_sea_area_fraction(
@@ -222,7 +223,7 @@ def main() -> None:  # noqa: D103
 
         lat[:] = output_lat
         lon[:] = output_lon
-        time[:] = output_time
+        time[:] = days_since_by_month(year, 15)
 
         times = pl.from_numpy(output_time.values).to_series()
 
