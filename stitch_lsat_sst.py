@@ -227,10 +227,13 @@ def main() -> None:  # noqa: D103
 
         times = pl.from_numpy(output_time.values).to_series()
 
+        frac_year_df = ice_fraction_df.filter(pl.col("time").dt.year().eq(year))
+
         print("  Beginning loop over times")
         for i, t in enumerate(times):
-            frac_month_df = ice_fraction_df.filter(
+            frac_month_df = frac_year_df.filter(
                 pl.col("time").dt.month().eq(t.month)
+                & pl.col("time").dt.year().eq(year)
             )
             frac_month = assign_to_grid(
                 frac_month_df.get_column("sea_fraction").to_numpy(),
@@ -246,6 +249,8 @@ def main() -> None:  # noqa: D103
             temp_anom[i, :, :] = out
             print(f"  Done with {i = }, {t = }")
             continue
+
+        del frac_year_df
 
         ncfile.close()
 
