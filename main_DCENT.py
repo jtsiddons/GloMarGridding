@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
-################
-# by A. Faulkner
-# for python version 3.0 and up
-################
+"""
+By A. Faulkner
+For python version 3.0 and up
+Modified by J. Siddons (2025-01). Requires python >= 3.11.
+"""
 
 # global
 import os
 from datetime import datetime
+import logging
 
 # argument parser
 import argparse
-from configparser import ConfigParser
+import yaml
 
 # math tools
 import numpy as np
@@ -24,137 +26,175 @@ import netCDF4 as nc
 # self-written modules (from the same directory)
 import glomar_gridding.observations as obs_module
 import glomar_gridding.kriging as krig
-from glomar_gridding.utils import ConfigParserMultiValues
+from glomar_gridding.kriging import kriging
+from glomar_gridding.utils import init_logging
+from glomar_gridding.grid import (
+    align_to_grid,
+    assign_to_grid,
+    grid_from_resolution,
+)
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-config",
+    dest="config",
+    required=True,
+    default="config.ini",
+    help="INI file containing configuration settings",
+    type=str,
+)
+parser.add_argument(
+    "-year_start",
+    dest="year_start",
+    required=False,
+    help="start year",
+    type=int,
+)
+parser.add_argument(
+    "-year_stop",
+    dest="year_stop",
+    required=False,
+    help="end year",
+    type=int,
+)
+parser.add_argument(
+    "-member",
+    dest="member",
+    required=True,
+    help="ensemble member: required argument",
+    type=int,
+    default=0,
+)
+parser.add_argument(
+    "-variable",
+    dest="variable",
+    required=False,
+    help="variable to process: sst or lsat",
+    type=str,
+    choices=["lsat", "sst"],
+    default="sst",
+)
+parser.add_argument(
+    "-method",
+    dest="method",
+    default="simple",
+    required=False,
+    help='Kriging Method - one of "simple" or "ordinary"',
+    type=str,
+    choices=["simple", "ordinary"],
+)
+parser.add_argument(
+    "-interpolation",
+    dest="interpolation",
+    default="ellipse",
+    required=False,
+    help='Interpolation covariance - one of "distance" or "ellipse"',
+    type=str,
+    choices=["distance", "ellipse"],
+)
+parser.add_argument(
+    "-remove_obs_mean",
+    dest="remove_obs_mean",
+    default=0,
+    required=False,
+    type=int,
+    help="Should the global mean be removed? - 0:no, 1:yes, "
+    + "2:yes but median, 3:yes but spatial mean",
+    choices=[0, 1, 2, 3],
+)
+parser.add_argument(
+    "-log_file",
+    dest="log_file",
+    type=str,
+    required=False,
+    default=None,
+    help="File to send logs. If not set will display logs on stdout",
+)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-config",
-        dest="config",
-        required=True,
-        default="config.ini",
-        help="INI file containing configuration settings",
-        type=str,
-    )
-    parser.add_argument(
-        "-year_start",
-        dest="year_start",
-        required=False,
-        help="start year",
-        type=int,
-    )
-    parser.add_argument(
-        "-year_stop",
-        dest="year_stop",
-        required=False,
-        help="end year",
-        type=int,
-    )
-    parser.add_argument(
-        "-member",
-        dest="member",
-        required=True,
-        help="ensemble member: required argument",
-        type=int,
-        default=0,
-    )
-    parser.add_argument(
-        "-variable",
-        dest="variable",
-        required=False,
-        help="variable to process: sst or lsat",
-        type=str,
-        choices=["lsat", "sst"],
-        default="sst",
-    )
-    parser.add_argument(
-        "-method",
-        dest="method",
-        default="simple",
-        required=False,
-        help='Kriging Method - one of "simple" or "ordinary"',
-        type=str,
-        choices=["simple", "ordinary"],
-    )
-    parser.add_argument(
-        "-interpolation",
-        dest="interpolation",
-        default="ellipse",
-        required=False,
-        help='Interpolation covariance - one of "distance" or "ellipse"',
-        type=str,
-        choices=["distance", "ellipse"],
-    )
-
-    parser.add_argument(
-        "-remove_obs_mean",
-        dest="remove_obs_mean",
-        default=0,
-        required=False,
-        type=int,
-        help="Should the global mean be removed? - 0:no, 1:yes, "
-        + "2:yes but median, 3:yes but spatial mean",
-        choices=[0, 1, 2, 3],
-    )
-
+def _parse_args(
+    parser,
+) -> tuple[dict, dict, int, int, int, str, str, str, int, str | None]:
     args = parser.parse_args()
-
-    config_file = args.config
-    print(config_file)
-
-    # load config options from ini file
-    # this is done using an ini config file, which is located in the same direcotry as the python code
-    # instantiate
-    # ===== MODIFIED =====
-    config = ConfigParser(
-        strict=False,
-        empty_lines_in_values=False,
-        dict_type=ConfigParserMultiValues,
-        converters={"list": ConfigParserMultiValues.getlist},
+    with open(args.config, "r") as io:
+        config: dict = yaml.safe_load(io)
+    year_start: int = args.year_start or config.get("domain", {}).get(
+        "startyear", 1850
     )
-    # ===== MODIFIED =====
-    # parce existing config file
-    config.read(config_file)  # ('config.ini' or 'three_step_kriging.ini')
+    year_stop: int = args.year_stop or config.get("domain", {}).get(
+        "endyear", 2023
+    )
+    variable = args.variable
+    var_config: dict = config.get(variable, {})
+    if not var_config:
+        raise ValueError(f"Cannot get variable configuration for {variable}")
+
+    member = args.member
+    if member < 1 or member > 200:
+        raise ValueError(
+            f"Ensemble member must be between 1 and 200, got {member}"
+        )
+
+    return (
+        config,
+        var_config,
+        year_start,
+        year_stop,
+        member,
+        variable,
+        args.method,
+        args.interpolation,
+        args.remove_obs_mean,
+        args.log_file,
+    )
+
+
+def main():  # noqa: C901, D103
+    (
+        config,
+        var_config,
+        year_start,
+        year_stop,
+        member,
+        variable,
+        method,
+        interpolation_covariance_type,
+        remove_obs_mean,
+        log_file,
+    ) = _parse_args(parser)
+
+    init_logging(log_file)
 
     print(config)
 
-    # read values from auxiliary_files section
-    # for string use config.get
-    # for boolean use config.getboolean
-    # for int use config.getint
-    # for float use config.getfloat
-    # for list (multiple options for same key) use config.getlist
-
     # set boundaries for the domain
-    lon_west = config.getfloat("DCENT", "lon_west")  # -180.
-    lon_east = config.getfloat("DCENT", "lon_east")  # 180.
-    lat_south = config.getfloat("DCENT", "lat_south")  # -90.
-    lat_north = config.getfloat("DCENT", "lat_north")  # 90.
+    lon_west: float = config.get("domain", {}).get("west", -180.0)
+    lon_east: float = config.get("domain", {}).get("east", 180.0)
+    lat_south: float = config.get("domain", {}).get("south", -90.0)
+    lat_north: float = config.get("domain", {}).get("north", 90.0)
 
-    year_start = args.year_start or config.getint("DCENT", "startyear")
-    year_stop = args.year_stop or config.getint("DCENT", "endyear")
-    print(year_start, year_stop)
+    output_grid: xr.DataArray = grid_from_resolution(
+        resolution=5.0,
+        bounds=[
+            (lat_south + 2.5, lat_north + 2.5),
+            (lon_west + 2.5, lon_east + 2.5),
+        ],
+        coord_names=["lat", "lon"],
+    )
+    output_lat: np.ndarray = output_grid.coords["lat"].values
+    output_lon: np.ndarray = output_grid.coords["lon"].values
+    logging.info("Initialised Output Grid")
+    print(f"{output_lat = }")
+    print(f"{output_lon = }")
 
     # location of the ICOADS observation files
-    data_path = config.get("DCENT", "observations")
+    data_path = config.get("DCENT", {}).get("observations")
 
     # location of landmasks
-    landmask = config.get("DCENT", "land_mask")
+    landmask = config.get("DCENT", {}).get("land_mask")
 
     # path to output directory
-    output_directory = config.get("DCENT", "output_dir")
-
-    # extract the latitude and longitude boundaries from user input
-    lon_bnds, lat_bnds = (lon_west, lon_east), (lat_south, lat_north)
-    print(lon_bnds, lat_bnds)
-
-    output_lat = np.arange(lat_bnds[0] + 2.5, lat_bnds[-1] + 2.5, 5)
-    output_lon = np.arange(lon_bnds[0] + 2.5, lon_bnds[-1] + 2.5, 5)
-    print(f"{output_lat =}")
-    print(f"{output_lon =}")
-
-    member = args.member
+    output_directory = config.get("DCENT", {}).get("output_dir")
 
     # ts1 = datetime.now()
     # print(ts1)
@@ -164,35 +204,34 @@ def main():
             data_path, f"DCENT_ensemble_1850_2023_member_{member:03d}.nc"
         )
     )
-    print("loaded observations")
+    logging.info("loaded observations")
     # ts2 = datetime.now()
     # print(ts2)
     print(obs)
 
     # what variable is being processed
-    variable = args.variable
     # path to directory where the covariance(s) is/are located
-    error_cov_dir = config.get(variable, "error_covariance_path")
+    error_cov_dir = config.get(variable, {}).get("error_covariance_path")
 
-    interpolation_covariance_type = args.interpolation
     match interpolation_covariance_type:
         case "distance":
-            interpolation_covariance_path = config.get(
-                variable, "distance_interpolation_covariance"
+            interpolation_covariance_path = config.get(variable, {}).get(
+                "distance_interpolation_covariance"
             )
             interp_covariance = np.load(interpolation_covariance_path)
         case "ellipse":
-            interpolation_covariance_path = config.get(
-                variable, "ellipse_interpolation_covariance"
+            interpolation_covariance_path = config.get(variable, {}).get(
+                "ellipse_interpolation_covariance"
             )
         case _:
             raise ValueError(
-                f"Somehow we got a bad interpolation value {interpolation_covariance_type}"
+                "Somehow we got a bad interpolation value "
+                + interpolation_covariance_type
             )
 
-    var_range = config.getfloat(variable, "range")
-    var_sigma = config.getfloat(variable, "sigma")
-    # var_matern = config.getfloat(variable, 'matern')
+    var_range = config.get(variable, {}).get("range")
+    var_sigma = config.get(variable, {}).get("sigma")
+    # var_matern = config.get(variable, {}).get("matern")
 
     match variable:
         case "sst":
@@ -224,7 +263,11 @@ def main():
     # print(error_cov.shape)
     # print(len(error_cov.shape))
 
-    output_directory = os.path.join(output_directory, variable)
+    output_directory = os.path.join(
+        output_directory,
+        interpolation_covariance_type,
+        variable,
+    )
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     print(output_directory)
@@ -234,7 +277,7 @@ def main():
     for current_year in year_list:
         try:
             ncfile.close()  # make sure dataset is not already open.
-        except (NameError, RuntimeError) as e:
+        except (NameError, RuntimeError):
             pass
         except Exception as e:  # Unknown Error
             raise e
@@ -300,7 +343,7 @@ def main():
         lat[:] = output_lat  # ds.lat.values
         lon[:] = output_lon  # ds.lon.values
 
-        for current_month in range(1, 13):
+        for timestep, current_month in enumerate(range(1, 13)):
             timestep = current_month - 1
             print("Current month and year: ", (current_month, current_year))
 
@@ -418,7 +461,7 @@ def main():
                     "covariance"
                 ].values
 
-            anom, uncert = krig.kriging(
+            anom, uncert = kriging(
                 grid_idx,
                 W,
                 np.asarray(mon_df[variable].values),
