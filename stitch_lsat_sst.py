@@ -180,18 +180,17 @@ def main() -> None:  # noqa: D103
         [
             pl.col("grid_idx"),
             pl.col("time"),
-            pl.max_horizontal(
+            (1 - pl.max_horizontal(
                 pl.min_horizontal(
-                    1 - pl.col("sic") + pl.col("sea_fraction"),
+                    (pl.col("sic").fill_nan(0).fill_null(0) + 1 - pl.col("sea_fraction")),
                     pl.lit(1),
                 ),
                 pl.lit(0),
-            )
-            .fill_nan(0)
-            .fill_null(0)
+            ))
             .alias("sea_fraction"),
         ]
     )
+
     print("Prepared Ice Fraction and Sea Fraction for the input period")
     print(ice_fraction_df)
 
@@ -229,7 +228,7 @@ def main() -> None:  # noqa: D103
 
         frac_year_df = ice_fraction_df.filter(pl.col("time").dt.year().eq(year))
 
-        print("  Beginning loop over times")
+        # print("  Beginning loop over times")
         for i, t in enumerate(times):
             frac_month_df = frac_year_df.filter(
                 pl.col("time").dt.month().eq(t.month)
@@ -242,12 +241,12 @@ def main() -> None:  # noqa: D103
             )
             del frac_month_df
 
-            out = (sst[i, :, :] + frac_month) + (
-                lsat[i, :, :] + (1 - frac_month)
+            out = (sst[i, :, :] * frac_month) + (
+                lsat[i, :, :] * (1 - frac_month)
             )
 
             temp_anom[i, :, :] = out
-            print(f"  Done with {i = }, {t = }")
+            # print(f"  Done with {i = }, {t = }")
             continue
 
         del frac_year_df
