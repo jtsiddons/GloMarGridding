@@ -1,0 +1,19 @@
+# Configuration for stitching HadCRUT from SST and LSAT files using
+# Ice and Sea Fraction files
+
+domain:
+  west: !!float -180.
+  east: !!float 180.
+  south: !!float -90.
+  north: !!float 90.
+
+  startyear: !!int 1850
+  endyear: !!int 2023
+
+  
+ice_fraction_path: "/noc/mpoc/surface_data/HadISST2_SeaIce_updated/HadISST_current/HadISST_ice.nc"
+sea_fraction_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ABSOLUTE/19800115_regridded_sst.nc"
+
+sst_path: "/noc/mpoc/surface/josidd/git/kriging_fork/scratch/HadCRUT/output/distance/tos/{year}_kriged_member_{ensemble:03d}.nc"
+lsat_path: "/noc/mpoc/surface/josidd/git/kriging_fork/scratch/HadCRUT/output/distance/tas/{year}_kriged_member_{ensemble:03d}.nc"
+out_path: "/noc/mpoc/surface/josidd/git/kriging_fork/scratch/HadCRUT/output/distance/stitched/{year}_kriged_member_{ensemble:03d}.nc"
