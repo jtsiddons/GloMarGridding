@@ -12,8 +12,8 @@ from .utils import filter_bounds, find_nearest, select_bounds
 def align_to_grid(
     obs: pl.DataFrame,
     grid: xr.DataArray,
-    grid_coords: list[str] = ["latitude", "longitude"],
     obs_coords: list[str] = ["lat", "lon"],
+    grid_coords: list[str] = ["latitude", "longitude"],
     sort: bool = True,
     bounds: list[tuple[float, float]] | None = None,
     add_grid_pts: bool = True,
@@ -37,12 +37,12 @@ def align_to_grid(
         grid.
     grid : xarray.DataArray
         Contains the grid coordinates to map observations to.
-    grid_coords : list[str]
-        Names of the coordinates in the input grid DataArray used to define the
-        grid.
     obs_coords : list[str]
         Names of the column containing positional values in the input
         observational DataFrame.
+    grid_coords : list[str]
+        Names of the coordinates in the input grid DataArray used to define the
+        grid.
     sort : bool
         Sort the observational DataFrame by the grid index
     bounds : list[tuple[float, float]] | None

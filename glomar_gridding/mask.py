@@ -17,8 +17,8 @@ def mask_observations(
     mask_varname: str = "mask",
     masked_value: Any = np.nan,
     mask_value: Any = True,
-    mask_coords: list[str] = ["latitude", "longitude"],
     obs_coords: list[str] = ["lat", "lon"],
+    mask_coords: list[str] = ["latitude", "longitude"],
     align_to_mask: bool = False,
     drop: bool = False,
     mask_grid_prefix: str = "_mask_grid_",
@@ -41,15 +41,15 @@ def mask_observations(
         Value indicating masked values in the DataArray.
     mask_value : Any
         Value to set masked values to in the observational DataFrame.
+    obs_coords : list[str]
+        A list of coordinate names in the observational DataFrame. Used to map
+        the mask DataArray to the observational DataFrame. The order must align
+        with the coordinates of the mask DataArray.
     mask_coords : list[str]
         A list of coordinate names in the mask DataArray. These coordinates are
         mapped onto the observational DataFrame in order to apply the mask. The
         ordering of the coordinate names in this list must match those in the
         obs_coords list.
-    obs_coords : list[str]
-        A list of coordinate names in the observational DataFrame. Used to map
-        the mask DataArray to the observational DataFrame. The order must align
-        with the coordinates of the mask DataArray.
     align_to_mask : bool
         Optionally align the observational DataFrame to the mask DataArray.
         This essentially sets the mask's grid as the output grid for
@@ -79,8 +79,8 @@ def mask_observations(
     obs = align_to_grid(
         obs=obs,
         grid=mask,
-        grid_coords=mask_coords,
         obs_coords=obs_coords,
+        grid_coords=mask_coords,
         grid_prefix=mask_grid_prefix,
         sort=False,
         add_grid_pts=align_to_mask,
