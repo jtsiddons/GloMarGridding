@@ -7,6 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 import numpy as np
+import xarray as xr
 from warnings import warn
 
 from scipy.special import gamma, kv
@@ -18,7 +19,9 @@ from .utils import find_nearest
 class Variogram:
     """Place holder"""
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the Variogram model to a distance matrix"""
         raise NotImplementedError("Not implemented for base Variogram class")
 
@@ -37,9 +40,14 @@ class LinearVariogram(Variogram):
     slope: float | np.ndarray
     nugget: float | np.ndarray
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the LinearVariogram model to a distance matrix"""
-        return self.slope * distance_matrix + self.nugget
+        out = self.slope * distance_matrix + self.nugget
+        if isinstance(out, xr.DataArray):
+            out.name = "variogram"
+        return out
 
 
 # DELETE: deprecated
@@ -77,7 +85,9 @@ class PowerVariogram(Variogram):
     exponent: float | np.ndarray
     nugget: float | np.ndarray
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the PowerVariogram model to a distance matrix"""
         return (
             self.scale * np.power(distance_matrix, self.exponent) + self.nugget
@@ -120,9 +130,11 @@ class GaussianVariogram(Variogram):
     range: float | np.ndarray
     nugget: float | np.ndarray
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the GaussianVariogram model to a distance matrix"""
-        return (
+        out = (
             self.psill
             * (
                 1.0
@@ -135,6 +147,9 @@ class GaussianVariogram(Variogram):
             )
             + self.nugget
         )
+        if isinstance(out, xr.DataArray):
+            out.name = "variogram"
+        return out
 
 
 # DELETE: deprecated
@@ -175,12 +190,17 @@ class ExponentialVariogram(Variogram):
     range: float | np.ndarray
     nugget: float | np.ndarray
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the ExponentialVariogram model to a distance matrix"""
-        return (
+        out = (
             self.psill * (1.0 - np.exp(-(distance_matrix / (self.range / 3.0))))
             + self.nugget
         )
+        if isinstance(out, xr.DataArray):
+            out.name = "variogram"
+        return out
 
 
 # DELETE: deprecated
@@ -268,7 +288,9 @@ class MaternVariogram(Variogram):
     def _left(self):
         return 1.0 / (gamma(self.nu) * np.power(2.0, self.nu - 1.0))
 
-    def _middle(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def _middle(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "classic":
                 return np.power(
@@ -285,7 +307,9 @@ class MaternVariogram(Variogram):
             case _:
                 raise ValueError("Unexpected 'method' value")
 
-    def _right(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def _right(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "classic":
                 return kv(
@@ -302,9 +326,11 @@ class MaternVariogram(Variogram):
             case _:
                 raise ValueError("Unexpected 'method' value")
 
-    def fit(self, distance_matrix: np.ndarray) -> np.ndarray:
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
         """Fit the MaternVariogram model to a distance matrix"""
-        return (
+        out = (
             self.psill
             * (
                 1
@@ -316,6 +342,13 @@ class MaternVariogram(Variogram):
             )
             + self.nugget
         )
+        # Matern is undefined at 0 distance, so replace nan on diagnonal
+        if isinstance(out, xr.DataArray):
+            np.fill_diagonal(out.values, 0)
+            out.name = "variogram"
+        else:
+            np.fill_diagonal(out, 0)
+        return out
 
 
 # DELETE: deprecated
@@ -525,10 +558,31 @@ def variogram_hadcrut5(
 
 
 def variogram_to_covariance(
-    variogram: np.ndarray,
-    variance: np.ndarray,
-) -> np.ndarray:
-    return variance - variogram
+    variogram: np.ndarray | xr.DataArray,
+    variance: np.ndarray | float,
+) -> np.ndarray | xr.DataArray:
+    """
+    Convert a variogram matrix to a covariance matrix.
+
+    This is given by:
+        covariance = variance - variogram
+
+    Parameters
+    ----------
+    variogram : numpy.ndarray | xarray.DataArray
+        The variogram matrix, output of Variogram.fit.
+    variance : numpy.ndarray | float
+        The variance
+
+    Returns
+    -------
+    cov : numpy.ndarray | xarray.DataArray
+        The covariance matrix
+    """
+    cov = variance - variogram
+    if isinstance(cov, xr.DataArray):
+        cov.name = "covariance"
+    return cov
 
 
 # QUESTION: Can I delete the following?
