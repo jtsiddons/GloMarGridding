@@ -122,13 +122,19 @@ class GaussianVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
-    range : float | np.ndarray
+    effective_range : float | np.ndarray
     nugget : float | np.ndarray
     """
 
     psill: float | np.ndarray
-    range: float | np.ndarray
+    effective_range: float | np.ndarray
     nugget: float | np.ndarray
+
+    @property
+    def range(self):
+        """The range parameter"""
+        return self.effective_range / 3
+        # return self.effective_range * (4 / 7)
 
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
@@ -141,7 +147,7 @@ class GaussianVariogram(Variogram):
                 - np.exp(
                     -(
                         np.power(distance_matrix, 2.0)
-                        / np.power(self.range * (4 / 7), 2.0)
+                        / np.power(self.range, 2.0)
                     )
                 )
             )
@@ -182,13 +188,18 @@ class ExponentialVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
-    range : float | np.ndarray
+    effective_range : float | np.ndarray
     nugget : float | np.ndarray
     """
 
     psill: float | np.ndarray
-    range: float | np.ndarray
+    effective_range: float | np.ndarray
     nugget: float | np.ndarray
+
+    @property
+    def range(self):
+        """The range paramter"""
+        return self.effective_range / 3
 
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
@@ -226,7 +237,7 @@ def exponential_variogram_model(m, d):
     )  # this should be the correct version
 
 
-MaternModel = Literal["classic", "gstat", "karspeck"]
+MaternModel = Literal["sklearn", "gstat", "karspeck"]
 
 
 @dataclass(frozen=True)
@@ -236,9 +247,9 @@ class MaternVariogram(Variogram):
 
     Same args as the Variogram classes with additional nu, method parameters.
 
-    Classic
+    Sklearn
     -------
-    1) This is called ``classic'' because if d/range_ = 1.0 and nu=0.5, it gives
+    1) This is called ``sklearn'' because if d/range_ = 1.0 and nu=0.5, it gives
        1/e correlation...
     2) This is NOT the same formulation as in GSTAT nor in papers about
        non-stationary anistropic covariance models (aka Karspeck paper).
@@ -271,18 +282,38 @@ class MaternVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
-    range : float | np.ndarray
+        Sill of the variogram where it will flatten out. Values in the variogram
+        will not exceed psill + nugget
+    effective_range : float | np.ndarray
+        Effective Range, this is the lag where 95% of ths sill are exceeded.
+        This is not the range parameter, which is defined as r/3 if nu < 0.5 or
+        nu > 10, otherwise r/2 (where r is the effective range).
     nugget : float | np.ndarray
+        The value of the independent variable at distance 0
     nu : float | np.ndarray
+        Smoothing parameter, shapes to a smooth or rough variogram function
     method : MaternModel
-        One of "classic", "gstat", or "karspeck"
+        One of "sklearn", "gstat", or "karspeck"
+        sklearn:
+            https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html#sklearn.gaussian_process.kernels.Matern
+        gstat:
+            https://scikit-gstat.readthedocs.io/en/latest/reference/models.html#matern-model
+        karspeck:
+            https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900
     """
 
     psill: float | np.ndarray
-    range: float | np.ndarray
+    effective_range: float | np.ndarray
     nugget: float | np.ndarray
     nu: float | np.ndarray = 0.5
-    method: MaternModel = "classic"
+    method: MaternModel = "sklearn"
+
+    @property
+    def range(self):
+        """The range parameter"""
+        if 0.5 <= self.nu <= 10:
+            return self.effective_range / 2
+        return self.effective_range / 3
 
     @property
     def _left(self):
@@ -292,7 +323,7 @@ class MaternVariogram(Variogram):
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
-            case "classic":
+            case "sklearn":
                 return np.power(
                     np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
                     self.nu,
@@ -311,7 +342,7 @@ class MaternVariogram(Variogram):
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
-            case "classic":
+            case "sklearn":
                 return kv(
                     self.nu,
                     np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
@@ -344,10 +375,10 @@ class MaternVariogram(Variogram):
         )
         # Matern is undefined at 0 distance, so replace nan on diagnonal
         if isinstance(out, xr.DataArray):
-            np.fill_diagonal(out.values, 0)
+            np.fill_diagonal(out.values, self.nugget)
             out.name = "variogram"
         else:
-            np.fill_diagonal(out, 0)
+            np.fill_diagonal(out, self.nugget)
         return out
 
 
@@ -538,7 +569,7 @@ def variogram_hadcrut5(
     distance_matrix,
     terrain="lnd",
     nugget_=0.0,
-    method: MaternModel = "classic",
+    method: MaternModel = "sklearn",
 ):
     if terrain not in ["lnd", "sea"]:
         raise ValueError("terrain must be lnd or sea.")
@@ -550,7 +581,7 @@ def variogram_hadcrut5(
 
     return MaternVariogram(
         psill=np.power(variogram_parms["sigma"], 2.0),
-        range=variogram_parms["r"],
+        effective_range=variogram_parms["r"],
         nugget=nugget_,
         nu=variogram_parms["v"],
         method=method,
