@@ -3,16 +3,12 @@ Varigram classes for construction of spatial covariance structure from distance
 matrices.
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 import numpy as np
 import xarray as xr
-from warnings import warn
 
 from scipy.special import gamma, kv
-
-from .utils import find_nearest
 
 
 @dataclass(frozen=True)
