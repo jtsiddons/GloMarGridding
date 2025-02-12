@@ -141,7 +141,7 @@ class ExponentialVariogram(Variogram):
     ) -> np.ndarray | xr.DataArray:
         """Fit the ExponentialVariogram model to a distance matrix"""
         out = (
-            self.psill * (1.0 - np.exp(-(distance_matrix / (self.range / 3.0))))
+            self.psill * (1.0 - np.exp(-(distance_matrix / self.range)))
             + self.nugget
         )
         if isinstance(out, xr.DataArray):
