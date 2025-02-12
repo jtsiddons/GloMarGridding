@@ -99,7 +99,7 @@ def radial_dist(
 def euclidean_distance(
     df: pl.DataFrame,
     radius: float = 6371.0,
-) -> float:
+) -> np.ndarray:
     """
     Calculate the Euclidean distance in kilometers between pairs of lat, lon
     points on the earth (specified in decimal degrees).
@@ -127,8 +127,8 @@ def euclidean_distance(
     Returns
     -------
     dist : float
-        The direct distance between the two input points through the sphere
-        defined by the radius parameter.
+        The direct pairwise distance between the positions in the input
+        DataFrame through the sphere defined by the radius parameter.
     """
     if df.columns != ["lat", "lon"]:
         raise ValueError("Input must only contain 'lat' and 'lon' columns")
@@ -148,7 +148,7 @@ def euclidean_distance(
 def haversine_distance(
     df: pl.DataFrame,
     radius: float = 6371,
-) -> float:
+) -> np.ndarray:
     """
     Calculate the great circle distance in kilometers between pairs of lat, lon
     points on the earth (specified in decimal degrees).
@@ -165,9 +165,9 @@ def haversine_distance(
 
     Returns
     -------
-    dist : float
-        The haversine distance between the two input points on the sphere
-        defined by the radius parameter.
+    dist : numpy.ndarray
+        The pairwise haversine distances between the inputs in the DataFrame,
+        on the sphere defined by the radius parameter.
     """
     if df.columns != ["lat", "lon"]:
         raise ValueError("Input must only contain 'lat' and 'lon' columns")
