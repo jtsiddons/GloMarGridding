@@ -10,6 +10,7 @@ component to an error covariance matrix.
 from collections.abc import Callable
 import numpy as np
 import polars as pl
+from sklearn.metrics import euclidean_distances
 from sklearn.metrics.pairwise import haversine_distances
 from scipy.spatial.distance import pdist, squareform
 
@@ -96,13 +97,12 @@ def radial_dist(
 
 
 def euclidean_distance(
-    loc1: tuple[float, float],
-    loc2: tuple[float, float],
+    df: pl.DataFrame,
     radius: float = 6371.0,
 ) -> float:
     """
-    Calculate the Euclidean distance in kilometers between two positions on the
-    earth (specified in decimal degrees).
+    Calculate the Euclidean distance in kilometers between pairs of lat, lon
+    points on the earth (specified in decimal degrees).
 
     See:
     https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
@@ -116,10 +116,10 @@ def euclidean_distance(
 
     Parameters
     ----------
-    loc1 : tuple[float, float]
-        The first position
-    loc2 : tuple[float, float]
-        The second position
+    df : polars.DataFrame
+        DataFrame containing latitude and longitude columns indicating the
+        positions between which distances are computed to form the distance
+        matrix
     radius : float
         The radius of the sphere used for the calculation. Defaults to the
         radius of the earth in km (6371.0 km).
@@ -130,34 +130,35 @@ def euclidean_distance(
         The direct distance between the two input points through the sphere
         defined by the radius parameter.
     """
-    lat1, lon1 = map(np.radians, loc1)
-    lat2, lon2 = map(np.radians, loc2)
+    if df.columns != ["lat", "lon"]:
+        raise ValueError("Input must only contain 'lat' and 'lon' columns")
+    df = df.select(pl.all().radians())
 
-    x1 = np.cos(lat1) * np.cos(lon1)
-    x2 = np.cos(lat2) * np.cos(lon2)
-    y1 = np.cos(lat1) * np.sin(lon1)
-    y2 = np.cos(lat2) * np.sin(lon2)
-    z1 = np.sin(lat1)
-    z2 = np.sin(lat2)
-    dist = radius * np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
-    return dist
+    df = df.select(
+        [
+            (pl.col("lat").cos() * pl.col("lon").cos()).alias("x"),
+            (pl.col("lat").cos() * pl.col("lon").sin()).alias("y"),
+            pl.col("lat").sin().alias("z"),
+        ]
+    )
+
+    return euclidean_distances(df) * radius
 
 
 def haversine_distance(
-    loc1: tuple[float, float],
-    loc2: tuple[float, float],
+    df: pl.DataFrame,
     radius: float = 6371,
 ) -> float:
     """
-    Calculate the great circle distance in kilometers between two points
-    on the earth (specified in decimal degrees)
+    Calculate the great circle distance in kilometers between pairs of lat, lon
+    points on the earth (specified in decimal degrees).
 
     Parameters
     ----------
-    loc1 : tuple[float, float]
-        The first position
-    loc2 : tuple[float, float]
-        The second position
+    df : polars.DataFrame
+        DataFrame containing latitude and longitude columns indicating the
+        positions between which distances are computed to form the distance
+        matrix
     radius : float
         The radius of the sphere used for the calculation. Defaults to the
         radius of the earth in km (6371.0 km).
@@ -168,21 +169,12 @@ def haversine_distance(
         The haversine distance between the two input points on the sphere
         defined by the radius parameter.
     """
-    lat1, lon1 = map(np.radians, loc1)
-    lat2, lon2 = map(np.radians, loc2)
-
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-    )
-    dist = radius * 2 * np.arcsin(np.sqrt(a))
-    return dist
+    if df.columns != ["lat", "lon"]:
+        raise ValueError("Input must only contain 'lat' and 'lon' columns")
+    df = df.select(pl.all().radians())
+    return haversine_distances(df) * radius
 
 
-# OPTIM: Improve this! Much slower than haversine_distances
 def calculate_distance_matrix(
     df: pl.DataFrame,
     dist_func: Callable = haversine_distance,
@@ -220,7 +212,6 @@ def calculate_distance_matrix(
     dist : np.ndarray[float]
         A matrix of pairwise distances.
     """
-    dist = squareform(
-        pdist(df.select([lat_col, lon_col]), lambda u, v: dist_func(u, v))
+    return dist_func(
+        df.select([pl.col(lat_col).alias("lat"), pl.col(lon_col).alias("lon")])
     )
-    return dist
