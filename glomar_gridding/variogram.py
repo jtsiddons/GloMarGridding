@@ -1,15 +1,15 @@
+"""
+Varigram classes for construction of spatial covariance structure from distance
+matrices.
+"""
+
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 import numpy as np
-import polars as pl
 from warnings import warn
 
-from scipy.spatial.distance import pdist, squareform
-
 from scipy.special import gamma, kv
-
-from math import radians
 
 from .utils import find_nearest
 
@@ -463,88 +463,6 @@ def find_values(ds_masked_xr, lat, lon, timestep):
     cci_lat_idx = np.delete(cci_lat_idx, to_remove)
     cci_lon_idx = np.delete(cci_lon_idx, to_remove)
     return cci_vals, cci_lat_idx, cci_lon_idx
-
-
-def euclidean_distance(
-    loc1: tuple[float, float],
-    loc2: tuple[float, float],
-    to_radians=True,
-    earth_radius=6371,
-) -> float:
-    """
-    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
-    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
-
-    d = SQRT((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
-    (x_n y_n z_n) = ( Rcos(lat)cos(lon) Rcos(lat)sin(lon) Rsin(lat) )
-
-    Calculate the Euclidean distance in kilometers between two points
-    on the earth (specified in decimal degrees)
-
-    Input: latitude and longitude columns from Pandas dataframe (arrays of
-      values)
-    Output: a 2D numpy array of (lat_decimal,lon_decimal) pairs
-    """
-    lat1 = loc1[0]
-    lon1 = loc1[1]
-    lat2 = loc2[0]
-    lon2 = loc2[1]
-    if to_radians:
-        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    x1 = np.cos(lat1) * np.cos(lon1)
-    x2 = np.cos(lat2) * np.cos(lon2)
-    y1 = np.cos(lat1) * np.sin(lon1)
-    y2 = np.cos(lat2) * np.sin(lon2)
-    z1 = np.sin(lat1)
-    z2 = np.sin(lat2)
-    km = earth_radius * np.sqrt(
-        (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
-    )
-    return km
-
-
-def haversine_distance(
-    loc1: tuple[float, float],
-    loc2: tuple[float, float],
-    to_radians=True,
-    earth_radius=6371,
-) -> float:
-    """
-    Calculate the great circle distance in kilometers between two points
-    on the earth (specified in decimal degrees)
-
-    Input: latitude and longitude columns from Pandas dataframe (arrays of
-      values)
-    Output: a 2D numpy array of (lat_decimal,lon_decimal) pairs
-    """
-    # "unpack" our numpy array, this extracts column wise arrays
-    lat1 = loc1[0]
-    lon1 = loc1[1]
-    lat2 = loc2[0]
-    lon2 = loc2[1]
-    if to_radians:
-        lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-    )
-    km = earth_radius * 2 * np.arcsin(np.sqrt(a))
-    return km
-
-
-def calculate_distance_matrix(
-    df: pl.DataFrame,
-    dist_func: Callable = haversine_distance,
-    lat_col: str = "lat",
-    lon_col: str = "lon",
-) -> np.ndarray:
-    distance_matrix = squareform(
-        pdist(df.select([lat_col, lon_col]), lambda u, v: dist_func(u, v))
-    )
-    return distance_matrix
 
 
 # DELETE: Use class objects
