@@ -1,12 +1,13 @@
 """Functions for creating grids and mapping observations to a grid"""
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 import numpy as np
 import polars as pl
 import xarray as xr
 
 from .utils import filter_bounds, find_nearest, select_bounds
+from .distances import calculate_distance_matrix, haversine_distance
 
 
 def align_to_grid(
@@ -183,3 +184,77 @@ def assign_to_grid(
         out_grid.values = np.where(grid == mask_value, np.nan, out_grid.values)
 
     return out_grid
+
+
+def grid_to_distance_matrix(
+    grid: xr.DataArray,
+    dist_func: Callable = haversine_distance,
+    lat_coord: str = "lat",
+    lon_coord: str = "lon",
+) -> xr.DataArray:
+    """
+    Calculate a distance matrix between all positions in a grid. Orientation of
+    latitude and longitude will be maintained in the returned distance matrix.
+
+    Parameters
+    ----------
+    grid : xarray.DataArray
+        A 2-d grid containing latitude and longitude indexes specified in
+        decimal degrees.
+    dist_func : Callable
+        Distance function to use to compute pairwise distances. See
+        glomar_gridding.distances.calculate_distance_matrix for more
+        information.
+    lat_coord : str
+        Name of the latitude coordinate in the input grid.
+    lon_coord : str
+        Name of the longitude coordinate in the input grid.
+
+    Returns
+    -------
+    dist : xarray.DataArray
+        A DataArray containing the distance matrix with coordinate system
+        defined with grid cell index ("index_1" and "index_2"). The coordinates
+        of the original grid are also kept as coordinates related to each
+        index (the coordinate names are suffixed with "_1" or "_2" respectively.
+    """
+    coords = grid.coords
+    if len(coords) != 2:
+        raise ValueError(
+            "Input grid must have 2 indexes - "
+            + "specifying latitude and longitude, in decimal degree."
+        )
+    if lat_coord not in coords:
+        raise KeyError(
+            f"Cannot find latitude coordinate {lat_coord} in the grid."
+        )
+    if lon_coord not in coords:
+        raise KeyError(
+            f"Cannot find longitude coordinate {lon_coord} in the grid."
+        )
+
+    coord_df = pl.from_records(
+        list(coords.to_index()),
+        schema=list(coords.keys()),
+        orient="row",
+    )
+
+    dist: np.ndarray = calculate_distance_matrix(
+        coord_df,
+        dist_func=dist_func,
+        lat_col=lat_coord,
+        lon_col=lon_coord,
+    )
+
+    n = coord_df.height
+    out_coords: dict[str, Any] = {"index_1": range(n), "index_2": range(n)}
+    for i in range(1, 3):
+        out_coords.update(
+            {f"{c}_{i}": (f"index_{i}", coord_df[c]) for c in coord_df.columns}
+        )
+
+    return xr.DataArray(
+        dist,
+        coords=xr.Coordinates(out_coords),
+        name="dist",
+    )
