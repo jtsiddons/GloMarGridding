@@ -11,7 +11,7 @@ import xarray as xr
 from scipy.special import gamma, kv
 
 
-@dataclass(frozen=True)
+@dataclass()
 class Variogram:
     """Place holder"""
 
@@ -22,7 +22,7 @@ class Variogram:
         raise NotImplementedError("Not implemented for base Variogram class")
 
 
-@dataclass(frozen=True)
+@dataclass()
 class LinearVariogram(Variogram):
     """
     Linear model
@@ -46,7 +46,7 @@ class LinearVariogram(Variogram):
         return out
 
 
-@dataclass(frozen=True)
+@dataclass()
 class PowerVariogram(Variogram):
     """
     Power model
@@ -71,7 +71,7 @@ class PowerVariogram(Variogram):
         )
 
 
-@dataclass(frozen=True)
+@dataclass()
 class GaussianVariogram(Variogram):
     """
     Gaussian Model
@@ -80,24 +80,34 @@ class GaussianVariogram(Variogram):
     ----------
     psill : float | np.ndarray
         The variance of the variogram.
-    effective_range : float | np.ndarray
+    effective_range : float | np.ndarray | None
+    range : float | np.ndarray | None
     nugget : float | np.ndarray
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray
+    effective_range: float | np.ndarray | None
+    range: float | np.ndarray | None
     nugget: float | np.ndarray
 
-    @property
-    def range(self):
-        """The range parameter"""
-        return self.effective_range / 3
-        # return self.effective_range * (4 / 7)
+    def __post_init__(self):
+        if self.range is None and self.effective_range is None:
+            raise ValueError(
+                "One of range and effective_range must be specified"
+            )
+        if self.range is None and self.effective_range is not None:
+            self.range = self.effective_range / 3
+        return None
 
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         """Fit the GaussianVariogram model to a distance matrix"""
+        if self.range is None:
+            raise ValueError(
+                "range parameter must not be None, "
+                + "it wasn't set by the __post_init__ method."
+            )
         out = (
             self.psill
             * (
@@ -116,32 +126,43 @@ class GaussianVariogram(Variogram):
         return out
 
 
-@dataclass(frozen=True)
+@dataclass()
 class ExponentialVariogram(Variogram):
     """
     Exponential Model
 
     Parameters
     ----------
-    psill : float | np.ndarray
+    psill : float | numpy.ndarray
         The variance of the variogram.
-    effective_range : float | np.ndarray
-    nugget : float | np.ndarray
+    effective_range : float | numpy.ndarray | None
+    range : float | numpy.ndarray | None
+    nugget : float | numpy.ndarray
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray
+    effective_range: float | np.ndarray | None
+    range: float | np.ndarray | None
     nugget: float | np.ndarray
 
-    @property
-    def range(self):
-        """The range paramter"""
-        return self.effective_range / 3
+    def __post_init__(self):
+        if self.range is None and self.effective_range is None:
+            raise ValueError(
+                "One of range and effective_range must be specified"
+            )
+        if self.range is None and self.effective_range is not None:
+            self.range = self.effective_range / 3
+        return None
 
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         """Fit the ExponentialVariogram model to a distance matrix"""
+        if self.range is None:
+            raise ValueError(
+                "range parameter must not be None, "
+                + "it wasn't set by the __post_init__ method."
+            )
         out = (
             self.psill * (1.0 - np.exp(-(distance_matrix / self.range)))
             + self.nugget
@@ -154,7 +175,7 @@ class ExponentialVariogram(Variogram):
 MaternModel = Literal["sklearn", "gstat", "karspeck"]
 
 
-@dataclass(frozen=True)
+@dataclass()
 class MaternVariogram(Variogram):
     """
     Matern Models
@@ -180,16 +201,16 @@ class MaternVariogram(Variogram):
 
     GeoStatic
     ---------
-    Similar to Classic MaternVariogram model but uses the range scaling in
+    Similar to Sklearn MaternVariogram model but uses the range scaling in
     gstat.
     Note: there are no square root 2 or nu in middle and right
 
-    Yields the same answer to Classic MaternVariogram if nu==0.5
+    Yields the same answer to sklearn MaternVariogram if nu==0.5
     but are otherwise different.
 
     Karspeck
     --------
-    Similar to Classic MaternVariogram model but uses the form in Karspeck paper
+    Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
     Note: Note the 2 is outside the square root for middle and right
     e-folding distance is now at d/SQRT(2) for nu=0.5
 
@@ -198,10 +219,14 @@ class MaternVariogram(Variogram):
     psill : float | np.ndarray
         Sill of the variogram where it will flatten out. Values in the variogram
         will not exceed psill + nugget. This value is the variance.
-    effective_range : float | np.ndarray
+    effective_range : float | np.ndarray | None
         Effective Range, this is the lag where 95% of ths sill are exceeded.
         This is not the range parameter, which is defined as r/3 if nu < 0.5 or
-        nu > 10, otherwise r/2 (where r is the effective range).
+        nu > 10, otherwise r/2 (where r is the effective range). One of
+        effective_range and range must be set.
+    range : float | ndarray | None
+        The range parameter. One of range and effective_range must be set. If
+        range is not set, it will be computed from effective_range.
     nugget : float | np.ndarray
         The value of the independent variable at distance 0
     nu : float | np.ndarray
@@ -217,56 +242,67 @@ class MaternVariogram(Variogram):
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray
+    effective_range: float | np.ndarray | None
+    range: float | np.ndarray | None
     nugget: float | np.ndarray
     nu: float | np.ndarray = 0.5
     method: MaternModel = "sklearn"
 
-    @property
-    def range(self):
-        """The range parameter"""
-        if 0.5 <= self.nu <= 10:
-            return self.effective_range / 2
-        return self.effective_range / 3
+    def __post_init__(self) -> None:
+        if self.effective_range is None and self.range is None:
+            raise ValueError(
+                "One of range and effective_range must be specified"
+            )
+        if self.range is None and self.effective_range is not None:
+            self.range = (
+                self.effective_range / 2
+                if 0.5 <= self.nu <= 10
+                else self.effective_range / 3
+            )
+        elif self.effective_range is None and self.range is not None:
+            self.effective_range = (
+                self.range * 2 if 0.5 <= self.nu <= 10 else self.range * 3
+            )
+        return None
 
     @property
     def _left(self):
         return 1.0 / (gamma(self.nu) * np.power(2.0, self.nu - 1.0))
 
     def _middle(
-        self, distance_matrix: np.ndarray | xr.DataArray
+        self, dist_over_range: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "sklearn":
                 return np.power(
-                    np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
+                    np.sqrt(2.0 * self.nu) * dist_over_range,
                     self.nu,
                 )
             case "gstat":
-                return np.power(distance_matrix / self.range, self.nu)
+                return np.power(dist_over_range, self.nu)
             case "karspeck":
                 return np.power(
-                    2.0 * np.sqrt(self.nu) * distance_matrix / self.range,
+                    2.0 * np.sqrt(self.nu) * dist_over_range,
                     self.nu,
                 )
             case _:
                 raise ValueError("Unexpected 'method' value")
 
     def _right(
-        self, distance_matrix: np.ndarray | xr.DataArray
+        self, dist_over_range: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "sklearn":
                 return kv(
                     self.nu,
-                    np.sqrt(2.0 * self.nu) * distance_matrix / self.range,
+                    np.sqrt(2.0 * self.nu) * dist_over_range,
                 )
             case "gstat":
-                return kv(self.nu, distance_matrix / self.range)
+                return kv(self.nu, dist_over_range)
             case "karspeck":
                 return kv(
                     self.nu,
-                    2.0 * np.sqrt(self.nu) * distance_matrix / self.range,
+                    2.0 * np.sqrt(self.nu) * dist_over_range,
                 )
             case _:
                 raise ValueError("Unexpected 'method' value")
@@ -275,14 +311,20 @@ class MaternVariogram(Variogram):
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
         """Fit the MaternVariogram model to a distance matrix"""
+        if self.range is None:
+            raise ValueError(
+                "range parameter must not be None, "
+                + "it wasn't set by the __post_init__ method."
+            )
+        dist_over_range = distance_matrix / self.range
         out = (
             self.psill
             * (
                 1
                 - (
                     self._left
-                    * self._middle(distance_matrix)
-                    * self._right(distance_matrix)
+                    * self._middle(dist_over_range)
+                    * self._right(dist_over_range)
                 )
             )
             + self.nugget
