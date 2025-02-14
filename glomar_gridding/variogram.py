@@ -79,6 +79,7 @@ class GaussianVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
+        The variance of the variogram.
     effective_range : float | np.ndarray
     nugget : float | np.ndarray
     """
@@ -123,6 +124,7 @@ class ExponentialVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
+        The variance of the variogram.
     effective_range : float | np.ndarray
     nugget : float | np.ndarray
     """
@@ -195,7 +197,7 @@ class MaternVariogram(Variogram):
     ----------
     psill : float | np.ndarray
         Sill of the variogram where it will flatten out. Values in the variogram
-        will not exceed psill + nugget
+        will not exceed psill + nugget. This value is the variance.
     effective_range : float | np.ndarray
         Effective Range, this is the lag where 95% of ths sill are exceeded.
         This is not the range parameter, which is defined as r/3 if nu < 0.5 or
