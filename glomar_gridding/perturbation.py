@@ -76,20 +76,17 @@ def scipy_mv_normal_draw(  # noqa: C901
     if any_complex(v):
         raise ValueError("v is complex")
     if np.any(w < 0):
-        raise NotImplementedError(
-            "Handling of negative eigenvalues is not yet handled"
+        most_neg_eigval = np.min(w)
+        largest_eig_val = np.max(w)
+        rtol_check = np.abs(most_neg_eigval) / largest_eig_val
+        logging.warning(
+            "Negative eigenvalues detected: largest = "
+            + f"{largest_eig_val}; smallest = {most_neg_eigval}; "
+            + f"ratio = {rtol_check}"
         )
-        # most_neg_eigval = np.min(w)
-        # largest_eig_val = np.max(w)
-        # rtol_check = np.abs(most_neg_eigval) / largest_eig_val
-        # logging.warning(
-        #     "Negative eigenvalues detected: largest = "
-        #     + f"{largest_eig_val}; smallest = {most_neg_eigval}; "
-        #     + f"ratio = {rtol_check}"
-        # )
-        # if rtol_check >= eigen_rtol:
-        #     raise ValueError("Negative eigenvalues are unexpectedly large.")
-        # w[w < eigen_fudge] = eigen_fudge
+        if rtol_check >= eigen_rtol:
+            raise ValueError("Negative eigenvalues are unexpectedly large.")
+        w[w < eigen_fudge] = eigen_fudge
 
     cov2 = stats.Covariance.from_eigendecomposition((w, v))
 
