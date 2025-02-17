@@ -375,9 +375,13 @@ def main():  # noqa: C901, D103
                     + "(e.g. HadSST4), combine them first."
                 )
                 warnings.warn(single_sigma_warn_msg, DeprecationWarning)
-            uncorrelated_uncertainty = config.get(
-                variable, "uncorrelated_uncertainty"
+            uncorrelated_uncertainty = config.get(variable, {}).get(
+                "uncorrelated_uncertainty", ""
             )
+            if not os.path.isfile(uncorrelated_uncertainty):
+                raise FileNotFoundError(
+                    "Cannot find {uncorrelated_uncertainty = }"
+                )
 
             uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
 
