@@ -80,15 +80,15 @@ class GaussianVariogram(Variogram):
     ----------
     psill : float | np.ndarray
         The variance of the variogram.
+    nugget : float | np.ndarray
     effective_range : float | np.ndarray | None
     range : float | np.ndarray | None
-    nugget : float | np.ndarray
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray | None
-    range: float | np.ndarray | None
     nugget: float | np.ndarray
+    effective_range: float | np.ndarray | None = None
+    range: float | np.ndarray | None = None
 
     def __post_init__(self):
         if self.range is None and self.effective_range is None:
@@ -135,15 +135,15 @@ class ExponentialVariogram(Variogram):
     ----------
     psill : float | numpy.ndarray
         The variance of the variogram.
+    nugget : float | numpy.ndarray
     effective_range : float | numpy.ndarray | None
     range : float | numpy.ndarray | None
-    nugget : float | numpy.ndarray
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray | None
-    range: float | np.ndarray | None
     nugget: float | np.ndarray
+    range: float | np.ndarray | None = None
+    effective_range: float | np.ndarray | None = None
 
     def __post_init__(self):
         if self.range is None and self.effective_range is None:
@@ -219,6 +219,8 @@ class MaternVariogram(Variogram):
     psill : float | np.ndarray
         Sill of the variogram where it will flatten out. Values in the variogram
         will not exceed psill + nugget. This value is the variance.
+    nugget : float | np.ndarray
+        The value of the independent variable at distance 0
     effective_range : float | np.ndarray | None
         Effective Range, this is the lag where 95% of ths sill are exceeded.
         This is not the range parameter, which is defined as r/3 if nu < 0.5 or
@@ -227,8 +229,6 @@ class MaternVariogram(Variogram):
     range : float | ndarray | None
         The range parameter. One of range and effective_range must be set. If
         range is not set, it will be computed from effective_range.
-    nugget : float | np.ndarray
-        The value of the independent variable at distance 0
     nu : float | np.ndarray
         Smoothing parameter, shapes to a smooth or rough variogram function
     method : MaternModel
@@ -242,9 +242,9 @@ class MaternVariogram(Variogram):
     """
 
     psill: float | np.ndarray
-    effective_range: float | np.ndarray | None
-    range: float | np.ndarray | None
     nugget: float | np.ndarray
+    effective_range: float | np.ndarray | None = None
+    range: float | np.ndarray | None = None
     nu: float | np.ndarray = 0.5
     method: MaternModel = "sklearn"
 
