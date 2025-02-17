@@ -11,7 +11,6 @@ from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
 import polars as pl
-import re
 import xarray as xr
 from warnings import warn
 from polars._typing import ClosedInterval
@@ -87,84 +86,6 @@ class ConfigParserMultiValues(OrderedDict):
     @staticmethod
     def getlist(value):  # noqa: D102
         return value.splitlines()
-
-
-# DELETE: Unused
-def match_coord(
-    ds: xr.Dataset,
-    candidate_names: list[str] | str,
-    case_insensitive: bool = True,
-) -> str:
-    """
-    Identify a coordinate from a dataset based on exact match. An error is
-    raised if no match is found.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        The dataset containing coordinates to match against.
-    candidate_names : list[str] | str
-        List of possible values for the coordinate.
-    case_insensitive : bool
-        Match the coordinate ignoring case. Setting to True will test lowercase
-        coordinate names against the candidates. Will return the original
-        coordinate name.
-
-    Returns
-    -------
-    coord : str
-        Name of the coordinate matching any candidate.
-    """
-    if isinstance(candidate_names, str):
-        candidate_names = [candidate_names]
-    coords: list[str] = [str(c) for c in ds.coords]
-    for coord in coords:
-        test = coord.lower() if case_insensitive else coord
-        if test in candidate_names:
-            return coord
-    raise ValueError(
-        "Cannot find candidate coordinate name, possible coords = '"
-        + "', '".join(coords)
-        + "'."
-    )
-
-
-# DELETE: Unused
-def regex_coord(
-    ds: xr.Dataset,
-    pattern: re.Pattern,
-    case_insensitive: bool = True,
-) -> str:
-    """
-    Identify a coordinate from a dataset based on regex match. An error is
-    raised if no match is found.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        The dataset containing coordinates to match against.
-    pattern : re.Pattern
-        Regular expression to use for coordinate identification.
-    case_insensitive : bool
-        Match the coordinate ignoring case. Setting to True will test lowercase
-        coordinate names against the candidates. Will return the original
-        coordinate name.
-
-    Returns
-    -------
-    coord : str
-        Name of the coordinate matching the regex pattern.
-    """
-    coords: list[str] = [str(c) for c in ds.indexes]
-    for coord in coords:
-        test = coord.lower() if case_insensitive else coord
-        if pattern.match(test):
-            return coord
-    raise ValueError(
-        "Cannot match coordinates to pattern, possible coords = '"
-        + "', '".join(coords)
-        + "'."
-    )
 
 
 def _daterange_by_day(year: int, day: int) -> pl.Series:
