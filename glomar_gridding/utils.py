@@ -7,7 +7,6 @@ from datetime import date, timedelta
 from enum import IntEnum
 import inspect
 import logging
-import os
 from typing import TypeVar
 import netCDF4 as nc
 import numpy as np
@@ -27,6 +26,8 @@ class ColumnNotFoundError(Exception):
 
 
 class MonthName(IntEnum):
+    """Name of month from int"""
+
     JANUARY = 1
     FEBRUARY = 2
     MARCH = 3
@@ -46,6 +47,19 @@ def add_empty_layers(
     timestamps: Iterable[int] | int,
     shape: tuple[int, int],
 ) -> None:
+    """
+    Add empty layers to a netcdf file. This adds a layer of zeros to the netCDF
+    file.
+
+    Parameters
+    ----------
+    nc_variables : Iterable[nc.Variable] | nc.Variable
+        Name(s) of the variables to add empty layers to
+    timestamps : Iterable[int] | int
+        Indices to add empty layers
+    shape : tuple[int, int]
+        Shape of the layer to add
+    """
     empty = np.zeros(shape=shape).astype(np.float32)
     nc_variables = (
         [nc_variables]
@@ -62,6 +76,8 @@ def add_empty_layers(
 
 
 class ConfigParserMultiValues(OrderedDict):
+    """Internal Helper Class"""
+
     def __setitem__(self, key, value):
         if key in self and isinstance(value, list):
             self[key].extend(value)
@@ -69,7 +85,7 @@ class ConfigParserMultiValues(OrderedDict):
             super().__setitem__(key, value)
 
     @staticmethod
-    def getlist(value):
+    def getlist(value):  # noqa: D102
         return value.splitlines()
 
 
@@ -159,6 +175,11 @@ def _daterange_by_day(year: int, day: int) -> pl.Series:
 
 
 def days_since_by_month(year: int, day: int) -> np.ndarray:
+    """
+    Get the number of days since `year`-01-`day` for each month. This is used
+    to set the time values in a netCDF file where temporal resolution is monthly
+    and the units are days since some date.
+    """
     dates = _daterange_by_day(year, day)
     return (dates - date(year, 1, day)).dt.total_days().to_numpy()
 
@@ -194,6 +215,27 @@ def find_nearest(
     array: Iterable,
     values: Iterable,
 ) -> tuple[list[int], np.ndarray]:
+    """
+    Get the indices and values from an array that are closest to the input
+    values.
+
+    A single index, value pair is returned for each look-up value in the values
+    list.
+
+    Parameters
+    ----------
+    array : Iterable
+        The array to search for nearest values.
+    values : Iterable
+        The values to look-up in the array.
+
+    Returns
+    -------
+    idx_list : list[int]
+        The indices of nearest values
+    array_values_list : list
+        The list of values in array that are closest to the input values.
+    """
     idx_list = [(np.abs(array - value)).argmin() for value in values]
     array_values_list = np.array(array)[idx_list]
     # print(values)
@@ -206,6 +248,24 @@ def select_bounds(
     bounds: list[tuple[float, float]] = [(-90, 90), (-180, 180)],
     variables: list[str] = ["lat", "lon"],
 ) -> _XR_Data:
+    """
+    Filter an xarray.DataArray or xarray.Dataset by a set of bounds.
+
+    Parameters
+    ----------
+    x : xarray.DataArray | xarray.Dataset
+        The data to filter
+    bounds : list[tuple[float, float]]
+        A list of tuples containing the lower and upper bounds for each
+        dimension.
+    variables : list[str]
+        Names of the dimensions (the order must match the bounds).
+
+    Returns
+    -------
+    x : xarray.DataArray | xarray.Dataset
+        The input data filtered by the bounds.
+    """
     bnd_map: dict[str, slice] = {
         b: slice(*v) for b, v in zip(variables, bounds)
     }
