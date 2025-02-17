@@ -4,7 +4,8 @@ the GeoStats.jl Julia package. The example can be found at
 
 https://juliaearth.github.io/GeoStatsDocs/stable/interpolation/#Kriging
 
-Here we replace the variogram with a MaternVariogram with the following
+Here we shrink the domain to 20 x 20 for speed/memory for simple testing
+purposes and we replace the variogram with a MaternVariogram with the following
 parameters:
 
 * range : 35.0
@@ -18,6 +19,9 @@ https://juliaearth.github.io/GeoStatsDocs/stable/variograms/#GeoStatsFunctions.M
 
 We need to adjust the range to our range value: ((our) range = range / 3) for
 GeoStats.jl range parameter.
+
+The intent of this test is to make sure that our implementation of Ordinary
+Kriging is correct.
 """
 
 import pytest  # noqa: F401
@@ -45,16 +49,16 @@ def _load_results() -> np.ndarray:
         lines = io.readlines()
     converted = [float(line) for line in lines]
     # NOTE: Julia uses "F" style ordering
-    return np.reshape(converted, (100, 100), "F")
+    return np.reshape(converted, (20, 20), "F")
 
 
 def test_ordinary_kriging() -> None:  # noqa: D103
     expected = _load_results()
-    grid = grid_from_resolution(1, [(1, 101), (1, 101)], ["lat", "lon"])
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
     obs = pl.DataFrame(
         {
-            "lat": [25.0, 75.0, 50.0],
-            "lon": [25.0, 50.0, 75.0],
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
             "val": [1.0, 0.0, 1.0],
         }
     ).pipe(align_to_grid, grid, grid_coords=["lat", "lon"])
@@ -71,5 +75,5 @@ def test_ordinary_kriging() -> None:  # noqa: D103
     SS = covariance.values[grid_idx, :]
     k, _ = kriging_ordinary(S, SS, obs_vals, covariance.values)
 
-    assert np.allclose(expected, np.reshape(k, (100, 100), "C"))  # noqa: S101
+    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
