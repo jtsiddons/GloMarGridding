@@ -180,14 +180,20 @@ def main() -> None:  # noqa: D103
         [
             pl.col("grid_idx"),
             pl.col("time"),
-            (1 - pl.max_horizontal(
-                pl.min_horizontal(
-                    (pl.col("sic").fill_nan(0).fill_null(0) + 1 - pl.col("sea_fraction")),
-                    pl.lit(1),
-                ),
-                pl.lit(0),
-            ))
-            .alias("sea_fraction"),
+            (
+                1
+                - pl.max_horizontal(
+                    pl.min_horizontal(
+                        (
+                            pl.col("sic").fill_nan(0).fill_null(0)
+                            + 1
+                            - pl.col("sea_fraction")
+                        ),
+                        pl.lit(1),
+                    ),
+                    pl.lit(0),
+                )
+            ).alias("sea_fraction"),
         ]
     )
 
