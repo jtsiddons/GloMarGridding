@@ -168,7 +168,7 @@ def _get_sst_err_cov(
     current_year: int,
     current_month: int,
     error_covariance_path: str,
-    # uncorrelated: xr.Dataset,
+    uncorrelated: xr.Dataset,
 ) -> np.ndarray:
     err_cov_fn = (
         f"HadCRUT.5.0.2.0.error_covariance.{current_year}{current_month:02d}.nc"
@@ -176,7 +176,16 @@ def _get_sst_err_cov(
     error_cov = xr.open_dataset(
         os.path.join(error_covariance_path, err_cov_fn)
     )["tas_cov"].values[0]
-    return error_cov
+    uncorrelated_mon = uncorrelated.sel(
+        time=np.logical_and(
+            uncorrelated.time.dt.month == current_month,
+            uncorrelated.time.dt.year == current_year,
+        )
+    )["tas_unc"].values
+    joined_mon = uncorrelated_mon * uncorrelated_mon
+    unc_1d = np.reshape(joined_mon, (2592, 1))
+    covariance2 = np.diag(np.reshape(unc_1d, (2592)))
+    return error_cov + covariance2
 
 
 def _get_lsat_err_cov(
@@ -366,17 +375,18 @@ def main():  # noqa: C901, D103
                     + "(e.g. HadSST4), combine them first."
                 )
                 warnings.warn(single_sigma_warn_msg, DeprecationWarning)
-            # uncorrelated_uncertainty = config.get(
-            #     variable, "uncorrelated_uncertainty"
-            # )
+            uncorrelated_uncertainty = config.get(
+                variable, "uncorrelated_uncertainty"
+            )
 
-            # uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
+            uncorrelated = xr.open_dataset(uncorrelated_uncertainty)
 
             def get_error_cov(year: int, month: int) -> np.ndarray:
                 return _get_sst_err_cov(
                     year,
                     month,
-                    error_covariance_path,  # uncorrelated
+                    error_covariance_path,
+                    uncorrelated,
                 )
 
         case "lsat":
