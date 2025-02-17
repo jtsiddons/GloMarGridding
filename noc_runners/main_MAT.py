@@ -34,7 +34,7 @@ from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.interpolation_covariance import load_covariance
 from glomar_gridding.io import load_array, load_dataset
 from glomar_gridding.mask import mask_observations, get_mask_idx
-from glomar_gridding.matern_and_tm.matern_tau import tau_dist
+from glomar_gridding.distances import tau_dist
 from glomar_gridding.utils import get_pentad_range
 
 # NOC Specific Helper Functions
