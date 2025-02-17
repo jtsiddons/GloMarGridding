@@ -61,7 +61,7 @@ def scipy_mv_normal_draw(  # noqa: C901
     try:
         draw = np.random.multivariate_normal(loc, cov, size=ndraws)
         return draw[0] if ndraws == 1 else draw
-    except np.linalg.LinAlgError as e:
+    except np.linalg.LinAlgError:
         pass
     except Exception as e:
         raise e
@@ -76,18 +76,20 @@ def scipy_mv_normal_draw(  # noqa: C901
     if any_complex(v):
         raise ValueError("v is complex")
     if np.any(w < 0):
-        raise Exception("STOP")
-        most_neg_eigval = np.min(w)
-        largest_eig_val = np.max(w)
-        rtol_check = np.abs(most_neg_eigval) / largest_eig_val
-        logging.warning(
-            "Negative eigenvalues detected: largest = "
-            + f"{largest_eig_val}; smallest = {most_neg_eigval}; "
-            + f"ratio = {rtol_check}"
+        raise NotImplementedError(
+            "Handling of negative eigenvalues is not yet handled"
         )
-        if rtol_check >= eigen_rtol:
-            raise ValueError("Negative eigenvalues are unexpectedly large.")
-        w[w < eigen_fudge] = eigen_fudge
+        # most_neg_eigval = np.min(w)
+        # largest_eig_val = np.max(w)
+        # rtol_check = np.abs(most_neg_eigval) / largest_eig_val
+        # logging.warning(
+        #     "Negative eigenvalues detected: largest = "
+        #     + f"{largest_eig_val}; smallest = {most_neg_eigval}; "
+        #     + f"ratio = {rtol_check}"
+        # )
+        # if rtol_check >= eigen_rtol:
+        #     raise ValueError("Negative eigenvalues are unexpectedly large.")
+        # w[w < eigen_fudge] = eigen_fudge
 
     cov2 = stats.Covariance.from_eigendecomposition((w, v))
 
@@ -98,6 +100,8 @@ def scipy_mv_normal_draw(  # noqa: C901
     # but is INCONSISTENT with behavior when cov is a
     # valid numpy array ---> shape is (len(loc2),)
 
-    draw = stats.multivariate_normal.rvs(mean=loc, cov=cov2, size=ndraws)
+    draw = stats.multivariate_normal.rvs(
+        mean=loc, cov=cov2.covariance, size=ndraws
+    )
     # draw = np.random.multivariate_normal(loc, cov2.covariance, size=ndraws)
     return draw[0] if ndraws == 1 else draw
