@@ -4,7 +4,7 @@ observational data to in-filled gridded fields. Typically this will make use
 of Kriging as the inteprolation method.
 """
 
-from .grid import align_to_grid
+from .grid import map_to_grid
 from .error_covariance import (
     dist_weight,
     get_weights,
@@ -26,7 +26,7 @@ __all__ = [
     "LinearVariogram",
     "MaternVariogram",
     "PowerVariogram",
-    "align_to_grid",
+    "map_to_grid",
     "correlated_components",
     "dist_weight",
     "get_weights",

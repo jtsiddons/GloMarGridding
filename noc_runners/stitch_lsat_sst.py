@@ -18,7 +18,7 @@ import xarray as xr
 import yaml
 
 from glomar_gridding.grid import (
-    align_to_grid,
+    map_to_grid,
     assign_to_grid,
     grid_from_resolution,
 )
@@ -35,7 +35,7 @@ def _align_sea_area_fraction(
 ) -> pl.DataFrame:
     sf_df = pl.from_pandas(sea_area_fraction.to_dataframe().reset_index())
     return (
-        align_to_grid(
+        map_to_grid(
             sf_df,
             grid,
             grid_coords=["lat", "lon"],
@@ -60,7 +60,7 @@ def _prep_ice_fraction(
         if_df.select(["latitude", "longitude"])
         .unique()
         .pipe(
-            align_to_grid,
+            map_to_grid,
             grid,
             obs_coords=["latitude", "longitude"],
             grid_coords=["lat", "lon"],

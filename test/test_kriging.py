@@ -33,7 +33,7 @@ import xarray as xr
 from sklearn.metrics.pairwise import euclidean_distances
 
 from glomar_gridding.grid import (
-    align_to_grid,
+    map_to_grid,
     grid_from_resolution,
     grid_to_distance_matrix,
 )
@@ -61,7 +61,7 @@ def test_ordinary_kriging() -> None:  # noqa: D103
             "lon": [5.0, 10.0, 15.0],
             "val": [1.0, 0.0, 1.0],
         }
-    ).pipe(align_to_grid, grid, grid_coords=["lat", "lon"])
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
     dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
 
     variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)

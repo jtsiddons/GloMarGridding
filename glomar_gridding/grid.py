@@ -10,7 +10,7 @@ from .utils import filter_bounds, find_nearest, select_bounds
 from .distances import calculate_distance_matrix, haversine_distance
 
 
-def align_to_grid(
+def map_to_grid(
     obs: pl.DataFrame,
     grid: xr.DataArray,
     obs_coords: list[str] = ["lat", "lon"],

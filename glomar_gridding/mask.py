@@ -6,7 +6,7 @@ import numpy as np
 import polars as pl
 import xarray as xr
 
-from glomar_gridding.grid import align_to_grid
+from glomar_gridding.grid import map_to_grid
 from glomar_gridding.utils import check_cols
 
 
@@ -76,7 +76,7 @@ def mask_observations(
             f"Mask grid idx column '{grid_idx_name}' already in observational "
             + "DataFrame, values will be overwritten"
         )
-    obs = align_to_grid(
+    obs = map_to_grid(
         obs=obs,
         grid=mask,
         obs_coords=obs_coords,

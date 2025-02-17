@@ -31,7 +31,7 @@ import netCDF4 as nc
 
 # self-written modules (from the same directory)
 from glomar_gridding.grid import (
-    align_to_grid,
+    map_to_grid,
     assign_to_grid,
     grid_from_resolution,
 )
@@ -509,7 +509,7 @@ def main():  # noqa: C901, D103
                 logging.error("Failed to get interp_covariance or y. Skipping")
                 continue
 
-            mon_df = align_to_grid(
+            mon_df = map_to_grid(
                 mon_df, output_grid, grid_coords=["lat", "lon"]
             )
             logging.info("Aligned observations to output grid")
