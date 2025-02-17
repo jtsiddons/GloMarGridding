@@ -12,7 +12,6 @@ import numpy as np
 import polars as pl
 from sklearn.metrics import euclidean_distances
 from sklearn.metrics.pairwise import haversine_distances
-from scipy.spatial.distance import pdist, squareform
 
 from .utils import check_cols
 from .matern_and_tm import tau_dist  # noqa: F401
