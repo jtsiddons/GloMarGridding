@@ -178,7 +178,7 @@ def read_climatology(
     clim_ds : xarray.Dataset
         Containing the climatology bounded by the min/max arguments provided.
     """
-    clim_ds = xr.load_dataset(clim_path, **kwargs)
+    clim_ds: xr.Dataset = load_dataset(clim_path, **kwargs)
     clim_ds = select_bounds(
         clim_ds,
         bounds=[(min_lat, max_lat), (min_lon, max_lon)],
