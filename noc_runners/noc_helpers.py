@@ -10,7 +10,7 @@ from glomar_gridding.utils import check_cols
 
 
 def _get_clim_qc(var: str) -> list[str]:
-    match var:
+    match var.lower():
         case "at":
             return [
                 "noval_at",
