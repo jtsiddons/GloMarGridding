@@ -1,0 +1,409 @@
+"""
+Functions for calculating distances or distance-based covariance components.
+
+Some functions can be used for computing pairwise-distances, for example via
+squareform. Some functions can be used as a distance function for
+glomar_gridding.error_covariance.dist_weights, accounting for the distance
+component to an error covariance matrix.
+
+Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
+"""
+
+from collections.abc import Callable
+
+import numpy as np
+import polars as pl
+import pandas as pd
+import geopandas as gpd
+
+from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
+from scipy.spatial.transform import Rotation
+from shapely.geometry import Point
+
+from .utils import check_cols
+
+
+# NOTE: This is a Variogram result
+def haversine_gaussian(
+    df: pl.DataFrame,
+    R: float = 6371.0,
+    r: float = 40,
+    s: float = 0.6,
+) -> np.ndarray:
+    """
+    Gaussian Haversine Model
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        Observations, required columns are "lat" and "lon" representing
+        latitude and longitude respectively.
+    R : float
+        Radius of the sphere on which Haversine distance is computed. Defaults
+        to radius of earth in km.
+    r : float
+        Gaussian model range parameter
+    s : float
+        Gaussian model scale parameter
+
+    Returns
+    -------
+    C : np.ndarray
+        Distance matrix for the input positions. Result has been modified using
+        the Gaussian model.
+    """
+    check_cols(df, ["lat", "lon"])
+    pos = np.radians(df.select(["lat", "lon"]).to_numpy())
+    C = haversine_distances(pos) * R
+    C = np.exp(-(np.pow(C, 2)) / np.pow(r, 2))
+    return s / 2 * C
+
+
+def radial_dist(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float,
+) -> float:
+    """
+     Computes a distance matrix of the coordinates using a spherical metric.
+
+    Parameters
+    ----------
+    lat1 : float
+        latitude of point A
+    lon1 : float
+        longitude of point A
+    lat2 : float
+        latitude of point B
+    lon2 : float
+        longitude of point B
+
+    Returns
+    -------
+    Radial distance between point A and point B
+    """
+    # approximate radius of earth in km
+    R = 6371.0
+    lat1r = np.radians(lat1)
+    # lon1r = math.radians(lon1)
+    lat2r = np.radians(lat2)
+    # lon2r = math.radians(lon2)
+
+    dlon = np.radians(lon2 - lon1)
+    dlat = lat2r - lat1r
+
+    a = (
+        np.sin(dlat / 2) ** 2
+        + np.cos(lat1r) * np.cos(lat2r) * np.sin(dlon / 2) ** 2
+    )
+    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    return R * c
+
+
+def euclidean_distance(
+    df: pl.DataFrame,
+    radius: float = 6371.0,
+) -> np.ndarray:
+    """
+    Calculate the Euclidean distance in kilometers between pairs of lat, lon
+    points on the earth (specified in decimal degrees).
+
+    See:
+    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
+    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
+
+    d = SQRT((x_2-x_1)**2 + (y_2-y_1)**2 + (z_2-z_1)**2)
+
+    where
+
+    (x_n y_n z_n) = ( Rcos(lat)cos(lon) Rcos(lat)sin(lon) Rsin(lat) )
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        DataFrame containing latitude and longitude columns indicating the
+        positions between which distances are computed to form the distance
+        matrix
+    radius : float
+        The radius of the sphere used for the calculation. Defaults to the
+        radius of the earth in km (6371.0 km).
+
+    Returns
+    -------
+    dist : float
+        The direct pairwise distance between the positions in the input
+        DataFrame through the sphere defined by the radius parameter.
+    """
+    if df.columns != ["lat", "lon"]:
+        raise ValueError("Input must only contain 'lat' and 'lon' columns")
+    df = df.select(pl.all().radians())
+
+    df = df.select(
+        [
+            (pl.col("lat").cos() * pl.col("lon").cos()).alias("x"),
+            (pl.col("lat").cos() * pl.col("lon").sin()).alias("y"),
+            pl.col("lat").sin().alias("z"),
+        ]
+    )
+
+    return euclidean_distances(df) * radius
+
+
+def haversine_distance(
+    df: pl.DataFrame,
+    radius: float = 6371,
+) -> np.ndarray:
+    """
+    Calculate the great circle distance in kilometers between pairs of lat, lon
+    points on the earth (specified in decimal degrees).
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        DataFrame containing latitude and longitude columns indicating the
+        positions between which distances are computed to form the distance
+        matrix
+    radius : float
+        The radius of the sphere used for the calculation. Defaults to the
+        radius of the earth in km (6371.0 km).
+
+    Returns
+    -------
+    dist : numpy.ndarray
+        The pairwise haversine distances between the inputs in the DataFrame,
+        on the sphere defined by the radius parameter.
+    """
+    if df.columns != ["lat", "lon"]:
+        raise ValueError("Input must only contain 'lat' and 'lon' columns")
+    df = df.select(pl.all().radians())
+    return haversine_distances(df) * radius
+
+
+def calculate_distance_matrix(
+    df: pl.DataFrame,
+    dist_func: Callable = haversine_distance,
+    lat_col: str = "lat",
+    lon_col: str = "lon",
+) -> np.ndarray:
+    """
+    Create a distance matrix from a DataFrame containing positional information,
+    typically latitude and longitude, using a distance function.
+
+    Available functions are `haversine_distance`, `euclidean_distance`. A
+    custom function can be used, requiring that the function takes the form:
+        (tuple[float, float], tuple[float, float]) -> float
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        DataFrame containing latitude and longitude columns indicating the
+        positions between which distances are computed to form the distance
+        matrix
+    dist_func : Callable
+        The function used to calculate the pairwise distances. Functions
+        available for this function are `haversine_distance` and
+        `euclidean_distance`.
+        A custom function can be based, that takes as input two tuples of
+        positions (computing a single distance value between the pair of
+        positions). (tuple[float, float], tuple[float, float]) -> float
+    lat_col : str
+        Name of the column in the input DataFrame containing latitude values.
+    lon_col : str
+        Name of the column in the input DataFrame containing longitude values.
+
+    Returns
+    -------
+    dist : np.ndarray[float]
+        A matrix of pairwise distances.
+    """
+    return dist_func(
+        df.select([pl.col(lat_col).alias("lat"), pl.col(lon_col).alias("lon")])
+    )
+
+
+def _latlon2ne(
+    latlons: np.ndarray,
+    latlons_in_rads: bool = False,
+    latlon0: tuple[float, float] = (0.0, 180.0),
+) -> np.ndarray:
+    """
+    Compute Northing and Easting from Latitude and Longitude
+
+    latlons -- a (N, 2) (numpy) array of latlons
+    By GIS and netcdf as well as sklearn convention
+    [X, 0] = lat
+    [X, 1] = lon
+    aka [LAT, LON] [Y,X] NOT [X,Y]!!!!!
+
+    latlons_in_rads -- boolean stating if latlons are in radians
+    (default False -- input are in degrees)
+
+    latlon0 - a (lat, lon) in degree tuple stating
+    the central point of Transverse Mercator for reprojecting to
+    Northing East
+
+    returns a (N, 2) numpy array of Northing Easting [km]
+    """
+    if latlons_in_rads:
+        latlons2 = np.rad2deg(latlons)
+    else:
+        latlons2 = latlons.copy()
+    df0 = pd.DataFrame({"lat": latlons2[:, 0], "lon": latlons2[:, 1]})
+    df0["geometry"] = df0.apply(lambda row: Point([row.lon, row.lat]), axis=1)
+    df0 = gpd.GeoDataFrame(df0, geometry="geometry", crs="EPSG:4326")
+    #
+    # Transverse Mercator projection
+    # Recommended to be centered on the central point
+    # of the grid box
+    # Large distortions will occur if you use a single value for
+    # latlon0 for the entire globe
+    proj4 = "+proj=tmerc +lat_0=" + str(latlon0[0])
+    proj4 += " +lon_0=" + str(latlon0[1])
+    proj4 += " +k=0.9996 +x_0=0 +y_0=0 +units=km"
+    df1: gpd.GeoDataFrame = gpd.GeoDataFrame(
+        df0,
+        crs="EPSG:4326",
+        geometry=gpd.points_from_xy(df0["lon"], df0["lat"]),
+    )
+    df1.to_crs(proj4, inplace=True)
+    df1["easting"] = df1.geometry.x
+    df1["northing"] = df1.geometry.y
+    pos = df1[["northing", "easting"]].to_numpy()
+    return pos
+
+
+def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
+    """
+    Input:
+    (N, 2) array
+    [X, 0] = lat or northing
+    [X, 1] = lon or easting
+    """
+    return yx[:, None, :] - yx
+
+
+def _Ls2sigma(Lx: float, Ly: float, theta: float) -> np.ndarray:  # noqa: N802
+    """
+    Lx, Ly - anistropic variogram length scales
+    theta - angle relative to lines of constant latitude
+    theta should be radians, and the fitting code outputs radians by default
+    """
+    R = Rotation.from_rotvec([0, 0, theta])
+    R = R.as_matrix()[:2, :2]
+    L = np.diag([Lx**2.0, Ly**2.0])
+    sigma = R @ L @ R.T
+    return sigma
+
+
+def _compute_tau(
+    dE: np.ndarray,
+    dN: np.ndarray,
+    sigma: np.ndarray,
+) -> np.ndarray:
+    """
+    Eq.15 in Karspeck paper
+    but it is standard formulation to the
+    Mahalanobis distance
+    https://en.wikipedia.org/wiki/Mahalanobis_distance
+    10.1002/qj.900
+    """
+    dx_vec = np.array([dE, dN])
+    return np.sqrt(dx_vec.T @ np.linalg.inv(sigma) @ dx_vec)
+
+
+def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    """Wrapper function for computing tau"""
+    DE = dyx[:, :, 1]
+    DN = dyx[:, :, 0]
+
+    def compute_tau2(dE, dN):
+        return _compute_tau(dE, dN, sigma)
+
+    compute_tau_vectorised = np.vectorize(compute_tau2)
+    return compute_tau_vectorised(DE, DN)
+
+
+def tau_dist(df: pl.DataFrame) -> np.ndarray:
+    """
+    Compute the tau/Mahalanobis matrix for all records within a gridbox
+
+    Can be used as an input function for observations.dist_weight.
+
+    Eq.15 in Karspeck paper
+    but it is standard formulation to the
+    Mahalanobis distance
+    https://en.wikipedia.org/wiki/Mahalanobis_distance
+    10.1002/qj.900
+
+    By Steven Chan - @stchan
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+        The observational DataFrame, containing positional information for each
+        observation ("lat", "lon"), gridbox specific positional information
+        ("grid_lat", "grid_lon"), and ellipse length-scale parameters used for
+        computation of `sigma` ("grid_lx", "grid_ly", "grid_theta").
+
+    Returns
+    -------
+    tau : numpy.matrix
+        A matrix of dimension n x n where n is the number of rows in `df` and
+        is the tau/Mahalanobis distance.
+    """
+    required_cols = [
+        "grid_lon",
+        "grid_lat",
+        "grid_lx",
+        "grid_ly",
+        "grid_theta",
+        "lat",
+        "lon",
+    ]
+    check_cols(df, required_cols)
+    # Get northing and easting
+    lat0, lon0 = df.select(["grid_lat", "grid_lon"]).row(0)
+    latlons = np.asarray(df.select(["lat", "lon"]).to_numpy())
+    ne = _latlon2ne(latlons, latlons_in_rads=False, latlon0=(lat0, lon0))
+    paired_dist = _paired_vector_dist(ne)
+
+    # Get sigma
+    Lx, Ly, theta = df.select(["grid_lx", "grid_ly", "grid_theta"]).row(0)
+    sigma = _Ls2sigma(Lx, Ly, theta)
+
+    tau = _compute_tau_wrapper(paired_dist, sigma)
+    return np.exp(-tau)
+
+
+# def _tau_unit_test():
+#     Lx = 1000.0
+#     Ly = 250.0
+#     theta = np.pi / 4
+#     sigma = Ls2sigma(Lx, Ly, theta)
+#     print(sigma)
+#     latlon0 = (10.0, -35.0)
+#     # df = pd.DataFrame({'lat': [7.0, 12.0, -1.0, 20.0],
+#     #                    'lon': [-32.0, -24.5, -27.0, -40.0]})
+#     lats = np.linspace(latlon0[0] - 10, latlon0[0] + 10, 21)
+#     lons = np.linspace(latlon0[1] - 10, latlon0[1] + 10, 21)
+#     lons2, lats2 = np.meshgrid(lons, lats)
+#     df = pd.DataFrame(
+#         {"lat": lats2.flatten().tolist(), "lon": lons2.flatten().tolist()}
+#     )
+#     print(df)
+#     pos = np.asarray(df[["lat", "lon"]].values)
+#     print(pos)
+#     pos2 = latlon2ne(pos, latlons_in_rads=False, latlon0=latlon0)
+#     print(pos2)
+#     df["northing"] = pos2[:, 0]
+#     df["easting"] = pos2[:, 1]
+#     paired_dis_mat = paired_vector_dist(pos2)
+#     print("dis_Y:")
+#     print(paired_dis_mat[:, :, 0])
+#     print("dis_X:")
+#     print(paired_dis_mat[:, :, 1])
+#     tau_mat = compute_tau_wrapper(paired_dis_mat, sigma)
+#     print("tau:")
+#     print(tau_mat)
+#     return {"tau": tau_mat, "sigma": sigma, "grid": df}

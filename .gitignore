@@ -1,4 +1,5 @@
 # Project output files
+scratch/
 dataframe*
 ESA_CCI_SST*
 /calculate_ESA_empirical_covariance.py
@@ -41,6 +42,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+uv.lock
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
