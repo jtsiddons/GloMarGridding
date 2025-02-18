@@ -235,14 +235,16 @@ def get_unmasked_obs_indices(
     return obs_idx
 
 
+# TODO: Handle mean
 def kriging_simple(
     S: np.ndarray,
     Ss: np.ndarray,
     grid_obs: np.ndarray,
     interp_cov: np.ndarray,
+    mean: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Perform Simple Kriging
+    Perform Simple Kriging assuming a constant known mean.
 
     Parameters
     ----------
@@ -258,6 +260,8 @@ def kriging_simple(
     interp_cov : np.ndarray[float]
         interpolation covariance of all output grid points (each point in time
         and all points against each other).
+    mean : float
+        The constant mean of the output field.
 
     Returns
     -------
@@ -292,7 +296,7 @@ def kriging_ordinary(
     interp_cov: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Perform Ordinary Kriging
+    Perform Ordinary Kriging with unknown but constant mean.
 
     Parameters
     ----------
@@ -335,51 +339,6 @@ def kriging_ordinary(
 
     print("Ordinary Kriging Complete")
     return z_obs, dz
-
-
-def result_reshape_2d(result_1d, iid, grid_2d):
-    """
-    Returns reshaped krigged output array, from 1-D into 2-D reproducing
-    Matlab's functionality (going over all rows first, before moving onto
-    columns)
-
-    Parameters
-    ----------
-    result_1d (array) - krigged output array in 1-D
-    iid (array) - mask array indicating locations of water regions in the domain
-    grid_2d (array) - 2-D array of the output domain
-
-    Returns
-    -------
-    Krigged result over water areas on a 2-D domain grid with masked land areas
-    """
-    result_1d = result_1d.astype("float")
-    grid_2d = grid_2d.astype("float")
-
-    if grid_2d.ndim != 2:
-        raise ValueError(
-            f"'grid_2d' should be 2 dimensional, got {grid_2d.ndim}"
-        )
-    # Vector of length product grid_2d.shape
-    landmask = grid_2d.flatten()
-
-    to_modify = np.zeros(landmask.shape)
-
-    if iid.ndim > 1:
-        iid = np.squeeze(iid)
-    indexes = iid
-
-    if ~np.isnan(landmask).any():
-        landmask = landmask.astype("float")
-        landmask[landmask == 0] = np.nan
-
-    replacements = result_1d
-    for index, replacement in zip(indexes, replacements):
-        to_modify[index] = replacement
-    # to_modify = to_modify * landmask
-    to_modify = np.where(np.isnan(landmask), np.nan, to_modify)
-    result_2d = np.reshape(to_modify, (grid_2d.shape))
-    return result_2d
 
 
 def get_spatial_mean(
