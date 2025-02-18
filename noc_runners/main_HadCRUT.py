@@ -39,6 +39,7 @@ from glomar_gridding.error_covariance import get_weights
 from glomar_gridding.kriging import kriging
 from glomar_gridding.utils import days_since_by_month, init_logging
 from glomar_gridding.perturbation import scipy_mv_normal_draw
+from glomar_gridding.io import load_array
 
 # Debugging
 import logging
@@ -354,7 +355,12 @@ def main():  # noqa: C901, D103
     )
     interp_covariance = None
     if interpolation_covariance_type == "distance":
-        interp_covariance = np.load(interpolation_covariance_path)
+        if interpolation_covariance_path.endswith(".nc"):
+            interp_covariance = load_array(
+                interpolation_covariance_path, var="covariance"
+            )["covariance"].values
+        else:  # is a numpy file
+            interp_covariance = np.load(interpolation_covariance_path)
         logging.info("loaded interpolation covariance")
         print(f"{interp_covariance = }")
 
