@@ -358,7 +358,7 @@ def main():  # noqa: C901, D103
         if interpolation_covariance_path.endswith(".nc"):
             interp_covariance = load_array(
                 interpolation_covariance_path, var="covariance"
-            )["covariance"].values
+            ).values
         else:  # is a numpy file
             interp_covariance = np.load(interpolation_covariance_path)
         logging.info("loaded interpolation covariance")
