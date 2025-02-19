@@ -210,17 +210,17 @@ def _initialise_xarray(
     )
 
     # Update the attributes of the coordinates
-    ds.lat.attr["units"] = "degrees_north"
-    ds.lat.attr["long_name"] = "latitude"
-    ds.lat.attr["standard_name"] = "latitude"
-    ds.lat.attr["axis"] = "Y"
+    ds.lat.attrs["units"] = "degrees_north"
+    ds.lat.attrs["long_name"] = "latitude"
+    ds.lat.attrs["standard_name"] = "latitude"
+    ds.lat.attrs["axis"] = "Y"
 
-    ds.lon.attr["units"] = "degrees_east"
-    ds.lon.attr["long_name"] = "longitude"
-    ds.lon.attr["standard_name"] = "longitude"
-    ds.lon.attr["axis"] = "X"
+    ds.lon.attrs["units"] = "degrees_east"
+    ds.lon.attrs["long_name"] = "longitude"
+    ds.lon.attrs["standard_name"] = "longitude"
+    ds.lon.attrs["axis"] = "X"
 
-    ds.time.attr["long_name"] = "time"
+    ds.time.attrs["long_name"] = "time"
 
     # Define a 3D variable to hold the data
     ds[f"{variable}_anom"] = xr.DataArray(
