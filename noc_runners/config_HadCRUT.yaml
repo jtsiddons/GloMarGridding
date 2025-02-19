@@ -8,6 +8,9 @@ domain:
 
   startyear: !!int 1850
   endyear: !!int 2023
+  
+  startmember: !!int 1
+  endmember: !!int 200
 
   variable: "sst"
   # variable: "lsat"
