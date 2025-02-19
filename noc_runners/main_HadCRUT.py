@@ -53,9 +53,6 @@ from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
 import logging
 import warnings
 
-MULTI: int = 4
-ADDER: int = 71
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
