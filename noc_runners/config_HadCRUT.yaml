@@ -9,12 +9,17 @@ domain:
   startyear: !!int 1850
   endyear: !!int 2023
 
+  variable: "sst"
+  # variable: "lsat"
+
 sst:
-  # observations: "/noc/mpoc/surface_data/HadSST4_extra/HadSST.4.0.1.0_median.nc"
-  observations: "/noc/mpoc/surface_data/HadSST4_extra/og_ensemble/HadSST.4.0.1.0_ensemble_member_{member}.nc"
-  distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_haversine.npy"
-  # distance_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_euclidean.npy"
-  ellipse_interpolation_covariance: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances"
+  # observations_path: "/noc/mpoc/surface_data/HadSST4_extra/HadSST.4.0.1.0_median.nc"
+  observations_path: "/noc/mpoc/surface_data/HadSST4_extra/og_ensemble/HadSST.4.0.1.0_ensemble_member_{member}.nc"
+  interpolation_covariance_type: "euclidean"
+  euclidean_interpolation_covariance_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_euclidean.npy"
+  haversine_interpolation_covariance_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/sea_sigma_covariance_haversine.npy"
+  ellipse_interpolation_covariance_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances"
+  
   error_covariance: "/noc/mpoc/surface_data/HadCRUT5_extra/error_cov"
   uncorrelated_uncertainty: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated.nc"
 
@@ -23,11 +28,13 @@ sst:
   matern: !!float 1.5
 
 lsat:
-  # observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
-  observations: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/non_infilled_ensemble/CRUTEM.5.0.2.0.anomalies.{member}.nc"
-  distance_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_haversine.npy"
-  # distance_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
-  ellipse_interpolation_covariance: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances"
+  # observations_path: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/CRUTEM.5.0.2.0.anomalies.nc"
+  observations_path: "/noc/mpoc/surface_data/CRUTEM.5.0.2.0/non_infilled_ensemble/CRUTEM.5.0.2.0.anomalies.{member}.nc"
+  interpolation_covariance_type: "euclidean"
+  euclidean_interpolation_covariance_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_haversine.npy"
+  haversine_interpolation_covariance_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
+  ellipse_interpolation_covariance_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances"
+
   error_covariance: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated_dummy"
 
   range: !!float 1300.
