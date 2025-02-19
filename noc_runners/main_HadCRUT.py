@@ -351,10 +351,6 @@ def main():  # noqa: C901, D103
     logging.info(f"Copying this file to {file_copy}")
     shutil.copyfile(os.path.abspath(__file__), file_copy)
 
-    # var_range = config.getfloat(variable, "range")
-    # var_sigma = config.getfloat(variable, "sigma")
-    # var_matern = config.getfloat(variable, "matern")
-
     interpolation_covariance_path: str | None = get_recurse(
         config,
         variable,
@@ -413,8 +409,8 @@ def main():  # noqa: C901, D103
     match variable:
         case "sst":
             logging.info(f"Processing for variable {variable} | {hadcrut_var}")
-            uncorrelated_uncertainty = config.get(variable, {}).get(
-                "uncorrelated_uncertainty_path", ""
+            uncorrelated_uncertainty = get_recurse(
+                config, variable, "uncorrelated_uncertainty_path", default=""
             )
             if not os.path.isfile(uncorrelated_uncertainty):
                 raise FileNotFoundError(
@@ -434,11 +430,7 @@ def main():  # noqa: C901, D103
         case "lsat":
             logging.info(f"Processing for variable {variable} | {hadcrut_var}")
 
-            error_cov = np.load(
-                os.path.join(
-                    error_covariance_path, "HadCRUT.5.0.2.0.uncorrelated.npz"
-                )
-            )["err_cov"]
+            error_cov = np.load(error_covariance_path)["err_cov"]
             logging.info("loaded error covariance")
             print(f"{error_cov = }")
 
@@ -522,19 +514,6 @@ def main():  # noqa: C901, D103
                 )
                 logging.info("Aligned observations to output grid")
 
-                error_cov_diag_at_obs = pl.Series(
-                    "error_covariance_diagonal",
-                    np.diag(error_covariance)[mon_df.get_column("grid_idx")],
-                )
-                mon_df = mon_df.with_columns(error_cov_diag_at_obs)
-                mon_df = mon_df.filter(
-                    pl.col("error_covariance_diagonal").is_not_nan()
-                    & pl.col("error_covariance_diagonal").is_not_null()
-                )
-                logging.info(
-                    "Added error covariance diagonal to the observations"
-                )
-
                 # count obs per grid for output
                 gridbox_counts = mon_df["grid_idx"].value_counts()
                 grid_obs_2d = assign_to_grid(
@@ -542,9 +521,6 @@ def main():  # noqa: C901, D103
                     gridbox_counts["grid_idx"].to_numpy(),
                     output_grid,
                 )
-                # need to either add weights (which will be just 1 or 0
-                # everywhere as obs are gridded)
-                # krige obs onto gridded field
 
                 grid_idx = mon_df.get_column("grid_idx").to_numpy()
 

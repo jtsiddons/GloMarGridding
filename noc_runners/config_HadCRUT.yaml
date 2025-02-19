@@ -38,7 +38,7 @@ lsat:
   haversine_interpolation_covariance_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/lnd_sigma_covariance_euclidean.npy"
   ellipse_interpolation_covariance_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances"
 
-  error_covariance_path: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated_dummy"
+  error_covariance_path: "/noc/mpoc/surface_data/HadCRUT5_extra/HadCRUT.5.0.2.0.uncorrelated_dummy/HadCRUT.5.0.2.0.uncorrelated.npz"
 
   range: !!float 1300.
   sigma: !!float 1.2
