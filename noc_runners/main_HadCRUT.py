@@ -280,6 +280,7 @@ def _initialise_xarray(
 def main():  # noqa: C901, D103
     config = _parse_args(parser)
 
+    config["summary"] = {}
     config["summary"]["start"] = str(datetime.today())
     config["summary"]["user"] = os.environ["USER"]
     config["summary"]["revision"] = get_git_commit()
