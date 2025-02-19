@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
+import os
+import subprocess
 import logging
 from typing import TypeVar
 import netCDF4 as nc
@@ -354,3 +356,34 @@ def init_logging(file: str | None = None) -> None:
 
     logging.captureWarnings(True)
     return None
+
+
+def get_date_index(year: int, month: int, start_year: int) -> int:
+    """
+    Get the index of a given year-month in a monthly sequence of dates
+    starting from month 1 in a specific start year
+
+    Parameters
+    ----------
+    year : int
+        The year for the date to find the index of.
+    month : int
+        The month for the date to find the index of.
+    start_year : int
+        The start year of the date series, the result assumes that the date
+        time series starts in the first month of this year.
+
+    Returns
+    -------
+    index : int
+        The index of the input date in the monthly datetime series starting from
+        the first month of year `start_year`.
+    """
+    return 12 * (year - start_year) + (month - 1)
+
+
+def get_git_commit() -> str:
+    """Get the most recent commit of the repository for reproducibility"""
+    path = os.path.dirname(os.path.abspath(__file__))
+    out = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path)
+    return out.strip().decode()
