@@ -186,7 +186,7 @@ def _initialise_xarray(
     member: int,
 ) -> xr.Dataset:
     # Time dimension is not unlimited
-    coords: dict = {
+    _coords: dict = {
         "time": pl.datetime_range(
             datetime(year_range[0], 1, 15, 12),
             datetime(year_range[1], 12, 15, 12),
@@ -196,7 +196,11 @@ def _initialise_xarray(
         ).to_numpy()
     }
     # Add the spatial coordinates of the grid
-    coords.update({c: grid.coords[c].values for c in grid.coords})
+    _coords.update({c: grid.coords[c].values for c in grid.coords})
+
+    # Create a Coordinates object to use for DataArray creation (can't just use
+    # dict)
+    coords = xr.Coordinates(_coords)
     ds = xr.Dataset(
         coords=coords,
         attrs={
@@ -410,7 +414,7 @@ def main():  # noqa: C901, D103
         case "sst":
             logging.info(f"Processing for variable {variable} | {hadcrut_var}")
             uncorrelated_uncertainty = config.get(variable, {}).get(
-                "uncorrelated_uncertainty", ""
+                "uncorrelated_uncertainty_path", ""
             )
             if not os.path.isfile(uncorrelated_uncertainty):
                 raise FileNotFoundError(
