@@ -124,16 +124,15 @@ def _get_sst_err_cov(
         os.path.join(error_covariance_path, err_cov_fn)
     )["tas_cov"].values[0]
     # Uncorrelated components
-    uncorrelated_mon = uncorrelated.sel(
+    uncorrelated_month = uncorrelated.sel(
         time=np.logical_and(
             uncorrelated.time.dt.month == current_month,
             uncorrelated.time.dt.year == current_year,
         )
     )["tas_unc"].values
-    joined_mon = uncorrelated_mon * uncorrelated_mon
-    unc_1d = np.reshape(joined_mon, (2592, 1))
-    covariance2 = np.diag(np.reshape(unc_1d, (2592)))
-    return error_cov + covariance2
+    uncorrelated_var_month = np.pow(uncorrelated_month, 2)
+    unc_diagonal = np.reshape(uncorrelated_var_month, (2592, 1))
+    return error_cov + np.diag(np.reshape(unc_diagonal, (2592)))
 
 
 def _get_lsat_err_cov(
@@ -204,7 +203,7 @@ def _initialise_xarray(
         coords=coords,
         attrs={
             "produced": str(datetime.today()),
-            "produced_by": "J. T. Siddons",
+            "produced_by": os.environ["USER"],
             "library": "GloMarGridding",
             "url": "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding",
             "git_commit": get_git_commit(),
