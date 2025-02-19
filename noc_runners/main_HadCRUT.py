@@ -59,7 +59,8 @@ ADDER: int = 71
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "-config",
+    "-c",
+    "--config",
     dest="config",
     required=False,
     default=os.path.join(os.path.dirname(__file__), "config_HadCRUT.ini"),
