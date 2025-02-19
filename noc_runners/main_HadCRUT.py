@@ -467,7 +467,7 @@ def main():  # noqa: C901, D103
             # Draw from N(0, interp_covariance)
             y = None
             if (
-                interpolation_covariance_type == "distance"
+                interpolation_covariance_type in ["euclidean", "haversine"]
                 and interp_covariance is not None
             ):
                 y = scipy_mv_normal_draw(
