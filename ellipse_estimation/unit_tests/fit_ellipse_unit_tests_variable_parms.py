@@ -6,8 +6,8 @@ from iris.util import equalise_attributes
 from iris.fileformats import netcdf as inc
 # from statsmodels.stats.multitest import multipletests
 
-from nonstationary_cov import cube_covariance
-from nonstationary_cov import simulate_ellipse as se_og
+from ellipse_estimation import cube_covariance
+from ellipse_estimation import simulate_ellipse as se_og
 from nonstationary_cov.unit_tests import simulate_ellipse_unit_tests as seut
 
 @pytest.mark.parametrize(

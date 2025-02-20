@@ -6,7 +6,7 @@ Will also be used in future fit testing and ellipse simulation code
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-import cube_covariance as cube_cov
+from ellipse_estimation import cube_covariance as cube_cov
 
 def haversine2(lon1, lat1, lon2, lat2):
     """

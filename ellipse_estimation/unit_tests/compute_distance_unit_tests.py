@@ -2,7 +2,7 @@ import pytest
 
 import iris
 
-from nonstationary_cov import distance_util as d_u
+from ellipse_estimation import distance_util as d_u
 
 nc_A = '../tests_and_examples/test_data/blank_cube.nc'
 cube_A_iris = iris.load_cube(nc_A)

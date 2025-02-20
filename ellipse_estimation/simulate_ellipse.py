@@ -6,8 +6,8 @@ from numpy.random import multivariate_normal
 from scipy import stats
 import xarray as xa
 
-import cube_covariance
-import cube_covariance_nonstationary_stich as ccns
+from ellipse_estimation import cube_covariance
+from ellipse_estimation import cube_covariance_nonstationary_stich as ccns
 
 def fill_cube_with_uniform_parms(cube_template,
                                  sdev,

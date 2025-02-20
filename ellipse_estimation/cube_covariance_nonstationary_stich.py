@@ -20,12 +20,12 @@ from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
 from statsmodels.stats import correlation_tools
 
-import cube_covariance as cube_cov
-from distance_util import scalar_cube_great_circle_distance
+from ellipse_estimation import cube_covariance as cube_cov
+from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
 
 # Below is in theory redudant, but the view/controller bits of the code has not been
 # integrated to the package; for now, keeping this in case of breaking other code
-# from distance_util import scalar_cube_great_circle_distance_cube
+# from ellipse_estimation.distance_util import scalar_cube_great_circle_distance_cube
 
 # Developmental functions that I do not have time to explore much
 _default_n_jobs = 4
