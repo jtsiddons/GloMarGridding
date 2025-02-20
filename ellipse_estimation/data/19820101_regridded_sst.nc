@@ -1,0 +1,1 @@
+/noc/mpoc/surface_data/ESA_CCI1deg_daily/ANOMALY/1982/19820101_regridded_sst.nc
