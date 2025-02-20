@@ -4,7 +4,7 @@ To contribute to this package you will need to be a member of NOC GitLab & have 
 to this repository - if you're able to read this then you have access!
 
 If you wish to contribute please make sure you are working on your own branches (not main), ideally
-you should work on your own branch. If you wish to work on a particular module you could name your
+you should work on your own fork. If you wish to work on a particular module you could name your
 branch `module-user` where `module` would be replaced by the name of the module you are working on,
 and `user` would be your user name. However you can name your branch as you see fit, but it is a
 good idea to name it something that relates to what you are working on. If you are working on an
@@ -15,6 +15,10 @@ If you wish to merge to `main` please create a merge request and assign it to `a
 and/or `ricorne` - either to perform the merge and/or review/approve the request. Please provide a
 summary of the main changes that you have made so that there is context for us to review the
 changes.
+
+## Changelog
+
+The changelog is `CHANGES.md`. Please add your changes to the changelog in your merge request.
 
 ## Commit Messages
 
