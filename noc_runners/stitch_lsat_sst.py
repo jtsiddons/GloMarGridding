@@ -30,6 +30,8 @@ def main() -> None:  # noqa: D103
     lsat_var_name: str = config.get("lsat_var_name", "lsat_anom")
 
     out_path: str = config.get("out_path", "")
+    if not os.path.isdir(os.path.dirname(out_path)):
+        os.makedirs(os.path.dirname(out_path))
     out_var_name: str = config.get("out_var_name", "combined")
 
     weights_path: str = config.get("weights_path", "")
