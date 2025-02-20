@@ -1,7 +1,6 @@
 import pytest
 
 import iris
-import numpy as np
 
 from nonstationary_cov import distance_util as d_u
 

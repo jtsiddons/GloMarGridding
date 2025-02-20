@@ -48,7 +48,7 @@ def load_sst_cubes0(yyyys,
     for yyyy in yyyys:
         nc_files += glob.glob(nc_path+str(yyyy)+'????_regridded_sst.nc')
     nc_files.sort()
-    cubes = iris.load(nc_files, 
+    cubes = iris.load(nc_files,
                       ['sea_water_temperature_anomaly',
                        'sea_ice_area_fraction'],
                       callback=fix_latlonmeta_callback)
@@ -105,7 +105,6 @@ def prep_sst_data():
 
 def main():
     prep_sst_data()
-    return
 
 
 if __name__ == "__main__":

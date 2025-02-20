@@ -86,8 +86,8 @@ def test_EllipseSimulation_PrescribedParms(v, sdev_cube, Lx_cube, Ly_cube, theta
     print('This is test_EllipseSimulation_PrescribedParms')
     ans = s_e.EllipseSimulation_PrescribedParms(v,
                                                 sdev_cube,
-                                                Lx_cube, 
-                                                Ly_cube, 
+                                                Lx_cube,
+                                                Ly_cube,
                                                 theta_cube)
     print(repr(ans))
     return ans
@@ -96,20 +96,20 @@ def test_EllipseSimulation_PrescribedParms(v, sdev_cube, Lx_cube, Ly_cube, theta
 @pytest.mark.parametrize(
     "v, sdev_func, Lx_func, Ly_func, theta_func",
     [
-        # (1.5, 
-        #  lambda x, y: 1.2+0.*x+0.*y, 
-        #  lambda x, y: 1500.+100.*x+0.*y, 
-        #  lambda x, y: 500.+0.*x+50.*y, 
+        # (1.5,
+        #  lambda x, y: 1.2+0.*x+0.*y,
+        #  lambda x, y: 1500.+100.*x+0.*y,
+        #  lambda x, y: 500.+0.*x+50.*y,
         #  lambda x, y: 0+0.*x+0.*y),
-        (1.5, 
-         lambda x, y: 0.6+0.05*x+0.01*y, 
-         lambda x, y: 1500.+100.*x+0.*y, 
-         lambda x, y: 500.+0.*x+50.*y, 
+        (1.5,
+         lambda x, y: 0.6+0.05*x+0.01*y,
+         lambda x, y: 1500.+100.*x+0.*y,
+         lambda x, y: 500.+0.*x+50.*y,
          lambda x, y: 0.+0.*x+0.*y),
-        # (1.5, 
-        #  lambda x, y: 1.2+0.*x+0.*y, 
-        #  lambda x, y: 1500.+100.*x+0.*y, 
-        #  lambda x, y: 500.+0.*x+50.*y, 
+        # (1.5,
+        #  lambda x, y: 1.2+0.*x+0.*y,
+        #  lambda x, y: 1500.+100.*x+0.*y,
+        #  lambda x, y: 500.+0.*x+50.*y,
         #  lambda x, y: np.pi/4+0.*x+0.*y),
     ]
 )
@@ -130,8 +130,8 @@ def test_EllipseSimulation_NonStatFunc(v, sdev_func, Lx_func, Ly_func, theta_fun
     template_theta = compute_parms(theta_func, Atlantic_theta)
     ans = s_e.EllipseSimulation_PrescribedParms(v,
                                                 template_sigma,
-                                                template_Lx, 
-                                                template_Ly, 
+                                                template_Lx,
+                                                template_Ly,
                                                 template_theta)
     ans.create_cov()
     np.set_printoptions(suppress=True)

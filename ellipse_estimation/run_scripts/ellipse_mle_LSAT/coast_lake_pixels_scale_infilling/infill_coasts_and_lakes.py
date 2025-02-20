@@ -42,17 +42,18 @@ always_land = np.all(cube.data == 1.0, axis=0)
 
 '''
 
+import math
+
 import iris
 from iris.analysis import maths as iam
 from iris.fileformats import netcdf as inc
-iris.FUTURE.save_split_attrs = True # This may become obsolete in the future
-
 import numpy as np
-import math
 from scipy.linalg import eigh
 from scipy.spatial.transform import Rotation as R
 
 from nonstationary_cov.cube_covariance import sigma_rot_func
+
+iris.FUTURE.save_split_attrs = True # This may become obsolete in the future
 
 '''
 ERA5 LSAT Spatial Scale: Longitude -180 to 180, not y-reversed, no bounds 
@@ -90,9 +91,9 @@ def sigma_2_parms(sigma, degrees=False):
     r = R.from_matrix(v_padded)
     theta = r.as_euler('zxy', degrees=degrees)[0]
     d180 = np.pi if not degrees else 180.0
-    if (theta < -d180/2):
+    if theta < -d180/2:
         theta = theta+d180
-    if (theta > d180/2):
+    if theta > d180/2:
         theta = theta-d180
     return (Lx, Ly, theta)
 
@@ -117,7 +118,7 @@ def zero_360_2_180_180(cube):
 
 def Minus180_180_2_0_360(cube):
     cube.coord('longitude').bounds = None
-    cube.coord('latitude').bounds = None  
+    cube.coord('latitude').bounds = None
     z_2_d = iris.Constraint(longitude=lambda val: val >= 0.0)
     b_t_d = iris.Constraint(longitude=lambda val: val < 0.0)
     cube_b_t_d = cube.extract(b_t_d)
@@ -139,7 +140,7 @@ hadcrut5_defaults = {'land': {'Lx': 1600.0, 'Ly': 1600.0, 'sdev': 1.2, 'theta': 
                      'water': {'Lx': 1600.0, 'Ly': 1600.0, 'sdev': 0.6, 'theta': 0.0}}
 
 
-def landfrac_categorial(land_frac_arr, 
+def landfrac_categorial(land_frac_arr,
                         minimum_land_threshold=0.001):
     '''
     OSTIA definition
@@ -149,10 +150,10 @@ def landfrac_categorial(land_frac_arr,
     landfrac_categorial_arr = np.zeros_like(land_frac_arr, dtype=np.uint8)
     water = land_frac_arr <= minimum_land_threshold
     land  = land_frac_arr >= (1.0-minimum_land_threshold)
-    coast = np.logical_and(land_frac_arr > minimum_land_threshold, 
+    coast = np.logical_and(land_frac_arr > minimum_land_threshold,
                            land_frac_arr < (1.0-minimum_land_threshold))
     landfrac_categorial_arr[water] = land_cat['water']
-    landfrac_categorial_arr[land] = land_cat['land']    
+    landfrac_categorial_arr[land] = land_cat['land']
     landfrac_categorial_arr[coast] = land_cat['coast']
     return landfrac_categorial_arr
 
@@ -176,7 +177,7 @@ def ESA_landfrac(minimum_land_threshold=0.001,
         land_frac = Minus180_180_2_0_360(land_frac)
     land_frac.rename('land area fraction')
     land_frac_cat = land_frac.copy()
-    land_frac_cat.data = landfrac_categorial(land_frac_cat.data, 
+    land_frac_cat.data = landfrac_categorial(land_frac_cat.data,
                                              minimum_land_threshold=minimum_land_threshold)
     land_frac_cat.rename('land area categorical')
     land_frac_cat.attributes = None
@@ -208,17 +209,17 @@ def find_neighbours(jj, ii, jj_max=35, ii_max=71):
         if (jj_s < 0) or (jj_s > jj_max):
             continue
         for ii_s in [ii-1, ii, ii+1]:
-            if (ii_s > ii_max):
+            if ii_s > ii_max:
                 neighbours.append((jj_s, 0))
-            elif (ii_s < 0):
+            elif ii_s < 0:
                 neighbours.append((jj_s, ii_max))
             else:
                 neighbours.append((jj_s, ii_s))
     return neighbours
 
 
-def infill_scales(Lx, Ly, 
-                  theta, 
+def infill_scales(Lx, Ly,
+                  theta,
                   sdev,
                   convergence_qc,
                   terrain='land',
@@ -335,8 +336,8 @@ def run_land():
         theta = cubes.extract('theta')[0]
         sdev = cubes.extract('standard_deviation')[0]
         qc = cubes.extract('qc_code')[0]
-        ans = infill_scales(Lx, Ly, 
-                            theta, 
+        ans = infill_scales(Lx, Ly,
+                            theta,
                             sdev,
                             qc,
                             terrain=terrain)
@@ -358,8 +359,8 @@ def run_sea():
         theta = cubes.extract('theta')[0]
         sdev = cubes.extract('standard_deviation')[0]
         qc = cubes.extract('qc_code')[0]
-        ans = infill_scales(Lx, Ly, 
-                            theta, 
+        ans = infill_scales(Lx, Ly,
+                            theta,
                             sdev,
                             qc,
                             terrain=terrain)
