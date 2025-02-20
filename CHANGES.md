@@ -7,6 +7,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 ### New features and enhancements
 
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
+* Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 
 ### Breaking changes
 
