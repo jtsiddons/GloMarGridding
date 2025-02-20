@@ -9,8 +9,8 @@ import ntpath
 import os
 
 import iris
-import iris.coord_categorisation as icc
-import iris.util as iutil
+from iris import coord_categorisation as icc
+from iris import util as iutil
 import numpy as np
 
 # All this needs fixing... they are specific to JASMIN scratch storage
@@ -214,7 +214,7 @@ def iris_load_cube_plus(ncfiles,
                             icc.add_day_of_month,
                             icc.add_year]:
         try:
-     world_landmask.nc       t_meta_gen_func(ans_cube, 'time')
+            t_meta_gen_func(ans_cube, 'time')
         except Exception as e:
             print('Python exception detected (extra t coord probably exist):')
             logging.error(repr(e))

@@ -4,7 +4,7 @@ iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
 '''
 
-from nonstationary_cov import cube_covariance as cube_cov
+import cube_covariance as cube_cov
 
 # from contextlib import nullcontext
 import datetime

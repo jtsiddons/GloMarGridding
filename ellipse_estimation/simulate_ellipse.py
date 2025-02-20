@@ -5,9 +5,8 @@ import numpy as np
 from numpy.random import multivariate_normal
 from scipy import stats
 
-from nonstationary_cov import cube_covariance
-from nonstationary_cov import cube_covariance_nonstationary_stich as ccns
-# from GP_toybox import ensemble_generator as eg
+import cube_covariance
+import cube_covariance_nonstationary_stich as ccns
 
 def fill_cube_with_uniform_parms(cube_template,
                                  sdev,
