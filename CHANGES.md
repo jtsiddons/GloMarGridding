@@ -4,6 +4,19 @@
 
 Contributors to this version: Joseph Siddons (@josidd)
 
+### New features and enhancements
+
+* Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
+
+### Breaking changes
+
+* Refactored HadCRUT runner script (!38)
+    * Outputs are no-longer yearly files
+    * Use xarray rather than open a netCDF file
+    * Loop over all ensembles in script
+    * Simplify arguments for script, now only require config, all parameters must be set in config file
+    * Outputs include information for traceability (including git commit, user)
+
 ### Internal changes
 
 * Added changelog (!39)

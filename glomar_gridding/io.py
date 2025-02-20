@@ -4,6 +4,7 @@ file.
 """
 
 import os
+from typing import Any
 import xarray as xr
 
 
@@ -69,3 +70,44 @@ def load_array(
         An array containing the values of the variable specified by var
     """
     return load_dataset(path, **kwargs)[var]
+
+
+def get_recurse(config: dict, *keys, default: Any = None) -> Any:
+    """
+    Recursively get sub keys from a python dict object.
+
+    If a dictionary object contains keys whose values are themselves
+    dictionaries, get a value from a sub dictionary by specifying the key-path
+    to get to the desired value.
+
+    Equivalent to:
+
+    > config[keys[0]][keys[1]]...[keys[n]]
+
+    Or:
+
+    > config.get(keys[0]).get(keys[1])...get(keys[n])
+
+    Parameters
+    ----------
+    config : dict
+        The layered dictionary containing sub dictionaries.
+    *keys
+        The sequence of keys to recurse through to get the final value. If any
+        key in the sequence is not found, or is not a dictionary (and is not
+        the final key), then the default value is returned.
+    default : Any
+        The default value, returned if the sequence of keys cannot be completed
+        or the final key is not present.
+
+    Returns
+    -------
+    The value associated with the final key, or the default value if the final
+    key cannot be reached.
+    """
+    if len(keys) == 1:
+        return config.get(keys[0], default)
+    new_config = config.get(keys[0])
+    if new_config is None or not isinstance(new_config, dict):
+        return default
+    return get_recurse(new_config, *keys[1:], default=default)
