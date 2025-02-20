@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### Internal changes
+
+* Added changelog (!39)
+
 ## 0.2.0 (2025-02-18)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Agnieszka Faulkner (@agfaul)
