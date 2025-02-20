@@ -38,6 +38,8 @@ def main() -> None:  # noqa: D103
     weights_path: str = config.get("weights_path", "")
     weights_var_name: str = config.get("weights_var_name", "weights")
 
+    coords = ["time", "lat", "lon"]
+
     weights = (
         pl.from_pandas(
             load_array(weights_path, weights_var_name)
@@ -47,6 +49,8 @@ def main() -> None:  # noqa: D103
         .rename({"latitude": "lat", "longitude": "lon"})
         .filter(pl.col("time").dt.year().is_between(*YEAR_RANGE, closed="both"))
         .with_columns(pl.col("time").dt.replace(day=15, hour=12).name.keep())
+        .select([*coords, weights_var_name])
+        .unique()
     )
 
     weight_indicator: str = config.get("weight_indicator", "sst")
@@ -81,7 +85,6 @@ def main() -> None:  # noqa: D103
             )
             .rename({"epsilon": "lsat_epsilon", "n_obs": "lsat_n_obs"})
         )
-        coords = ["time", "lat", "lon"]
 
         combined_df = sst_array.join(lsat_array, on=coords, how="left")
         combined_df = combined_df.join(weights, on=coords, how="left")
