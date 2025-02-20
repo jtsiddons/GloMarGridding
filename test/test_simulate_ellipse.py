@@ -1,13 +1,14 @@
 import pytest
+import os
 
 import iris
 import xarray as xa
 import numpy as np
 
-from nonstationary_cov import simulate_ellipse as s_e
+from ellipse_estimation import simulate_ellipse as s_e
 
-nc_A = '../tests_and_examples/test_data/blank_cube.nc'
-nc_B = '../tests_and_examples/test_data/data_-170_-10.nc'
+nc_A = os.path.dirname(__file__)+'/../ellipse_estimation/tests_and_examples/test_data/blank_cube.nc'
+nc_B = os.path.dirname(__file__)+'/../ellipse_estimation/tests_and_examples/test_data/data_-170_-10.nc'
 cube_A_iris = iris.load_cube(nc_A)
 cube_A_xa = xa.load_dataset(nc_A)['tas']
 cube_B_iris = iris.load_cube(nc_B, 'sst_anomalies_projected_to_top_10_global_pcas')
@@ -68,7 +69,7 @@ def test_EllipseSimulation_UniformParms(v, cube_template, sdev, sigma_parms):
     return ans
 
 
-Atlantic_parm_cube = '../tests_and_examples/test_data/Atlantic_Ocean_07.nc'
+Atlantic_parm_cube = os.path.dirname(__file__)+'/../ellipse_estimation/tests_and_examples/test_data/Atlantic_Ocean_07.nc'
 cube_matern_dist = iris.load(Atlantic_parm_cube)
 Atlantic_Lx = cube_matern_dist.extract('Lx')[0][50:70, 50:70]
 Atlantic_Ly = cube_matern_dist.extract('Ly')[0][50:70, 50:70]

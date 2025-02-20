@@ -1,14 +1,15 @@
 import pytest
+# import os
 
 import numpy as np
 import iris
 from iris.util import equalise_attributes
-from iris.fileformats import netcdf as inc
+# from iris.fileformats import netcdf as inc
 # from statsmodels.stats.multitest import multipletests
 
-from nonstationary_cov import cube_covariance
-from nonstationary_cov import simulate_ellipse as se_og
-from nonstationary_cov.unit_tests import simulate_ellipse_unit_tests as seut
+from ellipse_estimation import cube_covariance
+from ellipse_estimation import simulate_ellipse as se_og
+import test_simulate_ellipse as seut
 
 @pytest.mark.parametrize(
     "v, cube_template, sdev, sigma_parms, size, outname",
@@ -109,9 +110,9 @@ def test_EllipseSimulation_UniformParms_FitRandomData(v,
     print('Estimated 2D kernel (ellipse parameter) looks fine.')
     #
     # Saving outputs for visualisation
-    outpath = '../tests_and_examples/test_data/'
-    outncfilename = outpath+outname+'.nc'
-    print('Results to be saved...')
-    print(super_cube_list)
-    print('Saving results to ',outncfilename)
-    inc.save(super_cube_list, outncfilename)
+    # outpath = os.path.dirname(__file__)+'/../ellipse_estimation/tests_and_examples/test_data/'
+    # outncfilename = outpath+outname+'.nc'
+    # print('Results to be saved...')
+    # print(super_cube_list)
+    # print('Saving results to ',outncfilename)
+    # inc.save(super_cube_list, outncfilename)

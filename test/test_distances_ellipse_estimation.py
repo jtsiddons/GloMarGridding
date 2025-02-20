@@ -1,10 +1,11 @@
 import pytest
+import os
 
 import iris
 
 from ellipse_estimation import distance_util as d_u
 
-nc_A = '../tests_and_examples/test_data/blank_cube.nc'
+nc_A = os.path.dirname(__file__)+'/../ellipse_estimation/tests_and_examples/test_data/blank_cube.nc'
 cube_A_iris = iris.load_cube(nc_A)
 
 '''
