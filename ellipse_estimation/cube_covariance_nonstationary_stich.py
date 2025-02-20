@@ -3,36 +3,31 @@ Requires numpy, scipy, sklearn
 iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
 '''
-
-import cube_covariance as cube_cov
-
-# from contextlib import nullcontext
 import datetime
 from functools import reduce
 import logging
 import numbers
+import sys
 import tracemalloc
 import warnings
 
+from joblib import Parallel, delayed # Developmental
 from iris import analysis as ia
-# import math
 import numpy as np
 from numpy import ma
 from numpy import linalg
 from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
-from statsmodels.stats import correlation_tools as correlation_tools
+from statsmodels.stats import correlation_tools
 
+import cube_covariance as cube_cov
 from nonstationary_cov.distance_util import scalar_cube_great_circle_distance
 
 # Below is in theory redudant, but the view/controller bits of the code has not been
-# integrated to the package; for now, keeping this in case of breaking other code 
-from nonstationary_cov.distance_util import scalar_cube_great_circle_distance_cube 
+# integrated to the package; for now, keeping this in case of breaking other code
+from nonstationary_cov.distance_util import scalar_cube_great_circle_distance_cube
 
-import sys
-
-# In development
-from joblib import Parallel, delayed
+# Developmental functions that I do not have time to explore much
 _default_n_jobs = 4
 # This is the only one would work if you want to modify self covariance
 # array inside method; slow
@@ -114,7 +109,7 @@ def c_ij_anistropic_rotated_nonstationary(v,
     if verbose:
         # The long-winded way of decomposing sigma_bar
         # Give you verbose info (Lx_bar, Ly_bar and theta_bar)
-        # It is not numerically stable if circles are involved 
+        # It is not numerically stable if circles are involved
         # Eigenvalues can be complex due to numerical errors when computing linalg.eig
         # It is slower as well.
         #
@@ -124,7 +119,7 @@ def c_ij_anistropic_rotated_nonstationary(v,
         # If numerical instability is detected, resulting in complex number, take the real part
         try:
             assert np.all(np.isreal(sigma_bar_eigval)) and np.all(np.isreal(sigma_bar_eigvec))
-        except AssertionError: 
+        except AssertionError:
             print('Complex eigenvalues detected!')
             print('sigma_bar_eigval = ', sigma_bar_eigval)
             print('sigma_bar_eigvec = ', sigma_bar_eigvec)
@@ -290,7 +285,7 @@ def perturb_sym_matrix_2_positive_definite(square_sym_matrix):
     print('Number of eigenvalues = ', len(eigenvalues))
     print('Number of negative eigenvalues = ', n_negatives)
     print('Largest eigenvalue  = ', max_eigen)
-    print('Smallest eigenvalue = ', min_eigen)   
+    print('Smallest eigenvalue = ', min_eigen)
     if min_eigen >= 0.0:
         print('Matrix is already positive (semi-)definite.')
         return square_sym_matrix
@@ -576,7 +571,7 @@ class CovarianceCube_PreStichedLocalEstimates():
                                                                         degree_dist=self.degree_dist,
                                                                         delta_x_method=self.delta_x_method,
                                                                         use_sklearn_haversine=self.use_sklearn_haversine)
-                    if (abs_x > self.max_dist):
+                    if abs_x > self.max_dist:
                         self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = 0.0
                     else:
                         sdev_j = self.sdev_local_estimates_compressed[jj]
@@ -658,7 +653,7 @@ class CovarianceCube_PreStichedLocalEstimates():
             print(self.cov_eig[:10], '...', self.cov_eig[-10:])
             if np.min(self.cov_eig) < 0:
                 # This uses the late Higham and his student's method
-                # Can be prone to errors due to (platform-level) memory issues (not capturable) 
+                # Can be prone to errors due to (platform-level) memory issues (not capturable)
                 # and (Python-level) numpy problems - capturable with Python
                 # Memory demanding (?); JASMIN est.
                 # memory for global 60S-60N 55000
@@ -716,7 +711,7 @@ class CovarianceCube_PreStichedLocalEstimates():
                                                             degree_dist=self.degree_dist,
                                                             delta_x_method=self.delta_x_method,
                                                             use_sklearn_haversine=self.use_sklearn_haversine)
-        if (abs_x > self.max_dist):
+        if abs_x > self.max_dist:
             self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = 0.0
         else:
             sdev_j = self.sdev_local_estimates_compressed[jj]
@@ -753,7 +748,7 @@ class CovarianceCube_PreStichedLocalEstimates():
                                                             degree_dist=self.degree_dist,
                                                             delta_x_method=self.delta_x_method,
                                                             use_sklearn_haversine=self.use_sklearn_haversine)
-        if (abs_x > self.max_dist):
+        if abs_x > self.max_dist:
             cov_bar = 0.0
         else:
             sdev_j = self.sdev_local_estimates_compressed[jj]

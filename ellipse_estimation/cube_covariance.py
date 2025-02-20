@@ -3,42 +3,29 @@ Requires numpy, scipy, sklearm
 iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
 '''
+from collections import OrderedDict
+from functools import reduce
+import math
+import warnings
+
 import iris
 import iris.coords as icoords
 import iris.util as iutil
-
-from collections import OrderedDict
-
 from cf_units import Unit
-
-#import pandas as pd
-
-import warnings
-
+from joblib import Parallel, delayed
 import numpy as np
-import numpy.ma as ma
-import numpy.linalg as linalg
-import math
-
-#from numba import jit
-
-from functools import reduce
-
-import scipy.ndimage as sndimage
-#import scipy.linalg as slinalg
+from numpy import ma
+from numpy import linalg
+from scipy import ndimage as sndimage
 from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
 from scipy.spatial.transform import Rotation as R
 from scipy import stats
 from scipy.optimize import minimize
-
-import sklearn.metrics as skl_metrics
-
-import skimage.measure as ski_measure
-from skimage.measure import EllipseModel
-from skimage.measure import CircleModel
-
-from joblib import Parallel, delayed
+from sklearn import metrics as skl_metrics
+from skimage import measure as ski_measure
+from skimage.measure import EllipseModel # pylint: disable=no-name-in-module
+from skimage.measure import CircleModel # pylint: disable=no-name-in-module
 
 _RADIUS_OF_EARTH = 6371000.0
 _KM2M = 1000.0
@@ -203,7 +190,7 @@ class CovarianceCube():
         xy_cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
         #xy_cov = _AT_A(xyflatten_data)
         if correlation:
-            return self._cov2cor(xy_cov, rounding=rounding)
+            return self._cov2cor(rounding=rounding)
         else:
             if rounding is not None:
                 return np.round(xy_cov, rounding)
@@ -356,7 +343,7 @@ class CovarianceCube():
         for contour in contours_smoothed:
             for ppp in contour:
                 contours_array.append([dx*ppp[1]+x0, dy*ppp[0]+y0])
-        contours_array = np.array(contours_array) 
+        contours_array = np.array(contours_array)
         ##
         model = Shape_Model if isinstance(Shape_Model, EllipseModel) or isinstance(Shape_Model, CircleModel) else Shape_Model()
         success = model.estimate(contours_array)
@@ -379,11 +366,11 @@ class CovarianceCube():
         if model_type == 'e-folding_ellipse':
             model_params[-1] = model_params[-1]*180.0/np.pi
         template_cube = self._make_template_cube(xy_point)
-        model_as_cubelist = create_output_cubes(template_cube, 
-                                                model_type = model_type, 
+        model_as_cubelist = create_output_cubes(template_cube,
+                                                model_type = model_type,
                                                 default_values = model_params)['param_cubelist']
         ##
-        return {'Correlation': R2, 
+        return {'Correlation': R2,
                 'Contours': contours_smoothed,
                 'Contours_xy_offset': (x0, y0),
                 'Contours_dx_dy': (dx, dy),
@@ -453,7 +440,7 @@ class CovarianceCube():
         ##
         ## dx and dy are in degrees
         dx = np.array([a - lonlat[0] for a in self.xy[:, 0]])
-        dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])        
+        dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])
         dx[dx >  180.0] -= 360.0
         dx[dx < -180.0] += 360.0
         ## Delete the origin (can't have dx = dy = 0)
@@ -461,7 +448,7 @@ class CovarianceCube():
         dy = np.delete(dy, xy_point)
         correlation_vector2 = np.delete(correlation_vector, xy_point)
         ##
-        ## distance is in delta-degrees 
+        ## distance is in delta-degrees
         lonlat_vector = np.column_stack([dx, dy])
         distance = linalg.norm(lonlat_vector, axis=1)
         #distance_i = np.abs(dx)
@@ -484,7 +471,7 @@ class CovarianceCube():
             The first coordinate of each point is assumed to be the latitude, the second is the longitude, given in radians. 
             The dimension of the data must be 2.
             '''
-            latlon_vector2 = np.column_stack([_deg2rad(lonlat[1]+dy), _deg2rad(lonlat[0]+dx)])    
+            latlon_vector2 = np.column_stack([_deg2rad(lonlat[1]+dy), _deg2rad(lonlat[0]+dx)])
             latlon2 = np.array([_deg2rad(lonlat[1]), _deg2rad(lonlat[0])])
             latlon2 = latlon2[np.newaxis, :]
             X_train_radial = skl_metrics.pairwise.haversine_distances(latlon_vector2, latlon2)[:, 0]
@@ -506,7 +493,7 @@ class CovarianceCube():
                 print('Check, num of abs(inside_arccos) > 1.0 = ',np.sum(np.abs(inside_arccos) > 1.0))
                 print('Check, max(inside_arccos): max(inside_arccos) = ',inside_arccos.max())
                 ## Numerical issues may lead to numbers slightly greater than 1.0 or less than -1.0
-                inside_arccos[inside_arccos >  1.0] =  1.0 
+                inside_arccos[inside_arccos >  1.0] =  1.0
                 inside_arccos[inside_arccos < -1.0] = -1.0
                 distance_ii = dx_sign * np.arccos(inside_arccos)
             elif delta_x_method == "Met_Office":
@@ -519,7 +506,7 @@ class CovarianceCube():
                 raise ValueError('Unknown delta_x_method')
             ##
             ## Converts dx and dy to physical distance (km)
-            X_train_directional = np.column_stack([distance_ii*_RADIUS_OF_EARTH/_KM2M, 
+            X_train_directional = np.column_stack([distance_ii*_RADIUS_OF_EARTH/_KM2M,
                                                    distance_jj*_RADIUS_OF_EARTH/_KM2M])
             X_train_radial = X_train_radial*_RADIUS_OF_EARTH/_KM2M
         else:
@@ -530,12 +517,12 @@ class CovarianceCube():
         print('Calculation check for X_train_directional')
         print(X_train_directional.shape)
         print('i-th component range, min, max: ',
-              np.ptp(X_train_directional[:,0]), 
-              np.min(X_train_directional[:,0]), 
+              np.ptp(X_train_directional[:,0]),
+              np.min(X_train_directional[:,0]),
               np.max(X_train_directional[:,0]))
         print('j-th component range, min, max: ',
-              np.ptp(X_train_directional[:,1]), 
-              np.min(X_train_directional[:,1]), 
+              np.ptp(X_train_directional[:,1]),
+              np.min(X_train_directional[:,1]),
               np.max(X_train_directional[:,1]))
         distance_limit = np.where(distance > max_distance)[0].tolist()
         distance_threshold = np.where(distance < min_distance)[0].tolist()
@@ -543,7 +530,7 @@ class CovarianceCube():
         X_train_directional = np.delete(X_train_directional, xys_2_drop, axis=0)
         X_train_radial = np.delete(X_train_radial, xys_2_drop, axis=0)
         y_train = np.delete(y_train, xys_2_drop)
-        ##                     
+        ##
         model_type = fform_2_modeltype[fform]
         if (fform == 'anistropic_rotated') or (fform == 'anistropic_rotated_pd'):
             X_train = X_train_directional
@@ -556,8 +543,8 @@ class CovarianceCube():
         ##
         results, params_SE, bbs = matern.fit(X_train,
                                              y_train,
-                                             guesses=guesses, 
-                                             bounds=bounds, 
+                                             guesses=guesses,
+                                             bounds=bounds,
                                              opt_method=opt_method,
                                              tol=tol,
                                              estimate_SE=estimate_SE,
@@ -583,8 +570,8 @@ class CovarianceCube():
                 right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
                 left_advisory = 'near_left_bnd' if left_check else 'not_near_left_bnd'
                 right_advisory = 'near_right_bnd' if right_check else 'not_near_rgt_bnd'
-                print('Convergence success after ', results.nit, ' iterations :) : ', 
-                      model_param, bb[0], bb[1], 
+                print('Convergence success after ', results.nit, ' iterations :) : ',
+                      model_param, bb[0], bb[1],
                       left_advisory, right_advisory)
                 if left_check:
                     if fit_success2 == 0.0:
@@ -606,7 +593,7 @@ class CovarianceCube():
         print('QC flag = ', fit_success2)
         model_params.append(np.sqrt(self.Cov[xy_point, xy_point]/self.time_n))  # append standard deviation
         model_params.append(fit_success2)
-        model_params.append(results.nit)                   
+        model_params.append(results.nit)
         ##
         v_coord = make_v_aux_coord(v)
         template_cube = self._make_template_cube(xy_point)
@@ -614,7 +601,7 @@ class CovarianceCube():
                                                 model_type=model_type,
                                                 additional_meta_aux_coords=[v_coord],
                                                 default_values=model_params)['param_cubelist']
-        ##                      
+        ##
         return {'Correlation': R2,
                 'MaternObj': matern,
                 'Model': results,
@@ -645,13 +632,13 @@ class CovarianceCube():
     def _make_template_cube2(self, lonlat):
         xy = lonlat
         t_len = len(self.data_cube.coord('time').points)
-        template_cube = self.data_cube[t_len//2].intersection(longitude=(xy[0]-0.05, xy[0]+0.05), 
+        template_cube = self.data_cube[t_len//2].intersection(longitude=(xy[0]-0.05, xy[0]+0.05),
                                                               latitude=(xy[1]-0.05, xy[1]+0.05))
         return template_cube
-        
+
     def __str__(self):
-        return str(self.__class__) 
-        #return str(self.__class__) + ": " + str(self.__dict__) 
+        return str(self.__class__)
+        #return str(self.__class__) + ": " + str(self.__dict__)
 
 
 def sigma_rot_func(Lx, Ly, theta):
@@ -703,7 +690,7 @@ def mahal_dist_func_sigma(delta_x, delta_y, sigma, verbose=False):
     Useful for sigma_bar computations
     '''
     xi_minus_xj = np.array([delta_x, delta_y])
-    tau_inside_squareroot = np.matmul(np.matmul(np.transpose(xi_minus_xj), linalg.inv(sigma)), xi_minus_xj)    
+    tau_inside_squareroot = np.matmul(np.matmul(np.transpose(xi_minus_xj), linalg.inv(sigma)), xi_minus_xj)
     tau = np.sqrt(tau_inside_squareroot)
     if verbose:
         print('tau', tau)
@@ -800,7 +787,7 @@ class MLE_c_ij_Builder_Karspeck():
                 raise NotImplementedError('Standardised/normalise covariance matrix first to correlation matrix')
         elif fform == 'anistropic':
             ## anistropic non-rotated
-            self.n_params = 2            
+            self.n_params = 2
             self.default_guesses = [7.0, 7.0]
             self.default_bounds  = [(0.5, 50), (0.5, 30)]
             if standardised_cov_matrix:
@@ -809,7 +796,7 @@ class MLE_c_ij_Builder_Karspeck():
                 raise NotImplementedError('Standardised/normalise covariance matrix first to correlation matrix')
         elif fform == 'anistropic_pd':
             ## anistropic non-rotated
-            self.n_params = 2            
+            self.n_params = 2
             self.default_guesses = [_deg2km(7.0), _deg2km(7.0)]
             self.default_bounds  = [(_deg2km(0.5), _deg2km(50)), (_deg2km(0.5), _deg2km(30))]
             if standardised_cov_matrix:
@@ -837,7 +824,7 @@ class MLE_c_ij_Builder_Karspeck():
         else:
             raise ValueError('Unknown fform')
 
-    def negativeloglikelihood(self, X, y, 
+    def negativeloglikelihood(self, X, y,
                               params,
                               arctanh_transform=True,
                               backend=_default_backend,
@@ -887,9 +874,9 @@ class MLE_c_ij_Builder_Karspeck():
             #for n_x_j in range(X.shape[0]):
             #    y_LL.append(self.c_ij(X[n_x_j,:], Lx, Ly, theta))
             y_LL = np.array(y_LL)
-        ''' 
-        if y is correlation, 
-        it might be useful to Fisher transform them before plugging into norm.logpdf 
+        '''
+        if y is correlation,
+        it might be useful to Fisher transform them before plugging into norm.logpdf
         this affects values close to 1 and -1
         imposing better behavior to the differences at the tail
         '''
@@ -924,7 +911,7 @@ class MLE_c_ij_Builder_Karspeck():
             #
             nLL = -1.0 * np.sum(stats.norm.logpdf(np.arctanh(y), loc=np.arctanh(y_LL), scale=sigma))
         else:
-            nLL = -1.0 * np.sum(stats.norm.logpdf(y, loc=y_LL), scale=sigma)
+            nLL = -1.0 * np.sum(stats.norm.logpdf(y, loc=y_LL, scale=sigma))
         return nLL
 
     def build_negativeloglikelihood_for_optimisation(self, X, y,
@@ -935,7 +922,7 @@ class MLE_c_ij_Builder_Karspeck():
                                                          n_jobs=n_jobs,
                                                          backend=backend)
 
-    def fit(self, 
+    def fit(self,
             X, y,
             guesses=None,
             bounds=None,
@@ -995,11 +982,11 @@ class MLE_c_ij_Builder_Karspeck():
                 SE = np.std(sim_params, axis = 0)
             elif estimate_SE == 'bootstrap_parallel':
                 ### Parallel
-                ### On JASMIN Jupyter: n_jobs = 5 leads to 1/3 wallclock time 
+                ### On JASMIN Jupyter: n_jobs = 5 leads to 1/3 wallclock time
                 kwargs_0 = {'n_jobs': n_jobs, 'backend': backend}
                 workers = range(n_sim)
-                sim_params = Parallel(**kwargs_0)(delayed(self._bootstrap_once)(X, y, 
-                                                                                guesses, 
+                sim_params = Parallel(**kwargs_0)(delayed(self._bootstrap_once)(X, y,
+                                                                                guesses,
                                                                                 bounds,
                                                                                 opt_method,
                                                                                 tol=tol,
@@ -1017,7 +1004,7 @@ class MLE_c_ij_Builder_Karspeck():
             return [results, None, bounds]
 
     def _bootstrap_once(self, X, y, guesses, bounds, opt_method, tol=None, seed=1234):
-        rng = np.random.RandomState(seed)
+        rng = np.random.RandomState(seed) # pylint: disable=no-member
         len_obs = len(y)
         i_obs = np.arange(len_obs)
         bootstrap_i = rng.choice(i_obs, size=len_obs, replace=True)
@@ -1039,11 +1026,11 @@ def create_output_cubes(template_cube,
     supercategory = model_type_2_supercategory[model_type]
     params_dict = supercategory_parms[supercategory]
     ##
-    model_type_coord = icoords.AuxCoord(model_type, 
-                                        long_name='fitting_model', 
+    model_type_coord = icoords.AuxCoord(model_type,
+                                        long_name='fitting_model',
                                         units='no_unit')
-    supercategory_coord = icoords.AuxCoord(supercategory, 
-                                           long_name='supercategory_of_fitting_model', 
+    supercategory_coord = icoords.AuxCoord(supercategory,
+                                           long_name='supercategory_of_fitting_model',
                                            units='no_unit')
     ##
     ans_cubelist = iris.cube.CubeList()

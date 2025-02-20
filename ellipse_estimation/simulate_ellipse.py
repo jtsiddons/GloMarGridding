@@ -1,9 +1,10 @@
-import iris
-import xarray as xa
 import numbers
+
+import iris
 import numpy as np
 from numpy.random import multivariate_normal
 from scipy import stats
+import xarray as xa
 
 import cube_covariance
 import cube_covariance_nonstationary_stich as ccns
@@ -84,13 +85,13 @@ class _EllipseSimulation():
                                                                       v=self.v,
                                                                       **kwargs4CC_PLE)
 
-  
+
     def simulate_cov(self,
                      mean=0.0,
                      size=1,
                      reshaped_2_og=True):
         if not self.check_self_exist(self.CCPLE_out):
-            print('Covariance and correlation not created yet; creating with default kwargs.')  
+            print('Covariance and correlation not created yet; creating with default kwargs.')
             self.create_cov()
         try:
             iter(mean)
@@ -103,7 +104,7 @@ class _EllipseSimulation():
             print(ans.shape)
             return ans
         return ans
-    
+
 
     def simulated_map_as_iris_cube_with_fake_t(self, map_arr, t_coord):
         if map_arr.shape[-2:] != self.Lx.shape:
@@ -128,14 +129,14 @@ class _EllipseSimulation():
 
     def __repr__(self):
         return f'SuperClass _EllipseSimulation with v = {self.v}'
-                 
+
 
 class EllipseSimulation_UniformParms(_EllipseSimulation):
 
     def __init__(self,
                  v,
-                 cube_template, 
-                 sdev_uniform, 
+                 cube_template,
+                 sdev_uniform,
                  sigma_parms_uniform):
         parm_cubes = fill_cube_with_uniform_parms(cube_template,
                                                   sdev_uniform,
@@ -149,11 +150,11 @@ class EllipseSimulation_UniformParms(_EllipseSimulation):
 
 class EllipseSimulation_PrescribedParms(_EllipseSimulation):
 
-    def __init__(self, 
-                 v, 
-                 sdev_cube, 
-                 Lx_cube, 
-                 Ly_cube, 
+    def __init__(self,
+                 v,
+                 sdev_cube,
+                 Lx_cube,
+                 Ly_cube,
                  theta_cube):
         super().__init__(v, sdev_cube, Lx_cube, Ly_cube, theta_cube)
 
@@ -217,7 +218,7 @@ def chisq_test_using_likelihood_ratios_4_covariance(sigma_hat, sigma_actual, n):
     # Both Ws are the same
     # eig_inside_the_brackets = np.linalg.eigvals(inside_the_brackets)
     # alpha, g = np.mean(eig_inside_the_brackets), stats.gmean(eig_inside_the_brackets)
-    # W = n*p*(alpha-np.log(g)-1) 
+    # W = n*p*(alpha-np.log(g)-1)
     p_val = stats.chi2.sf(W, p*(p+1)/2)
     return (W, p_val)
 
@@ -267,4 +268,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -240,7 +240,7 @@ def add_proj_fix_mask_callback_ESA_1deg(cube, field, filename):
     cube.coord('latitude').guess_bounds()
     cube.coord('longitude').guess_bounds()
 
-    
+
 def getmask_ESA_with_ice_1deg():
     # Includes ice-covered grid points
     # I think Aga created the file; it is the same file in config file in noc_runners
@@ -308,7 +308,7 @@ def mask_cube_ERA_0p25(cube2mask, use_alternative=False):
     _lsmask_cube_era = iris.load_cube(_lsmask_file_era)[0]
     lons = cube2mask.coord('longitude').points
     lats = cube2mask.coord('latitude').points
-    lsmask_cube_regional = _lsmask_cube_era.intersection(longitude=(lons[0], lons[-1]), 
+    lsmask_cube_regional = _lsmask_cube_era.intersection(longitude=(lons[0], lons[-1]),
                                                          latitude=(lats[0], lats[-1]))
     lsmask_cube_regional = iutil.reverse(lsmask_cube_regional, 'latitude')
     print(repr(lsmask_cube_regional), lsmask_cube_regional.shape)
