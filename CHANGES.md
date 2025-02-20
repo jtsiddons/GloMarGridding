@@ -1,0 +1,103 @@
+# Changelog
+
+## 0.2.1 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### Internal changes
+
+* Added changelog (!39)
+
+## 0.2.0 (2025-02-18)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Agnieszka Faulkner (@agfaul)
+
+### Announcements
+
+* Renamed library to `GloMarGridding`
+* Significant re-factor of the entire library in merge request !30.
+
+### New features and enhancements
+
+* Added `pertubation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
+* Added `io` module for loading netCDF files, making use of format strings (!30)
+* Computation of distance matrix from grid (!30)
+* Added `noc_runners/noc_helpers` to contain shared job-specific functions (!30)
+* Added `interpolation_covariance` module (!30)
+* Added `climatology` module for joining climatology data to observational data (!30)
+* Added `error_covariance` module for computing correlated, uncorrelated, and spatial components of error covariance matrices (functions moved from `observations`, `kriging` modules) (!30)
+* Added `distances` module for computing haversine, euclidean distances for covariance matrices (!30)
+* Added `mask` module for working with masks and grids, some functions moved from `observations` (!30)
+* Added `grid` module for constructing, mapping to grids for outputs, allowing for consistent indexing (!30)
+
+### Bug fixes
+
+* Account for immutability of `np.diag` (!35)
+
+### Internal changes
+
+* Added `LICENSE` and `CONTRIBUTING` files (!30)
+* Updated `README` to include set-up details (!30)
+* Complete re-structure of library, modules now part of `glomar_gridding` module (!30)
+* Add some unit tests for ordinary kriging (!30)
+* Config files for main scripts now utilise yaml over ini (!30)
+* Library dependencies can be managed by `pip` or `uv` (!30)
+* Build of library now uses `pyproject.toml` (!30)
+* Follow code standards using `ruff` for linting and formatting (!30)
+
+### Breaking changes
+
+* Remove specific `io` functions, added to `noc_runners/noc_helpers` (!30)
+* Variogram functions re-factored to classes, class names follow CamelCase naming convention (!30)
+* Re-name `covariance_variogram` -> `variogram`, remove unused functions (!30)
+* Removal of `observations`, `observations_plus_qc`, `simple_plots`, `covariance`, `covariance_calculation` modules, code moved to other modules (!30)
+* Modules moved to `glomar_gridding` (!30)
+* Main scripts and config files now moved to `noc_runners` (!30)
+* Use `polars` in place of `python` (!30)
+
+## 0.1.0 (2024-12-09)
+
+Contributors to this version: Agnieszka Faulkner (@agfaul), Steven Chan (@stchan), Joseph Siddons (@josidd), Richard Cornes (@ricorne)
+
+### New features and enhancements
+
+* Allow computation of Euclidean (tunnel) distance (!26)
+* Allow for removal of mean/median before kriging, adding back in after (!24)
+* Added processing scripts for DCENT and HadCRUT (!20, !23, !33)
+* Add function to correctly compute covariance from variogram
+* Added processing scripts for TAO (!18)
+* Add Matern Tau distance
+* Add utils module
+* Simplify adjustment of small negative eigenvalues (!29)
+* Add metadata to output netCDF files (!13)
+* Only perform one method of kriging in main scripts (!11)
+* Allow for height adjustments to marine air temperature in mat main files
+* Count number of observations by grid-box (!5)
+* Add script for producing MAT datasets by month (!4, !16)
+
+### Bug fixes
+
+* Fix problems with longitude in DCENT processing (!34)
+* Fix missing `remove_obs_mean` definition in DCENT processing (!31)
+* Disable use of uncorrelated components in HadSST script (!36)
+* Fix numerical issues when kriging with no error covariance (!28)
+* Correct calculation of `dz` for ordinary kriging (!21)
+
+### Internal changes
+
+* Optimised reading of height adjustments by using polars and feather format (!12)
+* Optimised computation of distance/weight components of error covariance (!1, !3)
+* Use float32 for improved memory performance on JASMIN (!4)
+
+### Breaking changes
+
+* Simplified kriging functions by splitting out `kriging_ordinary` and `kriging_simple` (!27)
+* Refactored code into python modules
+
+## 0.0.1 (2023-08-16)
+
+Contributors to this version: Agnieszka Faulkner (@agfaul)
+
+### New features and enhancements
+
+* Rewrote original Matlab code into python scripts for kriging 
