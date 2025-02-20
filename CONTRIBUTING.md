@@ -16,6 +16,10 @@ and/or `ricorne` - either to perform the merge and/or review/approve the request
 summary of the main changes that you have made so that there is context for us to review the
 changes.
 
+## Changelog
+
+The changelog is `CHANGES.md`. Please add your changes to the changelog in your merge request.
+
 ## Commit Messages
 
 We are trying to use a consistent and informative approach for writing commit messages in this
