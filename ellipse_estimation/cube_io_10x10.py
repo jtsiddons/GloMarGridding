@@ -245,6 +245,7 @@ def getmask_ESA_with_ice_1deg():
     # Includes ice-covered grid points
     # I think Aga created the file; it is the same file in config file in noc_runners
     mask_path = os.path.dirname(__file__)+'/data/'
+    # mask_path = "/noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/world/"
     wor_mask = iris.load_cube(mask_path+'world_landmask.nc',
                               callback=add_proj_fix_mask_callback_ESA_1deg)
     wor_mask.data = wor_mask.data.astype('int8')

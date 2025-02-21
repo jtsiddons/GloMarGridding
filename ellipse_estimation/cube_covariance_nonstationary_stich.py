@@ -468,7 +468,7 @@ class CovarianceCube_PreStichedLocalEstimates():
                               self.Ly_local_estimates,
                               self.theta_local_estimates,
                               self.sdev_local_estimates]:
-                self._lazy_bums_must_die(selfcubes)
+                self._no_lazy_data(selfcubes)
 
         # The cov and corr matrix will be sq matrix of this
         self.xy_shape = self.Lx_local_estimates.shape
@@ -768,19 +768,14 @@ class CovarianceCube_PreStichedLocalEstimates():
                                                             verbose=verbose)
         return cov_bar
 
-    def _lazy_bums_must_die(self, cube):
+    def _no_lazy_data(self, cube):
         ''' Disable iris cube lazy data '''
         if cube.has_lazy_data():
-            # print('Get your lazy bottoms off your chair!')
             cube.data
         # else:
-        #     print('Nothing to see here, cube')
         for coord in ['latitude', 'longitude']:
             if cube.coord(coord).has_lazy_points():
-                # print('You too coord, lazy bottoms off the chair now!')
                 cube.coord(coord).points
-            # else:
-            #     print('You are good to go, coord')
 
     def _self_mask(self, data_cube):
         data_cube2 = data_cube.copy()
