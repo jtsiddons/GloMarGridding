@@ -7,7 +7,6 @@ from datetime import date, timedelta
 from enum import IntEnum
 import inspect
 import os
-import subprocess
 import logging
 from typing import TypeVar
 import netCDF4 as nc
@@ -380,10 +379,3 @@ def get_date_index(year: int, month: int, start_year: int) -> int:
         the first month of year `start_year`.
     """
     return 12 * (year - start_year) + (month - 1)
-
-
-def get_git_commit() -> str:
-    """Get the most recent commit of the repository for reproducibility"""
-    path = os.path.dirname(os.path.abspath(__file__))
-    out = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=path)
-    return out.strip().decode()

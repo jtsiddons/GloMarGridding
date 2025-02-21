@@ -45,9 +45,10 @@ from glomar_gridding.perturbation import scipy_mv_normal_draw
 from glomar_gridding.utils import (
     init_logging,
     get_date_index,
-    get_git_commit,
 )
 from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
+
+from .noc_helpers import get_git_commit
 
 # Debugging
 import logging
