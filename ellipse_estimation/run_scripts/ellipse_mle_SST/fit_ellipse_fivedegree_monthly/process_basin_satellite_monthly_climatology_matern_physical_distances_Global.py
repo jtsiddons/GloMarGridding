@@ -1,4 +1,5 @@
-import datetime
+# import datetime
+import logging
 from pathlib import Path
 import sys
 
@@ -10,8 +11,10 @@ import numpy as np
 
 import psutil
 
-from nonstationary_cov import cube_covariance
+from ellipse_estimation import cube_covariance
+from glomar_gridding.utils import init_logging
 
+# pylint: disable=logging-fstring-interpolation
 
 def load_sst():
     ncfile = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/'
@@ -38,13 +41,13 @@ def mask_time_union(cube):
 
 def main():
     #
-    print(datetime.datetime.now(), 'Start')
+    init_logging()
     #
-    # nCPUs = 2
-    print(datetime.datetime.now(), psutil.Process().cpu_affinity())
-    print(datetime.datetime.now(), 'len(cpu_affinity) = ', len(psutil.Process().cpu_affinity()))
+    logging.info('Start')
+    #
+    print(psutil.Process().cpu_affinity())
     nCPUs = len(psutil.Process().cpu_affinity())
-    print(datetime.datetime.now(), 'number of jobs threads = ', nCPUs)
+    print('len(cpu_affinity) = ', nCPUs)
     #
     dat_type = sys.argv[1]
     month_value = int(sys.argv[2])
@@ -97,19 +100,19 @@ def main():
     #
     super_cube_list = iris.cube.CubeList()
     #
-    print(datetime.datetime.now(), repr(surftemp_cube))
-    print(datetime.datetime.now(), surftemp_cube.coord('latitude'))
-    print(datetime.datetime.now(), surftemp_cube.coord('longitude'))
-    print(datetime.datetime.now(), surftemp_cube.coord('time'))
-    print(datetime.datetime.now(), 'Large cube built for cov caculations:', repr(surftemp_cube))
-    print(datetime.datetime.now(), 'Building covariance matrix')
+    logging.info(repr(surftemp_cube))
+    print(surftemp_cube.coord('latitude'))
+    print(surftemp_cube.coord('longitude'))
+    print(surftemp_cube.coord('time'))
+    print('Large cube built for cov caculations:', repr(surftemp_cube))
+    logging.info('Building covariance matrix')
     super_sst_cov = cube_covariance.CovarianceCube(surftemp_cube)
-    print(datetime.datetime.now(), 'Covariance matrix completed')
+    logging.info('Covariance matrix completed')
     #
     sst_cube_not_template = surftemp_cube[surftemp_cube_time_length//2]
     for zonal, zonal_slice in enumerate(sst_cube_not_template.slices(['longitude'])):
         # Zonal slices
-        print(datetime.datetime.now(), zonal, repr(zonal_slice))
+        logging.info(f"{zonal} {repr(zonal_slice)}")
         if (zonal % everyother) != 0:
             continue
         zonal_cube_list = iris.cube.CubeList()
@@ -117,11 +120,11 @@ def main():
             #
             if (box_count % everyother) != 0:
                 continue
-            print(datetime.datetime.now(), zonal, '||', box_count, repr(invidiual_box))
+            logging.info(f"{zonal} || {box_count} {repr(invidiual_box)}")
             #
             current_lon = invidiual_box.coord('longitude').points[0]
             current_lat = invidiual_box.coord('latitude').points[0]
-            print(datetime.datetime.now(), zonal, '||', box_count, current_lon, current_lat)
+            logging.info(f"{zonal} || {box_count} {current_lon} {current_lat}")
             if np.ma.is_masked(invidiual_box.data):
                 xy, actual_latlon = super_sst_cov.find_nearest_xy_index_in_cov_matrix([current_lon, current_lat], use_full=True)
                 kwargs = {'model_type': cube_covariance.fform_2_modeltype[fform],
@@ -153,13 +156,14 @@ def main():
                 ansH = (ansX['Model'].x, ansX['Model'].x[-1]*180.0/np.pi)
             ans_lon = ans[0].coord('longitude').points
             ans_lat = ans[0].coord('latitude').points
-            print(datetime.datetime.now(), zonal, '||', box_count, xy, actual_latlon, ans_lon, ans_lat, ansH)
+            logging.info(f"{zonal} || {box_count} {xy} {actual_latlon} {ans_lon} {ans_lat} {ansH}")
             for individual_ans in ans:
                 zonal_cube_list.append(individual_ans)
                 zonal_cube_list.concatenate()
         for zonal_ans_cube in zonal_cube_list:
             super_cube_list.append(zonal_ans_cube)
             equalise_attributes(super_cube_list)
+    logging.info("Grid box loop is completed")
     equalise_attributes(super_cube_list)
     try:
         super_cube_list = super_cube_list.concatenate()
@@ -176,9 +180,9 @@ def main():
     outncfilename += str(month_value).zfill(2)+'.nc'
     print('Results to be saved...')
     print(super_cube_list)
-    print('Saving results to ',outncfilename)
+    logging.info(f"Saving results to {outncfilename}")
     inc.save(super_cube_list, outncfilename)
-    print(datetime.datetime.now(), 'Completed')
+    logging.info('Completed')
 
 
 if __name__ == "__main__":
