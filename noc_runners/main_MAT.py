@@ -38,7 +38,7 @@ from glomar_gridding.distances import tau_dist
 from glomar_gridding.utils import get_pentad_range
 
 # NOC Specific Helper Functions
-from .noc_helpers import (
+from noc_helpers import (
     add_height_adjustment,
     merge_ellipse_params,
     load_icoads,
