@@ -4,7 +4,6 @@ iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
 '''
 from collections import OrderedDict
-from functools import reduce
 import math
 import warnings
 
@@ -151,7 +150,8 @@ class CovarianceCube():
         ### Defining the input data
         self.data_cube = data_cube
         self.xy_shape = self.data_cube[0].shape
-        self.big_covar_size = reduce(lambda x, y: x*y, self.xy_shape)
+        assert len(self.xy_shape) == 2, "Time slices maps should be 2D; check if you have extra dimensions (ensemble/realizations?)"
+        self.big_covar_size = np.prod(self.xy_shape)
 
         ### Detect data mask and determine dimension of array without masked data
         self.data_has_mask = ma.is_masked(self.data_cube.data) ## This is almost certain to be True anywhere near the coast
