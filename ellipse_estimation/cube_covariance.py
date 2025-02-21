@@ -34,11 +34,33 @@ _deg2rad = lambda deg: np.deg2rad(deg)
 _rad2deg = lambda rad: np.rad2deg(rad)
 
 ## Each degree of latitude is equal to 60 nautical miles (with cosine correction for lon values)
-nm_per_lat = 60.0
-km2nm = 1.852
-_deg2nm  = lambda deg: nm_per_lat * deg
-_deg2km  = lambda deg: km2nm * _deg2nm(deg)
-_km2deg  = lambda  km: (km / km2nm) / nm_per_lat
+nm_per_lat = 60.0 # 60 nautical miles per degree latitude
+km2nm = 1.852 # 1852 meters per nautical miles
+
+
+def _deg2nm(deg: float) -> float:
+    '''
+    deg: float (degrees)
+    Convert degree latitude change to nautical miles
+    '''
+    return nm_per_lat * deg
+
+
+def _deg2km(deg: float) -> float:
+    '''
+    deg: float (degrees)
+    Convert degree latitude change to km
+    '''
+    return km2nm * _deg2nm(deg)
+
+
+def _km2deg(km: float) -> float:
+    '''
+    km: float (km)
+    Convert meridonal km change to degree latitude
+    '''
+    return (km / km2nm) / nm_per_lat
+
 
 _default_n_jobs = 4
 _default_backend = 'loky' ## loky appears to be fastest
