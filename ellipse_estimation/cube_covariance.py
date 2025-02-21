@@ -201,10 +201,17 @@ class CovarianceCube():
                 return xy_cov
 
     def _cov2cor(self, rounding=None):
-        sigma_inverse = np.zeros_like(self.Cov)
-        np.fill_diagonal(sigma_inverse, np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
-        ans = np.matmul(np.matmul(sigma_inverse, self.Cov), sigma_inverse)
-        #ans = _Dinv_A_Dinv(self.Cov)
+        '''
+        https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+        '''
+        sdevs = np.sqrt(np.diag(self.Cov))
+        normalisation = np.outer(sdevs, sdevs)
+        ans = self.Cov/normalisation
+        ans[self.Cov==0] = 0
+        # sigma_inverse = np.zeros_like(self.Cov)
+        # np.fill_diagonal(sigma_inverse, np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
+        # ans = np.matmul(np.matmul(sigma_inverse, self.Cov), sigma_inverse)
+        # #ans = _Dinv_A_Dinv(self.Cov)
         if rounding is not None:
             ans = np.round(ans, rounding)
         return ans
