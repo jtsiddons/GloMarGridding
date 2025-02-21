@@ -1,4 +1,9 @@
-"""Functions for applying masks to grids and DataFrames"""
+"""
+Masking
+-------
+
+Functions for applying masks to grids and DataFrames
+"""
 
 from typing import Any
 from warnings import warn

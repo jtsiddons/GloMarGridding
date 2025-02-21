@@ -1,4 +1,7 @@
 """
+Distances
+---------
+
 Functions for calculating distances or distance-based covariance components.
 
 Some functions can be used for computing pairwise-distances, for example via
@@ -192,7 +195,7 @@ def calculate_distance_matrix(
 
     Available functions are `haversine_distance`, `euclidean_distance`. A
     custom function can be used, requiring that the function takes the form:
-        (tuple[float, float], tuple[float, float]) -> float
+    (tuple[float, float], tuple[float, float]) -> float
 
     Parameters
     ----------

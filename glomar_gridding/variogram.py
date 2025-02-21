@@ -1,4 +1,7 @@
 """
+Variograms
+----------
+
 Varigram classes for construction of spatial covariance structure from distance
 matrices.
 """
@@ -182,9 +185,9 @@ class MaternVariogram(Variogram):
 
     Same args as the Variogram classes with additional nu, method parameters.
 
-    Sklearn
-    -------
-    1) This is called ``sklearn'' because if d/range_ = 1.0 and nu=0.5, it gives
+    Sklearn:
+
+    1) This is called "sklearn" because if d/range = 1.0 and nu=0.5, it gives
        1/e correlation...
     2) This is NOT the same formulation as in GSTAT nor in papers about
        non-stationary anistropic covariance models (aka Karspeck paper).
@@ -199,8 +202,8 @@ class MaternVariogram(Variogram):
     Gaussian Processes for Machine Learning. The MIT Press.
     https://doi.org/10.7551/mitpress/3206.001.0001
 
-    GeoStatic
-    ---------
+    GeoStatic:
+
     Similar to Sklearn MaternVariogram model but uses the range scaling in
     gstat.
     Note: there are no square root 2 or nu in middle and right
@@ -208,8 +211,8 @@ class MaternVariogram(Variogram):
     Yields the same answer to sklearn MaternVariogram if nu==0.5
     but are otherwise different.
 
-    Karspeck
-    --------
+    Karspeck:
+
     Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
     Note: Note the 2 is outside the square root for middle and right
     e-folding distance is now at d/SQRT(2) for nu=0.5
@@ -233,12 +236,9 @@ class MaternVariogram(Variogram):
         Smoothing parameter, shapes to a smooth or rough variogram function
     method : MaternModel
         One of "sklearn", "gstat", or "karspeck"
-        sklearn:
-            https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html#sklearn.gaussian_process.kernels.Matern
-        gstat:
-            https://scikit-gstat.readthedocs.io/en/latest/reference/models.html#matern-model
-        karspeck:
-            https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900
+        sklearn: https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html#sklearn.gaussian_process.kernels.Matern
+        gstat: https://scikit-gstat.readthedocs.io/en/latest/reference/models.html#matern-model
+        karspeck: https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900
     """
 
     psill: float | np.ndarray

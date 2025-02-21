@@ -1,4 +1,7 @@
 """
+Error Covariance
+----------------
+
 Functions for computing correlated and uncorrelated components of the error
 covariance. These values are determined from standard deviation (sigma) values
 assigned to groupings within the observational data.

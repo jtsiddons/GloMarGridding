@@ -1,4 +1,7 @@
 """
+Kriging
+-------
+
 Functions for performing Kriging.
 
 Interpolation using a Gaussian Process. Available methods are Simple and

@@ -1,4 +1,8 @@
-"""Utility functions for GlomarGridding"""
+"""
+Utils
+-----
+Utility functions for GlomarGridding
+"""
 
 from calendar import isleap
 from collections import OrderedDict
