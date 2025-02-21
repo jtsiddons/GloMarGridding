@@ -2456,6 +2456,466 @@ np.ndarray
 
 \end{fulllineitems}
 
+\index{module@\spxentry{module}!glomar\_gridding.utils@\spxentry{glomar\_gridding.utils}}\index{glomar\_gridding.utils@\spxentry{glomar\_gridding.utils}!module@\spxentry{module}}
+
+\section{Utils}
+\label{\detokenize{users_guide:utils}}\label{\detokenize{users_guide:module-glomar_gridding.utils}}
+\sphinxAtStartPar
+Utility functions for GlomarGridding
+\index{ColumnNotFoundError@\spxentry{ColumnNotFoundError}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.ColumnNotFoundError}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{exception}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{ColumnNotFoundError}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Error class for Column Not Being Found
+
+\end{fulllineitems}
+
+\index{ConfigParserMultiValues (class in glomar\_gridding.utils)@\spxentry{ConfigParserMultiValues}\spxextra{class in glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.ConfigParserMultiValues}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{ConfigParserMultiValues}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Internal Helper Class
+
+\end{fulllineitems}
+
+\index{MonthName (class in glomar\_gridding.utils)@\spxentry{MonthName}\spxextra{class in glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.MonthName}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{MonthName}}}
+{\sphinxparam{\DUrole{n}{value}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Name of month from int
+
+\end{fulllineitems}
+
+\index{add\_empty\_layers() (in module glomar\_gridding.utils)@\spxentry{add\_empty\_layers()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.add_empty_layers}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{add\_empty\_layers}}}
+{\sphinxparam{\DUrole{n}{nc\_variables}}\sphinxparamcomma \sphinxparam{\DUrole{n}{timestamps}}\sphinxparamcomma \sphinxparam{\DUrole{n}{shape}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Add empty layers to a netcdf file. This adds a layer of zeros to the netCDF
+file.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{nc\_variables}} (\sphinxstyleliteralemphasis{\sphinxupquote{Iterable}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{nc.Variable}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{nc.Variable}}) \textendash{} Name(s) of the variables to add empty layers to
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{timestamps}} (\sphinxstyleliteralemphasis{\sphinxupquote{Iterable}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Indices to add empty layers
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{shape}} (\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Shape of the layer to add
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{adjust\_small\_negative() (in module glomar\_gridding.utils)@\spxentry{adjust\_small\_negative()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.adjust_small_negative}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{adjust\_small\_negative}}}
+{\sphinxparam{\DUrole{n}{mat}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Adjusts small negative values (with absolute value \textless{} 1e\sphinxhyphen{}8)
+in matrix to 0 in\sphinxhyphen{}place.
+
+\sphinxAtStartPar
+Raises a warning if any small negative values are detected.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mat}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Squared uncertainty associated with chosen kriging method
+Derived from the diagonal of the matrix
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{check\_cols() (in module glomar\_gridding.utils)@\spxentry{check\_cols()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.check_cols}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{check\_cols}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cols}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Check that all columns in a list of columns are in a DataFrame
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{days\_since\_by\_month() (in module glomar\_gridding.utils)@\spxentry{days\_since\_by\_month()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.days_since_by_month}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{days\_since\_by\_month}}}
+{\sphinxparam{\DUrole{n}{year}}\sphinxparamcomma \sphinxparam{\DUrole{n}{day}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the number of days since \sphinxtitleref{year}\sphinxhyphen{}01\sphinxhyphen{}\sphinxtitleref{day} for each month. This is used
+to set the time values in a netCDF file where temporal resolution is monthly
+and the units are days since some date.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{filter\_bounds() (in module glomar\_gridding.utils)@\spxentry{filter\_bounds()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.filter_bounds}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{filter\_bounds}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bound\_cols}}\sphinxparamcomma \sphinxparam{\DUrole{n}{closed}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}left\textquotesingle{}}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Filter a polars DataFrame based on a set of lower and upper bounds.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{df}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The data to be filtered by the bounds
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of tuples containing lower and upper bounds for a column
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bound\_cols}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of column names to be filtered by the bounds, the length of
+the bounds list must equal the length of the bound\_cols list.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{closed}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} One of “both”, “left”, “right”, “none” indicating the closedness of
+the bounds. If the input is a single instance then all bounds will have
+that closedness. If it is a list of closed values then its length must
+match the length of the bounds list.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataFrame}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{find\_nearest() (in module glomar\_gridding.utils)@\spxentry{find\_nearest()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.find_nearest}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{find\_nearest}}}
+{\sphinxparam{\DUrole{n}{array}}\sphinxparamcomma \sphinxparam{\DUrole{n}{values}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the indices and values from an array that are closest to the input
+values.
+
+\sphinxAtStartPar
+A single index, value pair is returned for each look\sphinxhyphen{}up value in the values
+list.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{array}} (\sphinxstyleliteralemphasis{\sphinxupquote{Iterable}}) \textendash{} The array to search for nearest values.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{Iterable}}) \textendash{} The values to look\sphinxhyphen{}up in the array.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{int}}{]}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{idx\_list} (\sphinxstyleemphasis{list{[}int{]}}) \textendash{} The indices of nearest values
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{array\_values\_list} (\sphinxstyleemphasis{list}) \textendash{} The list of values in array that are closest to the input values.
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_date\_index() (in module glomar\_gridding.utils)@\spxentry{get\_date\_index()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.get_date_index}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{get\_date\_index}}}
+{\sphinxparam{\DUrole{n}{year}}\sphinxparamcomma \sphinxparam{\DUrole{n}{month}}\sphinxparamcomma \sphinxparam{\DUrole{n}{start\_year}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the index of a given year\sphinxhyphen{}month in a monthly sequence of dates
+starting from month 1 in a specific start year
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{year}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} The year for the date to find the index of.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{month}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} The month for the date to find the index of.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{start\_year}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} The start year of the date series, the result assumes that the date
+time series starts in the first month of this year.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{index} \textendash{} The index of the input date in the monthly datetime series starting from
+the first month of year \sphinxtitleref{start\_year}.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+int
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_pentad\_range() (in module glomar\_gridding.utils)@\spxentry{get\_pentad\_range()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.get_pentad_range}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{get\_pentad\_range}}}
+{\sphinxparam{\DUrole{n}{centre\_date}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the start and date of a pentad centred at a centre date. If the
+pentad includes the leap date of 29th Feb then the pentad will include
+6 days. This follows the \sphinxstylestrong{*} pentad convention.
+
+\sphinxAtStartPar
+The start and end date are first calculated from a non\sphinxhyphen{}leap year.
+
+\sphinxAtStartPar
+If the centre date value is 29th Feb then the pentad will be a pentad
+starting on 27th Feb and ending on 2nd March.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{centre\_date}} (\sphinxstyleliteralemphasis{\sphinxupquote{datetime.date}}) \textendash{} The centre date of the pentad. The start date will be 2 days before this
+date, and the end date will be 2 days after.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{date}}, \sphinxcode{\sphinxupquote{date}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{start\_date} (\sphinxstyleemphasis{datetime.date}) \textendash{} Two days before centre\_date
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstylestrong{end\_date} (\sphinxstyleemphasis{datetime.date}) \textendash{} Two days after centre\_date
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{init\_logging() (in module glomar\_gridding.utils)@\spxentry{init\_logging()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.init_logging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{init\_logging}}}
+{\sphinxparam{\DUrole{n}{file}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Initialise the logger
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} File to send log messages to. If set to None (default) then print log
+messages to STDout
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{intersect\_mtlb() (in module glomar\_gridding.utils)@\spxentry{intersect\_mtlb()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.intersect_mtlb}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{intersect\_mtlb}}}
+{\sphinxparam{\DUrole{n}{a}}\sphinxparamcomma \sphinxparam{\DUrole{n}{b}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Returns data common between two arrays, a and b, in a sorted order and index
+vectors for a and b arrays Reproduces behaviour of Matlab’s intersect
+function.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{array}} (\sphinxstyleliteralemphasis{\sphinxupquote{b}}\sphinxstyleliteralemphasis{\sphinxupquote{ (}}\sphinxstyleliteralemphasis{\sphinxupquote{array}}\sphinxstyleliteralemphasis{\sphinxupquote{) }}\sphinxstyleliteralemphasis{\sphinxupquote{\sphinxhyphen{} 1\sphinxhyphen{}D}})
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{array}}
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{1\sphinxhyphen{}D array, c, of common values found in two arrays, a and b, sorted in order}
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{List of indices, where the common values are located, for array a}
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleemphasis{List of indices, where the common values are located, for array b}
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{select\_bounds() (in module glomar\_gridding.utils)@\spxentry{select\_bounds()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{users_guide:glomar_gridding.utils.select_bounds}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{select\_bounds}}}
+{\sphinxparam{\DUrole{n}{x}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{{[}(\sphinxhyphen{}90, 90), (\sphinxhyphen{}180, 180){]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{variables}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Filter an xarray.DataArray or xarray.Dataset by a set of bounds.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{x}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Dataset}}) \textendash{} The data to filter
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of tuples containing the lower and upper bounds for each
+dimension.
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{variables}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the dimensions (the order must match the bounds).
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{x} \textendash{} The input data filtered by the bounds.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.DataArray | xarray.Dataset
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 
 
 \renewcommand{\indexname}{Python Module Index}
@@ -2470,6 +2930,7 @@ np.ndarray
 \item\relax\sphinxstyleindexentry{glomar\_gridding.kriging}\sphinxstyleindexpageref{users_guide:\detokenize{module-glomar_gridding.kriging}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.mask}\sphinxstyleindexpageref{users_guide:\detokenize{module-glomar_gridding.mask}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.perturbation}\sphinxstyleindexpageref{users_guide:\detokenize{module-glomar_gridding.perturbation}}
+\item\relax\sphinxstyleindexentry{glomar\_gridding.utils}\sphinxstyleindexpageref{users_guide:\detokenize{module-glomar_gridding.utils}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.variogram}\sphinxstyleindexpageref{users_guide:\detokenize{module-glomar_gridding.variogram}}
 \end{sphinxtheindex}
 

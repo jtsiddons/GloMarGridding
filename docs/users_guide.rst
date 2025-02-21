@@ -28,3 +28,6 @@ Users Guide
 
 .. automodule:: glomar_gridding.perturbation
    :members:
+
+.. automodule:: glomar_gridding.utils
+   :members:
