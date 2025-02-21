@@ -21,16 +21,13 @@ from scipy.special import gamma
 from scipy.spatial.transform import Rotation as R
 from scipy import stats
 from scipy.optimize import minimize
-from sklearn import metrics as skl_metrics
+from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 # from astropy.constants import R_earth
 
 # Earth is nearly round.
 # _RADIUS_OF_EARTH = R_earth.value # Radius along the equator 6378.1 km
 _RADIUS_OF_EARTH = 6371000.0 # Average radius of Earth
 _KM2M = 1000.0
-
-def _deg2rad(deg): return np.deg2rad(deg)
-def _rad2deg(rad): return np.rad2deg(rad)
 
 ## Each degree of latitude is equal to 60 nautical miles (with cosine correction for lon values)
 nm_per_lat = 60.0 # 60 nautical miles per degree latitude
@@ -52,13 +49,12 @@ def _deg2km(deg: float) -> float:
     return km2nm * _deg2nm(deg)
 
 
-def _km2deg(km: float) -> float:
-    '''
-    km: float (km)
-    Convert meridonal km change to degree latitude
-    '''
-    return (km / km2nm) / nm_per_lat
-
+# def _km2deg(km: float) -> float:
+#     '''
+#     km: float (km)
+#     Convert meridonal km change to degree latitude
+#     '''
+#     return (km / km2nm) / nm_per_lat
 
 _default_n_jobs = 4
 _default_backend = 'loky' ## loky appears to be fastest
@@ -233,20 +229,20 @@ class CovarianceCube():
         yx_og = np.column_stack([unmeshed_y, unmeshed_x])
         if haversine:
             ### Great circle - Earth
-            f_D = lambda arr: skl_metrics.pairwise.haversine_distances(arr) * _RADIUS_OF_EARTH/_KM2M
-            yx = np.column_stack([np.array([_deg2rad(lat) for lat in unmeshed_y]),
-                                  np.array([_deg2rad(lon) for lon in unmeshed_x])])
+            def f_D(arr): return haversine_distances(arr) * _RADIUS_OF_EARTH/_KM2M
+            yx = np.column_stack([np.array([np.deg2rad(lat) for lat in unmeshed_y]),
+                                  np.array([np.deg2rad(lon) for lon in unmeshed_x])])
         else:
             ### Delta degrees - locally flat Earth, treating like it an image
-            f_D = skl_metrics.pairwise.euclidean_distances
+            f_D = euclidean_distances
             yx = yx_og
         D = f_D(yx)
         ##
         ## Angle difference vs x/longitude-axis - below two yields the same result
-        #_dy = skl_metrics.pairwise.euclidean_distances(np.column_stack([unmeshed_y, np.zeros_like(unmeshed_y)]))
-        #_dx = skl_metrics.pairwise.euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x]))
-        _dy = skl_metrics.pairwise.euclidean_distances(np.column_stack([yx[:,0], np.zeros_like(unmeshed_y)]))
-        _dx = skl_metrics.pairwise.euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), yx[:,1]]))
+        #_dy = euclidean_distances(np.column_stack([unmeshed_y, np.zeros_like(unmeshed_y)]))
+        #_dx = euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x]))
+        _dy = euclidean_distances(np.column_stack([yx[:,0], np.zeros_like(unmeshed_y)]))
+        _dx = euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), yx[:,1]]))
         dy = np.triu(_dy) - np.tril(_dy)
         dx = np.triu(_dx) - np.tril(_dx)
         A = np.arctan2(dy, dx) ### In Radians, note arctan2 (i.e. it can tell if dy and dx are negative)
@@ -256,7 +252,6 @@ class CovarianceCube():
     def _self_mask(self):
         broadcasted_mask = np.broadcast_to(self.cube_mask, self.data_cube.data.shape)
         self.data_cube.data = ma.masked_where(broadcasted_mask, self.data_cube.data)
-        return
 
     def _reverse_mask_from_compress_1D(self, compressed_1D_vector, fill_value = 0.0, dtype = np.float32):
         '''
@@ -380,11 +375,13 @@ class CovarianceCube():
             The first coordinate of each point is assumed to be the latitude, the second is the longitude, given in radians. 
             The dimension of the data must be 2.
             '''
-            latlon_vector2 = np.column_stack([_deg2rad(lonlat[1]+dy), _deg2rad(lonlat[0]+dx)])
-            latlon2 = np.array([_deg2rad(lonlat[1]), _deg2rad(lonlat[0])])
+            latlon_vector2 = np.column_stack([np.deg2rad(lonlat[1]+dy),
+                                              np.deg2rad(lonlat[0]+dx)])
+            latlon2 = np.array([np.deg2rad(lonlat[1]),
+                                np.deg2rad(lonlat[0])])
             latlon2 = latlon2[np.newaxis, :]
-            X_train_radial = skl_metrics.pairwise.haversine_distances(latlon_vector2, latlon2)[:, 0]
-            distance_jj = _deg2rad(distance_j)
+            X_train_radial = haversine_distances(latlon_vector2, latlon2)[:, 0]
+            distance_jj = np.deg2rad(distance_j)
             ''' 
             Law of cosines/Pyth Theroem on a sphere surface:
             https://sites.math.washington.edu/~king/coursedir/m445w03/class/02-03-lawcos-answers.html
@@ -407,10 +404,10 @@ class CovarianceCube():
                 distance_ii = dx_sign * np.arccos(inside_arccos)
             elif delta_x_method == "Met_Office":
                 ## Cylindrical approximation
-                distance_ii = _deg2rad(dx)
+                distance_ii = np.deg2rad(dx)
             elif delta_x_method == "Modified_Met_Office":
-                average_cos = 0.5 * (np.cos(_deg2rad(lonlat[1]+dy)) + np.cos(_deg2rad(lonlat[1])))
-                distance_ii = _deg2rad(dx) * average_cos
+                average_cos = 0.5 * (np.cos(np.deg2rad(lonlat[1]+dy)) + np.cos(np.deg2rad(lonlat[1])))
+                distance_ii = np.deg2rad(dx) * average_cos
             else:
                 raise ValueError('Unknown delta_x_method')
             ##
