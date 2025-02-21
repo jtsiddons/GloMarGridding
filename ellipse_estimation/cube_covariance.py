@@ -16,27 +16,25 @@ from joblib import Parallel, delayed
 import numpy as np
 from numpy import ma
 from numpy import linalg
-from scipy import ndimage as sndimage
 from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
 from scipy.spatial.transform import Rotation as R
 from scipy import stats
 from scipy.optimize import minimize
 from sklearn import metrics as skl_metrics
-from skimage import measure as ski_measure
-from skimage.measure import EllipseModel # pylint: disable=no-name-in-module
-from skimage.measure import CircleModel # pylint: disable=no-name-in-module
+# from astropy.constants import R_earth
 
-_RADIUS_OF_EARTH = 6371000.0
+# Earth is nearly round.
+# _RADIUS_OF_EARTH = R_earth.value # Radius along the equator 6378.1 km
+_RADIUS_OF_EARTH = 6371000.0 # Average radius of Earth
 _KM2M = 1000.0
 
-_deg2rad = lambda deg: np.deg2rad(deg)
-_rad2deg = lambda rad: np.rad2deg(rad)
+def _deg2rad(deg): return np.deg2rad(deg)
+def _rad2deg(rad): return np.rad2deg(rad)
 
 ## Each degree of latitude is equal to 60 nautical miles (with cosine correction for lon values)
 nm_per_lat = 60.0 # 60 nautical miles per degree latitude
 km2nm = 1.852 # 1852 meters per nautical miles
-
 
 def _deg2nm(deg: float) -> float:
     '''
@@ -65,9 +63,7 @@ def _km2deg(km: float) -> float:
 _default_n_jobs = 4
 _default_backend = 'loky' ## loky appears to be fastest
 
-model_type_2_supercategory = {'e-folding_ellipse': '3_param_ellipse',
-                              'e-folding_circle' : '1_param_circle',
-                              'ps2006_kks2011_iso'  : '1_param_matern',
+model_type_2_supercategory = {'ps2006_kks2011_iso'  : '1_param_matern',
                               'ps2006_kks2011_ani'  : '2_param_matern',
                               'ps2006_kks2011_ani_r': '3_param_matern',
                               'ps2006_kks2011_iso_pd'  : '1_param_matern_pd',
@@ -83,18 +79,7 @@ fform_2_modeltype = {'anistropic_rotated': 'ps2006_kks2011_ani_r',
                      'isotropic_pd'         : 'ps2006_kks2011_iso_pd',
                     }
 
-supercategory_parms = {'3_param_ellipse': OrderedDict([('major_axis', Unit('km')),
-                                                       ('minor_axis', Unit('km')),
-                                                       ('theta', Unit('degrees')),
-                                                       ('standard_deviation', Unit('K')),
-                                                      ]),
-                       '2_param_ellipse': OrderedDict([('major_axis', Unit('km')),
-                                                       ('minor_axis', Unit('km')),
-                                                       ('standard_deviation', Unit('K')),
-                                                      ]),
-                       '1_param_circle' : OrderedDict([('radius', Unit('km')),
-                                                      ('standard_deviation', Unit('K')),]),
-                       '3_param_matern': OrderedDict([('Lx', Unit('degrees')),
+supercategory_parms = {'3_param_matern': OrderedDict([('Lx', Unit('degrees')),
                                                       ('Ly', Unit('degrees')),
                                                       ('theta', Unit('radians')),
                                                       ('standard_deviation', Unit('K')),
@@ -302,104 +287,6 @@ class CovarianceCube():
         dummy_cube.units = cube_unit
         return dummy_cube
 
-    def e_folding_model(self,
-                        xy_point,
-                        threshold = 1.0/np.e,
-                        Shape_Model = EllipseModel,
-                        gaussian_smooth = None,
-                        length_threshold_check=0.667,
-                        failed2converge_fillvalue=-999.99):
-        '''
-        Estimate 2+3-parameter anistropic/2+1 isotropic autocorrelation range 
-        using contour finding of fixed thresholds
-        (x0, y0, a, b, theta) or (x0, y0, r)
-
-        This is not stable when masks and weird correlation maps are involved
-        Use ps2006_kks2011_model instead
-        '''
-        ''' Default is the pointer to class not an instance to the class '''
-        if (Shape_Model == EllipseModel) or isinstance(Shape_Model, EllipseModel):
-            model_type = 'e-folding_ellipse'
-        elif (Shape_Model == CircleModel) or isinstance(Shape_Model, CircleModel):
-            model_type = 'e-folding_circle'
-        else:
-            raise ValueError('Shape_Model should be pointer or instance of skimage.measure.EllipseModel or skimage.measure.CircleModel')
-        n_parms = len(supercategory_parms[model_type_2_supercategory[model_type]])
-        ##
-        R  = self.Corr
-        R2 = self.data_cube[0].copy()
-        R2x = self._reverse_mask_from_compress_1D(R[xy_point,:])
-        R2.data = R2x.reshape(self.xy_shape)
-        R2.units = "1"
-        ##
-        if gaussian_smooth is not None:
-            ### May have issues if near missing data which is set to have 0 correlation (i.e. coastlines)
-            R2.data = sndimage.gaussian_filter(R2.data, sigma = gaussian_smooth)
-        ##
-        if self.data_has_mask:
-            R3 = R2.copy()
-            R3.data[self.cube_mask] = np.NAN
-            contours_smoothed = ski_measure.find_contours(R3.data, threshold, mask = np.logical_not(self.cube_mask))
-        else:
-            contours_smoothed = ski_measure.find_contours(R2.data, threshold)
-        contours_smoothed = sorted(contours_smoothed, key = len, reverse = True)
-        ##
-        total_len = 0.0
-        for contour in contours_smoothed:
-            total_len += len(contour)
-        ##
-        explained_length = 0.0
-        contours_smoothed2 = []
-        for contour in contours_smoothed:
-            if explained_length > length_threshold_check:
-                break
-            contours_smoothed2.append(contour)
-            explained_length += len(contour)/total_len
-        contours_smoothed = contours_smoothed2
-        ##
-        x0 = self.data_cube[0].coord(self.xycoords_name[0]).points[0]
-        y0 = self.data_cube[0].coord(self.xycoords_name[1]).points[0]
-        dx = self.data_cube[0].coord(self.xycoords_name[0]).points[1] - self.data_cube[0].coord(self.xycoords_name[0]).points[0]
-        dy = self.data_cube[0].coord(self.xycoords_name[1]).points[1] - self.data_cube[0].coord(self.xycoords_name[1]).points[0]
-        contours_array = []
-        for contour in contours_smoothed:
-            for ppp in contour:
-                contours_array.append([dx*ppp[1]+x0, dy*ppp[0]+y0])
-        contours_array = np.array(contours_array)
-        ##
-        model = Shape_Model if isinstance(Shape_Model, EllipseModel) or isinstance(Shape_Model, CircleModel) else Shape_Model()
-        success = model.estimate(contours_array)
-        ##
-        if (not success) or (model.params is None):
-            model.params = [failed2converge_fillvalue for _ in range(2+n_parms-1)] ## [x0, y0, ... fitted parameters]
-            warnings.warn('Fit has failed to converge, model.parms are set to '+str(failed2converge_fillvalue), UserWarning)
-        else:
-            if model_type == 'e-folding_ellipse':
-                ## Check for reversed major axes
-                if model.params[3] > model.params[2]:
-                    new_a = model.params[3]
-                    new_b = model.params[2]
-                    model.params[2] = new_a
-                    model.params[3] = new_b
-                    model.params[4] = model.params[4] - np.pi/2
-        ##
-        model_params = model.params[2:]
-        model_params.append(np.sqrt(self.Cov[xy_point, xy_point]/self.time_n)) ## append standard deviation
-        if model_type == 'e-folding_ellipse':
-            model_params[-1] = model_params[-1]*180.0/np.pi
-        template_cube = self._make_template_cube(xy_point)
-        model_as_cubelist = create_output_cubes(template_cube,
-                                                model_type = model_type,
-                                                default_values = model_params)['param_cubelist']
-        ##
-        return {'Correlation': R2,
-                'Contours': contours_smoothed,
-                'Contours_xy_offset': (x0, y0),
-                'Contours_dx_dy': (dx, dy),
-                'Model': model, 
-                'Model_Type': model_type, 
-                'Model_as_1D_cube': model_as_cubelist}
-
     def ps2006_kks2011_model(self,
                              xy_point,
                              max_distance=20.0,
@@ -563,14 +450,14 @@ class CovarianceCube():
         else:
             raise ValueError('Unknown fform')
         ##
-        results, params_SE, bbs = matern.fit(X_train,
-                                             y_train,
-                                             guesses=guesses,
-                                             bounds=bounds,
-                                             opt_method=opt_method,
-                                             tol=tol,
-                                             estimate_SE=estimate_SE,
-                                             n_jobs=n_jobs)
+        results, _, bbs = matern.fit(X_train,
+                                     y_train,
+                                     guesses=guesses,
+                                     bounds=bounds,
+                                     opt_method=opt_method,
+                                     tol=tol,
+                                     estimate_SE=estimate_SE,
+                                     n_jobs=n_jobs)
         ##
         if unit_sigma:
             model_params = results.x.tolist()
@@ -1040,7 +927,7 @@ class MLE_c_ij_Builder_Karspeck():
 For data presentation 
 '''
 def create_output_cubes(template_cube,
-                        model_type='e-folding_ellipse',
+                        model_type='ps2006_kks2011_iso',
                         default_values=[-999.9, -999.9, -999.9],
                         additional_meta_aux_coords=None,
                         dtype=np.float32):
@@ -1078,10 +965,11 @@ def create_output_cubes(template_cube,
         ans_cubelist.append(param_cube)
     return {'param_cubelist': ans_cubelist, 'param_names': ans_paramlist}
 
+
 def main():
     print('=== Main ===')
     #_test_load()
-    return
+
 
 if __name__ == "__main__":
     main()
