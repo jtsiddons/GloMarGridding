@@ -48,7 +48,7 @@ from glomar_gridding.utils import (
 )
 from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
 
-from .noc_helpers import get_git_commit
+from noc_helpers import get_git_commit
 
 # Debugging
 import logging

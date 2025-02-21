@@ -9,6 +9,10 @@ Contributors to this version: Joseph Siddons (@josidd)
 * Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
 
+### Bug fixes
+
+* Correct local import of `noc_helpers` in `noc_runners` scripts (!45)
+
 ### Breaking changes
 
 * `utils.get_git_commit` moved to `noc_helpers.get_git_commit`. Use of subprocess dropped (!44)
