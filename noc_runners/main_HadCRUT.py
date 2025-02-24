@@ -186,14 +186,23 @@ def _initialise_xarray(
     year_range: tuple[int, int],
     member: int,
 ) -> xr.Dataset:
+    # Reference date is start of the first year in the output data
+    ref_date = datetime(year_range[0], 1, 1, 0, 0)
     # Time dimension is not unlimited
     _coords: dict = {
-        "time": pl.datetime_range(
-            datetime(year_range[0], 1, 15, 12),
-            datetime(year_range[1], 12, 15, 12),
-            interval="1mo",
-            closed="both",
-            eager=True,
+        "time": (
+            (
+                # 15th of every month at 12:00 noon
+                pl.datetime_range(
+                    datetime(year_range[0], 1, 15, 12),
+                    datetime(year_range[1], 12, 15, 12),
+                    interval="1mo",
+                    closed="both",
+                    eager=True,
+                )
+                - ref_date
+            ).dt.total_hours()
+            / 24
         ).to_numpy()
     }
     # Add the spatial coordinates of the grid
@@ -226,6 +235,7 @@ def _initialise_xarray(
     ds.lon.attrs["axis"] = "X"
 
     ds.time.attrs["long_name"] = "time"
+    ds.time.attrs["unit"] = f"days since {ref_date.strftime('%Y-%m-%d %H:%M')}"
 
     # Define a 3D variable to hold the data
     ds[f"{variable}_anom"] = xr.DataArray(
