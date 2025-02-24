@@ -379,3 +379,26 @@ def get_date_index(year: int, month: int, start_year: int) -> int:
         the first month of year `start_year`.
     """
     return 12 * (year - start_year) + (month - 1)
+
+
+def get_month_midpoint(dates: pl.Series) -> pl.Series:
+    """
+    Get the month midpoint for a series of datetimes.
+
+    The midpoint of a month is the exact half-way point between the start and
+    end of the month.
+
+    For example, the midpoint of January 1990 is 1990-01-16 12:00.
+    """
+    if not dates.dtype.is_temporal():
+        raise TypeError("Input is not a datetime series")
+
+    month_len = (
+        dates.dt.month_end().dt.date()
+        - dates.dt.month_start().dt.date().dt.offset_by("1d")
+    )
+    dates = dates.dt.month_start() + (month_len.cast(pl.Int64) / 2).cast(
+        pl.Duration("ms")
+    )
+
+    return dates

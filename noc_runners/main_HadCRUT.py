@@ -45,6 +45,7 @@ from glomar_gridding.perturbation import scipy_mv_normal_draw
 from glomar_gridding.utils import (
     init_logging,
     get_date_index,
+    get_month_midpoint,
 )
 from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
 
@@ -189,10 +190,11 @@ def _initialise_xarray(
     # Reference date is start of the first year in the output data
     ref_date = datetime(year_range[0], 1, 1, 0, 0)
     # Time dimension is not unlimited
+    # Mid-point of every month (Jan 1990 -> 1990-01-16 12:00)
+    # Matches HadCRUT times
     _coords: dict = {
-        "time": (
+        "time": get_month_midpoint(
             (
-                # 15th of every month at 12:00 noon
                 pl.datetime_range(
                     datetime(year_range[0], 1, 15, 12),
                     datetime(year_range[1], 12, 15, 12),
