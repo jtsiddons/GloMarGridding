@@ -236,6 +236,7 @@ def _initialise_xarray(
 
     ds.time.attrs["long_name"] = "time"
     ds.time.attrs["unit"] = f"days since {ref_date.strftime('%Y-%m-%d %H:%M')}"
+    ds.time.attrs["calendar"] = "standard"
 
     # Define a 3D variable to hold the data
     ds[f"{variable}_anom"] = xr.DataArray(
