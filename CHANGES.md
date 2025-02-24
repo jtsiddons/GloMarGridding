@@ -6,6 +6,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### New features and enhancements
 
+* Add function to compute mid-point of a month (matching HadCRUT datetimes) (!48)
 * Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
 
