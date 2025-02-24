@@ -11,6 +11,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Bug fixes
 
+* Use "days since" as units for HadCRUT reconstruction outputs (!48)
 * Correct local import of `noc_helpers` in `noc_runners` scripts (!45)
 
 ### Breaking changes
