@@ -193,14 +193,16 @@ def _initialise_xarray(
     # Mid-point of every month (Jan 1990 -> 1990-01-16 12:00)
     # Matches HadCRUT times
     _coords: dict = {
-        "time": get_month_midpoint(
+        "time": (
             (
-                pl.datetime_range(
-                    datetime(year_range[0], 1, 15, 12),
-                    datetime(year_range[1], 12, 15, 12),
-                    interval="1mo",
-                    closed="both",
-                    eager=True,
+                get_month_midpoint(
+                    pl.datetime_range(
+                        datetime(year_range[0], 1, 15, 12),
+                        datetime(year_range[1], 12, 15, 12),
+                        interval="1mo",
+                        closed="both",
+                        eager=True,
+                    )
                 )
                 - ref_date
             ).dt.total_hours()
