@@ -1,3 +1,8 @@
+'''
+Artifical construction of covariances with prescribed parameters
+Multivariate normal simulations of such covariance
+Tools to compare covariances
+'''
 import numbers
 
 import iris
@@ -49,17 +54,28 @@ def fill_cube_with_uniform_parms(cube_template,
     print(ans)
     return ans
 
-'''
-A covariance based on outputs generated from fill_cube_with_uniform_parms 
-can be generated using 
-cube_covariance_nonstationary_stich CovarianceCube_PreStichedLocalEstimates Class
-
-CovarianceCube_PreStichedLocalEstimates calls a distance function within compute_distance 
-'''
 
 class _EllipseSimulation():
 
+    '''
+    A covariance based on outputs generated from fill_cube_with_uniform_parms 
+    can be generated using 
+    cube_covariance_nonstationary_stich CovarianceCube_PreStichedLocalEstimates Class
+
+    CovarianceCube_PreStichedLocalEstimates calls a distance function within compute_distance 
+    '''
+
     def __init__(self, v, sdev_cube, Lx_cube, Ly_cube, theta_cube):
+        '''
+        v : float
+            Matern shape parameter
+        sdev_cube : iris.cube.Cube
+            standard deviations
+        Lx, Ly : iris.cube.Cube
+            Lx, Ly scale (km or degrees)
+        theta : iris.cube.Cube
+            rotation angle, radians; degrees? Bye, get lost, blah blah
+        '''
         assert isinstance(v, numbers.Number), 'Non number detected for v'
         assert v > 0.0, 'v must be a positive number (0 == bad)'
         self.v = v
@@ -173,9 +189,9 @@ def average_LxLyTheta(lx, ly, the, check_flip=False):
     print(sigmas.shape)
     sigma_bar = np.mean(sigmas, axis=0)
     print(sigma_bar)
-    eval, evec = np.linalg.eig(sigma_bar)
-    E_lx = np.sqrt(eval[0])
-    E_ly = np.sqrt(eval[1])
+    evals, evec = np.linalg.eig(sigma_bar)
+    E_lx = np.sqrt(evals[0])
+    E_ly = np.sqrt(evals[1])
     E_the = np.arctan2(evec[1, 0], evec[0, 0])
     if check_flip:
         if E_lx < E_ly:
@@ -267,6 +283,7 @@ def simulated_ellipse_vs_known_regmean(simulated_parms, actuals_parms, n_sims):
 
 
 def main():
+    ''' The main; hello, nothing to see here '''
     print('=== Main ===')
 
 

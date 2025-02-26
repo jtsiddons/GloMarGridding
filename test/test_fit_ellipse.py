@@ -1,3 +1,7 @@
+'''
+pytest the ellipse estimation, stiching code
+using fixed variogram parameters
+'''
 import pytest
 # import os
 
@@ -101,7 +105,7 @@ def test_EllipseSimulation_UniformParms_FitRandomData(v,
     Lx_hat, Ly_hat, theta_hat, sdev_hat = se_og.extract_LxLytheta(super_cube_list)
     ans_simulated = se_og.EllipseSimulation_PrescribedParms(v, sdev_hat, Lx_hat, Ly_hat, theta_hat)
     ans_actual_subsampled = se_og.EllipseSimulation_PrescribedParms(v,
-                                                                    ans.sdev[4:-4, 4:-4], 
+                                                                    ans.sdev[4:-4, 4:-4],
                                                                     ans.Lx[4:-4, 4:-4],
                                                                     ans.Ly[4:-4, 4:-4],
                                                                     ans.theta[4:-4, 4:-4])
