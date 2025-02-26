@@ -207,6 +207,9 @@ def chisq_test_using_likelihood_ratios_4_covariance(sigma_hat, sigma_actual, n):
     https://www.stat.pitt.edu/sungkyu/course/2221Fall13/lec3.pdf
     https://cran.r-project.org/web//packages/mvhtests/mvhtests.pdf <<< R docs (argh)
     '''
+    print(sigma_hat.shape)
+    print(sigma_actual.shape)
+    assert sigma_hat.shape == sigma_actual.shape, 'sigma_hat shape does not agree with sigma_actual.shape'
     sigma_hat_unbiased = (n/(n-1))*sigma_hat # unbiased estimator to sigma_hat for all practical purpose n/n-1 ~ 1
     print('sigma_hat = ', sigma_hat)
     print('sigma_hat_unbiased = ', sigma_hat_unbiased)
@@ -227,14 +230,15 @@ def extract_LxLytheta(cubelist):
     Lx = cubelist.extract('Lx')[0]
     Ly = cubelist.extract('Ly')[0]
     theta = cubelist.extract('theta')[0]
-    return (Lx, Ly, theta)
+    sdev = cubelist.extract('standard_deviation')[0]
+    return (Lx, Ly, theta, sdev)
 
 
 def regmean_simulated_ellipse_vs_known_regmean(fitted_parms_cubelist, actuals_parms, n_sims):
     '''
     Test against regional mean
     '''
-    Lx_estimated, Ly_estimated, theta_estimated = extract_LxLytheta(fitted_parms_cubelist)
+    Lx_estimated, Ly_estimated, theta_estimated, _ = extract_LxLytheta(fitted_parms_cubelist)
     Lx_hat, Ly_hat, theta_hat_deg = average_LxLyTheta(Lx_estimated, Ly_estimated, theta_estimated)
     theta_hat = np.deg2rad(theta_hat_deg)
     W, p_val = simulated_ellipse_vs_known_regmean([Lx_hat, Ly_hat, theta_hat],
