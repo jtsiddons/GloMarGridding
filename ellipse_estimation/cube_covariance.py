@@ -123,8 +123,24 @@ supercategory_nparms = {scp: len(supercategory_parms[scp]) for scp in supercateg
 #    return np.matmul(np.matmul(sigma_inverse, A), sigma_inverse)
 
 class CovarianceCube():
-    def __init__(self, data_cube):
+    def __init__(self, 
+                 data_cube):
+        '''
+        Class to build observed covariance and ellipse fitting
+        
+        Parameters
+        ----------
+        data_cube : instance of iris.cube.Cube
+            Training data stored within iris cube
 
+            Some modification probably needed to work with instances of xa.dataarray
+            The biggest hurdle is that iris cube handle masked data differently than xarray
+
+            While both iris.cube.Cube.data and xa.DataArray.data are instances to numpy.ndarray...
+
+            A masked array under iris.cube.Cube.data is always an instance of np.ma.MaskedArray
+            In xarray, xa.DataArray.data is always unmasked.
+        '''
         ### Check input data_cube is actually usable
         self.tcoord_pos = -1
         self.xycoords_pos = []
@@ -184,7 +200,21 @@ class CovarianceCube():
         self.Cov  = self._calc_cov()
         self.Corr = self._cov2cor()
 
-    def _calc_cov(self, correlation=False, rounding=None):
+    def _calc_cov(self,
+                  correlation: bool=False,
+                  rounding: int=None):
+        '''
+        Parameters
+        ----------
+        correlation : bool 
+            to state if you want a correlation (normalised covariance or not)
+        rounding : int
+            round the values of the output
+        Returns
+        -------
+        xy_cov : np.ndarray [float]
+            covariance or correlation matrix
+        '''
         ## Reshape data to (t, xy), get rid of mask values -- cannot caculate cov for such data
         xyflatten_data = self.data_cube.data.reshape((len(self.data_cube.coord('time').points), self.big_covar_size))
         xyflatten_data = ma.compress_rowcols(xyflatten_data, -1)
@@ -201,9 +231,21 @@ class CovarianceCube():
             else:
                 return xy_cov
 
-    def _cov2cor(self, rounding=None):
+    def _cov2cor(self,
+                 rounding=None):
         '''
+        Normalises the covariance matrices within the class instance 
+        and return correlation matrices
         https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+
+        Parameters
+        ----------
+        rounding : int
+            round the values of the output
+        Returns
+        -------
+        ans : np.ndarray [float]
+            correlation matrix
         '''
         sdevs = np.sqrt(np.diag(self.Cov))
         normalisation = np.outer(sdevs, sdevs)
@@ -217,7 +259,23 @@ class CovarianceCube():
             ans = np.round(ans, rounding)
         return ans
 
-    def calc_distance_angle_selfcube(self, haversine=False, compressed=True):
+    def calc_distance_angle_selfcube(self,
+                                     haversine=False,
+                                     compressed=True):
+        '''
+        Compute distances between grid points of cube data stored within class instance
+        
+        Parameters
+        ----------
+        haversine : bool
+            Use the haversine instead
+        compressed: bool
+            Do a np.ma.MaskedArray.comressed, this get rids of masked points...
+        Returns
+        -------
+        D, A : np.ndarray [float]
+            D (distance in km), A (distance in angle)   
+        '''
         xx, yy = np.meshgrid(self.data_cube.coord('longitude').points,
                              self.data_cube.coord('latitude').points)
         xx = ma.masked_where(self.cube_mask, xx)
@@ -231,9 +289,15 @@ class CovarianceCube():
         D, A = self._calc_distance_angle(unmeshed_x, unmeshed_y, haversine = haversine)
         return (D, A)
 
-    def _calc_distance_angle(self, unmeshed_x, unmeshed_y, haversine = False):
+    def _calc_distance_angle(self,
+                             unmeshed_x,
+                             unmeshed_y,
+                             haversine=False):
+        '''
+        The function that does the math for self.calc_distance_angle_selfcube...
         ## Compute a distance matrix between all points
         ## This is a memory demanding function!
+        '''
         yx_og = np.column_stack([unmeshed_y, unmeshed_x])
         if haversine:
             ### Great circle - Earth
@@ -258,11 +322,33 @@ class CovarianceCube():
         return (D, A) ### Both D and A are square matrices
 
     def _self_mask(self):
+        '''
+        Broadcast cube_mask to all observations 
+        '''
         broadcasted_mask = np.broadcast_to(self.cube_mask, self.data_cube.data.shape)
         self.data_cube.data = ma.masked_where(broadcasted_mask, self.data_cube.data)
 
-    def _reverse_mask_from_compress_1D(self, compressed_1D_vector, fill_value = 0.0, dtype = np.float32):
+    def _reverse_mask_from_compress_1D(self,
+                                       compressed_1D_vector,
+                                       fill_value=0.0,
+                                       dtype=np.float32):
         '''
+        Since there are lot of flatten and compressing going on for observations and fitted parameters
+        This reverses the 1D array to the original 2D map
+
+        Parameters
+        ----------
+        compressed_1D_vector : np.ndarray (1D) shape = (NUM,)
+            1D vector that is a compressed/flatten version of a 2D map
+        fill_value: float
+            Fill value for masked point
+        dtype: valid numpy float type
+            The dtype for 2D array.
+        Returns
+        -------
+        ans : np.ndarray (2D) shape = (NUM,NUM)
+            The 2D map array
+
         DANGER WARNING, use different fill_value depending on situation
         This affects how signal and image processing module interacts with missing and masked values
         They don't ignore them, so a fill_value like 0 may be sensible for covariance (-999.99 will do funny things)

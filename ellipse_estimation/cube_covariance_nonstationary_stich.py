@@ -47,6 +47,30 @@ _MAX_DEG_compromise = cube_cov._km2deg(_MAX_DIST_compromise)
 _MIN_CORR_Threshold = 0.5 / np.e
 
 
+def convert_cube_data_2_MaskedArray_if_not(cube):
+    '''
+    Forces cube.data to be an instance of np.ma.MaskedArray
+
+    Parameters
+    ----------
+    cube : instance to iris.cube.Cube
+        iris.cube.Cube.data can be masked or not masked
+
+    Returns
+    -------
+    cube : instance to iris.cube.Cube
+        Perhaps the data within the cube is now an instance of np.ma.MaskedArray
+    '''
+    np_array = cube.data 
+    print(type(np_array))
+    assert isinstance(np_array, np.ndarray), 'Not a numpy array (masked or not)'
+    if not isinstance(np_array, np.ma.MaskedArray):
+        print('Ad hoc conversion to np.ma.MaskedArray')
+        cube.data = np.ma.MaskedArray(np_array)
+        return cube
+    return cube
+
+
 def sizeof_fmt(num, suffix="B"):
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
         if abs(num) < 1024.0:
@@ -446,10 +470,10 @@ class CovarianceCube_PreStichedLocalEstimates():
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx_local_estimates = Lx_cube
-        self.Ly_local_estimates = Ly_cube
-        self.theta_local_estimates = theta_cube
-        self.sdev_local_estimates = sdev_cube
+        self.Lx_local_estimates = convert_cube_data_2_MaskedArray_if_not(Lx_cube)
+        self.Ly_local_estimates = convert_cube_data_2_MaskedArray_if_not(Ly_cube)
+        self.theta_local_estimates = convert_cube_data_2_MaskedArray_if_not(theta_cube)
+        self.sdev_local_estimates = convert_cube_data_2_MaskedArray_if_not(sdev_cube)
         self.max_dist = max_dist
         self.degree_dist = degree_dist
         self.delta_x_method = delta_x_method
