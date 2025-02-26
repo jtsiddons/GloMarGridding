@@ -5,7 +5,6 @@ import numpy as np
 import iris
 from iris.util import equalise_attributes
 # from iris.fileformats import netcdf as inc
-# from statsmodels.stats.multitest import multipletests
 
 from ellipse_estimation import cube_covariance
 from ellipse_estimation import simulate_ellipse as se_og
@@ -143,26 +142,6 @@ def test_EllipseSimulation_VariableParms_FitRandomData(v,
                                                                 (sigma_parms[0], sigma_parms[1], sigma_parms[2]),
                                                                 size)
     assert p_val > critical_val, "Null hypothesis not rejected at "+str(critical_val)+" level"
-    # # Check at each point with multi-testing correction
-    # print('Local checks?')
-    # Lx_hat, Ly_hat, theta_hat = se_og.extract_LxLytheta(super_cube_list)
-    # Ws, p_vals = [], []
-    # zipper = zip(Lx_hat.slices([]), Ly_hat.slices([]), theta_hat.slices([]),
-    #              actual_Lx.slices([]), actual_Ly.slices([]), actual_theta.slices([]))
-    # for Lx_hat_cubbie, Ly_hat_cubbie, theta_hat_cubbie, actual_Lx_cubbie, actual_Ly_cubbie, actual_theta_cubbie in zipper:
-    #     sigma_hat_parms = (Lx_hat_cubbie.data, Ly_hat_cubbie.data, theta_hat_cubbie.data)
-    #     sigma_actual_parms = (actual_Lx_cubbie.data, actual_Ly_cubbie.data, actual_theta_cubbie.data)
-    #     ans = se_og.simulated_ellipse_vs_known_regmean(sigma_hat_parms, sigma_actual_parms, size)
-    #     Ws.append(ans[0])
-    #     p_vals.append(ans[1])
-    # Ws = np.array(Ws)
-    # p_vals = np.array(p_vals)
-    # print(Ws)
-    # print(p_vals)
-    # fdr_ans = multipletests(p_vals, alpha=critical_val, method='fdr_bh')
-    # print(fdr_ans)
-    # p_vals_adjs = fdr_ans[1]
-    # assert np.all(p_vals_adjs > critical_val)
     #
     print('Estimated 2D kernel (ellipse parameter) looks fine.')
     #
