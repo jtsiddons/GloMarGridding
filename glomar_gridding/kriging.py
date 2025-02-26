@@ -276,22 +276,17 @@ def kriging_simple(
     dz : np.ndarray[float]
         Uncertainty associated with the simple kriging.
     """
-    G = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
-    print(f"{G.shape = }")
-    print(f"{grid_obs.shape =}")
-    z_obs = G @ grid_obs
-    print(f"{z_obs =}")
+    kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+    kriged_result = kriging_weights @ grid_obs
 
-    G = G @ obs_grid_cov
-    print(f"{G =}")
-    dz_squared = np.diag(interp_cov - G)
+    kriging_weights = kriging_weights @ obs_grid_cov
+    dz_squared = np.diag(interp_cov - kriging_weights)
     dz_squared = adjust_small_negative(dz_squared)
-    dz = np.sqrt(dz_squared)
-    print(f"{dz =}")
-    dz[np.isnan(dz)] = 0.0
+    uncert = np.sqrt(dz_squared)
+    uncert[np.isnan(uncert)] = 0.0
 
     print("Simple Kriging Complete")
-    return z_obs, dz
+    return kriged_result, uncert
 
 
 def kriging_ordinary(
@@ -335,18 +330,18 @@ def kriging_ordinary(
     obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
     grid_obs = np.append(grid_obs, 0)
 
-    G = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
-    alpha = G[:, -1]
-    z_obs = G @ grid_obs
+    kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+    kriged_result = kriging_weights @ grid_obs
 
-    G = G @ obs_grid_cov
-    dz_squared = np.diag(interp_cov - G) - alpha
-    dz_squared = adjust_small_negative(dz_squared)
-    dz = np.sqrt(dz_squared)
+    alpha = kriging_weights[:, -1]
+    kriging_weights = kriging_weights @ obs_grid_cov
+    uncert_squared = np.diag(interp_cov - kriging_weights) - alpha
+    uncert_squared = adjust_small_negative(uncert_squared)
+    uncert = np.sqrt(uncert_squared)
     # dz[np.isnan(dz)] = 0.0
 
     print("Ordinary Kriging Complete")
-    return z_obs, dz
+    return kriged_result, uncert
 
 
 def get_spatial_mean(
