@@ -48,12 +48,13 @@ def _deg2km(deg: float) -> float:
     return km2nm * _deg2nm(deg)
 
 
-# def _km2deg(km: float) -> float:
-#     '''
-#     km: float (km)
-#     Convert meridonal km change to degree latitude
-#     '''
-#     return (km / km2nm) / nm_per_lat
+def _km2deg(km: float) -> float:
+    '''
+    km: float (km)
+    Convert meridonal km change to degree latitude
+    '''
+    return (km / km2nm) / nm_per_lat
+
 
 _default_n_jobs = 4
 _default_backend = 'loky' ## loky appears to be fastest
