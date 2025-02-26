@@ -123,7 +123,13 @@ supercategory_nparms = {scp: len(supercategory_parms[scp]) for scp in supercateg
 #    return np.matmul(np.matmul(sigma_inverse, A), sigma_inverse)
 
 class CovarianceCube():
-    def __init__(self, 
+
+    '''
+    Class to build spatial covariance and correlation matricies
+    Interacts with MLE_c_ij_Builder_Karspeck to build covariance models
+    '''
+
+    def __init__(self,
                  data_cube):
         '''
         Class to build observed covariance and ellipse fitting
@@ -156,7 +162,7 @@ class CovarianceCube():
                 pass
         if self.tcoord_pos == -1:
             raise ValueError('Input cube needs a time dimension')
-        elif self.tcoord_pos != 0:
+        if self.tcoord_pos != 0:
             raise ValueError('Input cube time dimension not at 0')
         if not self.xycoords_pos:
             raise ValueError('Input cube needs one spatial dimension')
@@ -164,18 +170,19 @@ class CovarianceCube():
         if 'lat' in self.xycoords_name[0]:
             self.xycoords_name = self.xycoords_name[::-1]
 
-        ### Defining the input data
+        # Defining the input data
         self.data_cube = data_cube
         self.xy_shape = self.data_cube[0].shape
-        assert len(self.xy_shape) == 2, "Time slices maps should be 2D; check if you have extra dimensions (ensemble/realizations?)"
+        assert len(self.xy_shape) == 2, "Time slice maps should be 2D; check extra dims (ensemble?)"
         self.big_covar_size = np.prod(self.xy_shape)
 
-        ### Detect data mask and determine dimension of array without masked data
-        self.data_has_mask = ma.is_masked(self.data_cube.data) ## This is almost certain to be True anywhere near the coast
+        # Detect data mask and determine dimension of array without masked data
+        self.data_has_mask = ma.is_masked(self.data_cube.data) # Almost certain True near the coast
         if self.data_has_mask:
-            ### Depending on dataset, the mask might not be invariant (like high latitude data with ice)
-            ### xys with time varying mask are currently discarded. If analysis is conducted seasonally
-            ### this should normally not a problem unless in high latitudes
+            # Depending on dataset, the mask might not be invariant (like sea ice)
+            # xys with time varying mask are currently discarded. 
+            # If analysis is conducted seasonally
+            # this should normally not a problem unless in high latitudes
             self.cube_mask = np.any(self.data_cube.data.mask, axis = 0)
             self.cube_mask_1D = self.cube_mask.flatten()
             self._self_mask()
@@ -225,11 +232,9 @@ class CovarianceCube():
         #xy_cov = _AT_A(xyflatten_data)
         if correlation:
             return self._cov2cor(rounding=rounding)
-        else:
-            if rounding is not None:
-                return np.round(xy_cov, rounding)
-            else:
-                return xy_cov
+        if rounding is not None:
+            return np.round(xy_cov, rounding)
+        return xy_cov
 
     def _cov2cor(self,
                  rounding=None):
@@ -539,19 +544,19 @@ class CovarianceCube():
         dx_sign = np.sign(dx)
         ##
         if fform[-3:] == '_pd':
-            ''' 
-            There are two ways to do that 
-            (1) Use the Haversine formula and solve for distance_ii 
-            (2) Use the law of cosines, taking inputs of distance_ii and distance_jj and solve for radial distance <-- this retains the up and down.... 
-            '''
-            ''' 
-            Haversine -- (delta_lat, delta_lon)
-            sklearn.metrics.pairwise.haversine_distances(X, Y=None)[source]
-            Compute the Haversine distance between samples in X and Y.
-            The Haversine (or great circle) distance is the angular distance between two points on the surface of a sphere. 
-            The first coordinate of each point is assumed to be the latitude, the second is the longitude, given in radians. 
-            The dimension of the data must be 2.
-            '''
+            # There are two ways to do that 
+            # (1) Use the Haversine formula and solve for distance_ii 
+            # (2) Use the law of cosines, taking inputs of distance_ii and distance_jj 
+            # and solve for radial distance <-- this retains the up and down.... 
+            #
+            # Haversine -- (delta_lat, delta_lon)
+            # sklearn.metrics.pairwise.haversine_distances(X, Y=None)[source]
+            # Compute the Haversine distance between samples in X and Y.
+            # The Haversine (or great circle) distance is the angular distance between
+            # two points on the surface of a sphere. 
+            # The first coordinate of each point is assumed to be the latitude, 
+            # the second is the longitude, given in radians. 
+            # The dimension of the data must be 2.
             latlon_vector2 = np.column_stack([np.deg2rad(lonlat[1]+dy),
                                               np.deg2rad(lonlat[0]+dx)])
             latlon2 = np.array([np.deg2rad(lonlat[1]),
@@ -559,16 +564,16 @@ class CovarianceCube():
             latlon2 = latlon2[np.newaxis, :]
             X_train_radial = haversine_distances(latlon_vector2, latlon2)[:, 0]
             distance_jj = np.deg2rad(distance_j)
-            ''' 
-            Law of cosines/Pyth Theroem on a sphere surface:
-            https://sites.math.washington.edu/~king/coursedir/m445w03/class/02-03-lawcos-answers.html
-            COS(Haversine Dist) = COS(Delta_Lat) COS(Delta_X)
-            
-            Note: 
-            Delta_X != Delta_LON or Delta_Lon x COS LAT
-            Delta_X itself is a great circle distance
-            Here meridonal displacement is always defined relative to the north and south pole!
-            '''
+            # 
+            # Law of cosines/Pyth Theroem on a sphere surface:
+            # https://sites.math.washington.edu/~king/coursedir/m445w03/class/02-03-lawcos-answers.html
+            # COS(Haversine Dist) = COS(Delta_Lat) COS(Delta_X)
+            #
+            # Note: 
+            # Delta_X != Delta_LON or Delta_Lon x COS LAT
+            # Delta_X itself is a great circle distance
+            # Here meridonal displacement is always defined relative to the north and south pole!
+            # 
             if delta_x_method == "Spherical_COS_Law":
                 ## This doesn't appears to work... recheck needed
                 inside_arccos = np.cos(X_train_radial)/np.cos(distance_jj)
@@ -615,11 +620,14 @@ class CovarianceCube():
         y_train = np.delete(y_train, xys_2_drop)
         ##
         model_type = fform_2_modeltype[fform]
-        if (fform == 'anistropic_rotated') or (fform == 'anistropic_rotated_pd'):
+        if fform in ['anistropic_rotated', 'anistropic_rotated_pd']:
+            # (fform == 'anistropic_rotated') or (fform == 'anistropic_rotated_pd')
             X_train = X_train_directional
-        elif (fform == 'anistropic') or (fform == 'anistropic_pd'):
+        elif fform in ['anistropic', 'anistropic_pd']:
+            # (fform == 'anistropic') or (fform == 'anistropic_pd')
             X_train = X_train_directional
-        elif (fform == 'isotropic') or (fform == 'isotropic_pd'):
+        elif fform in ['isotropic', 'isotropic_pd']:
+            #  (fform == 'isotropic') or (fform == 'isotropic_pd')
             X_train = X_train_radial.reshape(-1, 1)
         else:
             raise ValueError('Unknown fform')
@@ -639,13 +647,14 @@ class CovarianceCube():
         else:
             model_params = results.x.tolist()[:-1]
             std = results.x.tolist()[-1]
-        '''
-        0: success
-        1: success but with one parameter reaching lower bounadries
-        2: success but with one parameter reaching upper bounadries
-        3: success with multiple parameters reaching the boundaries (aka both Lx and Ly), can be both at lower or upper boundaries
-        9: fail, probably due to running out of maxiter (see scipy.optimize.minimize kwargs "options)"
-        '''
+        # Meaning of fit_success2 (float)
+        # 0: success
+        # 1: success but with one parameter reaching lower bounadries
+        # 2: success but with one parameter reaching upper bounadries
+        # 3: success with multiple parameters reaching the boundaries 
+        #    (aka both Lx and Ly), can be both at lower or upper boundaries
+        # 9: fail, probably due to running out of maxiter
+        #    (see scipy.optimize.minimize kwargs "options)"
         if results.success:
             fit_success2 = 0.0
             for model_param, bb in zip(model_params, bbs):
@@ -919,8 +928,38 @@ def c_ij_istropic(v, sdev, displacement, rou, sdev_j=None):
     return ans
 
 class MLE_c_ij_Builder_Karspeck():
-    ''' This class assumes your input to be a standardised correlation matrix '''
+
+    '''
+    The class that contains variogram/ellipse fitting methods and parameters
+    
+    This class assumes your input to be a standardised correlation matrix
+    They are easier to handle because sdevs in the covariance function become 1!
+    '''
+
     def __init__(self, v, fform, standardised_cov_matrix=True, unit_sigma=True):
+        '''
+        Parameters
+        ----------
+        v : float
+            Matern shape parameter
+        fform : str
+            See dict at the top of this code to see valid options
+            This determines number of parameters to estimated
+    
+        standardised_cov_matrix : bool 
+            If you set this to False, it will raise an error
+            See docstring for class, this expect correlation matrices only!
+
+        unit_sigma : bool
+            See ps2006_kks2011_model above
+            Basically do you want the sdev related to variogram fit deivations 
+            to be estimated; this is usually True (the deviations are ignored),
+            and does not affect the results
+
+        Returns
+        -------
+        Nothing (__init__)
+        '''
         self.fform = fform
         self.unit_sigma = unit_sigma
         if fform == 'isotropic':
@@ -983,19 +1022,48 @@ class MLE_c_ij_Builder_Karspeck():
                               arctanh_transform=True,
                               backend=_default_backend,
                               n_jobs=_default_n_jobs):
-    ###
-    ### log(LL) = SUM (f (y,x|params) )
-    ### params = Maximise (log(LL))
-    ### params = Minimise (-log(LL)) <--- which is how usually the computer solves it
-    ### assuming errors of params are normally distributed
-    ###
-    ### There is a hidden scale/standard deviation in stats.norm.logpdf (scale, which defaults to 1)
-    ### but since we have scaled our values to covariance to correlation (and even used
-    ### Fisher transform) as part of the function, it can be dropped
-    ###
-    ### Otherwise, you need to have sdev as the last value of params, and should be set to the
-    ### scale parameter
-    ###
+        '''
+        Compute the negative log-likelihood given observed X independent observations 
+        (displacements) and y dependent variable (the observed correlation), and Matern 
+        parameters params. Namely does the Matern covariance function using params, how
+        close it explains the observed displacements and correlations.
+
+        log(LL) = SUM (f (y,x|params) )
+        params = Maximise (log(LL))
+        params = Minimise (-log(LL)) <--- which is how usually the computer solves it
+        assuming errors of params are normally distributed
+        
+        There is a hidden scale/standard deviation in stats.norm.logpdf (scale, which defaults to 1)
+        but since we have scaled our values to covariance to correlation (and even used
+        Fisher transform) as part of the function, it can be dropped
+        
+        Otherwise, you need to have sdev as the last value of params, and should be set to the
+        scale parameter
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Observed displacements
+        y : np.ndarray
+            Observed correlation
+        params : tuple of Matern parameters 
+            (in the current optimize iteration) or if you want to
+            compute the actual negative log-likelihood
+        arctanh_transform : bool
+            Should the Fisher (arctanh) transform be used
+            This is usually option, but it does make the computation
+            more stable if they are close to 1 (or -1; doesn't apply here)
+        backend : str
+            joblib backend
+            See https://joblib.readthedocs.io/en/latest/generated/joblib.Parallel.html
+        n_jobs : int
+            Number of threads/parallel computation
+
+        Returns
+        -------
+        nLL : float
+            The negative log likelihood
+        '''
         if self.n_params == 1:
             rou = params[0]
             if self.unit_sigma:
@@ -1028,12 +1096,10 @@ class MLE_c_ij_Builder_Karspeck():
             #for n_x_j in range(X.shape[0]):
             #    y_LL.append(self.c_ij(X[n_x_j,:], Lx, Ly, theta))
             y_LL = np.array(y_LL)
-        '''
-        if y is correlation,
-        it might be useful to Fisher transform them before plugging into norm.logpdf
-        this affects values close to 1 and -1
-        imposing better behavior to the differences at the tail
-        '''
+        # if y is correlation,
+        # it might be useful to Fisher transform them before plugging into norm.logpdf
+        # this affects values close to 1 and -1
+        # imposing better behavior to the differences at the tail
         if arctanh_transform:
             #
             # Warning against arctanh(abs(y) > 1); (TO DO: Add correction later)
@@ -1071,6 +1137,9 @@ class MLE_c_ij_Builder_Karspeck():
     def build_negativeloglikelihood_for_optimisation(self, X, y,
                                                      n_jobs=_default_n_jobs,
                                                      backend=_default_backend):
+        '''
+        Creates a function that can be fed into scipy.optimizer.minimize
+        '''
         return lambda params: self.negativeloglikelihood(X, y,
                                                          params,
                                                          n_jobs=n_jobs,
@@ -1087,7 +1156,6 @@ class MLE_c_ij_Builder_Karspeck():
             n_jobs=_default_n_jobs,
             backend=_default_backend,
             random_seed=1234):
-        ##
         '''
         Default solver in Nelder-Mead as used in the Karspeck paper
         https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
@@ -1095,6 +1163,13 @@ class MLE_c_ij_Builder_Karspeck():
         for 3 variables (Lx, Ly, theta) --> 200x3 = 600
         note: unlike variogram fitting, no nugget, no sill, and no residue variance (normalised data but Fisher transform needed?)
         can be adjusted using "maxiter" within "options" kwargs
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
         '''
         ##
         if guesses is None:
@@ -1125,7 +1200,7 @@ class MLE_c_ij_Builder_Karspeck():
                            method=opt_method,
                            tol=tol)
         ##
-        ''' This does not account for standard errors in the correlation/covariance matrix ! '''
+        #  This does not account for standard errors in the correlation/covariance matrix!
         if estimate_SE is not None:
             if estimate_SE == 'bootstrap_serial':
                 ### Serial
@@ -1153,9 +1228,8 @@ class MLE_c_ij_Builder_Karspeck():
             else:
                 raise ValueError('Unknown estimate_SE')
             return [results, SE, bounds]
-        else:
-            print('Standard error estimates not required')
-            return [results, None, bounds]
+        print('Standard error estimates not required')
+        return [results, None, bounds]
 
     def _bootstrap_once(self, X, y, guesses, bounds, opt_method, tol=None, seed=1234):
         rng = np.random.RandomState(seed) # pylint: disable=no-member
@@ -1168,15 +1242,38 @@ class MLE_c_ij_Builder_Karspeck():
         ans = minimize(LL_bootXy_simulatedparams, guesses, bounds=bounds, method=opt_method, tol=tol)
         return ans.x
 
-'''
-For data presentation 
-'''
+
 def create_output_cubes(template_cube,
                         model_type='ps2006_kks2011_iso',
-                        default_values=[-999.9, -999.9, -999.9],
+                        default_values=None,
                         additional_meta_aux_coords=None,
                         dtype=np.float32):
+    '''
+    For data presentation, create template iris cubes to insert data
+
+    Parameters
+    ----------
+    template_cube : iris.cube.Cube
+        A cube to be copied as the template
+    model_type : str
+        See dict at top, string to add auxcoord for outputs
+    default_values : list of float 
+        Default values to be put in cube, not neccessary a masked/fill value
+    additional_meta_aux_coords : list of icoords.AuxCoord
+        Whatever additional auxcoord metadata you want to add
+    dtype=np.float32 : numpy number type
+        The number type to be used in the cube usually np.float32 or np.float(64)
+
+    Returns
+    ----------
+    dictionary:
+        "param_cubelist" : Instance of iris.cube.CubeList() that contains cubes to be filled in
+        "param_names" : the names of the variable that get added to param_cubelist
+    '''
     ##
+    if default_values is None:
+        default_values = [-999.9, -999.9, -999.9]
+    #
     supercategory = model_type_2_supercategory[model_type]
     params_dict = supercategory_parms[supercategory]
     ##
@@ -1190,7 +1287,7 @@ def create_output_cubes(template_cube,
     ans_cubelist = iris.cube.CubeList()
     ans_paramlist = []
     ##
-    for param, default_value in zip(params_dict.keys(), default_values):
+    for param, default_value in zip(params_dict, default_values):
         ans_paramlist.append(param)
         param_cube = template_cube.copy()
         param_cube.rename(param)
@@ -1212,6 +1309,7 @@ def create_output_cubes(template_cube,
 
 
 def main():
+    ''' Main - keep calm and does nothing '''
     print('=== Main ===')
     #_test_load()
 
