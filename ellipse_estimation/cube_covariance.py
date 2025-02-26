@@ -269,7 +269,7 @@ class CovarianceCube():
         ----------
         haversine : bool
             Use the haversine instead
-        compressed: bool
+        compressed : bool
             Do a np.ma.MaskedArray.comressed, this get rids of masked points...
         Returns
         -------
@@ -390,13 +390,6 @@ class CovarianceCube():
                              tol=0.001,
                              estimate_SE=None,
                              n_jobs=_default_n_jobs):
-        #
-        # Note on new tol kwarg:
-        # For N-M, this sets the value to both xatol and fatol
-        # Default is 1E-4 (?)
-        # Since it affects accuracy of all values including rotation
-        # rotation angle 0.001 rad ~ 0.05 deg
-        #
         '''
         Fit ellipses/covariance models using adhoc local covariances
 
@@ -425,6 +418,96 @@ class CovarianceCube():
         delta_x_method = "Spherical_COS_Law": uses COS(C) = COS(A)COS(B)
         delta_x_method = "Met_Office": Suspected flat (cylindrical) Earthers in Exeter! delta_x = 6400km x delta_lon (in radians)
         delta_x_method = "Modified_Met_Office": A bit better, but uses the average zonal dist at different lat
+
+        Parameters
+        ----------
+        xy_point : int
+            The index point where ellipses will be fitted to
+
+        max_distance : float
+            Maximum seperation in distance unit that data will be fed into parameter fitting 
+            Units depend on fform (it is usually either degrees or km)
+            
+        min_distance: float
+            Minimum seperation in distance unit that data will be fed into parameter fitting 
+            Units depend on fform (it is usually either degrees or km)
+            Note: Due to the way we compute the Matern function, it is undefined at dist == 0
+            even if the limit -> zero is obvious. 
+
+        v: float
+            Dimensionless Matern shape parameter 
+            0.5 gives an exponential covariance function
+            lim --> inf gives a Guassian covariance function
+
+        fform='anistropic_rotated': str
+            The form of Matern function to be fitted
+            See fform_2_modeltype and other dictionaries at the top of this piece of code
+        
+        unit_sigma=True: bool
+            When MLE fitting the Matern parameters, assuming the Matern parameters themselves
+            are normally distributed, there is standard deviation within the log likelihood function. 
+
+            See Wikipedia entry for Maxmimum Likelihood under Continuous distribution, continuous parameter space
+
+            Its actual value is not important to the best (MLE) estimate of the Matern parameters. If one assumes
+            the parameters are normally distributed, the mean (best estimate) is independent of its variance.
+            In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1). This value can however be computed.
+            It serves a similar purpose as the original standard deviation: in this case, how the actual observed 
+            semivariance disperses around the fitted variogram. 
+
+            Here it defaults to 1 just as Karspeck.
+
+        delta_x_method="Modified_Met_Office": str
+            How to compute distances between grid points
+            For istropic variogram/covariances, this is a trival problem; you can just take the haversine or
+            Euclidian ("tunnel") distance as they are non-directional.
+
+            But it is non trival for anistropic cases, you have to define a set of orthogonal space. In HadSST4,
+            Earth is assumed to be cyclindrical "tin can" Earth, so you can just define the orthogonal space by
+            lines of constant lat and lon (delta_x_method="Met_Office").
+
+            The modified "Modified_Met_Office" is a variation to that but allow the tin can get squished at the poles.
+            (Sinusoidal projection). This does results in a problem: the zonal displacement now depends in which latitude
+            you compute on (at the beginning latitude or at the end latitude). Here we take the average of the two.
+
+        guesses=None: tuple of floats; None uses default guess values
+            Initial guess values that get feeds in the optimizer for MLE.
+            In scipy, you are required to do so (but R often doesn't).
+            You should anyway; sometimes they do funny things if you don't (per recommendation of David Stephenson)
+
+        bounds=None: tuple of floats; None uses default bounds values
+            This is essentially a Bayesian "uniformative prior" that forces convergence if the optimizer hits the bound.
+            For lower resolution fitting, this is rarely a problem. For higher resolution fits, this often interacts with
+            the limit of the data you can put into the fit the optimizer may fail to converge if the input data is very 
+            smooth (aka ENSO region, where anomalies are smooth over very large (~10000km) scales.
+
+        opt_method='Nelder-Mead': str
+            scipy optimizer method. Nelder-Mead is the one used by Karspeck.
+            See https://docs.scipy.org/doc/scipy/tutorial/optimize.html for valid options
+
+        tol=0.001: float
+            set convergence tolerance for scipy optimize.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize 
+        #
+        # Note on new tol kwarg:
+        # For N-M, this sets the value to both xatol and fatol
+        # Default is 1E-4 (?)
+        # Since it affects accuracy of all values including rotation
+        # rotation angle 0.001 rad ~ 0.05 deg
+        #
+
+        estimate_SE=None
+            The code can estimate the standard error if the Matern parameters. This is not usually used or discussed
+            for the purpose of kriging/GP prediction. Certain opt_method (gradient descent) can do this automatically 
+            using Fisher Info for certain covariance funciton, but is not possible for some nasty functions (aka Bessel
+            func) gets involved nor it is possible for optimisers (such as Nelder-Mead). The code does it using bootstrapping. 
+                            
+        n_jobs=_default_n_jobs: int
+            If parallel processing, number of threads to use.
+
+        Returns
+        -------
+        ans : dictionary of results of the fit and the observed correlation matrix
         '''
         ##
         matern = MLE_c_ij_Builder_Karspeck(v, fform, unit_sigma=unit_sigma)
@@ -609,6 +692,9 @@ class CovarianceCube():
                 'Model_as_1D_cube': model_as_cubelist}
 
     def find_nearest_xy_index_in_cov_matrix(self, lonlat, use_full = False):
+        '''
+        Find the nearest column/row index of the covariance that corresponds to a specific lat lon
+        '''
         ## lonlat = [lon, lat]
         if use_full:
             a = self.xy_full
@@ -619,10 +705,17 @@ class CovarianceCube():
         return (idx, a[idx,:])
 
     def _xy_2_xy_full_index(self, xy_point):
+        '''
+        Given xy index in that corresponding to a latlon in the covariance (masked value ma.MaskedArray compressed), 
+        what is its index with masked values (i.e. ndarray flatten) 
+        '''
         ans = int(np.argwhere(np.all((self.xy_full - self.xy[xy_point,:]) == 0, axis=1))[0])
         return ans
 
     def _make_template_cube(self, xy_point):
+        '''
+        Make a template cube for lat lon corresponding to xy_point index
+        '''
         xy = self.xy[xy_point, :]
         return self._make_template_cube2(xy)
         #t_len = len(self.data_cube.coord('time').points)
@@ -630,6 +723,9 @@ class CovarianceCube():
         #return template_cube
 
     def _make_template_cube2(self, lonlat):
+        '''
+        Same as in _make_template_cube but takes latlon instead of xy index
+        '''
         xy = lonlat
         t_len = len(self.data_cube.coord('time').points)
         template_cube = self.data_cube[t_len//2].intersection(longitude=(xy[0]-0.05, xy[0]+0.05),
@@ -659,7 +755,12 @@ def sigma_rot_func(Lx, Ly, theta):
     return sigma
 
 
-def mahal_dist_func_rot(delta_x, delta_y, Lx, Ly, theta=None, verbose=False):
+def mahal_dist_func_rot(delta_x,
+                        delta_y,
+                        Lx,
+                        Ly,
+                        theta=None,
+                        verbose=False):
     '''
     Calculate tau if Lx, Ly, theta is known (aka, this takes the additional step to compute sigma)
     This is needed for MLE estimation of Lx, Ly, and theta
@@ -668,6 +769,16 @@ def mahal_dist_func_rot(delta_x, delta_y, Lx, Ly, theta=None, verbose=False):
     d is distance between two points
     Lx, Ly, theta are unknown parameters that need to be estimated
     and replaces d/rou in equation 14 in Karspect et al paper
+
+    Parameters
+    ----------
+    x_i, x_j : float - displacement to remote point as in: (x_i) i + (x_j) j in old school vector notation
+    Lx, Ly : float - Lx, Ly scale (km or degrees)
+    theta : float - rotation angle (RADIANS ONLY!!!!!)
+
+    Return
+    ----------
+    tau : float - Mahalanobis distance
     '''
     # sigma is 4x4 matrix
     if theta is not None:
@@ -698,10 +809,15 @@ def mahal_dist_func_sigma(delta_x, delta_y, sigma, verbose=False):
 
 
 def mahal_dist_func(delta_x, delta_y, Lx, Ly):
+    ''' 
+    Compute tau for non-rotational case; 
+    unlike mahal_dist_func_sigma, sigma is not needed
+    '''
     return mahal_dist_func_rot(delta_x, delta_y, Lx, Ly, theta=None)
 
 
 def make_v_aux_coord(v):
+    ''' Create an iris coord for the Matern (positive) shape parameter '''
     return icoords.AuxCoord(v, long_name='v_shape', units='no_unit')
 
 
@@ -720,6 +836,21 @@ def c_ij_anistropic_rotated(v,
     this makes formulation a lot simplier
     We let sdev_j opens to changes, 
     but in pracitice, we normalise everything to correlation so sdev == sdev_j == 1
+
+    Parameters
+    ----------
+    v : float - Matern shape parameter
+    sdev : float, standard deviation, local point
+    x_i, x_j : float - displacement to remote point as in: (x_i) i + (x_j) j in old school vector notation
+    Lx, Ly : float - Lx, Ly scale (km or degrees)
+    theta : float - rotation angle (RADIANS ONLY!!!!!)
+    sdev_j : float - standard deviation, remote point
+    verbose : bool - got stdout text?
+
+    Returns
+    ----------
+    ans : float 
+        Covariance/correlation between local and remote point given displacement and Matern covariance parameters
     '''
     ##
     if sdev_j is None:
@@ -729,12 +860,12 @@ def c_ij_anistropic_rotated(v,
     tau = mahal_dist_func_rot(x_i, x_j, Lx, Ly, theta=theta, verbose=verbose)
     ##
     first_term = (sdev * sdev_j)/(gamma(v)*(2.0**(v-1)))
-    '''
-    If data is assumed near stationary locally, sigma_i ~ sigma_j same
-    making (sigma_i)**1/4 (sigma_j)**1/4 / (mean_sigma**1/2) = 1.0
-    Treating it the otherwise is a major escalation to the computation
-    See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
-    '''
+    # '''
+    # If data is assumed near stationary locally, sigma_i ~ sigma_j same
+    # making (sigma_i)**1/4 (sigma_j)**1/4 / (mean_sigma**1/2) = 1.0
+    # Treating it the otherwise is a major escalation to the computation
+    # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
+    # '''
     #second_term = 1.0
     third_term = (2.0*tau*np.sqrt(v))**v
     forth_term = modified_bessel_2nd(v, 2.0*tau*np.sqrt(v))
@@ -748,10 +879,33 @@ def c_ij_anistropic_rotated(v,
         print('ans', ans, ans.shape)
     return ans
 
-def c_ij_anistropic_unrotated(v, sdev, x_i, x_j, Lx, Ly, sdev_j = None):
+def c_ij_anistropic_unrotated(v, sdev, x_i, x_j, Lx, Ly, sdev_j=None):
+    '''
+    Alias for non rotated version of c_ij_anistropic_rotated
+    '''
     return c_ij_anistropic_rotated(v, sdev, x_i, x_j, Lx, Ly, None, sdev_j=sdev_j)
 
 def c_ij_istropic(v, sdev, displacement, rou, sdev_j=None):
+    '''
+    Isotropic version of c_ij_anistropic_rotated
+
+    Parameters
+    ----------
+    v : float
+        Matern shape parameter
+    sdev : float
+        standard deviation, local point
+    displacement : float 
+        displacement to remote point
+    rou : float
+        range parameter (km or degrees)
+    sdev_j : float - standard deviation, remote point
+
+    Returns
+    ----------
+    ans : float 
+        Covariance/correlation between local and remote point given displacement and Matern covariance parameters
+    '''
     ##
     if sdev_j is None:
         sdev_j = sdev
