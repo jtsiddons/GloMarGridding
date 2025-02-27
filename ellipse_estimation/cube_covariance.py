@@ -164,11 +164,11 @@ class CovarianceCube():
             raise ValueError('Input cube needs a time dimension')
         if self.tcoord_pos != 0:
             raise ValueError('Input cube time dimension not at 0')
-        if not self.xycoords_pos:
-            raise ValueError('Input cube needs one spatial dimension')
+        if len(self.xycoords_pos) != 2:
+            raise ValueError('Input cube need two spatial dimensions (\"latitude\" and \"longitude\"')
         self.xycoords_pos = tuple(self.xycoords_pos)
-        if 'lat' in self.xycoords_name[0]:
-            self.xycoords_name = self.xycoords_name[::-1]
+        # if 'lat' in self.xycoords_name[0]:
+        #     self.xycoords_name = self.xycoords_name[::-1]
 
         # Defining the input data
         self.data_cube = data_cube
