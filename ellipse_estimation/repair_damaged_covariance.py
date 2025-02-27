@@ -431,6 +431,7 @@ class Laloux_CovarianceClean:
 
 
 def main():
+    ''' Main - keep calm and does nothing! '''
     print('--- Main ---')
 
 
