@@ -177,7 +177,7 @@ class CovarianceCube():
         self.data_has_mask = ma.is_masked(self.data_cube.data) # Almost certain True near the coast
         if self.data_has_mask:
             # Depending on dataset, the mask might not be invariant (like sea ice)
-            # xys with time varying mask are currently discarded. 
+            # xys with time varying mask are currently discarded.
             # If analysis is conducted seasonally
             # this should normally not a problem unless in high latitudes
             self.cube_mask = np.any(self.data_cube.data.mask, axis = 0)
@@ -648,7 +648,7 @@ class CovarianceCube():
         # 0: success
         # 1: success but with one parameter reaching lower bounadries
         # 2: success but with one parameter reaching upper bounadries
-        # 3: success with multiple parameters reaching the boundaries 
+        # 3: success with multiple parameters reaching the boundaries
         #    (aka both Lx and Ly), can be both at lower or upper boundaries
         # 9: fail, probably due to running out of maxiter
         #    (see scipy.optimize.minimize kwargs "options)"
