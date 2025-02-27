@@ -40,6 +40,25 @@ numbers. Both are the same, but original paper uses sigma matrix averaging.
 
 always_land = np.all(cube.data == 1.0, axis=0)
 
+Where are the files:
+
+ERA5 LSAT Spatial Scale: Longitude -180 to 180, not y-reversed, no bounds 
+JASMIN:
+/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+
+NOC:
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+
+ESA SST spatial scale file: Longitude -180 to 180, not y-reversed, has bounds
+JASMIN:
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+
+NOC:
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
 '''
 
 import math
@@ -54,16 +73,6 @@ from scipy.spatial.transform import Rotation as R
 from nonstationary_cov.cube_covariance import sigma_rot_func
 
 iris.FUTURE.save_split_attrs = True # This may become obsolete in the future
-
-'''
-ERA5 LSAT Spatial Scale: Longitude -180 to 180, not y-reversed, no bounds 
-/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
-
-ESA SST spatial scale file: Longitude -180 to 180, not y-reversed, has bounds
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
-'''
 
 def sigma_2_parms(sigma, degrees=False):
     '''
@@ -269,18 +278,48 @@ def infill_scales(Lx, Ly,
                   sdev,
                   convergence_qc,
                   terrain='land',
+                  infill_parms_lookup=None,
                   landfrac_func=ESA_landfrac,
-                  landfrac_func_kwargs={},
+                  landfrac_func_kwargs=None,
                   fudge_long_scales=True):
     '''
-    Fill Matern kernel parameters into grid points that were masked
+    Fill Matern kernel parameters into grid points that are:
+    - masked
+    - where the kernel parameters have failed to converge
     
+    "infill_parms_lookup" must be a dict with keys that work with "terrain"
+
     Parameters
     ----------
-    Lx, Ly, theta, sdev : 
+    Lx, Ly, theta, sdev : iris.cube.Cube
+        iris cubes with Lx, Ly, theta, sdev with gaps to fill in
+    convergence_qc : iris.cube.Cube
+        iris cubes where QC/convergence flags are stored
+    terrain : str
+        terrain type, must be a key to infill_parms_lookup
+    infill_parms_lookup : dict
+        look up table for priors to the infill parameters
+        see hadcrut5_defaults for format
+    landfrac_func : callable
+        Function that returns the land fraction
+    landfrac_func_kwargs : dict
+        kwargs for landfrac_func
+    fudge_long_scales : bool
+        Should Lx, Ly, theta, sdev be modified if convergence_qc values that are flagged
+        qc_redflags = [2.0, 3.0, 9.0]
+        See cube_covarinace.py
+        2.0 : success but with one parameter reaching upper bounadries
+        3.0 : success with multiple parameters reaching the boundaries
+        9.0 : No convergence after scipy.optimize.minimize reach maxiter
     '''
-    assert terrain in ['land', 'water'], 'Unknown terrain; land or sea only'
-    infill_parms = hadcrut5_defaults[terrain]
+    #
+    if infill_parms_lookup is None:
+        infill_parms_lookup = hadcrut5_defaults
+    if landfrac_func_kwargs is None:
+        landfrac_func_kwargs = {}
+    #
+    assert terrain in infill_parms_lookup, 'Unknown terrain; land or sea only'
+    infill_parms = infill_parms_lookup[terrain]
     #
     where_is_mask = Lx.data.mask.copy()
     Lx_v2 = Lx.copy()
@@ -375,6 +414,7 @@ def infill_scales(Lx, Ly,
 
 
 def run_land():
+    ''' Fill the land scale files '''
     terrain = 'land'
     basepath = '/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/'
     inpath = basepath+'matern_physical_distances_v_eq_1p5/'
@@ -398,6 +438,7 @@ def run_land():
 
 
 def run_sea():
+    ''' Fill the sea scale files '''
     terrain = 'water'
     basepath = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/'
     inpath = basepath+'matern_physical_distances_v_eq_1p5/'
@@ -421,6 +462,7 @@ def run_sea():
 
 
 def main():
+    ''' Main - keep calm and does something! '''
     print('--- MAIN ---')
     run_land()
     run_sea()
