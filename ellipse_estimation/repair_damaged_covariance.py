@@ -346,12 +346,70 @@ def csum_up_to_val_recursive(samples,
 class Laloux_CovarianceClean:
     '''
     https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255
+
+    Eigenvalue clipping based on number of thresholds and normalizations
+    Can be done vs the actual covariance (or the correlation converted back to covariance)
     '''
-    def __init__(self, C, clean=True, atol=None):
+    def __init__(self, 
+                 C, 
+                 clean_small_vals=False, 
+                 atol=None):
         print('CovarianceClean __init__')
         print(C.shape)
-        self.C = self.clean_small(C, atol=atol) if clean else C
+        if clean_small_vals:
+            self.C = self.clean_small(C, atol=atol) 
+        else:
+            self.C = C
+        if isinstance(self.C, np.ma.MaskedArray):
+            self.C = self.C.data
         print((np.max(self.C), np.min(self.C)))
+        self.Corr = self._cov2cor(self.C)
+
+    def _cov2cor(self, Cov):
+        '''
+        Normalises the covariance matrices and return correlation matrices
+        https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+
+        Parameters
+        ----------
+        Cov : np.ndarray
+            Covariance matrix
+        Returns
+        -------
+        ans : np.ndarray [float]
+            Correlation matrix
+        '''
+        sdevs = np.sqrt(np.diag(Cov))
+        normalisation = np.outer(sdevs, sdevs)
+        ans = Cov/normalisation
+        if not np.all(np.diag(ans) == 1.0):
+            print(np.max(np.abs(np.diag(ans)-1.0)))
+            assert np.max(np.abs(np.diag(ans)-1.0)) < 1E-6 # This should never get flagged
+            print('Numerical error correction applied to diagonal of correlation matrix')
+            np.fill_diagonal(ans, 1.0)    
+        ans[Cov==0] = 0
+        return ans 
+    
+    def _cor2cov(self, Cor, variances):
+        '''
+        Reverse operation of _cov2cor
+        Correlation to covariance, requires actual variances (NOT STANDARD DEVIATIONS)
+        Parameters
+        ----------
+        Cor : np.ndarray
+            Correlation matrix
+        variances : np.ndarray
+            Variances (NOT STANDARD DEVIATION! THE SQUARE OF IT!)
+        Returns
+        -------
+        ans : np.ndarray [float]
+            Covariance matrix
+        '''
+        sdevs = np.sqrt(variances)
+        normalisation = np.outer(sdevs, sdevs)
+        ans = Cor*normalisation
+        ans[Cor==0] = 0
+        return ans
 
     def clean_small(self, matrix, atol=None):
         if atol is None:
@@ -370,8 +428,18 @@ class Laloux_CovarianceClean:
 
     def find_index_aspect_ratio(self, eigvals, N=37000, T=41*6):
         '''
-        Defaults are based on 41 years of pentad ESA data...
-        it does not work in general
+        Defaults are based on:
+        41 years ESA data
+        6 pentads per month
+        and 37000ish 1x1 deg grid points
+        q ~ 150, threshold ~ 175
+
+        For 5x5 data and 40-ish year of observations
+        Observations are monthly
+        q ~ 65, threshold ~ 82
+
+        These parameters do not work in general 
+        must be determined from input data
         '''
         __, threshold = self.estimate_threshold(N, T)
         i2goal = -np.sum(eigvals > threshold)
@@ -389,45 +457,117 @@ class Laloux_CovarianceClean:
         threshold = (1.0 + np.sqrt(q))**2.0
         return (q, threshold)
 
-    def eig_clip(self,
-                 method='explained_variance',
-                 method_parms={'target': 0.95}):
+    def eig_clip_via_cor(self,
+                         method='explained_variance',
+                         method_parms={'target': 0.95}):
         '''
         Denoise symmetric damaged covariance/correlation matrix C
         by clipping eigenvalues
+
+        This is the original method (?)
+        https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255
+        
+        Explained variance or aspect ratio based threshold
+        Aspect ratios is based on dimensionless parameters 
+        (number of independent variable and observation size) 
+        q = N/T
+          = (num of independent variable)/(num of observation per independent variable)
+        Does not give the same results as in eig_clip
+
+        explained_variance here does not have the same meaning.
+        The trace of a correlation, by definition, equals the number of diagonal elements,
+        which isn't intituatively linked to actual explained variance in climate science sense
+
         This is done by KEEPING the largest explained variance
         in which (number of basis vectors to be kept) >> (number of rows)
         In ESA data, keeping 95% variance means keeping top ~15% of the
         eigenvalues
         '''
         print('Solving eigenvalues and vectors')
-        self.eigvals, eigvec = linalg_scipy.eigh(self.C)
-        sorted_order = np.argsort(self.eigvals)
-        self.eigvals = self.eigvals[sorted_order]
-        print('[:5] =', self.eigvals[:5])
-        print('[-5:] =', self.eigvals[-5:])
+        Corr = self._cov2cor(self.C)
+        # print(np.trace(Corr), Corr.shape[0])
+        eigvals, eigvec = linalg_scipy.eigh(Corr)
+        sorted_order = np.argsort(eigvals)
+        eigvals = eigvals[sorted_order]
+        print('[:5] =', eigvals[:5])
+        print('[-5:] =', eigvals[-5:])
         eigvecs = eigvec[:, sorted_order]
-        self.n_eigvals = len(self.eigvals)
+        n_eigvals = len(eigvals)
         thresh_ms = {'explained_variance': self.find_index_explained_variance,
                      'Laloux_2000': self.find_index_aspect_ratio}
-        self.i2keep_m = method
-        self.i2keep_m_kwargs = method_parms
-        self.i2keep = thresh_ms[self.i2keep_m](self.eigvals, **self.i2keep_m_kwargs)
-        self.i2clip = self.n_eigvals + self.i2keep  # Note i2keep is NEGATIVE
-        print('Numbers of kept eigenvalues = ', -self.i2keep)
-        print('Numbers of clipped eigenvalues = ', self.i2clip)
+        i2keep = thresh_ms[method](eigvals, **method_parms)
+        i2clip = n_eigvals + i2keep  # Note i2keep is NEGATIVE
+        print('Numbers of kept eigenvalues = ', -i2keep)
+        print('Numbers of clipped eigenvalues = ', i2clip)
         #
         # The total variance should be perserved after clipping
         # within precision error of the eigenvalues which is O(Max(Eig) * float_accuracy)
-        self.total_var = np.sum(self.eigvals)
-        self.var_explained_by_i2keep = np.sum(self.eigvals[self.i2keep:])
-        self.unexplained_var = self.total_var - self.var_explained_by_i2keep
-        self.avg_eigenvals_4_unexplained = self.unexplained_var / self.i2clip
+        total_var = np.sum(eigvals)
+        var_explained_by_i2keep = np.sum(eigvals[i2keep:])
+        unexplained_var = total_var - var_explained_by_i2keep
+        avg_eigenvals_4_unexplained = unexplained_var / i2clip
         #
         # Find eigenvectors associated up to i2keep
-        self.new_eigvals = self.eigvals.copy()
-        self.new_eigvals[:self.i2keep] = self.avg_eigenvals_4_unexplained
-        self.C_hat = eigvecs @ np.diag(self.new_eigvals) @ eigvecs.T
+        new_eigvals = eigvals.copy()
+        new_eigvals[:i2keep] = avg_eigenvals_4_unexplained
+        Corr_hat = eigvecs @ np.diag(new_eigvals) @ eigvecs.T
+        # print(np.trace(Corr_hat), Corr_hat.shape)
+        #
+        # Restore the trace (rounding error causes slight deviations)
+        Corr_hat = self._cov2cor(Corr_hat)
+        # print(np.trace(Corr_hat), Corr_hat.shape)
+        #
+        C_hat = self._cor2cov(Corr_hat, np.diag(self.C))
+        return C_hat
+ 
+    def eig_clip_via_cov(self,
+                         method='explained_variance',
+                         method_parms={'target': 0.95}):
+        '''
+        Denoise symmetric damaged covariance matrix C by clipping eigenvalues.
+        Only works with explained variance approach?
+
+        An example:
+        https://ntrs.nasa.gov/api/citations/20170007918/downloads/20170007918.pdf
+        https://core.ac.uk/download/pdf/95856791.pdf
+
+        Laloux_2000 thresholds are for correlation and is clipping thresholds
+        are dimensionless parameters (doesn't work with covariances)
+
+        Since this is real explained variance, i.e. SST variances and EOFs
+        it is more physically intituative
+        
+        This is done by KEEPING the largest explained variance
+        in which (number of basis vectors to be kept) >> (number of rows)
+        In ESA data, keeping 95% variance means keeping top ~15% of the
+        eigenvalues
+        '''
+        print('Solving eigenvalues and vectors')
+        eigvals, eigvec = linalg_scipy.eigh(self.C)
+        sorted_order = np.argsort(eigvals)
+        eigvals = eigvals[sorted_order]
+        print('[:5] =', eigvals[:5])
+        print('[-5:] =', eigvals[-5:])
+        eigvecs = eigvec[:, sorted_order]
+        n_eigvals = len(eigvals)
+        thresh_ms = {'explained_variance': self.find_index_explained_variance}
+        i2keep = thresh_ms[method](eigvals, **method_parms)
+        i2clip = n_eigvals + i2keep  # Note i2keep is NEGATIVE
+        print('Numbers of kept eigenvalues = ', -i2keep)
+        print('Numbers of clipped eigenvalues = ', i2clip)
+        #
+        # The total variance should be perserved after clipping
+        # within precision error of the eigenvalues which is O(Max(Eig) * float_accuracy)
+        total_var = np.sum(eigvals)
+        var_explained_by_i2keep = np.sum(eigvals[i2keep:])
+        unexplained_var = total_var - var_explained_by_i2keep
+        avg_eigenvals_4_unexplained = unexplained_var / i2clip
+        #
+        # Find eigenvectors associated up to i2keep
+        new_eigvals = eigvals.copy()
+        new_eigvals[:i2keep] = avg_eigenvals_4_unexplained
+        C_hat = eigvecs @ np.diag(new_eigvals) @ eigvecs.T
+        return C_hat
 
 
 def main():
