@@ -48,8 +48,8 @@ JASMIN:
 /gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
 
 NOC:
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
 
 ESA SST spatial scale file: Longitude -180 to 180, not y-reversed, has bounds
 JASMIN:
@@ -57,8 +57,8 @@ JASMIN:
 /gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
 
 NOC:
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
+/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
 '''
 
 import math
@@ -416,7 +416,7 @@ def infill_scales(Lx, Ly,
 def run_land():
     ''' Fill the land scale files '''
     terrain = 'land'
-    basepath = '/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/'
+    basepath = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/'
     inpath = basepath+'matern_physical_distances_v_eq_1p5/'
     outpath = basepath+'matern_physical_distances_v_eq_1p5_filled_in/'
     for month in [m+1 for m in range(12)]:
@@ -440,7 +440,7 @@ def run_land():
 def run_sea():
     ''' Fill the sea scale files '''
     terrain = 'water'
-    basepath = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/'
+    basepath = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/'
     inpath = basepath+'matern_physical_distances_v_eq_1p5/'
     outpath = basepath+'matern_physical_distances_v_eq_1p5_filled_in/'
     for month in [m+1 for m in range(12)]:
