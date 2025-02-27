@@ -41,7 +41,7 @@ def mask_time_union(cube):
 
 def main():
     #
-    init_logging()
+    init_logging(level="WARN")
     #
     logging.info('Start')
     #
