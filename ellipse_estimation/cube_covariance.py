@@ -154,12 +154,9 @@ class CovarianceCube():
         for i, coord in enumerate(data_cube.coords()):
             if coord.standard_name == 'time':
                 self.tcoord_pos = i
-            try:
-                if ('lat' in coord.standard_name) or ('lon' in coord.standard_name):
-                    self.xycoords_pos.append(i)
-                    self.xycoords_name.append(coord.standard_name)
-            except:
-                pass
+            if ('lat' in coord.standard_name) or ('lon' in coord.standard_name):
+                self.xycoords_pos.append(i)
+                self.xycoords_name.append(coord.standard_name)
         if self.tcoord_pos == -1:
             raise ValueError('Input cube needs a time dimension')
         if self.tcoord_pos != 0:
