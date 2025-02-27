@@ -99,6 +99,9 @@ def sigma_2_parms(sigma, degrees=False):
 
 
 def zero_360_2_180_180(cube):
+    '''
+    Convert longitude from 0 to 360 to -180 to 180
+    '''
     cube.coord('longitude').bounds = None
     cube.coord('latitude').bounds = None
     b_t_d = iris.Constraint(longitude=lambda val: val >= 180.0)
@@ -117,6 +120,9 @@ def zero_360_2_180_180(cube):
 
 
 def Minus180_180_2_0_360(cube):
+    '''
+    Convert longitude from -180 to 180 to 0 to 360
+    '''
     cube.coord('longitude').bounds = None
     cube.coord('latitude').bounds = None
     z_2_d = iris.Constraint(longitude=lambda val: val >= 0.0)
@@ -134,18 +140,42 @@ def Minus180_180_2_0_360(cube):
     return ans
 
 
+def as65_to_hs93_effective_range(L):
+    '''
+    Handcock-Stein 1993 and GSTAT (for common choices to v): 
+    Range parameter is scaled by 1/2
+    i.e.: 2 SQRT(v) r/L
+    
+    Abramowitz-Stegun 1965/Rasmussen-Williams 2005: 
+    Range parameter is scaled by 1/SQRT(2)
+    i.e.: SQRT(2 v) r/L 
+
+    This converts L definition used in AS65/RW05 to the one used in HS93 and GSTAT (for 10 >= v >= 0.5)
+    '''
+    return L * 2.0/np.sqrt(2)
+
+
 land_cat = {'water': 1, 'land': 2, 'coast': 16}
 land_cat_inv = {v: k for k, v in land_cat.items()}
-hadcrut5_defaults = {'land': {'Lx': 1600.0, 'Ly': 1600.0, 'sdev': 1.2, 'theta': 0.0},
-                     'water': {'Lx': 1600.0, 'Ly': 1600.0, 'sdev': 0.6, 'theta': 0.0}}
+hadcrut5_defaults = {'land': {'Lx': as65_to_hs93_effective_range(1300.0),
+                              'Ly': as65_to_hs93_effective_range(1300.0),
+                              'sdev': 1.2,
+                              'theta': 0.0},
+                     'water': {'Lx': as65_to_hs93_effective_range(1300.0),
+                               'Ly': as65_to_hs93_effective_range(1300.0),
+                               'sdev': 0.6,
+                               'theta': 0.0}}
 
 
 def landfrac_categorial(land_frac_arr,
                         minimum_land_threshold=0.001):
     '''
+    Create a uint8 ndarray based on land fraction
+    uint8 flags based on convention used in OSTIA
+
     OSTIA definition
-    flag_masks                     array([ 1, 2, 4, 8, 16], dtype=int8)
-    flag_meanings                  'water land optional_lake_surface sea_ice optional_river_surface' 
+    flag_masks        array([ 1, 2, 4, 8, 16], dtype=int8)
+    flag_meanings     'water land optional_lake_surface sea_ice optional_river_surface' 
     '''
     landfrac_categorial_arr = np.zeros_like(land_frac_arr, dtype=np.uint8)
     water = land_frac_arr <= minimum_land_threshold
@@ -160,7 +190,9 @@ def landfrac_categorial(land_frac_arr,
 
 def ESA_landfrac(minimum_land_threshold=0.001,
                  convert2_0_360=False):
-    ''' 
+    '''
+    Make ESA land fraction data cube
+
     ESA land (sea) fraction:
     Have no lakes, but lakes are included in HadCRUT5 weight files and ERA5. However for temperature kriging,
     it is not clear if lakes should be treated as land or even open sea, so defaults using for sea or land
@@ -202,8 +234,22 @@ def ESA_landfrac(minimum_land_threshold=0.001,
 #     return
 
 def find_neighbours(jj, ii, jj_max=35, ii_max=71):
-    assert (jj >= 0) and (jj <= jj_max), 'jj is out of range: jj='+str(jj)
-    assert (ii >= 0) and (ii <= ii_max), 'ii is out of range: ii='+str(ii)
+    '''
+    Find immediate neighbouring grid points,
+    accounting for wrap around point
+
+    Parameters
+    ----------
+    jj, ii : int
+        lat/y and lon/x
+    jj_max, ii_max: int
+        Number of lat and lon points
+    Returns
+    -------
+    list of tuples of (lat_index, lon_index) of the neighbours    
+    '''
+    assert 0 <= jj <= jj_max, 'jj is out of range: jj='+str(jj)
+    assert 0 <= ii <= ii_max, 'ii is out of range: ii='+str(ii)
     neighbours = []
     for jj_s in [jj-1, jj, jj+1]:
         if (jj_s < 0) or (jj_s > jj_max):
@@ -227,6 +273,11 @@ def infill_scales(Lx, Ly,
                   landfrac_func_kwargs={},
                   fudge_long_scales=True):
     '''
+    Fill Matern kernel parameters into grid points that were masked
+    
+    Parameters
+    ----------
+    Lx, Ly, theta, sdev : 
     '''
     assert terrain in ['land', 'water'], 'Unknown terrain; land or sea only'
     infill_parms = hadcrut5_defaults[terrain]
