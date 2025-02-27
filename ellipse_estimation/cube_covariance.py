@@ -112,7 +112,7 @@ supercategory_parms = {'3_param_matern': OrderedDict([('Lx', Unit('degrees')),
                                                          ('number_of_iterations', Unit('1')),
                                                         ]),
                       }
-supercategory_nparms = {scp: len(supercategory_parms[scp]) for scp in supercategory_parms.keys()}
+supercategory_nparms = {scp: len(supercategory_parms[scp]) for scp in supercategory_parms}
 
 #def _AT_A(A):
 #    return np.matmul(np.transpose(A), A)
@@ -154,7 +154,7 @@ class CovarianceCube():
         for i, coord in enumerate(data_cube.coords()):
             if coord.standard_name == 'time':
                 self.tcoord_pos = i
-            if ('lat' in coord.standard_name) or ('lon' in coord.standard_name):
+            if coord.standard_name in ["latitude", "longitude"]:
                 self.xycoords_pos.append(i)
                 self.xycoords_name.append(coord.standard_name)
         if self.tcoord_pos == -1:
