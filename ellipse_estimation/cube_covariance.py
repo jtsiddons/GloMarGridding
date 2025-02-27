@@ -541,18 +541,18 @@ class CovarianceCube():
         dx_sign = np.sign(dx)
         ##
         if fform[-3:] == '_pd':
-            # There are two ways to do that 
-            # (1) Use the Haversine formula and solve for distance_ii 
-            # (2) Use the law of cosines, taking inputs of distance_ii and distance_jj 
-            # and solve for radial distance <-- this retains the up and down.... 
+            # There are two ways to do that
+            # (1) Use the Haversine formula and solve for distance_ii
+            # (2) Use the law of cosines, taking inputs of distance_ii and distance_jj
+            # and solve for radial distance <-- this retains the up and down....
             #
             # Haversine -- (delta_lat, delta_lon)
             # sklearn.metrics.pairwise.haversine_distances(X, Y=None)[source]
             # Compute the Haversine distance between samples in X and Y.
             # The Haversine (or great circle) distance is the angular distance between
-            # two points on the surface of a sphere. 
-            # The first coordinate of each point is assumed to be the latitude, 
-            # the second is the longitude, given in radians. 
+            # two points on the surface of a sphere.
+            # The first coordinate of each point is assumed to be the latitude,
+            # the second is the longitude, given in radians.
             # The dimension of the data must be 2.
             latlon_vector2 = np.column_stack([np.deg2rad(lonlat[1]+dy),
                                               np.deg2rad(lonlat[0]+dx)])
@@ -561,16 +561,16 @@ class CovarianceCube():
             latlon2 = latlon2[np.newaxis, :]
             X_train_radial = haversine_distances(latlon_vector2, latlon2)[:, 0]
             distance_jj = np.deg2rad(distance_j)
-            # 
+            #
             # Law of cosines/Pyth Theroem on a sphere surface:
             # https://sites.math.washington.edu/~king/coursedir/m445w03/class/02-03-lawcos-answers.html
             # COS(Haversine Dist) = COS(Delta_Lat) COS(Delta_X)
             #
-            # Note: 
+            # Note:
             # Delta_X != Delta_LON or Delta_Lon x COS LAT
             # Delta_X itself is a great circle distance
             # Here meridonal displacement is always defined relative to the north and south pole!
-            # 
+            #
             if delta_x_method == "Spherical_COS_Law":
                 ## This doesn't appears to work... recheck needed
                 inside_arccos = np.cos(X_train_radial)/np.cos(distance_jj)
@@ -1161,12 +1161,35 @@ class MLE_c_ij_Builder_Karspeck():
         note: unlike variogram fitting, no nugget, no sill, and no residue variance (normalised data but Fisher transform needed?)
         can be adjusted using "maxiter" within "options" kwargs
 
+        Much of the variable names are defined the same way as earlier
+
         Parameters
         ----------
-
+        X, y : np.ndarray
+            distances and observed correlations
+        guesses=None : 
+            Tuples/lists of initial values to scipy.optimize.minimize
+        bounds=None : 
+            Tuples/lists of bounds for fitted parameters
+        opt_method='Nelder-Mead' : str
+            scipy.optimize.minimize optimisation method
+        tol=None : float
+            scipy.optimize.minimize convergence tolerance
+        estimate_SE='bootstrap_parallel' : str
+            how to estimate standard error if needed
+        n_sim=500 : int
+            number of bootstrap to estimate standard error
+        n_jobs=_default_n_jobs : int
+            number of threads
+        backend=_default_backend : str
+            joblib backend
+        random_seed=1234 (NEW): int, random seed for bootstrap
+    
         Returns
         -------
-
+        list : [fitted parameters,
+                standard error of the fitted parameters, 
+                bounds of fitted parameters]
         '''
         ##
         if guesses is None:
@@ -1220,7 +1243,7 @@ class MLE_c_ij_Builder_Karspeck():
                 sim_params = np.array(sim_params)
                 SE = np.std(sim_params, axis=0)
             elif estimate_SE == 'hessian':
-                ''' note: autograd does not work with scipy's Bessel functions '''
+                # note: autograd does not work with scipy's Bessel functions
                 raise NotImplementedError('Second order deriviative (Hessian) of Fisher Information not implemented')
             else:
                 raise ValueError('Unknown estimate_SE')
@@ -1229,6 +1252,7 @@ class MLE_c_ij_Builder_Karspeck():
         return [results, None, bounds]
 
     def _bootstrap_once(self, X, y, guesses, bounds, opt_method, tol=None, seed=1234):
+        ''' Bootstrap refit the Matern parameters '''
         rng = np.random.RandomState(seed) # pylint: disable=no-member
         len_obs = len(y)
         i_obs = np.arange(len_obs)
