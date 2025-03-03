@@ -63,11 +63,11 @@ def main():
     assert dat_type in ['sst', 'lsat'], 'dat_type (sys.argv[1]) must be sst or lsat'
     if dat_type == 'lsat':
         data_loader = load_lsat
-        outpath_base = '/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/'
+        outpath_base = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/'
         print('dat_type is lsat')
     else:
         data_loader = load_sst
-        outpath_base = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/'
+        outpath_base = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/'
         print('dat_type is sst')
     #
     print('v = ', v)
