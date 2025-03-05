@@ -45,6 +45,7 @@ def test_EllipseSimulation_UniformParms(v, cube_template, sdev, sigma_parms):
     ans.create_cov()
     print(ans.CCPLE_out.cor_ns)
     print(ans.CCPLE_out.cov_ns)
+    assert np.all(np.diag(ans.CCPLE_out.cov_ns) == (sdev**2))
     if (v == 0.5) and (sigma_parms[-1] == 0.0):
         pt0 = cube_template[0, 0]
         pt1 = cube_template[0, 1]
@@ -91,6 +92,7 @@ def test_EllipseSimulation_PrescribedParms(v, sdev_cube, Lx_cube, Ly_cube, theta
                                                 Ly_cube,
                                                 theta_cube)
     print(repr(ans))
+    assert True
     return ans
 
 
@@ -139,4 +141,5 @@ def test_EllipseSimulation_NonStatFunc(v, sdev_func, Lx_func, Ly_func, theta_fun
     print(repr(ans))
     print(ans.CCPLE_out.cor_ns)
     print(ans.CCPLE_out.cov_ns)
+    assert True
     return ans
