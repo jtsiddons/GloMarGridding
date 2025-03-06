@@ -1,0 +1,3 @@
+nc_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/"
+uncorrected: "covariance_MM_v_eq_1p5_lsat_without_psd_check.nc"
+output: "covariance_MM_v_eq_1p5_lsat_clipped.nc"

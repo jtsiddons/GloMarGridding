@@ -6,15 +6,20 @@ import iris
 from iris.fileformats import netcdf as inc
 import numpy as np
 from scipy import linalg as linalg_scipy
+import yaml
 
 from ellipse_estimation import repair_damaged_covariance as rdc
 
 def main():
-    ''' MAIN '''
+    ''' 
+    Check and correct for positive definitness for 12 months of covariances
+    '''
     #
-    nc_path = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/locally_build_covariances/'
-    nc_infiles = [nc_path+'covariance_'+str(mm+1).zfill(2)+'_v_eq_1p5_lsat_without_psd_check.nc' for mm in range(12)]
-    nc_outfiles = [nc_path+'covariance_'+str(mm+1).zfill(2)+'_v_eq_1p5_lsat_clipped.nc' for mm in range(12)]
+    with open('clip_sst_cov.yaml', 'r') as f:
+        clip_intel = yaml.safe_load(f)
+    nc_path = clip_intel['nc_path']
+    nc_infiles = [nc_path+clip_intel['uncorrected'].replace('MM', str(mm+1).zfill(2)) for mm in range(12)]
+    nc_outfiles = [nc_path+clip_intel['output'].replace('MM', str(mm+1).zfill(2)) for mm in range(12)]
     #
     explained_var_target = 0.95
     #
