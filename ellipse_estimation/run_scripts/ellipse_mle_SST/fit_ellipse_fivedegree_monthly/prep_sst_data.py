@@ -1,5 +1,15 @@
 '''
-Training period 1982-2022 (same as 1 deg exercise)
+Concat newer ESA CCI SST files
+Older (Liz Kent files): /noc/mpoc/surface_data/ESA_CCI5deg_month/ANOMALY
+Newer (pre 1981, post 2022): /noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY
+
+Fixes sea ice fraction inconsistencies between
+older files Liz Kent downloaded (mask above 15%) - standard for SST products
+newer files (masks above 100% aka nothing) - default set by UofReading download website
+
+https://surftemp.net/regridding/index.html
+
+Training period for ellipse 1982-2022 (same as 1 deg exercise)
 '''
 import glob
 
@@ -43,7 +53,7 @@ def cat_check(cubes):
 def load_sst_cubes0(yyyys,
                     ice_check=True,
                     ice_check_kwargs={}):
-    nc_path = '/work/scratch-pw2/schan016/NOC-hostace/ESA_CCI5deg_month/ANOMALY/'
+    nc_path = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/'
     nc_files = []
     for yyyy in yyyys:
         nc_files += glob.glob(nc_path+str(yyyy)+'????_regridded_sst.nc')
@@ -98,7 +108,7 @@ def apply_ice_threshold(sst_cube,
 
 def prep_sst_data():
     sst = load_sst_cubes0(range(1982, 2023))
-    outfile = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/'
+    outfile = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/'
     outfile += 'esa_cci_sst_5deg_monthly_1982_2022.nc'
     inc.save(sst, outfile, zlib=True)
 
