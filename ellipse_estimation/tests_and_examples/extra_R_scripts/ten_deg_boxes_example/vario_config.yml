@@ -1,0 +1,6 @@
+
+default:
+  source_dir: "/gws/nopw/j04/hostace/VARIO/ESA_CCI1deg_pent/ANOMALY/"
+  tendeg_dir: "/work/scratch-pw3/XXX/SST-10x10/"
+  range_dir:  "/work/scratch-pw3/XXX/SST-10x10/RANGE/"
+
