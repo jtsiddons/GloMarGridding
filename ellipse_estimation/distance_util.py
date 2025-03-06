@@ -11,11 +11,28 @@ from ellipse_estimation import cube_covariance as cube_cov
 def haversine2(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
-    on the earth (specified in decimal degrees)
+    (specified in decimal degrees)
 
     All args must be of equal length.
 
     https://stackoverflow.com/questions/29545704/fast-haversine-approximation-python-pandas
+
+    This is an alternative to sklearn version, and can run faster under some circumstances
+
+    Parameters
+    ----------
+    lon1, lat1 : float or np.ndarray
+        lon and lat of point 1 in degrees
+    lon2, lat2 : float or np.ndarray
+        lon and lat of point 2 in degrees
+
+    Returns
+    -------
+    c : float or np.ndarray
+        Great circle distance distance between 1 and 2
+
+    Note: It HAS NOT multipled the radius of Earth yet, need to do that
+    to convert that to great circle distance on Earth
     """
     lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
@@ -33,6 +50,10 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
                                       use_sklearn_haversine=False,
                                       verbose=False):
     '''
+    A number of ways to approximate the vectored displacement in 
+    physical distances on the surface of Earth, noting that Earth
+    is round (!)
+
     Coordinates of the two points
     lat_i, lon_i
     lat_j, lon_j
@@ -76,6 +97,52 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
     delta_x = 0.5 x R_Earth x (COS(LAT_0)+COS(LAT_1)) x delta_lon
 
     Spherical coordinates, geosedics, and haversines are yuck!
+
+    Parameters
+    ----------
+    lat_i, lon_i : float
+        Lat Lon of point 1
+
+    lat_j, lon_j :
+        Lat Lon of point 2
+
+    degree_dist : bool (default False)
+        Compute distances by degrees (no more Earth being round problem duh)
+
+    delta_x_method : str (default="Modified_Met_Office")
+        Met_Office : 
+            tin can (cylindrical) Earth, used in HadSST4
+            Distance following down line constant lon (y-th component)
+            Distance following across line constant lat,
+            assuming NO variation to it by latitude (x-th component)
+
+        Modified_Met_Office : 
+            squished tin can (Sinusoidal projection) Earth
+            Distance following down line constant lon (y-th component)
+            Average distance following down line constant lat between
+            the starting and ending latitude with sine lat correction (x-th component)
+            This differs with "Met Office" only in how the x-th component is computed
+
+    use_sklearn_haversine : bool (default False)
+        use sklearn.metrics.pairwise.haversine_distances or haversine2 
+        (False means use haversine2)
+        This is very sensentive to platform. 
+        In NOC machines, it does not matter.
+        JASMIN installation of sklearn appears to be much slower
+        The actual sklearn src is not very complicated, but it enforces tough type
+        checks and assertations... which somehow JASMIN does not like
+
+    verbose : bool (default False)
+        More stuff get printed out on stdout
+
+    Returns
+    -------
+        dist : float
+            Haversine distance between the two points (non directional non-vectored)
+        dist_j : 
+            The y/j-th component of the displacement 
+        dist_i :
+            The x/i-th component of the displacement 
     '''
     lon_i = lon_i - 360.0 if lon_i > 180.0 else lon_i
     lon_j = lon_j - 360.0 if lon_j > 180.0 else lon_j
@@ -85,7 +152,7 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
     delta_lon = delta_lon + 360.0 if delta_lon < -180.0 else delta_lon
     dx_sign = np.sign(delta_lon)
     if degree_dist:
-        ''' returns Euclidean and delta_lat and lon if degree_dist == True '''
+        # returns Euclidean and delta_lat and lon if degree_dist == True
         return (np.sqrt(delta_lon**2.0 + delta_lat**2.0), delta_lat, delta_lon)
     ##
     ys = np.array([np.deg2rad(lat_i), np.deg2rad(lat_j)])
@@ -94,7 +161,7 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
     if verbose:
         print('From: ', np.rad2deg(yxs[0, :]))
         print('To  : ', np.rad2deg(yxs[1, :]))
-    ##
+    #
     # Bottleneck parm_check sklearn
     if use_sklearn_haversine:
         # Slower - sklearn has more overhead in checks
@@ -104,33 +171,12 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
         dist0 = haversine2(lon_i, lat_i, lon_j, lat_j)
     dy0 = yxs[1, 0] - yxs[0, 0]
     if verbose:
-        print('Delta Opposite = ', dist0, '[Radians]')
-        print('Delta Opposite = ', np.rad2deg(dist0), '[Degrees]')
+        print('Haversine = ', dist0, '[Radians]')
+        print('Haversine = ', np.rad2deg(dist0), '[Degrees]')
         print('Delta Lat = ', dy0, '[Radians]')
         print('Delta Lat = ', np.rad2deg(dy0), '[Degrees]')
 
-    if delta_x_method == "Spherical_COS_Law":
-        inside_arccos = np.cos(dist0)/np.cos(dy0)
-        if verbose:
-            print('Calculation check for inside_arccos: ', inside_arccos)
-        # if (np.abs(inside_arccos) - 1.0) > 1.0E-4:
-        #     warnings.warn('Unexpected inside_arccos value; fudge applied', UserWarning)
-        #     dx0 = dx_sign * distX
-        # else:
-        #     if inside_arccos > 1.0:
-        #         inside_arccos = 1.0
-        #     elif inside_arccos < -1.0:
-        #         inside_arccos = -1.0
-        #     else:
-        #         pass
-        if inside_arccos > 1.0:
-            inside_arccos = 1.0
-        elif inside_arccos < -1.0:
-            inside_arccos = -1.0
-        else:
-            pass
-        dx0 = dx_sign * np.arccos(inside_arccos)
-    elif delta_x_method == "Met_Office":
+    if delta_x_method == "Met_Office":
         dx0 = yxs[1, 1] - yxs[0, 1]
         if dx0 > np.pi:
             dx0 = dx0 - 2.0*np.pi
@@ -162,9 +208,33 @@ def scalar_cube_great_circle_distance_cube(scalar_cube_i,
                                            degree_dist=False,
                                            delta_x_method="Modified_Met_Office"):
     '''
+    Wrapper for scalar_cube_great_circle_distance but allows input as iris scalar cube with latlons
+    
     Takes iris cubes, xarray doesn't have coord so will need wrapper function 
     but xarray cubes can be converted to iris cubes
     from i to j : i.e. dist = j minus i
+
+    Parameters
+    ----------
+    scalar_cube_i : iris.cube.Cube
+        scalar cube at point 1
+    scalar_cube_j : iris.cube.Cube
+        scalar cube at point 2
+    degree_dist : bool
+        See scalar_cube_great_circle_distance
+    delta_x_method : str
+        See scalar_cube_great_circle_distance
+
+    Returns
+    -------
+        dist : float
+            Haversine distance between the two points (non directional non-vectored)
+        dist_j : 
+            The y/j-th component of the displacement 
+        dist_i :
+            The x/i-th component of the displacement 
+
+    Same as in scalar_cube_great_circle_distance
     '''
     if (len(scalar_cube_i.coord('latitude').points) != 1) or (len(scalar_cube_i.coord('longitude').points) != 1):
         raise ValueError('Scalar cubes only (i)')
@@ -179,6 +249,7 @@ def scalar_cube_great_circle_distance_cube(scalar_cube_i,
 
 
 def main():
+    ''' === Main === '''
     print('=== Main ===')
 
 
