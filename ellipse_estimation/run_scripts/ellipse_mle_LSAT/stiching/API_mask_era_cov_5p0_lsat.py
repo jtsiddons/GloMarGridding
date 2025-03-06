@@ -1,18 +1,5 @@
 '''
-Aga's requirements for testing (8 Aug 2023):
-File 1)
-        a) Land/sea ice-sea mask (Land/sea ice is 0 and sea is 1) at 2.5x2.5 - y, x (lat, lon)
-        b) SST anomaly samples at 2.5x2.5 - t, y, x (time, lat, lon)
-File 2)
-        a) Covariance matrix for each month 2.5 x 2.5 -- dim_0, dim_1 (row, column, c-styled row major)
-
-This script outputs the following:
-
-File 1) data_sample_MM.nc
-Containing the mask and sample data for month MM (01, 04, 07, 10)
-
-File 2) covariance_MM_v_eq_NU.nc
-Containing the covariance and correlation matrix for month MM (01, 04, 07, 10) using Matern shape parameter NU (1.5 and 3.0)
+Stiches non stationary variogram parameters to form a covariance matrix
 '''
 
 from os import path as os_path
@@ -27,12 +14,14 @@ from iris.cube import Cube
 from iris.fileformats import netcdf as inc
 import pandas as pd
 import numpy as np
+import yaml
 
 # My own modules
 from ellipse_estimation import cube_covariance_nonstationary_stich as cube_cov_stich
 
 
 def masklookuptable(cube, csv_unit):
+    ''' Writes the row column index that matches a specific grid box '''
     longrid, latgrid = np.meshgrid(cube.coord('longitude').points, cube.coord('latitude').points)
     latgrid = np.ma.masked_where(cube.data.mask, latgrid)
     longrid = np.ma.masked_where(cube.data.mask, longrid)
@@ -47,6 +36,7 @@ def masklookuptable(cube, csv_unit):
 
 
 def set_sklearn_haversine():
+    ''' Determine if sklearn haversine should be used or not '''
     host_name = socket.gethostname()
     # True - NOC; False - JASMIN
     if '.noc.' in host_name:
@@ -59,7 +49,7 @@ def set_sklearn_haversine():
 
 
 def main():
-
+    ''' MAIN '''
     delta_x_method = "Modified_Met_Office"
     degree_dist = False
     max_dist = 1.5E8
@@ -96,12 +86,14 @@ def main():
     print('n_jobs = ', n_jobs)
     print('fix_indefinite = ', fix_indefinite)
 
-    base_path = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/'
-    data_path = base_path+'matern_physical_distances_v_eq_1p5_filled_in/'
+    with open('API_mask_era_cov_5p0_lsat.yaml', 'r') as f:
+        stich_intel = yaml.safe_load(f)
+    base_path = stich_intel['base_path']
+    data_path = base_path+stich_intel['data_path']
     out_suffix = 'lsat'
     if not fix_indefinite:
         out_suffix += '_without_psd_check'
-    outpath = base_path+'locally_build_covariances/'
+    outpath = base_path+stich_intel['outpath']
     print('Outputs will be saved to ', outpath+'/')
     Path(outpath).mkdir(parents=True, exist_ok=True)
 
