@@ -37,9 +37,12 @@ for ncpath, obsname in zip(ncpaths, obsnames):
             cube = cubes.extract(varname)[0]
             print(repr(cube))
             new_cube = cube.copy()
-            new_cube.data = H@cube.data@H.T
+            og_type = cube.data.dtype
+            HCHT = H@cube.data@H.T
+            HCHT = HCHT.astype(og_type)
+            new_cube.data = HCHT
             new_cubes.append(new_cube)
-        new_cov = new_cubes.extract('covariance')[0]
+        # new_cov = new_cubes.extract('covariance')[0]
         # L = cholesky(new_cov.data, lower=True)
         print(mm, ': Saving to ', outfile)
         inc.save(new_cubes, outfile)
