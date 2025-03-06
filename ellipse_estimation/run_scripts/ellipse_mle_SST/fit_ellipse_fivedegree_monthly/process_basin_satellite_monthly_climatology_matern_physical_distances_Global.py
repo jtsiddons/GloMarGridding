@@ -1,3 +1,6 @@
+'''
+Run script for SST and LSAT nonstationary variogram parameter estimation
+'''
 # import datetime
 import logging
 from pathlib import Path
@@ -8,6 +11,7 @@ from iris import coord_categorisation as icc
 from iris.fileformats import netcdf as inc
 from iris.util import equalise_attributes
 import numpy as np
+import yaml
 
 import psutil
 
@@ -16,23 +20,31 @@ from glomar_gridding.utils import init_logging
 
 # pylint: disable=logging-fstring-interpolation
 
+with open('process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml', 'r') as f:
+    fit_intel = yaml.safe_load(f)
+
 def load_sst():
-    ncfile = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/'
-    ncfile += 'esa_cci_sst_5deg_monthly_1982_2022.nc'
+    ''' Load SST inputs '''
+    ncfile = fit_intel['sst_in']
     cube = iris.load_cube(ncfile)
     icc.add_month_number(cube, 'time', name='month_number')
     return cube
 
 
 def load_lsat():
-    ncfile = '/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/'
-    ncfile += 'era5_t2m_monthly_mean_1979_2023_5x5.nc'
+    ''' Load LSAT inputs '''
+    ncfile = fit_intel['lsat_in']
     cube = iris.load_cube(ncfile, 'land 2 metre temperature')
     icc.add_month_number(cube, 'time', name='month_number')
     return cube
 
 
 def mask_time_union(cube):
+    '''
+    Make sure mask is same for all time
+    If a single masking occur,
+    masks all other time as well
+    '''
     cube_mask = cube.data.mask
     common_mask = np.any(cube_mask, axis=0)
     cube.data.mask = common_mask
@@ -40,6 +52,9 @@ def mask_time_union(cube):
 
 
 def main():
+    '''
+    MAIN
+    '''
     #
     init_logging(level="WARN")
     #
@@ -63,11 +78,11 @@ def main():
     assert dat_type in ['sst', 'lsat'], 'dat_type (sys.argv[1]) must be sst or lsat'
     if dat_type == 'lsat':
         data_loader = load_lsat
-        outpath_base = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/'
+        outpath_base = fit_intel['lsat_out_base']
         print('dat_type is lsat')
     else:
         data_loader = load_sst
-        outpath_base = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/'
+        outpath_base = fit_intel['sst_out_base']
         print('dat_type is sst')
     #
     print('v = ', v)
@@ -92,7 +107,7 @@ def main():
     #
     # Init values set to HadCRUT5 defaults
     # no prior distrubtion set around those value
-    init_values = (1300.0, 1300.0, 0)
+    init_values = (2000.0, 2000.0, 0)
     # Uniformative prior of parameter range
     fit_bounds = ((300.0, 30000.0),
                   (300.0, 30000.0),
