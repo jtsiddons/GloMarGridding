@@ -1,64 +1,6 @@
 '''
-Richard and Aga discussion
-15 Oct 2024
-
-In order to do the kriging the UKMO way (i.e. use global covariance, krig everything, 
-and seperate land-sea weights finally), sea (land) points for the land (sea) length scale files 
-needs to be filled in with some value.
-
-The scales are also estimated as if the pixels are land or sea exclusives (``black-and-white''). 
-Coastal points need to have found, with a reasonable value filled if scale is missing in one of the file.
-
-There are also sea ice grid points which can be treated as either land or coast. Such pixels defaults
-to sea pixel will have missing values for land scale files prior of fixing.
-
-Land scales sometimes failed to converge and get assigned a Lx = 30000km over Antartica... can probably fudge them to HadCRUT5 defaults.
-
-This way, you will create a revised global land and sea scale file with NO missing values, 
-in which you can build a kriging covariance.
-
-HadCRUT5 defaults in ellipses method
-
-Lx = Ly = 1300km
-angle = anything (0 just for simplicity)
-sdev = 0.6 (sea) or 1.2 (land) degC 
-
-1) For 100% opposite terrain pixel (i.e. 100% sea pixels for land file, 100% land pixel for sea files), 
-it gets the HadCRUT5 default for that file for the sake of infilling (i.e. 100% sea pixels for land file gets the 
-HadCRUT5 default for land (1300, 1300, 0, 1.2) ). Do this first.
-
-2) For underdetermined coastal and lake pixels surronded by pixels with defined value (either actual fitted value or replacemement 
-value from step 1), a Bayesian approach can be taken (Bayesian averaging):
-    a) Initially assign such point with the HadCRUT5 default
-    b) Take the 9-point average (up down left right diagonals) and replace it with the mean.
-    c) If the other 8 points also include another missing point, that missing point takes the HadCRUT5 default as well.
-    (I think some fancy things can be done to improve point c above - possibly by some iterative procedure over multiple
-    missing points, ... lets put that aside for now.)
-
-3) The actual process of averaging the scales can be done by converting the scale parameters into the sigma matrix or complex
-numbers. Both are the same, but original paper uses sigma matrix averaging.
-
-always_land = np.all(cube.data == 1.0, axis=0)
-
-Where are the files:
-
-ERA5 LSAT Spatial Scale: Longitude -180 to 180, not y-reversed, no bounds 
-JASMIN:
-/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/schan016/ERA_SAT_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
-
-NOC:
-/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
-
-ESA SST spatial scale file: Longitude -180 to 180, not y-reversed, has bounds
-JASMIN:
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
-
-NOC:
-/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5
-/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/matern_physical_distances_v_eq_1p5_filled_in
+Fills missing pixels with HadCRUT5 defaults
+Borders of infilled and noninfilled points are also adjusted
 '''
 
 import math
