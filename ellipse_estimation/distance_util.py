@@ -37,7 +37,8 @@ def haversine2(lon1, lat1, lon2, lat2):
     lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
-    def hf(rad): return (np.sin(rad/2))**2
+    def hf(rad):
+        return (np.sin(rad/2))**2
     a = hf(dlat) + np.cos(lat1) * np.cos(lat2) * hf(dlon)
     c = 2 * np.arcsin(np.sqrt(a))
     return c
@@ -150,7 +151,7 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,
     delta_lon = lon_j - lon_i
     delta_lon = delta_lon - 360.0 if delta_lon > 180.0 else delta_lon
     delta_lon = delta_lon + 360.0 if delta_lon < -180.0 else delta_lon
-    dx_sign = np.sign(delta_lon)
+    # dx_sign = np.sign(delta_lon)
     if degree_dist:
         # returns Euclidean and delta_lat and lon if degree_dist == True
         return (np.sqrt(delta_lon**2.0 + delta_lat**2.0), delta_lat, delta_lon)

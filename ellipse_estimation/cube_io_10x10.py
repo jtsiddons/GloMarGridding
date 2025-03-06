@@ -14,6 +14,7 @@ from iris import util as iutil
 import numpy as np
 
 # All this needs fixing... they are specific to JASMIN scratch storage
+# And mostly applies to some analysis done in past with higher resolution data
 obs_2_default_path = {'ESA_satellite_0p25': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10/',
                       'ESA_satellite_0p25-mid': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-mid-scale/',
                       'ESA_satellite_0p25-ukmo': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-UKMO_grid/',
@@ -26,15 +27,15 @@ obs_2_default_path = {'ESA_satellite_0p25': '/work/scratch-pw2/schan016/NOC-host
                       'ERA5_T2M_0p25-ukmo-1': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ens1_pent_regridded/10x10/',
                       'ERA5_T2M_0p25-ukmo-m': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ensmean_pent_regridded/10x10/'}
 
-'''
-Definition of "ocean basins"
-The ranges are not strictly for those basin, but just a way to break the globe up into different
-lego pieces
-For instance
-"Atlantic Ocean" below contains bits of SE Pacific
-"Indian Ocean" below does not reach land of kangroos and koalas
-'''
-''' lon: -180 - 180 '''
+
+# Definition of "ocean basins"
+# The ranges are not strictly for those basin, but just a way to break the globe up into different
+# lego pieces
+# For instance
+# "Atlantic Ocean" below contains bits of SE Pacific
+# "Indian Ocean" below does not reach Australia
+
+# lon: -180 - 180
 basin_2_limit = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (-100, 20)},
                  'Indian_Ocean': {'latitude': (-60, 30), 'longitude': (20, 110)}, ## Original (60S-30N Indian Ocean) domain
                  'Indian_Ocean_X': {'latitude': (-60, 60), 'longitude': (20, 110)}, ## Full latitude band
@@ -47,7 +48,7 @@ basin_2_limit = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (-100, 2
                  'Arctic_Ocean': {'latitude': (60, 80), 'longitude': (-180, 180)},
                  'Arctic_Ocean_X': {'latitude': (60, 90), 'longitude': (-180, 180)}}
 
-''' lon: 0 - 360 '''
+# lon: 0 - 360
 basin_2_limit_era = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (260, 20)},
                      'Indian_Ocean': {'latitude': (-60, 30), 'longitude': (20, 110)}, ## Original (60S-30N Indian Ocean) domain
                      'Indian_Ocean_X': {'latitude': (-60, 60), 'longitude': (20, 110)}, ## Full latitude band
@@ -59,23 +60,45 @@ basin_2_limit_era = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (260
                      'Arctic_Ocean': {'latitude': (60, 80), 'longitude': (0, 360)},
                      'Arctic_Ocean_X': {'latitude': (60, 90), 'longitude': (0, 360)}}
 
+#
 month_2_constraint = {(month_num+1): iris.Constraint(month_number=month_num+1) for month_num in range(12)}
 
-'''
-Starting with those 10 deg box netcdfs, say data_160_0.nc (160E-170E, 0-10N)
-identify the netcdfs that are n_10box away from it, including diagonal ones
-n_10box == 1: total of  9 files (the original one plus the 8 around it)
-n_10box == 2: total of 25 files
 
-See "R_scripts", that is the original script that breaks up the larger ERA and ESA CCI files
-into 10 degree boxes
-'''
-def from_one_to_nine_data_lat_lon_convention(ncfile0, n_10box = 1, lat_max = 70):
-    #ncfile0_path = ntpath.dirname(ncfile0)
-    #if len(ncfile0_path) > 0:
-    #    ncfile0_path = ncfile0_path+'/'
-    #else:
-    #    ncfile0_path = './'
+def from_one_to_nine_data_lat_lon_convention(ncfile0,
+                                             n_10box=1,
+                                             lat_max=70):
+    '''
+    Starting with those 10 deg box netcdfs, say data_160_0.nc (160E-170E, 0-10N)
+    identify the netcdfs that are n_10box away from it, including diagonal ones
+    n_10box == 1: total of  9 files (the original one plus the 8 around it)
+    n_10box == 2: total of 25 files
+
+    See "tests_and_examples/extra_R_scripts", that is 
+    the original script that breaks up the larger ERA and ESA CCI files into 10 degree boxes
+
+    In the newer 5x5 runs, the data is small enough that carving the data into
+    smaller files are not needed. This is for higher resolution data, and is
+    a way Liz Kent used to process/manage them.
+
+    Parameters
+    ----------
+    ncfile0 : str
+        The "center" 10x10 NetCDF file
+    n_10box : int
+        Number of 10x10 boxes to adjacent to search,
+        it knows how to handle the global wrap around
+    lat_max : float or int
+        maximum latitude,
+        caveat: the naming of the 10x10 files are always to the 0,0
+        corner (lower left/SW corner) of the file,
+
+    Returns
+    -------
+        ans : list
+            List of netcdf file names
+        
+    Uses lon 0 to 360
+    '''
     ncfile0_basename = ntpath.basename(ncfile0)
     match0 = re.findall(r'[^\s_]+', ncfile0_basename)
     match1 = re.findall(r'[^\s.]+', match0[-1])
@@ -86,7 +109,7 @@ def from_one_to_nine_data_lat_lon_convention(ncfile0, n_10box = 1, lat_max = 70)
     lat_n = [lat+10*n for n in range(1, n_10box+1)]
     lon_b = [(llon+360) if (llon <  -180) else llon for llon in lon_b]
     lon_n = [(llon-360) if (llon >=  180) else llon for llon in lon_n]
-    ##
+    #
     ans = []
     for x in lon_b+[lon]+lon_n:
         for y in lat_b+[lat]+lat_n:
@@ -96,10 +119,13 @@ def from_one_to_nine_data_lat_lon_convention(ncfile0, n_10box = 1, lat_max = 70)
     return ans
 
 
-# I originally used the 10x10deg block files (a way Liz used to break up big global files)
-# to do ellipses at 1 deg
-# This needs revision
-def from_one_to_nine_data_lat_lon_convention_era(ncfile0, n_10box = 1, lat_max = 70):
+def from_one_to_nine_data_lat_lon_convention_era(ncfile0,
+                                                 n_10box=1,
+                                                 lat_max=70):
+    '''
+    Same as in from_one_to_nine_data_lat_lon_convention but
+    follows the longitude convention -180-180 (ERA/ESA data etc)
+    '''
     ncfile0_basename = ntpath.basename(ncfile0)
     match0 = re.findall(r'[^\s_]+', ncfile0_basename)
     match1 = re.findall(r'[^\s.]+', match0[-1])
@@ -119,17 +145,30 @@ def from_one_to_nine_data_lat_lon_convention_era(ncfile0, n_10box = 1, lat_max =
     ans.sort()
     return ans
 
-'''
-Identify 10 deg box netcdfs files within the definitions in dictionary basin_2_limit
-'''
-def default_files_in_basin(basin_name = 'Indian_Ocean'):
+
+def default_files_in_basin(basin_name='Indian_Ocean'):
+    '''
+    Identify all 10 deg box netcdfs files within the 
+    definitions in dictionary basin_2_limit
+
+    Parameters
+    ----------
+    basin_name : str
+        must be a key to basin_2_limit
+
+    Returns
+    -------
+    ans : list
+        a list of 10x10 netcdf files
+        similar to results from_one_to_nine_data_lat_lon_convention
+    '''
     lat_bounds = basin_2_limit[basin_name]['latitude']
     lon_bounds = basin_2_limit[basin_name]['longitude']
     lats = np.arange(lat_bounds[0], lat_bounds[1], 10).tolist()
     if lon_bounds[1] > lon_bounds[0]:
         lons = np.arange(lon_bounds[0], lon_bounds[1], 10).tolist()
     else:
-        ''' wrapped around 180E/W '''
+        # wrapped around 180E/W
         lons1 = np.arange(lon_bounds[0],  180, 10).tolist()
         lons2 = np.arange(-180, lon_bounds[1], 10).tolist()
         lons  = np.concatenate((lons1, lons2), axis = None)
@@ -139,14 +178,19 @@ def default_files_in_basin(basin_name = 'Indian_Ocean'):
             ans.append('data_'+str(lon)+'_'+str(lat)+'.nc')
     return ans
 
-def default_files_in_basin_era(basin_name = 'Indian_Ocean'):
+
+def default_files_in_basin_era(basin_name='Indian_Ocean'):
+    '''
+    As in default_files_in_basin but uses the different 
+    lon conventions as in from_one_to_nine_data_lat_lon_convention_era
+    '''
     lat_bounds = basin_2_limit_era[basin_name]['latitude']
     lon_bounds = basin_2_limit_era[basin_name]['longitude']
     lats = np.arange(lat_bounds[0], lat_bounds[1], 10).tolist()
     if lon_bounds[1] > lon_bounds[0]:
         lons = np.arange(lon_bounds[0], lon_bounds[1], 10).tolist()
     else:
-        ''' wrapped around 180E/W '''
+        # wrapped around 180E/W
         lons1 = np.arange(lon_bounds[0], 360, 10).tolist()
         lons2 = np.arange(  0, lon_bounds[1], 10).tolist()
         lons  = np.concatenate((lons1, lons2), axis = None)
@@ -156,16 +200,63 @@ def default_files_in_basin_era(basin_name = 'Indian_Ocean'):
             ans.append('data_'+str(lon)+'_'+str(lat)+'.nc')
     return ans
 
-'''
-iris.load wrapper
-'''
+
 def iris_load_cube_plus(ncfiles,
                         var_name='sst_anomaly',
                         fudge_negative_longitude=False,
                         fudge_360plus_longitude=False,
                         callback=None,
                         additional_constraints=None):
-    #
+    '''
+    iris.load_cube wrapper
+    with additional tools included mostly with the longitudes
+    since some dataset are -180 to 180 while some are 0 to 360.
+
+    Parameters
+    ----------
+    ncfiles : list or string
+        Usually a list of or but also work with one-single pathnames
+        of netcdf files
+    var_name : str
+        the variable to be load
+        Originally, iris.load_cube will try to concat/merge everything into
+        one cube, and will scream if it can't (including having multiple different
+        variables in the file). Here you just specify the variable name
+    fudge_negative_longitude and fudge_360plus_longitude: bool
+        Cannot be set to True together, mutually exclusive
+        
+        fudge_negative_longitude - 
+        this adds 360 to all negative lons
+        if this is a -180 to 180 global file, this makes the file 0 - 360
+        if this a regional file, the new lons are always positive
+        this is originally implemented to fudge lons for the Atlantic
+
+        fudge_360plus_longitude - 
+        Used for regional/basin files only
+        This forefully add 360 to all lons. It is originally added
+        to concat results from different basins
+        because the ellipse scales are estimated seperately for each
+        when data resolution is high
+    
+    callback : callable
+        This is the same kwarg for iris load
+        Consult iris documentation
+        Such as:
+        https://scitools-iris.readthedocs.io/en/stable/generated/api/iris.html
+    
+    
+    additional_constraints:
+        Additional constraints to be applied
+        This works the same way as iris
+        Consult iris documentation
+        Such as:
+        https://scitools-iris.readthedocs.io/en/stable/generated/api/iris.html
+
+    Returns
+    -------
+    ans_cube : iris.cube.Cube instance
+        The cube wanted
+    '''
     cubes = iris.load(ncfiles, var_name, callback=callback)
     for cube in cubes:
         assert 'time' in [coord.name() for coord in cube.coords()]
@@ -224,13 +315,16 @@ def iris_load_cube_plus(ncfiles,
     ##
     return ans_cube
 
-#
-# Masking tool for 1 deg?
-#
-fname = iris.sample_data_path('air_temp.pp')
-air_temp = iris.load_cube(fname)
-cube_projection = air_temp.coord('latitude').coord_system
-def add_proj_fix_mask_callback_ESA_1deg(cube, field, filename):
+
+def add_proj_fix_mask_callback_ESA_1deg(cube, _, __):
+    '''
+    Some ESA 1x1 (?) files are misssing map projection which makes
+    iris or CDO unhappy with it (like you cannot regrid them)
+    This fixes it via iris load callback mechanism
+    '''
+    fname = iris.sample_data_path('air_temp.pp')
+    air_temp = iris.load_cube(fname)
+    cube_projection = air_temp.coord('latitude').coord_system
     cube.coord('lat').units = 'degrees'
     cube.coord('lon').units = 'degrees'
     cube.coord('lat').rename('latitude')
@@ -242,10 +336,22 @@ def add_proj_fix_mask_callback_ESA_1deg(cube, field, filename):
 
 
 def getmask_ESA_with_ice_1deg():
-    # Includes ice-covered grid points
-    # I think Aga created the file; it is the same file in config file in noc_runners
+    '''
+    Read ESA Land|Ice-Sea 1.0x1.0 mask
+
+    Includes ice-covered grid points
+    I think Aga created the file; 
+    it is the same file in config file in noc_runners'
+    
+    The file is originally located at:
+    /noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/world/
+
+    Returns
+    -------
+    ls_mask : iris.cube.Cube instance
+        The mask
+    '''
     mask_path = os.path.dirname(__file__)+'/data/'
-    # mask_path = "/noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/world/"
     wor_mask = iris.load_cube(mask_path+'world_landmask.nc',
                               callback=add_proj_fix_mask_callback_ESA_1deg)
     wor_mask.data = wor_mask.data.astype('int8')
@@ -253,9 +359,21 @@ def getmask_ESA_with_ice_1deg():
     return wor_mask
 
 
-def getmask_ESA_1deg(threshold = 0.8):
-    # Pure land-sea mask
-    # File is generated by UoR using https://surftemp.net/
+def getmask_ESA_1deg(threshold=0.8):
+    '''
+    Pure land-sea mask 1.0x1.0 mask, ice ignored
+    File is generated by UoR using https://surftemp.net/'
+
+    Parameters
+    ----------
+    threshold : float
+        Threshold to pixel to be land
+
+    Returns
+    -------
+    ls_mask : iris.cube.Cube instance
+        The mask
+    '''
     esa_blob_path = os.path.dirname(__file__)+'/data/'
     esa_cubes = iris.load(esa_blob_path+'19820101_regridded_sst.nc')
     sea_area_fraction = esa_cubes.extract('sea_area_fraction')[0][0]
@@ -268,6 +386,20 @@ def getmask_ESA_1deg(threshold = 0.8):
 
 
 def mask_cube_ESA_1deg_with_ice(cube2mask):
+    '''
+    Front end to apply mask in getmask_ESA_with_ice_1deg
+    to another 1x1 dataset
+
+    Parameters
+    ----------
+    cube2mask : instance of iris.sube.Cube
+        The 1x1 iris cube to be masked
+
+    Returns
+    -------
+    cube2mask : iris.cube.Cube instance
+        The masked 1x1 iris cube
+    '''
     #
     wor_mask = getmask_ESA_with_ice_1deg()
     #
@@ -284,25 +416,43 @@ def mask_cube_ESA_1deg_with_ice(cube2mask):
     return cube2mask
 
 
-def mask_cube_ERA_0p25(cube2mask, use_alternative=False):
-    # This is the original path in CEDA for
-    # ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc
-    # _lsmask_file_era_path = '/badc/ecmwf-era5/data/invariants/'
+def mask_cube_ERA_0p25(cube2mask, use_180_2_180=False):
+    '''
+    This is the original path in CEDA for
+    ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc
+    _lsmask_file_era_path = '/badc/ecmwf-era5/data/invariants/'
+
+    use_180_2_180 = True (-180 to 180) or 
+    use_180_2_180 = False (0 to 360), 
+    both work, but use the one matches your file
+
+    However, cube2mask must be checked to make sure for longitude wrap around/discontinuity
+    cube.intersection does not work properly with them if there are longitude jumps
+
+    Below are situations that will fail:
+    350 (10W) --> 0 or 360 (0E/W) --> 10 (10E)
+    170 (170E) --> (-)180 (180E/W) --> -170 (170W)
+    
+    What will work:
+    350 --> 360 --> 370 or  -10 --> 0 --> 10
+    170 --> 180 --> 190
+
+    Parameters
+    ----------
+    cube2mask : instance of iris.sube.Cube
+        The 1x1 iris cube to be masked
+
+    use_180_2_180: bool
+        True if your file is -180 to 180.
+
+    Returns
+    -------
+    cube2mask : iris.cube.Cube instance
+        The masked 1x1 iris cube
+    '''
+    #
     _lsmask_file_era_path = os.path.dirname(__file__)+'/data/'
-    #
-    # use_alternative = True or use_alternative = False both work
-    # However, cube2mask must be checked to make sure for longitude wrap around/discontinuity
-    # cube.intersection does not work properly with them if there are longitude jumps
-    #
-    # Below are situations that will fail:
-    # 350 (10W) --> 0 or 360 (0E/W) --> 10 (10E)
-    # 170 (170E) --> (-)180 (180E/W) --> -170 (170W)
-    #
-    # What will work:
-    # 350 --> 360 --> 370 or  -10 --> 0 --> 10
-    # 170 --> 180 --> 190
-    #
-    if use_alternative:
+    if use_180_2_180:
         _lsmask_file_era = _lsmask_file_era_path+'ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.alternative.nc'
     else:
         _lsmask_file_era = _lsmask_file_era_path+'ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc'
@@ -319,26 +469,24 @@ def mask_cube_ERA_0p25(cube2mask, use_alternative=False):
     return cube2mask
 
 
-#
-#
-
-def _test_load(var_name = 'sst_anomaly'):
-    import glob
-    import random
-    ncfiles = glob.glob(obs_2_default_path['ESA_satellite_0p25']+'data*.nc')
-    for i in range(10):
-        ncfile0 = random.choice(ncfiles)
-        ans = from_one_to_nine_data_lat_lon_convention(ncfile0, lat_max = 80)
-        print(ncfile0, ans)
-        ncfiles = [obs_2_default_path['ESA_satellite_0p25']+ncfile for ncfile in ans]
-        cube = iris_load_cube_plus(ncfiles)
-        print(cube)
-    return
+# def _test_load():
+#     import glob
+#     import random
+#     ncfiles = glob.glob(obs_2_default_path['ESA_satellite_0p25']+'data*.nc')
+#     for i in range(10):
+#         ncfile0 = random.choice(ncfiles)
+#         ans = from_one_to_nine_data_lat_lon_convention(ncfile0, lat_max = 80)
+#         print(ncfile0, ans)
+#         ncfiles = [obs_2_default_path['ESA_satellite_0p25']+ncfile for ncfile in ans]
+#         cube = iris_load_cube_plus(ncfiles)
+#         print(cube)
+#     return
 
 def main():
+    ''' MAIN '''
     print('=== Main ===')
-    _test_load()
-    return
+    # _test_load()
+
 
 if __name__ == "__main__":
     main()
