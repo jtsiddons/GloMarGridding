@@ -1,5 +1,5 @@
 '''
-Fills missing pixels with HadCRUT5 defaults
+Fills masked and failed to coverge pixels with HadCRUT5 defaults
 Borders of infilled and noninfilled points are also adjusted
 '''
 
@@ -105,7 +105,9 @@ def as65_to_hs93_effective_range(L):
     '''
     return L * 2.0/np.sqrt(2)
 
-
+# In HadCRUT5 paper, they mentioned 1300km scale
+# The 1300km in that paper is based on the conventions used in Rasmussen-Williams 2005
+# The ellipse code follows the notation used in Karspeck et al which in turns based on Handcock-Stein 1993
 land_cat = {'water': 1, 'land': 2, 'coast': 16}
 land_cat_inv = {v: k for k, v in land_cat.items()}
 hadcrut5_defaults = {'land': {'Lx': as65_to_hs93_effective_range(1300.0),
