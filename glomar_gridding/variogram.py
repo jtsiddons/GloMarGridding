@@ -4,6 +4,7 @@ matrices.
 """
 
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from typing import Literal
 import numpy as np
 import xarray as xr
@@ -12,9 +13,10 @@ from scipy.special import gamma, kv
 
 
 @dataclass()
-class Variogram:
-    """Place holder"""
+class Variogram(ABC):
+    """Generic Variogram Class - defines the abstract class"""
 
+    @abstractmethod
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
