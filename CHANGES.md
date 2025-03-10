@@ -7,6 +7,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 ### New features and enhancements
 
 * Added documentation pdf (!46)
+* `init_logging` now has a `level` argument (!50)
 * Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
 
@@ -26,6 +27,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 
 ## 0.2.0 (2025-02-18)

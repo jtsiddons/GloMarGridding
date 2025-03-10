@@ -10,7 +10,6 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
-import os
 import logging
 from typing import TypeVar
 import netCDF4 as nc
@@ -129,12 +128,12 @@ def adjust_small_negative(mat: np.ndarray) -> np.ndarray:
     # Calls from kriging_ordinary and kriging_simple use np.diag
     # np.diag returns an immutable view of the array; .copy is required. See:
     # https://numpy.org/doc/2.1/reference/generated/numpy.diagonal.html#numpy.diagonal
-    ans = mat.copy()
+    ret = mat.copy()
     if small_negative_check.any():
         warn("Small negative vals are detected. Setting to 0.")
         print(mat[small_negative_check])
-        ans[small_negative_check] = 0.0
-    return ans
+        ret[small_negative_check] = 0.0
+    return ret
 
 
 def find_nearest(
@@ -330,33 +329,51 @@ def get_pentad_range(centre_date: date) -> tuple[date, date]:
     return start_date, end_date
 
 
-def init_logging(file: str | None = None) -> None:
+def _get_logging_level(level: str) -> int:
+    match level.lower():
+        case "debug":
+            level_i = 10
+        case "info":
+            level_i = 20
+        case "warn":
+            level_i = 30
+        case "error":
+            level_i = 40
+        case "critical":
+            level_i = 50
+        case _:
+            raise ValueError(f"Unknown logging level: {level}")
+    return level_i
+
+
+def init_logging(file: str | None, level: str = "DEBUG") -> None:
     """
     Initialise the logger
 
     Parameters
     ----------
-    file : str | None
+    file : str
         File to send log messages to. If set to None (default) then print log
         messages to STDout
+    level : str
+        Level of logging, one of: "debug", "info", "warn", "error", "critical".
+
+    Returns
+    -------
+    None
     """
     from importlib import reload
 
-    reload(logging)  # Clear the logging from cdm_reader_mapper
-    if file is None:
-        logging.basicConfig(
-            format="\n%(levelname)s at %(asctime)s : %(message)s\n",
-            level=logging.INFO,
-        )
-    else:
-        logging.basicConfig(
-            filename=file,
-            filemode="a",
-            encoding="utf-8",
-            format="%(levelname)s at %(asctime)s : %(message)s",
-            level=logging.INFO,
-        )
+    level_i: int = _get_logging_level(level)
 
+    reload(logging)  # Clear the logging from cdm_reader_mapper
+    logging.basicConfig(
+        filename=file,
+        filemode="a",
+        encoding="utf-8",
+        format="%(levelname)s at %(asctime)s : %(message)s",
+        level=level_i,
+    )
     logging.captureWarnings(True)
     return None
 

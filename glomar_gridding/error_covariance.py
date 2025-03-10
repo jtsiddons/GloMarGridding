@@ -35,7 +35,7 @@ def uncorrelated_components(
     obs_sig_map: dict[str, float] | None = None,
 ) -> np.ndarray:
     """
-    Calculates the covariance matrix of the measurements (obervations). This
+    Calculates the covariance matrix of the measurements (observations). This
     is the uncorrelated component of the covariance.
 
     The result is a diagonal matrix. The diagonal is formed by the square of the
