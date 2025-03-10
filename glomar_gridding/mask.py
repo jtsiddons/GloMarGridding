@@ -29,10 +29,10 @@ def mask_observations(
     Parameters
     ----------
     obs : polars.DataFrame
-        Observational DataFrame to be masked by postitions in the mask
+        Observational DataFrame to be masked by positions in the mask
         DataArray.
     mask : xarray.DataArray
-        Array containing vlaues used to mask the observational DataFrame.
+        Array containing values used to mask the observational DataFrame.
     varnames : str | list[str]
         Columns in the observational DataFrame to apply the mask to.
     mask_varname : str
@@ -120,10 +120,10 @@ def mask_array(
     Parameters
     ----------
     grid : xarray.DataArray
-        Observational DataArray to be masked by postitions in the mask
+        Observational DataArray to be masked by positions in the mask
         DataArray.
     mask : xarray.DataArray
-        Array containing vlaues used to mask the observational DataFrame.
+        Array containing values used to mask the observational DataFrame.
     varname : str
         Name of the variable in the observational DataArray to apply the mask
         to.
@@ -162,10 +162,10 @@ def mask_dataset(
     Parameters
     ----------
     dataset : xarray.Dataset
-        Observational Dataset to be masked by postitions in the mask
+        Observational Dataset to be masked by positions in the mask
         DataArray.
     mask : xarray.DataArray
-        Array containing vlaues used to mask the observational DataFrame.
+        Array containing values used to mask the observational DataFrame.
     varnames : str | list[str]
         A list containing the names of  variables in the observational Dataser
         to apply the mask to.
@@ -208,7 +208,7 @@ def mask_from_obs_frame(
     Parameters
     ----------
     obs : polars.DataFrame
-        DataFrame constaining observations over space and time. The values in
+        DataFrame containing observations over space and time. The values in
         the "value_col" field will be used to define the mask.
     coords : str | list[str]
         A list of columns containing the coordinates used to define the mask.

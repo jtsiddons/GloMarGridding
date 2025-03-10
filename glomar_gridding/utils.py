@@ -6,7 +6,6 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
-import os
 import logging
 from typing import TypeVar
 import netCDF4 as nc
@@ -125,12 +124,12 @@ def adjust_small_negative(mat: np.ndarray) -> np.ndarray:
     # Calls from kriging_ordinary and kriging_simple use np.diag
     # np.diag returns an immutable view of the array; .copy is required. See:
     # https://numpy.org/doc/2.1/reference/generated/numpy.diagonal.html#numpy.diagonal
-    ans = mat.copy()
+    ret = mat.copy()
     if small_negative_check.any():
         warn("Small negative vals are detected. Setting to 0.")
         print(mat[small_negative_check])
-        ans[small_negative_check] = 0.0
-    return ans
+        ret[small_negative_check] = 0.0
+    return ret
 
 
 def find_nearest(

@@ -92,7 +92,7 @@ def scipy_mv_normal_draw(  # noqa: C901
 
     # WARN: Weird/inconsistent behavior warning
     # if size==1 and cov is an instance of stats.Covariance
-    # ans has shape of (1, len(loc2),)
+    # return value has shape of (1, len(loc2),)
     # this behavior is consistent with size > 1 which yields (size, len(loc2))
     # but is INCONSISTENT with behavior when cov is a
     # valid numpy array ---> shape is (len(loc2),)

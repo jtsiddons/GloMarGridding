@@ -222,7 +222,7 @@ class MaternVariogram(Variogram):
     nugget : float | np.ndarray
         The value of the independent variable at distance 0
     effective_range : float | np.ndarray | None
-        Effective Range, this is the lag where 95% of ths sill are exceeded.
+        Effective Range, this is the lag where 95% of the sill are exceeded.
         This is not the range parameter, which is defined as r/3 if nu < 0.5 or
         nu > 10, otherwise r/2 (where r is the effective range). One of
         effective_range and range must be set.
