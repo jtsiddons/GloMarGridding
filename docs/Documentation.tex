@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Feb 21, 2025}
+\date{Mar 10, 2025}
 \release{0.2.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -650,7 +650,7 @@ will not exceed psill + nugget. This value is the variance.
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the lag where 95\% of ths sill are exceeded.
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the lag where 95\% of the sill are exceeded.
 This is not the range parameter, which is defined as r/3 if nu \textless{} 0.5 or
 nu \textgreater{} 10, otherwise r/2 (where r is the effective range). One of
 effective\_range and range must be set.
@@ -760,14 +760,14 @@ Fit the PowerVariogram model to a distance matrix
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{Variogram}}}
 \pysigstopsignatures
 \sphinxAtStartPar
-Place holder
+Generic Variogram Class \sphinxhyphen{} defines the abstract class
 \index{fit() (glomar\_gridding.variogram.Variogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.Variogram method}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{users_guide:glomar_gridding.variogram.Variogram.fit}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{fit}}}
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{fit}}}
 {\sphinxparam{\DUrole{n}{distance\_matrix}}}
 {}
 \pysigstopsignatures
@@ -1298,7 +1298,7 @@ anomaly values will have this name prefixed to “\_anomaly”.
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{temp\_from\_kelvin}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Optionally adjust the climatology from Kelvin to Celcius if the variable
+\sphinxstyleliteralstrong{\sphinxupquote{temp\_from\_kelvin}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Optionally adjust the climatology from Kelvin to Celsius if the variable
 is a temperature.
 
 \end{itemize}
@@ -1443,12 +1443,12 @@ will be raised if the coordinate systems cannot be aligned.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Observational DataArray to be masked by postitions in the mask
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Observational DataArray to be masked by positions in the mask
 DataArray.
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing vlaues used to mask the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing values used to mask the observational DataFrame.
 
 \item {} 
 \sphinxAtStartPar
@@ -1497,12 +1497,12 @@ will be raised if the coordinate systems cannot be aligned.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{dataset}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Dataset}}) \textendash{} Observational Dataset to be masked by postitions in the mask
+\sphinxstyleliteralstrong{\sphinxupquote{dataset}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Dataset}}) \textendash{} Observational Dataset to be masked by positions in the mask
 DataArray.
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing vlaues used to mask the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing values used to mask the observational DataFrame.
 
 \item {} 
 \sphinxAtStartPar
@@ -1600,7 +1600,7 @@ An example use\sphinxhyphen{}case would be to identify land positions from sst r
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} DataFrame constaining observations over space and time. The values in
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} DataFrame containing observations over space and time. The values in
 the “value\_col” field will be used to define the mask.
 
 \item {} 
@@ -1658,12 +1658,12 @@ Mask observations in a DataFrame subject to a mask DataArray.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} Observational DataFrame to be masked by postitions in the mask
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} Observational DataFrame to be masked by positions in the mask
 DataArray.
 
 \item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing vlaues used to mask the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Array containing values used to mask the observational DataFrame.
 
 \item {} 
 \sphinxAtStartPar
@@ -2326,7 +2326,7 @@ numpy.matrix
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Calculates the covariance matrix of the measurements (obervations). This
+Calculates the covariance matrix of the measurements (observations). This
 is the uncorrelated component of the covariance.
 
 \sphinxAtStartPar
@@ -2808,20 +2808,27 @@ date, and the end date will be 2 days after.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{init\_logging}}}
-{\sphinxparam{\DUrole{n}{file}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{file}}\sphinxparamcomma \sphinxparam{\DUrole{n}{level}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}DEBUG\textquotesingle{}}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Initialise the logger
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {} 
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} File to send log messages to. If set to None (default) then print log
+\sphinxstyleliteralstrong{\sphinxupquote{file}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} File to send log messages to. If set to None (default) then print log
 messages to STDout
+
+\item {} 
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{level}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Level of logging, one of: “debug”, “info”, “warn”, “error”, “critical”.
+
+\end{itemize}
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+None
 
 \end{description}\end{quote}
 
