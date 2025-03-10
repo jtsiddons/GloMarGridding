@@ -26,6 +26,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 
 ## 0.2.0 (2025-02-18)
