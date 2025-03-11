@@ -612,7 +612,7 @@ def main():  # noqa: C901, D103
 
             # first print the Dataset object to see what we've got
             # close the Dataset.
-        ds.to_netcdf(out_filename)
+        ds.to_netcdf(out_filename, unlimited_dims=["time"])
         logging.info("Dataset is closed!")
 
     config["summary"]["end"] = str(datetime.today())
