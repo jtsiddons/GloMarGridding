@@ -227,21 +227,6 @@ def _initialise_xarray(
         },
     )
 
-    # Update the attributes of the coordinates
-    ds.lat.attrs["units"] = "degrees_north"
-    ds.lat.attrs["long_name"] = "latitude"
-    ds.lat.attrs["standard_name"] = "latitude"
-    ds.lat.attrs["axis"] = "Y"
-
-    ds.lon.attrs["units"] = "degrees_east"
-    ds.lon.attrs["long_name"] = "longitude"
-    ds.lon.attrs["standard_name"] = "longitude"
-    ds.lon.attrs["axis"] = "X"
-
-    ds.time.attrs["long_name"] = "time"
-    ds.time.attrs["unit"] = f"days since {ref_date.strftime('%Y-%m-%d %H:%M')}"
-    ds.time.attrs["calendar"] = "standard"
-
     # Define a 3D variable to hold the data
     ds[f"{variable}_anom"] = xr.DataArray(
         coords=coords,
@@ -293,6 +278,21 @@ def _initialise_xarray(
             "units": "deg K",  # degrees Kelvin
         },
     )
+
+    # Update the attributes of the coordinates
+    ds.lat.attrs["units"] = "degrees_north"
+    ds.lat.attrs["long_name"] = "latitude"
+    ds.lat.attrs["standard_name"] = "latitude"
+    ds.lat.attrs["axis"] = "Y"
+
+    ds.lon.attrs["units"] = "degrees_east"
+    ds.lon.attrs["long_name"] = "longitude"
+    ds.lon.attrs["standard_name"] = "longitude"
+    ds.lon.attrs["axis"] = "X"
+
+    ds.time.attrs["long_name"] = "time"
+    ds.time.attrs["units"] = f"days since {ref_date.strftime('%Y-%m-%d')}"
+    ds.time.attrs["calendar"] = "standard"
 
     return ds
 
