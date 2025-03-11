@@ -1,6 +1,6 @@
 """Tests of the distances module"""
 
-import pytest
+import pytest  # noqa: F401
 from math import sqrt
 import polars as pl
 from glomar_gridding.distances import euclidean_distance, haversine_distance

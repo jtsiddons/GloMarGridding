@@ -112,21 +112,25 @@ def kriging(  # noqa: C901
     # S is the spatial covariance between all "measured" grid points
     # Plus the covariance due to the measurements, i.e. measurement noise, bias
     # noise, and sampling noise (R)
-    S = np.asarray(interp_cov[obs_idx[:, None], obs_idx[None, :]])
-    S += weights @ error_cov @ weights.T
-    print(f"{S =}, {S.shape =}")
+    obs_obs_cov = np.asarray(interp_cov[obs_idx[:, None], obs_idx[None, :]])
+    obs_obs_cov += weights @ error_cov @ weights.T
+    print(f"{obs_obs_cov =}, {obs_obs_cov.shape =}")
     # Ss is the covariance between to be "predicted" grid points (i.e. all) and
     # "measured" points
-    Ss = np.asarray(interp_cov[obs_idx, :])
-    print(f"{Ss =}, {Ss.shape =}")
+    obs_grid_cov = np.asarray(interp_cov[obs_idx, :])
+    print(f"{obs_grid_cov =}, {obs_grid_cov.shape =}")
 
     match method.lower():
         case "simple":
             print("Performing Simple Kriging")
-            z_obs, dz = kriging_simple(S, Ss, grid_obs, interp_cov)
+            z_obs, dz = kriging_simple(
+                obs_obs_cov, obs_grid_cov, grid_obs, interp_cov
+            )
         case "ordinary":
             print("Performing Ordinary Kriging")
-            z_obs, dz = kriging_ordinary(S, Ss, grid_obs, interp_cov)
+            z_obs, dz = kriging_ordinary(
+                obs_obs_cov, obs_grid_cov, grid_obs, interp_cov
+            )
         case _:
             raise NotImplementedError(
                 f"Kriging method {method} is not implemented. "
@@ -237,8 +241,8 @@ def get_unmasked_obs_indices(
 
 # TODO: Handle mean
 def kriging_simple(
-    S: np.ndarray,
-    Ss: np.ndarray,
+    obs_obs_cov: np.ndarray,
+    obs_grid_cov: np.ndarray,
     grid_obs: np.ndarray,
     interp_cov: np.ndarray,
     mean: float = 0.0,
@@ -248,12 +252,13 @@ def kriging_simple(
 
     Parameters
     ----------
-    S : np.ndarray[float]
-        Spatial covariance between all measured grid points plus the
+    obs_obs_cov : np.ndarray[float]
+        Covariance between all measured grid points plus the
         covariance due to measurements (i.e. measurement noise, bias noise, and
-        sampling noise).
-    Ss : np.ndarray[float]
+        sampling noise). Can include error covariance terms.
+    obs_grid_cov : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
+        Does not contain error covarance.
     grid_obs : np.ndarray[float]
         Gridded measurements (all measurement points averaged onto the output
         gridboxes).
@@ -271,27 +276,22 @@ def kriging_simple(
     dz : np.ndarray[float]
         Uncertainty associated with the simple kriging.
     """
-    G = np.linalg.solve(S, Ss).T
-    print(f"{G.shape = }")
-    print(f"{grid_obs.shape =}")
-    z_obs = G @ grid_obs
-    print(f"{z_obs =}")
+    kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+    kriged_result = kriging_weights @ grid_obs
 
-    G = G @ Ss
-    print(f"{G =}")
-    dz_squared = np.diag(interp_cov - G)
+    kriging_weights = kriging_weights @ obs_grid_cov
+    dz_squared = np.diag(interp_cov - kriging_weights)
     dz_squared = adjust_small_negative(dz_squared)
-    dz = np.sqrt(dz_squared)
-    print(f"{dz =}")
-    dz[np.isnan(dz)] = 0.0
+    uncert = np.sqrt(dz_squared)
+    uncert[np.isnan(uncert)] = 0.0
 
     print("Simple Kriging Complete")
-    return z_obs, dz
+    return kriged_result, uncert
 
 
 def kriging_ordinary(
-    S: np.ndarray,
-    Ss: np.ndarray,
+    obs_obs_cov: np.ndarray,
+    obs_grid_cov: np.ndarray,
     grid_obs: np.ndarray,
     interp_cov: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -300,12 +300,13 @@ def kriging_ordinary(
 
     Parameters
     ----------
-    S : np.ndarray[float]
-        Spatial covariance between all measured grid points plus the
+    obs_obs_cov : np.ndarray[float]
+        Covariance between all measured grid points plus the
         covariance due to measurements (i.e. measurement noise, bias noise, and
-        sampling noise).
-    Ss : np.ndarray[float]
+        sampling noise). Can include error covariance terms.
+    obs_grid_cov : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
+        Does not contain error covarance.
     grid_obs : np.ndarray[float]
         Gridded measurements (all measurement points averaged onto the output
         gridboxes).
@@ -322,23 +323,25 @@ def kriging_ordinary(
         Uncertainty associated with the ordinary kriging.
     """
     # Convert to ordinary kriging, add Lagrangian multiplier
-    N, M = Ss.shape
-    S = np.block([[S, np.ones((N, 1))], [np.ones((1, N)), 0]])
-    Ss = np.concatenate((Ss, np.ones((1, M))), axis=0)
+    N, M = obs_grid_cov.shape
+    obs_obs_cov = np.block(
+        [[obs_obs_cov, np.ones((N, 1))], [np.ones((1, N)), 0]]
+    )
+    obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
     grid_obs = np.append(grid_obs, 0)
 
-    G = np.linalg.solve(S, Ss).T
-    alpha = G[:, -1]
-    z_obs = G @ grid_obs
+    kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+    kriged_result = kriging_weights @ grid_obs
 
-    G = G @ Ss
-    dz_squared = np.diag(interp_cov - G) - alpha
-    dz_squared = adjust_small_negative(dz_squared)
-    dz = np.sqrt(dz_squared)
+    alpha = kriging_weights[:, -1]
+    kriging_weights = kriging_weights @ obs_grid_cov
+    uncert_squared = np.diag(interp_cov - kriging_weights) - alpha
+    uncert_squared = adjust_small_negative(uncert_squared)
+    uncert = np.sqrt(uncert_squared)
     # dz[np.isnan(dz)] = 0.0
 
     print("Ordinary Kriging Complete")
-    return z_obs, dz
+    return kriged_result, uncert
 
 
 def get_spatial_mean(
