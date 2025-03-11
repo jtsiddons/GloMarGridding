@@ -56,7 +56,7 @@ def join_climatology_by_doy(
     clim_var : str
         Name of the climatology variable in the climatology DataArray.
     temp_from_kelvin : bool
-        Optionally adjust the climatology from Kelvin to Celcius if the variable
+        Optionally adjust the climatology from Kelvin to Celsius if the variable
         is a temperature.
 
     Returns

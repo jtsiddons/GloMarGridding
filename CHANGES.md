@@ -18,6 +18,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Breaking changes
 
+* `kriging.kriging_simple` and `kriging.kriging_ordinary` covariance arguments renamed (!49)
 * `utils.get_git_commit` moved to `noc_helpers.get_git_commit`. Use of subprocess dropped (!44)
 * Refactored HadCRUT runner script (!38)
     * Outputs are no-longer yearly files
@@ -28,6 +29,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 
 ## 0.2.0 (2025-02-18)
