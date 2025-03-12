@@ -70,7 +70,7 @@ def main():
     print(config_file)
 
     # load config options from ini file
-    # this is done using an ini config file, which is located in the same direcotry as the python code
+    # this is done using an ini config file, which is located in the same directory as the python code
     # instantiate
     config = ConfigParser(
         strict=False,
