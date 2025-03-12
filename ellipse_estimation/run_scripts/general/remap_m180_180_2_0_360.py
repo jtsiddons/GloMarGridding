@@ -4,7 +4,7 @@ This is for a 36x72 grid
 '''
 import pandas as pd
 import numpy as np
-import iris 
+import iris
 from iris.fileformats import netcdf as inc
 # from scipy.linalg import cholesky
 
