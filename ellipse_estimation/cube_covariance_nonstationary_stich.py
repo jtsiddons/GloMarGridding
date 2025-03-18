@@ -9,7 +9,7 @@ import numbers
 import sys
 import tracemalloc
 
-from joblib import Parallel, delayed # Developmental
+from joblib import Parallel, delayed  # Developmental
 # from iris import analysis as ia
 import numpy as np
 from numpy import ma
@@ -61,7 +61,8 @@ def convert_cube_data_2_MaskedArray_if_not(cube):
     '''
     np_array = cube.data
     print(type(np_array))
-    assert isinstance(np_array, np.ndarray), 'Not a numpy array (masked or not)'
+    assert isinstance(
+        np_array, np.ndarray), 'Not a numpy array (masked or not)'
     if not isinstance(np_array, np.ma.MaskedArray):
         print('Ad hoc conversion to np.ma.MaskedArray')
         cube.data = np.ma.MaskedArray(np_array)
@@ -160,7 +161,8 @@ def c_ij_anistropic_rotated_nonstationary(v,
         #
         # If numerical instability is detected, resulting in complex number, take the real part
         try:
-            assert np.all(np.isreal(sigma_bar_eigval)) and np.all(np.isreal(sigma_bar_eigvec))
+            assert np.all(np.isreal(sigma_bar_eigval)) and np.all(
+                np.isreal(sigma_bar_eigvec))
         except AssertionError:
             print('Complex eigenvalues detected!')
             print('sigma_bar_eigval = ', sigma_bar_eigval)
@@ -208,9 +210,11 @@ def c_ij_anistropic_rotated_nonstationary(v,
     # Eq 17 in Karspeck et al 2012
     # ans = first_term x second_term x third_term x fourth_term '''
     first_term = (sdev_i * sdev_j)/(gamma(v) * (2.0**(v-1)))
+
     def root4(val):
         ''' 4th root '''
         return np.sqrt(np.sqrt(val))
+
     def det22(m22):
         ''' Explict computation of determinant of 2x2 matrix '''
         return m22[0, 0]*m22[1, 1]-m22[0, 1]*m22[1, 0]
@@ -382,6 +386,7 @@ class CovarianceCube_PreStichedLocalEstimates():
     non-stationary variogram parameters to build
     and save covariance matrices
     '''
+
     def __init__(self,
                  Lx_cube, Ly_cube,
                  theta_cube,
@@ -460,7 +465,7 @@ class CovarianceCube_PreStichedLocalEstimates():
 
         backend : str
             backend of joblib
-        
+
         nolazy : bool
             Manually forces computation to occur
 
@@ -468,13 +473,14 @@ class CovarianceCube_PreStichedLocalEstimates():
             sklearn has haversine function, but its preformance
             is inconsistent between different machines, and can
             cause a major slow down.
-        
+
         verbose : bool
             More stout stuff!
         '''
         tracemalloc.start()
         ove_start_time = datetime.datetime.now()
-        print('Overhead processing start: ', ove_start_time.strftime("%Y-%m-%d %H:%M:%S"))
+        print('Overhead processing start: ',
+              ove_start_time.strftime("%Y-%m-%d %H:%M:%S"))
 
         if not use_joblib:
             n_jobs = 1
@@ -484,10 +490,14 @@ class CovarianceCube_PreStichedLocalEstimates():
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx_local_estimates = convert_cube_data_2_MaskedArray_if_not(Lx_cube)
-        self.Ly_local_estimates = convert_cube_data_2_MaskedArray_if_not(Ly_cube)
-        self.theta_local_estimates = convert_cube_data_2_MaskedArray_if_not(theta_cube)
-        self.sdev_local_estimates = convert_cube_data_2_MaskedArray_if_not(sdev_cube)
+        self.Lx_local_estimates = convert_cube_data_2_MaskedArray_if_not(
+            Lx_cube)
+        self.Ly_local_estimates = convert_cube_data_2_MaskedArray_if_not(
+            Ly_cube)
+        self.theta_local_estimates = convert_cube_data_2_MaskedArray_if_not(
+            theta_cube)
+        self.sdev_local_estimates = convert_cube_data_2_MaskedArray_if_not(
+            sdev_cube)
         self.max_dist = max_dist
         self.degree_dist = degree_dist
         self.delta_x_method = delta_x_method
@@ -516,7 +526,7 @@ class CovarianceCube_PreStichedLocalEstimates():
             print('Masked pixels detected in input files')
             self.cube_mask = self.Lx_local_estimates.data.mask
             self.cube_mask_1D = self.cube_mask.flatten()
-            self.covar_size   = np.sum(np.logical_not(self.cube_mask))
+            self.covar_size = np.sum(np.logical_not(self.cube_mask))
         else:
             print('No masked pixels')
             self.cube_mask = np.zeros_like(self.Lx_local_estimates.data.data,
@@ -524,14 +534,19 @@ class CovarianceCube_PreStichedLocalEstimates():
             self.cube_mask_1D = self.cube_mask.flatten()
             self.covar_size = self.n_elements
 
-        ## Prepare matricies
-        ''' i and j represent data pairs, the original point follows _i, remote point is _j '''
+        # Prepare matricies
+        # i and j represent data pairs, the original point follows _i, remote point is _j
         print('Creating dummy arrays')
-        self.cov_ns = np.zeros((self.covar_size, self.covar_size), dtype=output_floatprecision)
-        self.lat_mat_i = np.zeros((self.covar_size, self.covar_size), dtype=np.float16)
-        self.lon_mat_i = np.zeros((self.covar_size, self.covar_size), dtype=np.float16)
-        self.lat_mat_j = np.zeros((self.covar_size, self.covar_size), dtype=np.float16)
-        self.lon_mat_j = np.zeros((self.covar_size, self.covar_size), dtype=np.float16)
+        self.cov_ns = np.zeros(
+            (self.covar_size, self.covar_size), dtype=output_floatprecision)
+        self.lat_mat_i = np.zeros(
+            (self.covar_size, self.covar_size), dtype=np.float16)
+        self.lon_mat_i = np.zeros(
+            (self.covar_size, self.covar_size), dtype=np.float16)
+        self.lat_mat_j = np.zeros(
+            (self.covar_size, self.covar_size), dtype=np.float16)
+        self.lon_mat_j = np.zeros(
+            (self.covar_size, self.covar_size), dtype=np.float16)
 
         ##
         print('Compressing (masked) array to 1D')
@@ -546,28 +561,33 @@ class CovarianceCube_PreStichedLocalEstimates():
         self.ym = np.ma.masked_where(self.cube_mask, self.yy)
         self.lat_grid_compressed = self.ym.compressed()
         self.lon_grid_compressed = self.xm.compressed()
-        self.xy = np.column_stack([self.lon_grid_compressed, self.lat_grid_compressed])
+        self.xy = np.column_stack(
+            [self.lon_grid_compressed, self.lat_grid_compressed])
         self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
 
         ove_end_time = datetime.datetime.now()
-        print('Overhead processing ended: ', ove_end_time.strftime("%Y-%m-%d %H:%M:%S"))
+        print('Overhead processing ended: ',
+              ove_end_time.strftime("%Y-%m-%d %H:%M:%S"))
         print('Time ellipsed: ', ove_end_time-ove_start_time)
 
-        ##
-        ''' Fill in the covariance matrix by looping over grid points with different sigma matricies '''
+        #
+        # Fill in the covariance matrix by looping over grid points with different sigma matricies
         ii_index = range(self.covar_size)
         cov_start_time = datetime.datetime.now()
-        print('Covariance processing start: ', cov_start_time.strftime("%Y-%m-%d %H:%M:%S"))
+        print('Covariance processing start: ',
+              cov_start_time.strftime("%Y-%m-%d %H:%M:%S"))
         for ii in ii_index:
             curr, peak = tracemalloc.get_traced_memory()
             rt_row_info = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+': '
             rt_row_info += 'Row '+str(ii)+'/'+str(ii_index[-1])+'; '
-            rt_row_info += 'current & peak mem: {} {} MB'.format(curr/(1024*1024), peak/(1024*1024))
+            rt_row_info += f'current & peak mem: {curr/(1024*1024)} {peak/(1024*1024)} MB'
             rt_row_info += '; n_jobs = '+str(n_jobs)
             print(rt_row_info)
             self.cov_ns[ii, ii] = self.sdev_local_estimates_compressed[ii]**2.0
-            self.lat_mat_i[ii, ii] = self.lat_mat_j[ii, ii] = self.lat_grid_compressed[ii]
-            self.lon_mat_i[ii, ii] = self.lon_mat_j[ii, ii] = self.lon_grid_compressed[ii]
+            self.lat_mat_i[ii, ii] = self.lat_mat_j[ii,
+                                                    ii] = self.lat_grid_compressed[ii]
+            self.lon_mat_i[ii, ii] = self.lon_mat_j[ii,
+                                                    ii] = self.lon_grid_compressed[ii]
             jj_index = range(ii+1, self.covar_size)
             #
             # New -- moved this outside the loop, may make things slightly faster
@@ -598,10 +618,14 @@ class CovarianceCube_PreStichedLocalEstimates():
                 for jj in jj_index:
                     if verbose:
                         print(ii, jj)
-                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj, ii] = lat_grid_compressed_i
-                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj, ii] = lon_grid_compressed_i
-                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj, ii] = self.lat_grid_compressed[jj]
-                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj, ii] = self.lon_grid_compressed[jj]
+                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj,
+                                                            ii] = lat_grid_compressed_i
+                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj,
+                                                            ii] = lon_grid_compressed_i
+                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj,
+                                                            ii] = self.lat_grid_compressed[jj]
+                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj,
+                                                            ii] = self.lon_grid_compressed[jj]
                     abs_x, x_j, x_i = scalar_cube_great_circle_distance(lat_grid_compressed_i,
                                                                         lon_grid_compressed_i,
                                                                         self.lat_grid_compressed[jj],
@@ -618,9 +642,11 @@ class CovarianceCube_PreStichedLocalEstimates():
                                          self.theta_local_estimates_compressed[jj])
                         if verbose:
                             print(ii, jj, x_i, x_j)
-                            print(ii, sdev_i, sigma_parms_i, np.rad2deg(sigma_parms_i[-1]))
-                            print(jj, sdev_j, sigma_parms_j, np.rad2deg(sigma_parms_j[-1]))
-                        ## Compute eq 17 in Karspeck et al at each grid point
+                            print(ii, sdev_i, sigma_parms_i,
+                                  np.rad2deg(sigma_parms_i[-1]))
+                            print(jj, sdev_j, sigma_parms_j,
+                                  np.rad2deg(sigma_parms_j[-1]))
+                        # Compute eq 17 in Karspeck et al at each grid point
                         cov_bar = c_ij_anistropic_rotated_nonstationary(v,
                                                                         sdev_i,
                                                                         sdev_j,
@@ -635,25 +661,31 @@ class CovarianceCube_PreStichedLocalEstimates():
                 if verbose:
                     for jj in jj_index:
                         print(ii, jj)
-                def spnip(jj): return self._single_cell_process_notinplace(ii,
-                                                                            jj,
-                                                                            sdev_i,
-                                                                            sigma_parms_i,
-                                                                            lat_grid_compressed_i,
-                                                                            lon_grid_compressed_i,
-                                                                            verbose)
+
+                def spnip(jj):
+                    return self._single_cell_process_notinplace(ii, jj,
+                                                                sdev_i,
+                                                                sigma_parms_i,
+                                                                lat_grid_compressed_i,
+                                                                lon_grid_compressed_i,
+                                                                verbose)
                 parallel_kwargs = {'n_jobs': n_jobs, 'backend': backend}
-                cov_bars = Parallel(**parallel_kwargs)(delayed(spnip)(jj) for jj in jj_index)
+                cov_bars = Parallel(
+                    **parallel_kwargs)(delayed(spnip)(jj) for jj in jj_index)
                 ''' Fill in symmetric matrix '''
                 if verbose:
                     print(len(jj_index),
-                            [cov_bars[jjjj] for jjjj in range(10)],
-                            cov_bars[-1])  # For checking use
+                          [cov_bars[jjjj] for jjjj in range(10)],
+                          cov_bars[-1])  # For checking use
                 for j_index, jj in enumerate(jj_index):
-                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj, ii] = self.lat_grid_compressed[ii]
-                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj, ii] = self.lon_grid_compressed[ii]
-                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj, ii] = self.lat_grid_compressed[jj]
-                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj, ii] = self.lon_grid_compressed[jj]
+                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj,
+                                                            ii] = self.lat_grid_compressed[ii]
+                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj,
+                                                            ii] = self.lon_grid_compressed[ii]
+                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj,
+                                                            ii] = self.lat_grid_compressed[jj]
+                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj,
+                                                            ii] = self.lon_grid_compressed[jj]
                     self.cov_ns[ii, jj] = cov_bars[j_index]
                     self.cov_ns[jj, ii] = cov_bars[j_index]
 
@@ -729,7 +761,7 @@ class CovarianceCube_PreStichedLocalEstimates():
                 print(ii, jj, x_i, x_j)
                 print(ii, sdev_i, sigma_parms_i, np.rad2deg(sigma_parms_i[-1]))
                 print(jj, sdev_j, sigma_parms_j, np.rad2deg(sigma_parms_j[-1]))
-            ''' Compute eq 17 in Karspeck et al at each grid point '''
+            # Compute eq 17 in Karspeck et al at each grid point
             cov_bar = c_ij_anistropic_rotated_nonstationary(self.v,
                                                             sdev_i, sdev_j,
                                                             x_i, x_j,
@@ -741,11 +773,10 @@ class CovarianceCube_PreStichedLocalEstimates():
     def _no_lazy_data(self, cube):
         ''' Disable iris cube lazy data '''
         if cube.has_lazy_data():
-            cube.data
+            cube.data  # pylint: disable=pointless-statement
         for coord in ['latitude', 'longitude']:
             if cube.coord(coord).has_lazy_points():
-                cube.coord(coord).points
-
+                cube.coord(coord).points  # pylint: disable=expression-not-assigned
 
     def _reverse_mask_from_compress_1D(self,
                                        compressed_1D_vector,
@@ -797,6 +828,7 @@ class CovarianceCube_PreStichedLocalEstimates():
 def main():
     ''' MAIN '''
     print('=== Main ===')
+
 
 if __name__ == "__main__":
     main()
