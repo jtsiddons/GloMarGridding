@@ -20,7 +20,8 @@ from glomar_gridding.utils import init_logging
 
 # pylint: disable=logging-fstring-interpolation
 
-with open('process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml', 'r') as f:
+yamlf = 'process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml'
+with open(yamlf, 'r', encoding="utf-8") as f:
     fit_intel = yaml.safe_load(f)
 
 def load_sst():
@@ -69,9 +70,6 @@ def main():
     v = float(sys.argv[3])
     fform = sys.argv[4]
     everyother = 1
-    # For Met Office-styled grid ::2 will sit on (y=*.5 x=*.5)
-    # Since data is from 89.5S and 89.5N,
-    # Southern Ocean_X cannot use offset for latitude because y = 0 is on lat = 89.5
     for argh, sysargv in enumerate(sys.argv):
         print('sys.argv['+str(argh)+'] = ', sysargv)
     #
@@ -155,9 +153,11 @@ def main():
                 # Nearest valid point
                 xy, actual_latlon = super_sst_cov.find_nearest_xy_index_in_cov_matrix([current_lon, current_lat])
                 # Note:
-                # Possible cause for convergence in ENSO grid points; max_distance is originally
-                # introduced to keep moving window fits consistent (i.e. always using 20x20 deg squares around
-                # central gp). Now with global inputs this can be relaxed, and use of global inputs will
+                # Possible cause for convergence failure are ENSO grid points;
+                # max_distance is originally introduced to keep moving window fits consistent
+                # (i.e. always using 20x20 deg squares around central gp), but is too small
+                # for ENSO signals.
+                # Now with global inputs this can be relaxed, and use of global inputs will
                 # ensure correlations from far away grid points be accounted for <--- this cannot be
                 # done for moving window fits.
                 kwargs = {'v': v,

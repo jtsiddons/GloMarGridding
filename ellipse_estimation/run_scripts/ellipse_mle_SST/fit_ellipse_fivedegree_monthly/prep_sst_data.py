@@ -18,13 +18,21 @@ from iris.util import equalise_attributes, unify_time_units
 from iris.fileformats import netcdf as inc
 import numpy as np
 
-
 def fix_meta(cubes):
+    ''' Simple iris util fudges for cube concat/merge '''
     equalise_attributes(cubes)
     unify_time_units(cubes)
 
 
-def fix_latlonmeta_callback(cube, field, filename):
+def fix_latlonmeta_callback(cube, field, filename): # pylint: disable=unused-argument
+    ''' 
+    Fix common missing metadata and fiddly issues that prevent concat/merge
+    using iris load callback
+
+    The callback function has to have a very particular arg format... 
+    which is not very pylint friendly
+    See: https://scitools-iris.readthedocs.io/en/latest/generated/api/iris.html
+    '''
     try:
         cube.coord('latitude').long_name = 'latitude'
     except:
@@ -38,6 +46,7 @@ def fix_latlonmeta_callback(cube, field, filename):
 
 
 def cat_check(cubes):
+    ''' Quick check if cube can be concatenated without throwing exception '''
     for a, b in zip(cubes[:-1], cubes[1:]):
         moo = iris.cube.CubeList()
         moo.append(a)
@@ -52,7 +61,10 @@ def cat_check(cubes):
 
 def load_sst_cubes0(yyyys,
                     ice_check=True,
-                    ice_check_kwargs={}):
+                    ice_check_kwargs=None):
+    ''' Concat/merge all the individual SST files into one big data cube '''
+    if ice_check_kwargs is None:
+        ice_check_kwargs = {}
     nc_path = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/'
     nc_files = []
     for yyyy in yyyys:
@@ -79,6 +91,12 @@ def apply_ice_threshold(sst_cube,
                         sic_cube,
                         sic_threshold=0.15):
     '''
+    Retroactively apply sic threshold
+
+    UoR downloading website https://surftemp.net/ allows users to set
+    different sic masking threshold. Some older files downloaded by Kent
+    has the 15% threshold set, but the default is to mask not to mask anything.
+
     It seems to be standard to use 15% as SIC threshold to define 
     ice covered pixel:
     https://nsidc.org/data/soac/sea-ice-concentration
@@ -107,6 +125,11 @@ def apply_ice_threshold(sst_cube,
 
 
 def prep_sst_data():
+    '''
+    Runs the concat/merge SST function
+    with checks to sic mask and metadata
+    and re-save data into one big file
+    '''
     sst = load_sst_cubes0(range(1982, 2023))
     outfile = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/'
     outfile += 'esa_cci_sst_5deg_monthly_1982_2022.nc'
@@ -114,6 +137,7 @@ def prep_sst_data():
 
 
 def main():
+    ''' main '''
     prep_sst_data()
 
 
