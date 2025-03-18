@@ -1,8 +1,8 @@
-'''
+"""
 Requires numpy, scipy, sklearm
 iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
-'''
+"""
 from collections import OrderedDict
 import math
 import warnings
@@ -34,18 +34,18 @@ km2nm = 1.852  # 1852 meters per nautical miles
 
 
 def _deg2nm(deg: float) -> float:
-    '''
+    """
     deg: float (degrees)
     Convert degree latitude change to nautical miles
-    '''
+    """
     return nm_per_lat * deg
 
 
 def _deg2km(deg: float) -> float:
-    '''
+    """
     deg: float (degrees)
     Convert degree latitude change to km
-    '''
+    """
     return km2nm * _deg2nm(deg)
 
 
@@ -1153,6 +1153,8 @@ class MLE_c_ij_Builder_Karspeck():
             # for n_x_j in range(X.shape[0]):
             #    y_LL.append(self.c_ij(X[n_x_j,:], Lx, Ly, theta))
             y_LL = np.array(y_LL)
+        else:
+            raise ValueError('Unexpected length of self.n_params.')
         # if y is correlation,
         # it might be useful to Fisher transform them before plugging into norm.logpdf
         # this affects values close to 1 and -1

@@ -80,6 +80,7 @@ ignore = [
   "D400", # ends-in-period
   "D401", # non-imperative-mood
   "D105", # missing docstring in magic method
+  "D4",
 ]
 preview = true
 select = [
