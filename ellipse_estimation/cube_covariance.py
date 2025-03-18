@@ -28,7 +28,8 @@ from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 _RADIUS_OF_EARTH = 6371000.0  # Average radius of Earth
 _KM2M = 1000.0
 
-# Each degree of latitude is equal to 60 nautical miles (with cosine correction for lon values)
+# Each degree of latitude is equal to 60 nautical miles (with cosine correction
+# for lon values)
 nm_per_lat = 60.0  # 60 nautical miles per degree latitude
 km2nm = 1.852  # 1852 meters per nautical miles
 
@@ -50,10 +51,10 @@ def _deg2km(deg: float) -> float:
 
 
 def _km2deg(km: float) -> float:
-    '''
+    """
     km: float (km)
     Convert meridonal km change to degree latitude
-    '''
+    """
     return (km / km2nm) / nm_per_lat
 
 
@@ -78,7 +79,8 @@ fform_2_modeltype = {'anistropic_rotated': 'ps2006_kks2011_ani_r',
 
 supercategory_parms = {'3_param_matern': OrderedDict([('Lx', Unit('degrees')),
                                                       ('Ly', Unit('degrees')),
-                                                      ('theta', Unit('radians')),
+                                                      ('theta',
+                                                       Unit('radians')),
                                                       ('standard_deviation',
                                                        Unit('K')),
                                                       ('qc_code', Unit('1')),
@@ -107,23 +109,23 @@ supercategory_parms = {'3_param_matern': OrderedDict([('Lx', Unit('degrees')),
                                                          ('standard_deviation',
                                                           Unit('K')),
                                                          ('qc_code', Unit('1')),
-                                                         ('number_of_iterations', Unit(
-                                                             '1')),
+                                                         ('number_of_iterations',
+                                                          Unit('1')),
                                                          ]),
                        '2_param_matern_pd': OrderedDict([('Lx', Unit('km')),
                                                          ('Ly', Unit('km')),
                                                          ('standard_deviation',
                                                           Unit('K')),
                                                          ('qc_code', Unit('1')),
-                                                         ('number_of_iterations', Unit(
-                                                             '1')),
+                                                         ('number_of_iterations',
+                                                          Unit('1')),
                                                          ]),
                        '1_param_matern_pd': OrderedDict([('rou', Unit('km')),
                                                          ('standard_deviation',
                                                           Unit('K')),
                                                          ('qc_code', Unit('1')),
-                                                         ('number_of_iterations', Unit(
-                                                             '1')),
+                                                         ('number_of_iterations',
+                                                          Unit('1')),
                                                          ]),
                        }
 supercategory_nparms = {
@@ -139,15 +141,14 @@ supercategory_nparms = {
 
 
 class CovarianceCube():
-
-    '''
+    """
     Class to build spatial covariance and correlation matricies
     Interacts with MLE_c_ij_Builder_Karspeck to build covariance models
-    '''
+    """
 
     def __init__(self,
                  data_cube):
-        '''
+        """
         Class to build observed covariance and ellipse fitting
 
         Parameters
@@ -155,14 +156,18 @@ class CovarianceCube():
         data_cube : instance of iris.cube.Cube
             Training data stored within iris cube
 
-            Some modification probably needed to work with instances of xa.dataarray
-            The biggest hurdle is that iris cube handle masked data differently than xarray
+            Some modification probably needed to work with instances
+            of xa.dataarray
+            The biggest hurdle is that iris cube handle masked data differently
+            than xarray
 
-            While both iris.cube.Cube.data and xa.DataArray.data are instances to numpy.ndarray...
+            While both iris.cube.Cube.data and xa.DataArray.data are instances
+            to numpy.ndarray...
 
-            A masked array under iris.cube.Cube.data is always an instance of np.ma.MaskedArray
+            A masked array under iris.cube.Cube.data is always an instance of
+            np.ma.MaskedArray
             In xarray, xa.DataArray.data is always unmasked.
-        '''
+        """
         # Check input data_cube is actually usable
         self.tcoord_pos = -1
         self.xycoords_pos = []
@@ -179,7 +184,7 @@ class CovarianceCube():
             raise ValueError('Input cube time dimension not at 0')
         if len(self.xycoords_pos) != 2:
             raise ValueError(
-                'Input cube need two spatial dimensions (\"latitude\" and \"longitude\"')
+                'Input cube need two spatial dimensions (\"latitude\" and \"longitude\"')  # noqa: E501
         self.xycoords_pos = tuple(self.xycoords_pos)
         # if 'lat' in self.xycoords_name[0]:
         #     self.xycoords_name = self.xycoords_name[::-1]
@@ -187,15 +192,16 @@ class CovarianceCube():
         # Defining the input data
         self.data_cube = data_cube
         self.xy_shape = self.data_cube[0].shape
-        assert len(
-            self.xy_shape) == 2, "Time slice maps should be 2D; check extra dims (ensemble?)"
+        assert len(  # noqa: S101
+            self.xy_shape) == 2, "Time slice maps should be 2D; check extra dims (ensemble?)"  # noqa: E501
         self.big_covar_size = np.prod(self.xy_shape)
 
         # Detect data mask and determine dimension of array without masked data
         # Almost certain True near the coast
         self.data_has_mask = ma.is_masked(self.data_cube.data)
         if self.data_has_mask:
-            # Depending on dataset, the mask might not be invariant (like sea ice)
+            # Depending on dataset, the mask might not be invariant 
+            # (like sea ice)
             # xys with time varying mask are currently discarded.
             # If analysis is conducted seasonally
             # this should normally not a problem unless in high latitudes
@@ -226,7 +232,7 @@ class CovarianceCube():
     def _calc_cov(self,
                   correlation: bool = False,
                   rounding: int = None):
-        '''
+        """
         Parameters
         ----------
         correlation : bool 
@@ -237,12 +243,14 @@ class CovarianceCube():
         -------
         xy_cov : np.ndarray [float]
             covariance or correlation matrix
-        '''
-        # Reshape data to (t, xy), get rid of mask values -- cannot caculate cov for such data
-        xyflatten_data = self.data_cube.data.reshape((len(self.data_cube.coord('time').points),
+        """
+        # Reshape data to (t, xy),
+        # get rid of mask values -- cannot caculate cov for such data
+        xyflatten_data = self.data_cube.data.reshape((len(self.data_cube.coord('time').points),  # noqa: E501
                                                       self.big_covar_size))
         xyflatten_data = ma.compress_rowcols(xyflatten_data, -1)
-        # Remove mean -- even data that says "SST anomalies" don't have zero mean (?!)
+        # Remove mean --
+        # even data that says "SST anomalies" don't have zero mean (?!)
         xy_mean = np.mean(xyflatten_data, axis=0, keepdims=True)
         xyflatten_data = xyflatten_data - xy_mean
         xy_cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
@@ -255,7 +263,7 @@ class CovarianceCube():
 
     def _cov2cor(self,
                  rounding=None):
-        '''
+        """
         Normalises the covariance matrices within the class instance 
         and return correlation matrices
         https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
@@ -268,13 +276,14 @@ class CovarianceCube():
         -------
         ans : np.ndarray [float]
             correlation matrix
-        '''
+        """
         sdevs = np.sqrt(np.diag(self.Cov))
         normalisation = np.outer(sdevs, sdevs)
-        ans = self.Cov/normalisation
+        ans = self.Cov / normalisation
         ans[self.Cov == 0] = 0
         # sigma_inverse = np.zeros_like(self.Cov)
-        # np.fill_diagonal(sigma_inverse, np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
+        # np.fill_diagonal(sigma_inverse, 
+        #                  np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
         # ans = np.matmul(np.matmul(sigma_inverse, self.Cov), sigma_inverse)
         # #ans = _Dinv_A_Dinv(self.Cov)
         if rounding is not None:
@@ -284,8 +293,9 @@ class CovarianceCube():
     def calc_distance_angle_selfcube(self,
                                      haversine=False,
                                      compressed=True):
-        '''
-        Compute distances between grid points of cube data stored within class instance
+        """
+        Compute distances between grid points of cube data stored
+        within class instance
 
         Parameters
         ----------
@@ -296,8 +306,8 @@ class CovarianceCube():
         Returns
         -------
         D, A : np.ndarray [float]
-            D (distance in km), A (distance in angle)   
-        '''
+            D (distance in km), A (distance in angle)
+        """
         xx, yy = np.meshgrid(self.data_cube.coord('longitude').points,
                              self.data_cube.coord('latitude').points)
         xx = ma.masked_where(self.cube_mask, xx)
@@ -316,18 +326,18 @@ class CovarianceCube():
                              unmeshed_x,
                              unmeshed_y,
                              haversine=False):
-        '''
+        """
         The function that does the math for self.calc_distance_angle_selfcube...
         ## Compute a distance matrix between all points
         ## This is a memory demanding function!
-        '''
+        """
         yx_og = np.column_stack([unmeshed_y, unmeshed_x])
         if haversine:
             # Great circle - Earth
             def f_D(arr): return haversine_distances(
-                arr) * _RADIUS_OF_EARTH/_KM2M
+                arr) * _RADIUS_OF_EARTH / _KM2M
             yx = np.column_stack([np.array([np.deg2rad(lat) for lat in unmeshed_y]),
-                                  np.array([np.deg2rad(lon) for lon in unmeshed_x])])
+                                  np.array([np.deg2rad(lon) for lon in unmeshed_x])])  # noqa: E501
         else:
             # Delta degrees - locally flat Earth, treating like it an image
             f_D = euclidean_distances
@@ -335,8 +345,8 @@ class CovarianceCube():
         D = f_D(yx)
         ##
         # Angle difference vs x/longitude-axis - below two yields the same result
-        # _dy = euclidean_distances(np.column_stack([unmeshed_y, np.zeros_like(unmeshed_y)]))
-        # _dx = euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x]))
+        # _dy = euclidean_distances(np.column_stack([unmeshed_y, np.zeros_like(unmeshed_y)]))  # noqa: E501
+        # _dx = euclidean_distances(np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x]))  # noqa: E501
         _dy = euclidean_distances(np.column_stack(
             [yx[:, 0], np.zeros_like(unmeshed_y)]))
         _dx = euclidean_distances(np.column_stack(
@@ -349,20 +359,18 @@ class CovarianceCube():
         return (D, A)  # Both D and A are square matrices
 
     def _self_mask(self):
-        '''
-        Broadcast cube_mask to all observations 
-        '''
+        """Broadcast cube_mask to all observations"""
         broadcasted_mask = np.broadcast_to(
             self.cube_mask, self.data_cube.data.shape)
         self.data_cube.data = ma.masked_where(
             broadcasted_mask, self.data_cube.data)
 
-    def _reverse_mask_from_compress_1D(self,
+    def _reverse_mask_from_compress_1D(self,  # noqa: N802
                                        compressed_1D_vector,
                                        fill_value=0.0,
                                        dtype=np.float32):
-        '''
-        Since there are lot of flatten and compressing going on for observations 
+        """
+        Since there are lot of flatten and compressing going on for observations
         and fitted parameters, this reverses the 1D array to the original 2D map
 
         Parameters
@@ -380,11 +388,13 @@ class CovarianceCube():
             The 2D map array
 
         DANGER WARNING, use different fill_value depending on situation
-        This affects how signal and image processing module interacts with missing and masked values
-        They don't ignore them, so a fill_value like 0 may be sensible for covariance (-999.99 will 
+        This affects how signal and image processing module interacts
+        with missing and masked values
+        They don't ignore them, so a fill_value like 0 may be sensible
+        for covariance (-999.99 will 
         do funny things if it finds its way to a convolution and filter)
         iris doesn't care, but should use something like -999.99 or something
-        '''
+        """
         compressed_counter = 0
         ans = np.zeros_like(self.cube_mask_1D, dtype=dtype)
         for i in range(len(self.cube_mask_1D)):
@@ -395,11 +405,15 @@ class CovarianceCube():
         ans = ma.masked_where(self.cube_mask_1D, ans)
         return ans
 
-    def remap_one_point_2_map(self, compressed_vector, cube_name='stuff', cube_unit='1'):
-        ''' 
-        This reverse one row/column of the covariance/correlation matrix to a plottable iris cube 
+    def remap_one_point_2_map(self,
+                              compressed_vector,
+                              cube_name='stuff',
+                              cube_unit='1'):
+        """ 
+        This reverse one row/column of the covariance/correlation matrix
+        to a plottable iris cube 
         using mask defined in class
-        '''
+        """
         dummy_cube = self.data_cube[0, :, :].copy()
         masked_vector = self._reverse_mask_from_compress_1D(compressed_vector)
         dummy_cube.data = masked_vector.reshape(self.xy_shape)
@@ -407,7 +421,7 @@ class CovarianceCube():
         dummy_cube.units = cube_unit
         return dummy_cube
 
-    def ps2006_kks2011_model(self,
+    def ps2006_kks2011_model(self,  # noqa: C901
                              xy_point,
                              max_distance=20.0,
                              min_distance=0.3,
@@ -421,7 +435,7 @@ class CovarianceCube():
                              tol=0.001,
                              estimate_SE=None,
                              n_jobs=_default_n_jobs):
-        '''
+        """
         Fit ellipses/covariance models using adhoc local covariances
 
         the form of the covariance model depends on "fform"
@@ -456,14 +470,16 @@ class CovarianceCube():
             The index point where ellipses will be fitted to
 
         max_distance : float
-            Maximum seperation in distance unit that data will be fed into parameter fitting 
+            Maximum seperation in distance unit that data will be fed
+            into parameter fitting 
             Units depend on fform (it is usually either degrees or km)
 
         min_distance: float
-            Minimum seperation in distance unit that data will be fed into parameter fitting 
+            Minimum seperation in distance unit that data
+            will be fed into parameter fitting 
             Units depend on fform (it is usually either degrees or km)
-            Note: Due to the way we compute the Matern function, it is undefined at dist == 0
-            even if the limit -> zero is obvious. 
+            Note: Due to the way we compute the Matern function,
+            it is undefined at dist == 0 even if the limit -> zero is obvious. 
 
         v: float
             Dimensionless Matern shape parameter 
@@ -472,52 +488,69 @@ class CovarianceCube():
 
         fform='anistropic_rotated': str
             The form of Matern function to be fitted
-            See fform_2_modeltype and other dictionaries at the top of this piece of code
+            See fform_2_modeltype and other dictionaries
+            at the top of this piece of code
 
         unit_sigma=True: bool
-            When MLE fitting the Matern parameters, assuming the Matern parameters themselves
-            are normally distributed, there is standard deviation within the log likelihood
-            function. 
+            When MLE fitting the Matern parameters,
+            assuming the Matern parameters themselves
+            are normally distributed,
+            there is standard deviation within the log likelihood function. 
 
             See Wikipedia entry for Maxmimum Likelihood under:
             - Continuous distribution, continuous parameter space
 
-            Its actual value is not important to the best (MLE) estimate of the Matern parameters. 
-            If one assumes the parameters are normally distributed, the mean (best estimate) is 
-            independent of its variance. In fact in Karspeck et al 2012, it is simply set to 1 
-            (Eq B1). This value can however be computed. It serves a similar purpose as the
-            original standard deviation: in this case, how the actual observed semivariance disperses
+            Its actual value is not important
+            to the best (MLE) estimate of the Matern parameters. 
+            If one assumes the parameters are normally distributed,
+            the mean (best estimate) is independent of its variance.
+            In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1).
+            This value can however be computed. It serves a similar purpose as the
+            original standard deviation: 
+            in this case, how the actual observed semivariance disperses
             around the fitted variogram. 
 
             Here it defaults to 1 just as Karspeck.
 
         delta_x_method="Modified_Met_Office": str
             How to compute distances between grid points
-            For istropic variogram/covariances, this is a trival problem; you can just take the haversine or
+            For istropic variogram/covariances, this is a trival problem;
+            you can just take the haversine or
             Euclidian ("tunnel") distance as they are non-directional.
 
-            But it is non trival for anistropic cases, you have to define a set of orthogonal space. In HadSST4,
-            Earth is assumed to be cyclindrical "tin can" Earth, so you can just define the orthogonal space by
+            But it is non trival for anistropic cases,
+            you have to define a set of orthogonal space. In HadSST4,
+            Earth is assumed to be cyclindrical "tin can" Earth,
+            so you can just define the orthogonal space by
             lines of constant lat and lon (delta_x_method="Met_Office").
 
-            The modified "Modified_Met_Office" is a variation to that but allow the tin can get squished at the poles.
-            (Sinusoidal projection). This does results in a problem: the zonal displacement now depends in which latitude
-            you compute on (at the beginning latitude or at the end latitude). Here we take the average of the two.
+            The modified "Modified_Met_Office" is a variation to that,
+            but allow the tin can get squished at the poles.
+            (Sinusoidal projection). This does results in a problem:
+            the zonal displacement now depends in which latitude
+            you compute on (at the beginning latitude or at the end latitude).
+            Here we take the average of the two.
 
         guesses=None: tuple of floats; None uses default guess values
             Initial guess values that get feeds in the optimizer for MLE.
             In scipy, you are required to do so (but R often doesn't).
-            You should anyway; sometimes they do funny things if you don't (per recommendation of David Stephenson)
+            You should anyway; sometimes they do funny things
+            if you don't (per recommendation of David Stephenson)
 
         bounds=None: tuple of floats; None uses default bounds values
-            This is essentially a Bayesian "uniformative prior" that forces convergence if the optimizer hits the bound.
-            For lower resolution fitting, this is rarely a problem. For higher resolution fits, this often interacts with
-            the limit of the data you can put into the fit the optimizer may fail to converge if the input data is very 
-            smooth (aka ENSO region, where anomalies are smooth over very large (~10000km) scales.
+            This is essentially a Bayesian "uniformative prior"
+            that forces convergence if the optimizer hits the bound.
+            For lower resolution fitting, this is rarely a problem.
+            For higher resolution fits, this often interacts with
+            the limit of the data you can put into the fit the optimizer
+            may fail to converge if the input data is very smooth (aka ENSO
+            region, where anomalies are smooth over very large
+            (~10000km) scales.
 
         opt_method='Nelder-Mead': str
             scipy optimizer method. Nelder-Mead is the one used by Karspeck.
-            See https://docs.scipy.org/doc/scipy/tutorial/optimize.html for valid options
+            See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
+            for valid options
 
         tol=0.001: float
             set convergence tolerance for scipy optimize.
@@ -531,18 +564,24 @@ class CovarianceCube():
         #
 
         estimate_SE=None
-            The code can estimate the standard error if the Matern parameters. This is not usually used or discussed
-            for the purpose of kriging/GP prediction. Certain opt_method (gradient descent) can do this automatically 
-            using Fisher Info for certain covariance funciton, but is not possible for some nasty functions (aka Bessel
-            func) gets involved nor it is possible for optimisers (such as Nelder-Mead). The code does it using bootstrapping. 
+            The code can estimate the standard error if the Matern parameters.
+            This is not usually used or discussed for the purpose of kriging.
+            Certain opt_method (gradient descent) can do this automatically
+            using Fisher Info for certain covariance funciton,
+            but is not possible for some nasty functions (aka Bessel
+            func) gets involved nor it is possible for some optimisers
+            (such as Nelder-Mead).
+            The code does it using bootstrapping. 
 
         n_jobs=_default_n_jobs: int
             If parallel processing, number of threads to use.
 
         Returns
         -------
-        ans : dictionary of results of the fit and the observed correlation matrix
-        '''
+        ans : dictionary
+            Dictionary with results of the fit
+            and the observed correlation matrix
+        """
         ##
         matern = MLE_c_ij_Builder_Karspeck(v, fform, unit_sigma=unit_sigma)
         lonlat = self.xy[xy_point]
@@ -586,8 +625,8 @@ class CovarianceCube():
             # The first coordinate of each point is assumed to be the latitude,
             # the second is the longitude, given in radians.
             # The dimension of the data must be 2.
-            latlon_vector2 = np.column_stack([np.deg2rad(lonlat[1]+dy),
-                                              np.deg2rad(lonlat[0]+dx)])
+            latlon_vector2 = np.column_stack([np.deg2rad(lonlat[1] + dy),
+                                              np.deg2rad(lonlat[0] + dx)])
             latlon2 = np.array([np.deg2rad(lonlat[1]),
                                 np.deg2rad(lonlat[0])])
             latlon2 = latlon2[np.newaxis, :]
@@ -601,17 +640,19 @@ class CovarianceCube():
             # Note:
             # Delta_X != Delta_LON or Delta_Lon x COS LAT
             # Delta_X itself is a great circle distance
-            # Here meridonal displacement is always defined relative to the north and south pole!
+            # Here meridonal displacement is always defined relative
+            # to the north and south pole!
             #
             if delta_x_method == "Spherical_COS_Law":
                 # This doesn't appears to work... recheck needed
-                inside_arccos = np.cos(X_train_radial)/np.cos(distance_jj)
+                inside_arccos = np.cos(X_train_radial) / np.cos(distance_jj)
                 print('Check, num of inside_arccos vals = ', len(inside_arccos))
                 print('Check, num of abs(inside_arccos) > 1.0 = ',
                       np.sum(np.abs(inside_arccos) > 1.0))
                 print('Check, max(inside_arccos): max(inside_arccos) = ',
                       inside_arccos.max())
-                # Numerical issues may lead to numbers slightly greater than 1.0 or less than -1.0
+                # Numerical issues may lead to numbers slightly greater than 1.0
+                # or less than -1.0
                 inside_arccos[inside_arccos > 1.0] = 1.0
                 inside_arccos[inside_arccos < -1.0] = -1.0
                 distance_ii = dx_sign * np.arccos(inside_arccos)
@@ -620,16 +661,16 @@ class CovarianceCube():
                 distance_ii = np.deg2rad(dx)
             elif delta_x_method == "Modified_Met_Office":
                 average_cos = 0.5 * \
-                    (np.cos(np.deg2rad(lonlat[1]+dy)) +
+                    (np.cos(np.deg2rad(lonlat[1] + dy)) +
                      np.cos(np.deg2rad(lonlat[1])))
                 distance_ii = np.deg2rad(dx) * average_cos
             else:
                 raise ValueError('Unknown delta_x_method')
             ##
             # Converts dx and dy to physical distance (km)
-            X_train_directional = np.column_stack([distance_ii*_RADIUS_OF_EARTH/_KM2M,
-                                                   distance_jj*_RADIUS_OF_EARTH/_KM2M])
-            X_train_radial = X_train_radial*_RADIUS_OF_EARTH/_KM2M
+            X_train_directional = np.column_stack([distance_ii * _RADIUS_OF_EARTH / _KM2M,  # noqa: E501
+                                                   distance_jj * _RADIUS_OF_EARTH / _KM2M])  # noqa: E501
+            X_train_radial = X_train_radial * _RADIUS_OF_EARTH / _KM2M
         else:
             X_train_directional = np.column_stack([distance_i, distance_j])
             X_train_radial = distance.copy()
@@ -647,7 +688,7 @@ class CovarianceCube():
               np.max(X_train_directional[:, 1]))
         distance_limit = np.where(distance > max_distance)[0].tolist()
         distance_threshold = np.where(distance < min_distance)[0].tolist()
-        xys_2_drop = list(set(distance_limit+distance_threshold))
+        xys_2_drop = list(set(distance_limit + distance_threshold))
         X_train_directional = np.delete(
             X_train_directional, xys_2_drop, axis=0)
         X_train_radial = np.delete(X_train_radial, xys_2_drop, axis=0)
@@ -718,7 +759,7 @@ class CovarianceCube():
             fit_success2 = 9
         print('QC flag = ', fit_success2)
         # append standard deviation
-        model_params.append(np.sqrt(self.Cov[xy_point, xy_point]/self.time_n))
+        model_params.append(np.sqrt(self.Cov[xy_point, xy_point] / self.time_n))
         model_params.append(fit_success2)
         model_params.append(results.nit)
         ##
@@ -737,9 +778,10 @@ class CovarianceCube():
                 'Model_as_1D_cube': model_as_cubelist}
 
     def find_nearest_xy_index_in_cov_matrix(self, lonlat, use_full=False):
-        '''
-        Find the nearest column/row index of the covariance that corresponds to a specific lat lon
-        '''
+        """
+        Find the nearest column/row index of the covariance
+        that corresponds to a specific lat lon
+        """
         # lonlat = [lon, lat]
         if use_full:
             a = self.xy_full
@@ -751,18 +793,17 @@ class CovarianceCube():
         return (idx, a[idx, :])
 
     def _xy_2_xy_full_index(self, xy_point):
-        '''
-        Given xy index in that corresponding to a latlon in the covariance (masked value ma.MaskedArray compressed), 
+        """
+        Given xy index in that corresponding to a latlon
+        in the covariance (masked value ma.MaskedArray compressed), 
         what is its index with masked values (i.e. ndarray flatten) 
-        '''
+        """
         ans = int(np.argwhere(
             np.all((self.xy_full - self.xy[xy_point, :]) == 0, axis=1))[0])
         return ans
 
     def _make_template_cube(self, xy_point):
-        '''
-        Make a template cube for lat lon corresponding to xy_point index
-        '''
+        """Make a template cube for lat lon corresponding to xy_point index"""
         xy = self.xy[xy_point, :]
         return self._make_template_cube2(xy)
         # t_len = len(self.data_cube.coord('time').points)
@@ -770,13 +811,11 @@ class CovarianceCube():
         # return template_cube
 
     def _make_template_cube2(self, lonlat):
-        '''
-        Same as in _make_template_cube but takes latlon instead of xy index
-        '''
+        """Same as in _make_template_cube but takes latlon instead of xy index"""
         xy = lonlat
         t_len = len(self.data_cube.coord('time').points)
-        template_cube = self.data_cube[t_len//2].intersection(longitude=(xy[0]-0.05, xy[0]+0.05),
-                                                              latitude=(xy[1]-0.05, xy[1]+0.05))
+        template_cube = self.data_cube[t_len // 2].intersection(longitude=(xy[0] - 0.05, xy[0] + 0.05),
+                                                                latitude=(xy[1] - 0.05, xy[1] + 0.05))
         return template_cube
 
     def __str__(self):
@@ -785,12 +824,12 @@ class CovarianceCube():
 
 
 def sigma_rot_func(Lx, Ly, theta):
-    '''
+    """
     Equation 15 in Karspeck el al 2011 and Equation 6
     in Paciorek and Schervish 2006,
     assuming Sigma(Lx, Ly, theta) locally/moving-window invariant or
     we have already taken the mean (Sigma overbar, PP06 3.1.1)
-    '''
+    """
     # sigma is a 2x2 matrix
     if theta is None:
         theta = 0.0
@@ -808,7 +847,7 @@ def mahal_dist_func_rot(delta_x,
                         Ly,
                         theta=None,
                         verbose=False):
-    '''
+    """
     Calculate tau if Lx, Ly, theta is known (aka, this takes the additional step to compute sigma)
     This is needed for MLE estimation of Lx, Ly, and theta
 
@@ -826,7 +865,7 @@ def mahal_dist_func_rot(delta_x,
     Return
     ----------
     tau : float - Mahalanobis distance
-    '''
+    """
     # sigma is 4x4 matrix
     if theta is not None:
         sigma = sigma_rot_func(Lx, Ly, theta)
@@ -843,10 +882,10 @@ def mahal_dist_func_rot(delta_x,
 
 
 def mahal_dist_func_sigma(delta_x, delta_y, sigma, verbose=False):
-    '''
+    """
     Calculate tau directly if sigma is already known
     Useful for sigma_bar computations
-    '''
+    """
     xi_minus_xj = np.array([delta_x, delta_y])
     tau_inside_squareroot = np.matmul(
         np.matmul(np.transpose(xi_minus_xj), linalg.inv(sigma)), xi_minus_xj)
@@ -857,15 +896,15 @@ def mahal_dist_func_sigma(delta_x, delta_y, sigma, verbose=False):
 
 
 def mahal_dist_func(delta_x, delta_y, Lx, Ly):
-    ''' 
+    """ 
     Compute tau for non-rotational case; 
     unlike mahal_dist_func_sigma, sigma is not needed
-    '''
+    """
     return mahal_dist_func_rot(delta_x, delta_y, Lx, Ly, theta=None)
 
 
 def make_v_aux_coord(v):
-    ''' Create an iris coord for the Matern (positive) shape parameter '''
+    """Create an iris coord for the Matern (positive) shape parameter"""
     return icoords.AuxCoord(v, long_name='v_shape', units='no_unit')
 
 
@@ -876,7 +915,7 @@ def c_ij_anistropic_rotated(v,
                             theta,
                             sdev_j=None,
                             verbose=False):
-    '''
+    """
     Covariance structure between base point i and j
     Assuming local stationarity or slowly varing
     so that some terms in PS06 drops off (like Sigma_i ~ Sigma_j instead of treating them as different)
@@ -899,7 +938,7 @@ def c_ij_anistropic_rotated(v,
     ----------
     ans : float 
         Covariance/correlation between local and remote point given displacement and Matern covariance parameters
-    '''
+    """
     ##
     if sdev_j is None:
         sdev_j = sdev
@@ -907,7 +946,7 @@ def c_ij_anistropic_rotated(v,
     # sigma = sigma_rot_func(Lx, Ly, theta)
     tau = mahal_dist_func_rot(x_i, x_j, Lx, Ly, theta=theta, verbose=verbose)
     ##
-    first_term = (sdev * sdev_j)/(gamma(v)*(2.0**(v-1)))
+    first_term = (sdev * sdev_j) / (gamma(v) * (2.0**(v - 1)))
     # '''
     # If data is assumed near stationary locally, sigma_i ~ sigma_j same
     # making (sigma_i)**1/4 (sigma_j)**1/4 / (mean_sigma**1/2) = 1.0
@@ -915,8 +954,8 @@ def c_ij_anistropic_rotated(v,
     # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
     # '''
     # second_term = 1.0
-    third_term = (2.0*tau*np.sqrt(v))**v
-    forth_term = modified_bessel_2nd(v, 2.0*tau*np.sqrt(v))
+    third_term = (2.0 * tau * np.sqrt(v))**v
+    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
     ans = first_term * third_term * forth_term
     # ans = first_term * second_term * third_term * forth_term
     ##
@@ -929,14 +968,14 @@ def c_ij_anistropic_rotated(v,
 
 
 def c_ij_anistropic_unrotated(v, sdev, x_i, x_j, Lx, Ly, sdev_j=None):
-    '''
+    """
     Alias for non rotated version of c_ij_anistropic_rotated
-    '''
+    """
     return c_ij_anistropic_rotated(v, sdev, x_i, x_j, Lx, Ly, None, sdev_j=sdev_j)
 
 
 def c_ij_istropic(v, sdev, displacement, rou, sdev_j=None):
-    '''
+    """
     Isotropic version of c_ij_anistropic_rotated
 
     Parameters
@@ -955,31 +994,30 @@ def c_ij_istropic(v, sdev, displacement, rou, sdev_j=None):
     ----------
     ans : float 
         Covariance/correlation between local and remote point given displacement and Matern covariance parameters
-    '''
+    """
     ##
     if sdev_j is None:
         sdev_j = sdev
     ##
-    tau = np.abs(displacement)/rou
+    tau = np.abs(displacement) / rou
     ##
-    first_term = (sdev * sdev_j)/(gamma(v)*(2.0**(v-1)))
-    third_term = (2.0*tau*np.sqrt(v))**v
-    forth_term = modified_bessel_2nd(v, 2.0*tau*np.sqrt(v))
+    first_term = (sdev * sdev_j) / (gamma(v) * (2.0**(v - 1)))
+    third_term = (2.0 * tau * np.sqrt(v))**v
+    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
     ans = first_term * third_term * forth_term
     return ans
 
 
 class MLE_c_ij_Builder_Karspeck():
-
-    '''
+    """
     The class that contains variogram/ellipse fitting methods and parameters
 
     This class assumes your input to be a standardised correlation matrix
     They are easier to handle because sdevs in the covariance function become 1!
-    '''
+    """
 
     def __init__(self, v, fform, standardised_cov_matrix=True, unit_sigma=True):
-        '''
+        """
         Parameters
         ----------
         v : float
@@ -1001,7 +1039,7 @@ class MLE_c_ij_Builder_Karspeck():
         Returns
         -------
         Nothing (__init__)
-        '''
+        """
         self.fform = fform
         self.unit_sigma = unit_sigma
         if fform == 'isotropic':
@@ -1050,7 +1088,7 @@ class MLE_c_ij_Builder_Karspeck():
             self.n_params = 3
             self.default_guesses = [7.0, 7.0, 0.0]
             self.default_bounds = [
-                (0.5, 50), (0.5, 30), (-2.0*np.pi, 2.0*np.pi)]
+                (0.5, 50), (0.5, 30), (-2.0 * np.pi, 2.0 * np.pi)]
             if standardised_cov_matrix:
                 self.c_ij = lambda X, Lx, Ly, theta: c_ij_anistropic_rotated(
                     v, 1, X[0], X[1], Lx, Ly, theta)
@@ -1062,7 +1100,7 @@ class MLE_c_ij_Builder_Karspeck():
             self.n_params = 3
             self.default_guesses = [_deg2km(7.0), _deg2km(7.0), 0.0]
             self.default_bounds = [(_deg2km(0.5), _deg2km(50)), (_deg2km(
-                0.5), _deg2km(30)), (-2.0*np.pi, 2.0*np.pi)]
+                0.5), _deg2km(30)), (-2.0 * np.pi, 2.0 * np.pi)]
             if standardised_cov_matrix:
                 self.c_ij = lambda X, Lx, Ly, theta: c_ij_anistropic_rotated(
                     v, 1, X[0], X[1], Lx, Ly, theta)
@@ -1077,7 +1115,7 @@ class MLE_c_ij_Builder_Karspeck():
                               arctanh_transform=True,
                               backend=_default_backend,
                               n_jobs=_default_n_jobs):
-        '''
+        """
         Compute the negative log-likelihood given observed X independent observations 
         (displacements) and y dependent variable (the observed correlation), and Matern 
         parameters params. Namely does the Matern covariance function using params, how
@@ -1118,7 +1156,7 @@ class MLE_c_ij_Builder_Karspeck():
         -------
         nLL : float
             The negative log likelihood
-        '''
+        """
         if self.n_params == 1:
             rou = params[0]
             if self.unit_sigma:
@@ -1167,8 +1205,8 @@ class MLE_c_ij_Builder_Karspeck():
             max_abs_y = np.max(np.abs(y))
             max_abs_yLL = np.max(np.abs(y_LL))
             if max_abs_y >= arctanh_threshold:
-                warn_msg = 'abs(y) >= '+str(arctanh_threshold)+' detected; '
-                warn_msg += 'fudged to threshold; max(abs(y))='+str(max_abs_y)
+                warn_msg = 'abs(y) >= ' + str(arctanh_threshold) + ' detected; '
+                warn_msg += 'fudged to threshold; max(abs(y))=' + str(max_abs_y)
                 warnings.warn(warn_msg, RuntimeWarning)
                 y[np.abs(y) > arctanh_threshold] = np.sign(
                     y[np.abs(y) > arctanh_threshold]) * arctanh_threshold
@@ -1179,7 +1217,7 @@ class MLE_c_ij_Builder_Karspeck():
             #     y[np.isclose(np.abs(y), 1.0)] = np.sign(y[np.isclose(np.abs(y), 1.0)]) * 0.9999
             #
             if max_abs_yLL >= 1:
-                warn_msg = 'abs(y_LL) >= '+str(arctanh_threshold)+' detected; '
+                warn_msg = 'abs(y_LL) >= ' + str(arctanh_threshold) + ' detected; '
                 warn_msg += 'fudged to threshold; max(abs(y_LL))=' + \
                     str(max_abs_yLL)
                 warnings.warn(warn_msg, RuntimeWarning)
@@ -1200,9 +1238,9 @@ class MLE_c_ij_Builder_Karspeck():
     def build_negativeloglikelihood_for_optimisation(self, X, y,
                                                      n_jobs=_default_n_jobs,
                                                      backend=_default_backend):
-        '''
+        """
         Creates a function that can be fed into scipy.optimizer.minimize
-        '''
+        """
         return lambda params: self.negativeloglikelihood(X, y,
                                                          params,
                                                          n_jobs=n_jobs,
@@ -1219,7 +1257,7 @@ class MLE_c_ij_Builder_Karspeck():
             n_jobs=_default_n_jobs,
             backend=_default_backend,
             random_seed=1234):
-        '''
+        """
         Default solver in Nelder-Mead as used in the Karspeck paper
         https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
         default max-iter is 200 x (number_of_variables)
@@ -1256,7 +1294,7 @@ class MLE_c_ij_Builder_Karspeck():
         list : [fitted parameters,
                 standard error of the fitted parameters, 
                 bounds of fitted parameters]
-        '''
+        """
         ##
         if guesses is None:
             guesses = self.default_guesses
@@ -1293,7 +1331,7 @@ class MLE_c_ij_Builder_Karspeck():
                 sim_params = []
                 for looper in range(n_sim):
                     sim_params.append(self._bootstrap_once(
-                        X, y, guesses, bounds, opt_method, tol=tol, seed=random_seed+looper))
+                        X, y, guesses, bounds, opt_method, tol=tol, seed=random_seed + looper))
                 sim_params = np.array(sim_params)
                 SE = np.std(sim_params, axis=0)
             elif estimate_SE == 'bootstrap_parallel':
@@ -1306,7 +1344,7 @@ class MLE_c_ij_Builder_Karspeck():
                                                                                 bounds,
                                                                                 opt_method,
                                                                                 tol=tol,
-                                                                                seed=random_seed+worker) for worker in workers)
+                                                                                seed=random_seed + worker) for worker in workers)
                 sim_params = np.array(sim_params)
                 SE = np.std(sim_params, axis=0)
             elif estimate_SE == 'hessian':
@@ -1320,7 +1358,7 @@ class MLE_c_ij_Builder_Karspeck():
         return [results, None, bounds]
 
     def _bootstrap_once(self, X, y, guesses, bounds, opt_method, tol=None, seed=1234):
-        ''' Bootstrap refit the Matern parameters '''
+        """Bootstrap refit the Matern parameters"""
         rng = np.random.RandomState(seed)  # pylint: disable=no-member
         len_obs = len(y)
         i_obs = np.arange(len_obs)
@@ -1339,7 +1377,7 @@ def create_output_cubes(template_cube,
                         default_values=None,
                         additional_meta_aux_coords=None,
                         dtype=np.float32):
-    '''
+    """
     For data presentation, create template iris cubes to insert data
 
     Parameters
@@ -1360,7 +1398,7 @@ def create_output_cubes(template_cube,
     dictionary:
         "param_cubelist" : Instance of iris.cube.CubeList() that contains cubes to be filled in
         "param_names" : the names of the variable that get added to param_cubelist
-    '''
+    """
     ##
     if default_values is None:
         default_values = [-999.9, -999.9, -999.9]
@@ -1401,7 +1439,7 @@ def create_output_cubes(template_cube,
 
 
 def main():
-    ''' Main - keep calm and does nothing '''
+    """Main - keep calm and does nothing"""
     print('=== Main ===')
     # _test_load()
 
