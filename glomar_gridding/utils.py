@@ -7,7 +7,7 @@ from datetime import date, timedelta
 from enum import IntEnum
 import inspect
 import logging
-from typing import TypeVar
+from typing import Any, TypeVar
 import netCDF4 as nc
 import numpy as np
 import polars as pl
@@ -429,3 +429,12 @@ def km_to_deg(km: float) -> float:
     Convert meridonal km change to degree latitude
     """
     return (km / KM_TO_NM) / NM_PER_LAT
+
+
+def is_iter(val: Any) -> bool:
+    """Determine if a value is an iterable"""
+    try:
+        iter(val)
+        return True
+    except TypeError:
+        return False

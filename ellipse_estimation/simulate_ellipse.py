@@ -7,6 +7,7 @@ Tools to compare covariances
 import numbers
 import logging
 
+from glomar_gridding.utils import is_iter
 import iris
 import numpy as np
 from numpy.random import multivariate_normal
@@ -115,10 +116,11 @@ class _EllipseSimulation:
                 "creating with default kwargs."
             )
             self.create_cov()
-        try:
-            iter(mean)
-        except TypeError:
-            mean = np.array([mean] * self.CCPLE_out.cov_ns.shape[0])
+        mean = (
+            mean
+            if is_iter(mean)
+            else np.repeat(mean, self.CCPLE_out.cov_ns.shape[0])
+        )
         ans = multivariate_normal(mean, self.CCPLE_out.cov_ns, size=size)
         print(ans.shape)
         if reshaped_2_og:
@@ -141,13 +143,6 @@ class _EllipseSimulation:
         ans.rename("Simulated values")
         ans.units = "1"
         return ans
-
-    def check_self_exist(self, thing):
-        try:
-            thing
-        except NameError:
-            return False
-        return True
 
     def __repr__(self):
         return f"SuperClass _EllipseSimulation with v = {self.v}"
