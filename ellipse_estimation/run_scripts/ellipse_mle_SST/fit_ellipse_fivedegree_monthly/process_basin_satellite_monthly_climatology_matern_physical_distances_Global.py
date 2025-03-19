@@ -54,10 +54,7 @@ def mask_time_union(cube):
     return cube
 
 
-def main():
-    """
-    MAIN
-    """
+def main():  # noqa: D103
     #
     init_logging(level="WARN")
     #
@@ -120,9 +117,9 @@ def main():
     super_cube_list = iris.cube.CubeList()
     #
     logging.info(repr(surftemp_cube))
-    print(surftemp_cube.coord("latitude"))
-    print(surftemp_cube.coord("longitude"))
-    print(surftemp_cube.coord("time"))
+    logging.debug(f"{surftemp_cube.coord('latitude') = }")
+    logging.debug(f"{surftemp_cube.coord('longitude') = }")
+    logging.debug(f"{surftemp_cube.coord('time') = }")
     print("Large cube built for cov caculations:", repr(surftemp_cube))
     logging.info("Building covariance matrix")
     super_sst_cov = cube_covariance.CovarianceCube(surftemp_cube)
@@ -153,7 +150,7 @@ def main():
                     )
                 )
                 kwargs = {
-                    "model_type": cube_covariance.fform_2_modeltype[fform],
+                    "model_type": cube_covariance.FFORM_TO_MODELTYPE[fform],
                     "additional_meta_aux_coords": [
                         cube_covariance.make_v_aux_coord(v)
                     ],
@@ -220,7 +217,7 @@ def main():
     Path(outpath).mkdir(parents=True, exist_ok=True)
     #
     outncfilename = outpath + dat_type + "_"
-    outncfilename += str(month_value).zfill(2) + ".nc"
+    outncfilename += f"{month_value:02d}.nc"
     print("Results to be saved...")
     print(super_cube_list)
     logging.info(f"Saving results to {outncfilename}")
