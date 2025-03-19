@@ -5,6 +5,7 @@ Tools to compare covariances
 """
 
 import numbers
+import logging
 
 import iris
 import numpy as np
@@ -108,9 +109,10 @@ class _EllipseSimulation:
         )
 
     def simulate_cov(self, mean=0.0, size=1, reshaped_2_og=True):
-        if not self.check_self_exist(self.CCPLE_out):
-            print(
-                "Covariance and correlation not created yet; creating with default kwargs."
+        if not hasattr(self, "CCPLE_out"):
+            logging.info(
+                "Covariance and correlation not created yet; "
+                "creating with default kwargs."
             )
             self.create_cov()
         try:
