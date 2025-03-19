@@ -342,7 +342,10 @@ def _get_logging_level(level: str) -> int:
     return level_i
 
 
-def init_logging(file: str | None, level: str = "DEBUG") -> None:
+def init_logging(
+    file: str | None = None,
+    level: str = "DEBUG",
+) -> None:
     """
     Initialise the logger
 
