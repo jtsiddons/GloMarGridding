@@ -15,6 +15,12 @@ import xarray as xr
 from warnings import warn
 from polars._typing import ClosedInterval
 
+
+from glomar_gridding.constants import (
+    KM_TO_NM,
+    NM_PER_LAT,
+)
+
 _XR_Data = TypeVar("_XR_Data", xr.DataArray, xr.Dataset)
 
 
@@ -399,3 +405,27 @@ def get_date_index(year: int, month: int, start_year: int) -> int:
         the first month of year `start_year`.
     """
     return 12 * (year - start_year) + (month - 1)
+
+
+def deg_to_nm(deg: float) -> float:
+    """
+    deg: float (degrees)
+    Convert degree latitude change to nautical miles
+    """
+    return NM_PER_LAT * deg
+
+
+def deg_to_km(deg: float) -> float:
+    """
+    deg: float (degrees)
+    Convert degree latitude change to km
+    """
+    return KM_TO_NM * deg_to_nm(deg)
+
+
+def km_to_deg(km: float) -> float:
+    """
+    km: float (km)
+    Convert meridonal km change to degree latitude
+    """
+    return (km / KM_TO_NM) / NM_PER_LAT
