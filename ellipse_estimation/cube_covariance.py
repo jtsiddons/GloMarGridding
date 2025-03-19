@@ -2048,13 +2048,3 @@ def create_output_cubes(
             param_cube.data.mask = template_cube.data.mask
         ans_cubelist.append(param_cube)
     return {"param_cubelist": ans_cubelist, "param_names": ans_paramlist}
-
-
-def main():
-    """Main - keep calm and does nothing"""
-    print("=== Main ===")
-    # _test_load()
-
-
-if __name__ == "__main__":
-    main()
