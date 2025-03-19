@@ -6,7 +6,7 @@ Will also be used in future fit testing and ellipse simulation code
 import numpy as np
 from sklearn import metrics as skl_metrics
 
-from ellipse_estimation import cube_covariance as cube_cov
+from glomar_gridding.constants import RADIUS_OF_EARTH_KM
 
 
 def haversine2(lon1, lat1, lon2, lat2):
@@ -221,9 +221,9 @@ def scalar_cube_great_circle_distance(
     else:
         raise ValueError("Unknown delta_x_method")
     ##
-    dist = dist0 * cube_cov._RADIUS_OF_EARTH / cube_cov._KM2M
-    dist_j = dy0 * cube_cov._RADIUS_OF_EARTH / cube_cov._KM2M
-    dist_i = dx0 * cube_cov._RADIUS_OF_EARTH / cube_cov._KM2M
+    dist = dist0 * RADIUS_OF_EARTH_KM
+    dist_j = dy0 * RADIUS_OF_EARTH_KM
+    dist_i = dx0 * RADIUS_OF_EARTH_KM
     # (great circle dist, lat displacement, zonal displacement)
     return (dist, dist_j, dist_i)
 
