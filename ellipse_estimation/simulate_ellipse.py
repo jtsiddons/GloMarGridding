@@ -12,7 +12,7 @@ import iris
 import numpy as np
 from numpy.random import multivariate_normal
 from scipy import stats
-import xarray as xa
+import xarray as xr
 
 from ellipse_estimation import cube_covariance
 from ellipse_estimation import cube_covariance_nonstationary_stich as ccns
@@ -28,23 +28,27 @@ def fill_cube_with_uniform_parms(cube_template, sdev, sigma_parms):
     :returns: a single instance of iris.Cube.CubeList with filled sdev, Lx, Ly, theta
     """
     #
-    if isinstance(cube_template, xa.DataArray):
+    if isinstance(cube_template, xr.DataArray):
         cube_template = cube_template.to_iris()
-    assert isinstance(cube_template, iris.cube.Cube), (
-        "cube_template should be an instance of xarray.DataArray or iris.cube"
-    )
+    if not isinstance(cube_template, (iris.cube.Cube, xr.DataArray)):
+        raise TypeError(
+            "cube_template should be an instance of "
+            + "xarray.DataArray or iris.cube"
+        )
     #
-    assert len(sigma_parms) == 3, "Length of sigma_parms must be 3"
+    if len(sigma_parms) != 3:
+        raise ValueError("Length of sigma_parms must be 3")
     for sparm_i, sparm in enumerate(
         [sdev, sigma_parms[0], sigma_parms[1], sigma_parms[2]]
     ):
-        assert isinstance(sparm, numbers.Number), (
-            "Non number detected on idx " + str(sparm_i)
-        )
+        if not isinstance(sparm, numbers.Number):
+            raise TypeError(f"Non number detected on idx: {sparm_i}")
     #
-    print("Creating parameter cubes with uniform parameters")
-    print("sdev = ", sdev)
-    print("(Lx, Ly, theta) = ", sigma_parms)
+    logging.info("Creating parameter cubes with uniform parameters")
+    logging.info(
+        f"{sdev = }",
+    )
+    logging.info(f"(Lx, Ly, theta) = {sigma_parms}")
     #
     ans = iris.cube.CubeList()
     #
@@ -67,38 +71,45 @@ class _EllipseSimulation:
     """
     A covariance based on outputs generated from fill_cube_with_uniform_parms
     can be generated using
-    cube_covariance_nonstationary_stich CovarianceCube_PreStichedLocalEstimates Class
+    cube_covariance_nonstationary_stich CovarianceCube_PreStichedLocalEstimates
+    Class
 
-    CovarianceCube_PreStichedLocalEstimates calls a distance function within compute_distance
+    CovarianceCube_PreStichedLocalEstimates calls a distance function within
+    compute_distance
+
+    Parameters
+    ----------
+    v : float
+        Matern shape parameter
+    sdev_cube : iris.cube.Cube
+        standard deviations
+    Lx, Ly : iris.cube.Cube
+        Lx, Ly scale (km or degrees)
+    theta : iris.cube.Cube
+        rotation angle, radians; degrees? Bye, get lost, blah blah
     """
 
     def __init__(self, v, sdev_cube, Lx_cube, Ly_cube, theta_cube):
-        """
-        v : float
-            Matern shape parameter
-        sdev_cube : iris.cube.Cube
-            standard deviations
-        Lx, Ly : iris.cube.Cube
-            Lx, Ly scale (km or degrees)
-        theta : iris.cube.Cube
-            rotation angle, radians; degrees? Bye, get lost, blah blah
-        """
-        assert isinstance(v, numbers.Number), "Non number detected for v"
-        assert v > 0.0, "v must be a positive number (0 == bad)"
+        if isinstance(v, numbers.Number):
+            raise TypeError("Non number detected for v")
+        if v <= 0.0:
+            raise ValueError("v must be a positive number (0 == bad)")
+
         self.v = v
         self.sdev = sdev_cube
         self.Lx = Lx_cube
         self.Ly = Ly_cube
         self.theta = theta_cube
-        print(self.v)
-        print(repr(self.sdev))
-        print(repr(self.Lx))
-        print(repr(self.Ly))
-        print(repr(self.theta))
+        logging.debug(self.v)
+        logging.debug(repr(self.sdev))
+        logging.debug(repr(self.Lx))
+        logging.debug(repr(self.Ly))
+        logging.debug(repr(self.theta))
 
     def create_cov(self, kwargs4CC_PLE=None):
         print(
-            "Creating stiched covariance and correlation using CovarianceCube_PreStichedLocalEstimates."
+            "Creating stiched covariance and correlation using "
+            + "CovarianceCube_PreStichedLocalEstimates."
         )
         if kwargs4CC_PLE is None:
             kwargs4CC_PLE = {
@@ -131,8 +142,8 @@ class _EllipseSimulation:
 
     def simulated_map_as_iris_cube_with_fake_t(self, map_arr, t_coord):
         if map_arr.shape[-2:] != self.Lx.shape:
-            print("map_arr.shape[-2:] = ", map_arr.shape[-2:])
-            print("Lx.shape = ", self.Lx.shape)
+            logging.error(f"{map_arr.shape[-2:] = }")
+            logging.error(f"Lx.shape = {self.Lx.shape}")
             raise ValueError("map_arr shape has unexpected shape")
         y_coord = self.Lx.coord("latitude")
         x_coord = self.Lx.coord("longitude")
@@ -165,7 +176,7 @@ class EllipseSimulation_PrescribedParms(_EllipseSimulation):
         super().__init__(v, sdev_cube, Lx_cube, Ly_cube, theta_cube)
 
 
-def average_LxLyTheta(lx, ly, the, check_flip=False):
+def average_LxLyTheta(lx, ly, the, check_flip=False):  # noqa: N802
     """
     Averages Lx, Ly, theta
     ans = Lx, Ly, E(theta) in deg (floats, not iris/xarray cubes)
@@ -280,28 +291,19 @@ def simulated_ellipse_vs_known_regmean(simulated_parms, actuals_parms, n_sims):
     sigma_hat = cube_covariance.sigma_rot_func(
         simulated_parms[0], simulated_parms[1], simulated_parms[2]
     )
-    print("sigma_hat:")
-    print(simulated_parms[0], simulated_parms[1], simulated_parms[2])
-    print(sigma_hat)
+    logging.debug("sigma_hat:")
+    logging.debug(simulated_parms[0], simulated_parms[1], simulated_parms[2])
+    logging.debug(sigma_hat)
     sigma_actual = cube_covariance.sigma_rot_func(
         actuals_parms[0], actuals_parms[1], actuals_parms[2]
     )
-    print("sigma_0:")
-    print(actuals_parms[0], actuals_parms[1], actuals_parms[2])
-    print(sigma_actual)
-    print("n_sims = ", n_sims)
+    logging.debug("sigma_0:")
+    logging.debug(actuals_parms[0], actuals_parms[1], actuals_parms[2])
+    logging.debug(sigma_actual)
+    logging.debug("n_sims = ", n_sims)
     W, p_val = chisq_test_using_likelihood_ratios_4_covariance(
         sigma_hat, sigma_actual, n_sims
     )
-    print("W (chi-sq) likelihood ratio test stat = ", W)
-    print("p-value = ", p_val)
+    logging.debug("W (chi-sq) likelihood ratio test stat = ", W)
+    logging.debug("p-value = ", p_val)
     return (W, p_val)
-
-
-def main():
-    """The main; hello, nothing to see here"""
-    print("=== Main ===")
-
-
-if __name__ == "__main__":
-    main()
