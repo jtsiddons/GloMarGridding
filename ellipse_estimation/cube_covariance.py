@@ -5,7 +5,8 @@ xarray cubes should work via iris interface)
 """
 
 from collections import OrderedDict
-from typing import Literal, get_args, cast
+from collections.abc import Callable
+from typing import Any, Literal, get_args, cast
 import math
 import warnings
 import logging
@@ -231,7 +232,7 @@ class MaternEllipseModel:
 
         return None
 
-    def _get_defaults(self):
+    def _get_defaults(self) -> None:
         """Get default values for the MaternEllipseModel."""
         match self.fform:
             case "isotropic":
@@ -294,7 +295,7 @@ class MaternEllipseModel:
         arctanh_transform: bool = True,
         backend: str = DEFAULT_BACKEND,
         n_jobs: int = DEFAULT_N_JOBS,
-    ):
+    ) -> float:
         """
         Compute the negative log-likelihood given observed X independent
         observations (displacements) and y dependent variable (the observed
@@ -446,10 +447,10 @@ class MaternEllipseModel:
         y: np.ndarray,
         n_jobs: int = DEFAULT_N_JOBS,
         backend: str = DEFAULT_BACKEND,
-    ):
+    ) -> Callable[[tuple[float, ...]], float]:
         """Creates a function that can be fed into scipy.optimizer.minimize"""
 
-        def f(params):
+        def f(params: tuple[float, ...]):
             return self.negative_log_likelihood(
                 X, y, params, n_jobs=n_jobs, backend=backend
             )
@@ -713,6 +714,8 @@ class CovarianceCube:
         # Calculate the actual covariance and correlation matrix:
         self._calc_cov(correlation=True)
 
+        return None
+
     def _calc_cov(
         self,
         correlation: bool = False,
@@ -781,7 +784,11 @@ class CovarianceCube:
             self.Corr = np.round(self.Corr, rounding)
         return None
 
-    def calc_distance_angle_selfcube(self, haversine=False, compressed=True):
+    def calc_distance_angle_selfcube(
+        self,
+        haversine: bool = False,
+        compressed: bool = True,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Compute distances between grid points of cube data stored
         within class instance
@@ -813,14 +820,14 @@ class CovarianceCube:
         D, A = self._calc_distance_angle(
             unmeshed_x, unmeshed_y, haversine=haversine
         )
-        return (D, A)
+        return D, A
 
     def _calc_distance_angle(
         self,
         unmeshed_x: np.ndarray,
         unmeshed_y: np.ndarray,
         haversine: bool = False,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Compute distance and angle between all points."""
         yx_og = np.column_stack([unmeshed_y, unmeshed_x])
         if haversine:
@@ -856,9 +863,9 @@ class CovarianceCube:
         # In radians; note, arctan2 can tell if dy and dx are negative
         A = np.arctan2(dy, dx)
         ##
-        return (D, A)  # Both D and A are square matrices
+        return D, A  # Both D and A are square matrices
 
-    def _self_mask(self):
+    def _self_mask(self) -> None:
         """Broadcast cube_mask to all observations"""
         broadcasted_mask = np.broadcast_to(
             self.cube_mask, self.data_cube.data.shape
@@ -939,7 +946,7 @@ class CovarianceCube:
         tol: float = 0.001,
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
-    ):
+    ) -> dict[str, Any]:
         """
         Fit ellipses/covariance models using adhoc local covariances
 
@@ -1291,7 +1298,7 @@ class CovarianceCube:
             )[0]
         )
 
-    def _make_template_cube(self, xy_point: int):
+    def _make_template_cube(self, xy_point: int) -> iris.cube.Cube:
         """Make a template cube for lat lon corresponding to xy_point index"""
         xy = self.xy[xy_point, :]
         return self._make_template_cube2(xy)
@@ -1302,7 +1309,7 @@ class CovarianceCube:
         # )
         # return template_cube
 
-    def _make_template_cube2(self, lonlat: np.ndarray):
+    def _make_template_cube2(self, lonlat: np.ndarray) -> iris.cube.Cube:
         """Make a template cube for lat lon"""
         t_len = len(self.data_cube.coord("time").points)
         template_cube = self.data_cube[t_len // 2].intersection(
@@ -1320,7 +1327,7 @@ def sigma_rot_func(
     Lx: float,
     Ly: float,
     theta: float | None,
-) -> float:
+) -> np.ndarray:
     """
     Equation 15 in Karspeck el al 2011 and Equation 6
     in Paciorek and Schervish 2006,
@@ -1416,7 +1423,7 @@ def mahal_dist_func(
     return mahal_dist_func_rot(delta_x, delta_y, Lx, Ly, theta=None)
 
 
-def make_v_aux_coord(v: float):
+def make_v_aux_coord(v: float) -> icoords.AuxCoord:
     """Create an iris coord for the Matern (positive) shape parameter"""
     return icoords.AuxCoord(v, long_name="v_shape", units="no_unit")
 
@@ -1977,7 +1984,7 @@ def create_output_cubes(
     default_values: list[float] | None = None,
     additional_meta_aux_coords: list | None = None,
     dtype=np.float32,
-):
+) -> dict:
     """
     For data presentation, create template iris cubes to insert data
 
