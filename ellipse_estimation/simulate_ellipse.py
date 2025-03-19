@@ -266,9 +266,7 @@ def extract_LxLytheta(cubelist):
 def regmean_simulated_ellipse_vs_known_regmean(
     fitted_parms_cubelist, actuals_parms, n_sims
 ):
-    """
-    Test against regional mean
-    """
+    """Test against regional mean"""
     Lx_estimated, Ly_estimated, theta_estimated, _ = extract_LxLytheta(
         fitted_parms_cubelist
     )
@@ -285,9 +283,7 @@ def regmean_simulated_ellipse_vs_known_regmean(
 
 
 def simulated_ellipse_vs_known_regmean(simulated_parms, actuals_parms, n_sims):
-    """
-    Test against regional mean
-    """
+    """Test against regional mean"""
     sigma_hat = cube_covariance.sigma_rot_func(
         simulated_parms[0], simulated_parms[1], simulated_parms[2]
     )
