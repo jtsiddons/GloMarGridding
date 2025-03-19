@@ -11,14 +11,9 @@ import matplotlib
 matplotlib.use("Agg")
 
 import iris
-import iris.coord_categorisation as icc
-import iris.analysis.maths as iam
-import iris.analysis.cartography as icart
-import iris.quickplot as qplt
 import iris.plot as iplt
 import matplotlib.pyplot as plt
 import matplotlib.cm as mpl_cm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import cartopy
 import cartopy.crs as ccrs
@@ -26,9 +21,6 @@ import cartopy.crs as ccrs
 plt.rcParams["figure.figsize"] = [12, 8]
 
 from skimage.measure import EllipseModel
-from sklearn.metrics.pairwise import euclidean_distances, haversine_distances
-from sklearn.metrics import r2_score
-from math import radians
 
 # from osgeo import osr
 import pandas as pd
@@ -76,7 +68,6 @@ def mask_time_union(cube):
 
 def draw_ellipse(latlon_point, figlabel, mm, london_in_the_middle=True):
     """Draw ellipse centre near latlon_point = (lat, lon)"""
-
     print(latlon_point, figlabel)
 
     # Config and setup variables

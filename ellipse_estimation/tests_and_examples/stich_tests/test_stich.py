@@ -8,7 +8,6 @@
 # In[2]:
 import iris
 import iris.quickplot as qplt
-import iris.plot as iplt
 from iris.fileformats import netcdf as inc
 from iris.coords import DimCoord, AuxCoord
 from iris.cube import Cube
@@ -17,14 +16,9 @@ import numpy as np
 
 
 # In[3]:
-from skimage.measure import EllipseModel
 
 
 # In[4]:
-from osgeo import osr
-import pandas as pd
-import geopandas as geopd
-from shapely.geometry import Point
 
 
 # In[5]:
@@ -32,11 +26,9 @@ import os
 import cProfile
 import pstats
 
-from nonstationary_cov import cube_covariance as cube_cov
 from nonstationary_cov import (
     cube_covariance_nonstationary_stich as cube_cov_stich,
 )
-from nonstationary_cov import cube_io_10x10 as cube_io_10
 
 
 # In[6]:
@@ -209,7 +201,7 @@ cor_cube.units = "1"
 cov_cube.rename("covariance")
 cor_cube.rename("correlation")
 
-## Write to file
+# Write to file
 cov_list = iris.cube.CubeList()
 cov_list.append(cov_cube)
 cov_list.append(cor_cube)
@@ -263,7 +255,7 @@ cor_cube.units = "1"
 cov_cube.rename("covariance")
 cor_cube.rename("correlation")
 
-## Write to file
+# Write to file
 cov_list = iris.cube.CubeList()
 cov_list.append(cov_cube)
 cov_list.append(cor_cube)

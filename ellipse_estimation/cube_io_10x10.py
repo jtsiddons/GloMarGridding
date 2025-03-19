@@ -44,15 +44,15 @@ basin_2_limit = {
     "Indian_Ocean": {
         "latitude": (-60, 30),
         "longitude": (20, 110),
-    },  ## Original (60S-30N Indian Ocean) domain
+    },  # Original (60S-30N Indian Ocean) domain
     "Indian_Ocean_X": {
         "latitude": (-60, 60),
         "longitude": (20, 110),
-    },  ## Full latitude band
+    },  # Full latitude band
     "Indian_Ocean_H": {
         "latitude": (30, 60),
         "longitude": (20, 110),
-    },  ## Missing northern part of Indian_Ocean
+    },  # Missing northern part of Indian_Ocean
     "Pacific_Ocean": {"latitude": (-60, 60), "longitude": (110, -100)},
     "Global_No_Poles": {"latitude": (-60, 60), "longitude": (-180, 180)},
     "Global_With_Poles": {"latitude": (-90, 90), "longitude": (-180, 180)},
@@ -68,15 +68,15 @@ basin_2_limit_era = {
     "Indian_Ocean": {
         "latitude": (-60, 30),
         "longitude": (20, 110),
-    },  ## Original (60S-30N Indian Ocean) domain
+    },  # Original (60S-30N Indian Ocean) domain
     "Indian_Ocean_X": {
         "latitude": (-60, 60),
         "longitude": (20, 110),
-    },  ## Full latitude band
+    },  # Full latitude band
     "Indian_Ocean_H": {
         "latitude": (30, 60),
         "longitude": (20, 110),
-    },  ## Missing northern part of Indian_Ocean
+    },  # Missing northern part of Indian_Ocean
     "Global_No_Poles": {"latitude": (-60, 60), "longitude": (-180, 180)},
     "Pacific_Ocean": {"latitude": (-60, 60), "longitude": (110, 260)},
     "Southern_Ocean": {"latitude": (-80, -60), "longitude": (0, 360)},

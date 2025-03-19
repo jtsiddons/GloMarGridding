@@ -8,7 +8,6 @@
 # In[2]:
 import iris
 import iris.quickplot as qplt
-import iris.plot as iplt
 from iris.fileformats import netcdf as inc
 from iris.coords import DimCoord, AuxCoord
 from iris.cube import Cube
@@ -44,11 +43,9 @@ print(socket.gethostname())
 
 
 # In[6]:
-from nonstationary_cov import cube_covariance as cube_cov
 from nonstationary_cov import (
     cube_covariance_nonstationary_stich as cube_cov_stich,
 )
-from nonstationary_cov import cube_io_10x10 as cube_io_10
 
 
 # In[7]:
@@ -180,7 +177,7 @@ if __name__ == "__main__":
     cov_cube.rename("covariance")
     cor_cube.rename("correlation")
 
-    ## Write to file
+    # Write to file
     cov_list = iris.cube.CubeList()
     cov_list.append(cov_cube)
     cov_list.append(cor_cube)
