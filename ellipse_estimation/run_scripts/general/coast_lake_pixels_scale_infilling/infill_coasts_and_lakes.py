@@ -41,7 +41,7 @@ def sigma_2_parms(sigma, degrees=False):
     v_padded = np.pad(v, ((0, 1), (0, 1)))
     v_padded[2, 2] = 1
     r = R.from_matrix(v_padded)
-    theta = r.as_euler('zxy', degrees=degrees)[0]
+    theta = r.as_euler("zxy", degrees=degrees)[0]
     d180 = np.pi if not degrees else 180.0
     if theta < -d180 / 2:
         theta = theta + d180
@@ -52,39 +52,39 @@ def sigma_2_parms(sigma, degrees=False):
 
 def zero_360_2_180_180(cube):
     """Convert longitude from 0 to 360 to -180 to 180"""
-    cube.coord('longitude').bounds = None
-    cube.coord('latitude').bounds = None
+    cube.coord("longitude").bounds = None
+    cube.coord("latitude").bounds = None
     b_t_d = iris.Constraint(longitude=lambda val: val >= 180.0)
     z_2_d = iris.Constraint(longitude=lambda val: val < 180.0)
     cube_b_t_d = cube.extract(b_t_d)
     cube_z_2_d = cube.extract(z_2_d)
-    new_cube_b_t_d_lons = cube_b_t_d.coord('longitude').points - 360.0
-    cube_b_t_d.coord('longitude').points = new_cube_b_t_d_lons
+    new_cube_b_t_d_lons = cube_b_t_d.coord("longitude").points - 360.0
+    cube_b_t_d.coord("longitude").points = new_cube_b_t_d_lons
     ans = iris.cube.CubeList()
     ans.append(cube_b_t_d)
     ans.append(cube_z_2_d)
     ans = ans.concatenate_cube()
-    ans.coord('longitude').guess_bounds()
-    ans.coord('latitude').guess_bounds()
+    ans.coord("longitude").guess_bounds()
+    ans.coord("latitude").guess_bounds()
     return ans
 
 
 def Minus180_180_2_0_360(cube):  # noqa: N802
     """Convert longitude from -180 to 180 to 0 to 360"""
-    cube.coord('longitude').bounds = None
-    cube.coord('latitude').bounds = None
+    cube.coord("longitude").bounds = None
+    cube.coord("latitude").bounds = None
     z_2_d = iris.Constraint(longitude=lambda val: val >= 0.0)
     b_t_d = iris.Constraint(longitude=lambda val: val < 0.0)
     cube_b_t_d = cube.extract(b_t_d)
     cube_z_2_d = cube.extract(z_2_d)
-    new_cube_b_t_d_lons = cube_b_t_d.coord('longitude').points + 360.0
-    cube_b_t_d.coord('longitude').points = new_cube_b_t_d_lons
+    new_cube_b_t_d_lons = cube_b_t_d.coord("longitude").points + 360.0
+    cube_b_t_d.coord("longitude").points = new_cube_b_t_d_lons
     ans = iris.cube.CubeList()
     ans.append(cube_b_t_d)
     ans.append(cube_z_2_d)
     ans = ans.concatenate_cube()
-    ans.coord('longitude').guess_bounds()
-    ans.coord('latitude').guess_bounds()
+    ans.coord("longitude").guess_bounds()
+    ans.coord("latitude").guess_bounds()
     return ans
 
 
@@ -109,20 +109,25 @@ def as65_to_hs93_effective_range(L):
 # in Rasmussen-Williams 2005
 # The ellipse code follows the notation used in Karspeck et al
 # which in turns based on Handcock-Stein 1993
-land_cat = {'water': 1, 'land': 2, 'coast': 16}
+land_cat = {"water": 1, "land": 2, "coast": 16}
 land_cat_inv = {v: k for k, v in land_cat.items()}
-hadcrut5_defaults = {'land': {'Lx': as65_to_hs93_effective_range(1300.0),
-                              'Ly': as65_to_hs93_effective_range(1300.0),
-                              'sdev': 1.2,
-                              'theta': 0.0},
-                     'water': {'Lx': as65_to_hs93_effective_range(1300.0),
-                               'Ly': as65_to_hs93_effective_range(1300.0),
-                               'sdev': 0.6,
-                               'theta': 0.0}}
+hadcrut5_defaults = {
+    "land": {
+        "Lx": as65_to_hs93_effective_range(1300.0),
+        "Ly": as65_to_hs93_effective_range(1300.0),
+        "sdev": 1.2,
+        "theta": 0.0,
+    },
+    "water": {
+        "Lx": as65_to_hs93_effective_range(1300.0),
+        "Ly": as65_to_hs93_effective_range(1300.0),
+        "sdev": 0.6,
+        "theta": 0.0,
+    },
+}
 
 
-def landfrac_categorial(land_frac_arr,
-                        minimum_land_threshold=0.001):
+def landfrac_categorial(land_frac_arr, minimum_land_threshold=0.001):
     """
     Create a uint8 ndarray based on land fraction
     uint8 flags based on convention used in OSTIA
@@ -134,16 +139,20 @@ def landfrac_categorial(land_frac_arr,
     landfrac_categorial_arr = np.zeros_like(land_frac_arr, dtype=np.uint8)
     water = land_frac_arr <= minimum_land_threshold
     land = land_frac_arr >= (1.0 - minimum_land_threshold)
-    coast = np.logical_and(land_frac_arr > minimum_land_threshold,
-                           land_frac_arr < (1.0 - minimum_land_threshold))
-    landfrac_categorial_arr[water] = land_cat['water']
-    landfrac_categorial_arr[land] = land_cat['land']
-    landfrac_categorial_arr[coast] = land_cat['coast']
+    coast = np.logical_and(
+        land_frac_arr > minimum_land_threshold,
+        land_frac_arr < (1.0 - minimum_land_threshold),
+    )
+    landfrac_categorial_arr[water] = land_cat["water"]
+    landfrac_categorial_arr[land] = land_cat["land"]
+    landfrac_categorial_arr[coast] = land_cat["coast"]
     return landfrac_categorial_arr
 
 
-def ESA_landfrac(minimum_land_threshold=0.001,  # noqa: N802
-                 convert2_0_360=False):
+def ESA_landfrac(
+    minimum_land_threshold=0.001,  # noqa: N802
+    convert2_0_360=False,
+):
     """
     Make ESA land fraction data cube
 
@@ -157,19 +166,22 @@ def ESA_landfrac(minimum_land_threshold=0.001,  # noqa: N802
     Coverage is globally complete; there are no missing data pixels (thumbs up).
     Cube is from -180 to +180 deg longitude
     """
-    in_path = '/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/'
-    in_file = in_path + '19800115_regridded_sst.nc'
-    sea_frac = iris.load_cube(in_file, 'sea_area_fraction')[0]  # NOT land fraction  # noqa: E501
+    in_path = "/gws/nopw/j04/hostace/data/ESA_CCI_5deg_monthly_extra/ANOMALY/"
+    in_file = in_path + "19800115_regridded_sst.nc"
+    sea_frac = iris.load_cube(in_file, "sea_area_fraction")[
+        0
+    ]  # NOT land fraction  # noqa: E501
     land_frac = iam.multiply(iam.add(sea_frac, -1), -1)
     if convert2_0_360:
         land_frac = Minus180_180_2_0_360(land_frac)
-    land_frac.rename('land area fraction')
+    land_frac.rename("land area fraction")
     land_frac_cat = land_frac.copy()
-    land_frac_cat.data = landfrac_categorial(land_frac_cat.data,
-                                             minimum_land_threshold=minimum_land_threshold)
-    land_frac_cat.rename('land area categorical')
+    land_frac_cat.data = landfrac_categorial(
+        land_frac_cat.data, minimum_land_threshold=minimum_land_threshold
+    )
+    land_frac_cat.rename("land area categorical")
     land_frac_cat.attributes = None
-    land_frac_cat.attributes['definitions'] = 'water = 1, land = 2, coast = 16'
+    land_frac_cat.attributes["definitions"] = "water = 1, land = 2, coast = 16"
     ans = iris.cube.CubeList()
     ans.append(land_frac)
     ans.append(land_frac_cat)
@@ -190,6 +202,7 @@ def ESA_landfrac(minimum_land_threshold=0.001,  # noqa: N802
 #     '''
 #     return
 
+
 def find_neighbours(jj, ii, jj_max=35, ii_max=71):
     """
     Find immediate neighbouring grid points,
@@ -205,8 +218,8 @@ def find_neighbours(jj, ii, jj_max=35, ii_max=71):
     -------
     list of tuples of (lat_index, lon_index) of the neighbours
     """
-    assert 0 <= jj <= jj_max, 'jj is out of range: jj=' + str(jj)  # noqa: S101
-    assert 0 <= ii <= ii_max, 'ii is out of range: ii=' + str(ii)  # noqa: S101
+    assert 0 <= jj <= jj_max, "jj is out of range: jj=" + str(jj)  # noqa: S101
+    assert 0 <= ii <= ii_max, "ii is out of range: ii=" + str(ii)  # noqa: S101
     neighbours = []
     for jj_s in [jj - 1, jj, jj + 1]:
         if (jj_s < 0) or (jj_s > jj_max):
@@ -221,15 +234,18 @@ def find_neighbours(jj, ii, jj_max=35, ii_max=71):
     return neighbours
 
 
-def infill_scales(Lx, Ly,  # noqa: C901
-                  theta,
-                  sdev,
-                  convergence_qc,
-                  terrain='land',
-                  infill_parms_lookup=None,
-                  landfrac_func=ESA_landfrac,
-                  landfrac_func_kwargs=None,
-                  fudge_long_scales=True):
+def infill_scales(
+    Lx,
+    Ly,  # noqa: C901
+    theta,
+    sdev,
+    convergence_qc,
+    terrain="land",
+    infill_parms_lookup=None,
+    landfrac_func=ESA_landfrac,
+    landfrac_func_kwargs=None,
+    fudge_long_scales=True,
+):
     """
     Fill Matern kernel parameters into grid points that are:
     - masked
@@ -267,7 +283,7 @@ def infill_scales(Lx, Ly,  # noqa: C901
     if landfrac_func_kwargs is None:
         landfrac_func_kwargs = {}
     #
-    assert terrain in infill_parms_lookup, 'Unknown terrain; land or sea only'  # noqa: S101
+    assert terrain in infill_parms_lookup, "Unknown terrain; land or sea only"  # noqa: S101
     infill_parms = infill_parms_lookup[terrain]
     #
     where_is_mask = Lx.data.mask.copy()
@@ -281,20 +297,22 @@ def infill_scales(Lx, Ly,  # noqa: C901
     theta_v2.data.mask = False
     sdev_v2.data.mask = False
     #
-    Lx_v2.data[where_is_mask] = infill_parms['Lx']
-    Ly_v2.data[where_is_mask] = infill_parms['Ly']
-    theta_v2.data[where_is_mask] = infill_parms['theta']
-    sdev_v2.data[where_is_mask] = infill_parms['sdev']
+    Lx_v2.data[where_is_mask] = infill_parms["Lx"]
+    Ly_v2.data[where_is_mask] = infill_parms["Ly"]
+    theta_v2.data[where_is_mask] = infill_parms["theta"]
+    sdev_v2.data[where_is_mask] = infill_parms["sdev"]
     #
     if fudge_long_scales:
         qc_redflags = [2.0, 3.0, 9.0]
         where_are_redflags = np.isin(convergence_qc.data, qc_redflags)
         if np.sum(where_are_redflags) > 0:
-            print(f'Red flags detected, infilling: {np.sum(where_are_redflags)}')  # noqa: E501
-            Lx_v2.data[where_are_redflags] = infill_parms['Lx']
-            Ly_v2.data[where_are_redflags] = infill_parms['Ly']
-            theta_v2.data[where_are_redflags] = infill_parms['theta']
-            sdev_v2.data[where_are_redflags] = infill_parms['sdev']
+            print(
+                f"Red flags detected, infilling: {np.sum(where_are_redflags)}"
+            )  # noqa: E501
+            Lx_v2.data[where_are_redflags] = infill_parms["Lx"]
+            Ly_v2.data[where_are_redflags] = infill_parms["Ly"]
+            theta_v2.data[where_are_redflags] = infill_parms["theta"]
+            sdev_v2.data[where_are_redflags] = infill_parms["sdev"]
     #
     Lx_v3 = Lx_v2.copy()
     Ly_v3 = Ly_v2.copy()
@@ -304,28 +322,32 @@ def infill_scales(Lx, Ly,  # noqa: C901
     out_cubelist = iris.cube.CubeList()
     #
     land_info = landfrac_func(**landfrac_func_kwargs)
-    land_tac = land_info.extract('land area categorical')[0]
-    where_is_coast = land_tac.data == land_cat['coast']
+    land_tac = land_info.extract("land area categorical")[0]
+    where_is_coast = land_tac.data == land_cat["coast"]
     where_is_current_terr = land_tac.data == land_cat[terrain]
     #
     where_is_correct_terr = np.logical_or(where_is_coast, where_is_current_terr)
-    where_is_mask_and_need_avging = np.logical_and(where_is_mask,
-                                                   where_is_correct_terr)
-    where_is_mask_and_not_avged = np.logical_and(where_is_mask,
-                                                 np.logical_not(where_is_correct_terr))
+    where_is_mask_and_need_avging = np.logical_and(
+        where_is_mask, where_is_correct_terr
+    )
+    where_is_mask_and_not_avged = np.logical_and(
+        where_is_mask, np.logical_not(where_is_correct_terr)
+    )
     #
     infill_status = land_tac.copy()
     infill_status.data[:] = 0
     infill_status.data[where_is_mask_and_not_avged] = 1
     infill_status.data[where_is_mask_and_need_avging] = 2
     infill_status.data[where_are_redflags] = 3
-    infill_status.rename('infill status')
+    infill_status.rename("infill status")
     infill_status.attributes = None
-    definition_str = 'not_adj=0 '
-    definition_str += 'adj_2_hadcrut5_parms=1 '
-    definition_str += 'adj_2_bavg_with_hadcrut5_parms_prior=2 '
-    definition_str += 'adj_2_bavg_with_hadcrut5_parms_prior_due_to_unconvergence=3'  # noqa: E501
-    infill_status.attributes['definitions'] = definition_str
+    definition_str = "not_adj=0 "
+    definition_str += "adj_2_hadcrut5_parms=1 "
+    definition_str += "adj_2_bavg_with_hadcrut5_parms_prior=2 "
+    definition_str += (
+        "adj_2_bavg_with_hadcrut5_parms_prior_due_to_unconvergence=3"  # noqa: E501
+    )
+    infill_status.attributes["definitions"] = definition_str
     #
     where_2_bavg_list = [where_is_mask_and_need_avging]
     if fudge_long_scales:
@@ -366,55 +388,51 @@ def infill_scales(Lx, Ly,  # noqa: C901
 
 def run_land():
     """Fill the land scale files"""
-    terrain = 'land'
-    basepath = '/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/'  # noqa: E501
-    inpath = basepath + 'matern_physical_distances_v_eq_1p5/'
-    outpath = basepath + 'matern_physical_distances_v_eq_1p5_filled_in/'
+    terrain = "land"
+    basepath = (
+        "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/"  # noqa: E501
+    )
+    inpath = basepath + "matern_physical_distances_v_eq_1p5/"
+    outpath = basepath + "matern_physical_distances_v_eq_1p5_filled_in/"
     for month in [m + 1 for m in range(12)]:
-        ncfile = 'lsat_' + str(month).zfill(2) + '.nc'
+        ncfile = "lsat_" + str(month).zfill(2) + ".nc"
         cubes = iris.load(inpath + ncfile)
-        Lx = cubes.extract('Lx')[0]
-        Ly = cubes.extract('Ly')[0]
-        theta = cubes.extract('theta')[0]
-        sdev = cubes.extract('standard_deviation')[0]
-        qc = cubes.extract('qc_code')[0]
-        ans = infill_scales(Lx, Ly,
-                            theta,
-                            sdev,
-                            qc,
-                            terrain=terrain)
+        Lx = cubes.extract("Lx")[0]
+        Ly = cubes.extract("Ly")[0]
+        theta = cubes.extract("theta")[0]
+        sdev = cubes.extract("standard_deviation")[0]
+        qc = cubes.extract("qc_code")[0]
+        ans = infill_scales(Lx, Ly, theta, sdev, qc, terrain=terrain)
         print(ans)
-        print('Saving to ' + outpath + ncfile)
+        print("Saving to " + outpath + ncfile)
         inc.save(ans, outpath + ncfile)
 
 
 def run_sea():
     """Fill the sea scale files"""
-    terrain = 'water'
-    basepath = '/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/'  # noqa: E501
-    inpath = basepath + 'matern_physical_distances_v_eq_1p5/'
-    outpath = basepath + 'matern_physical_distances_v_eq_1p5_filled_in/'
+    terrain = "water"
+    basepath = (
+        "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/"  # noqa: E501
+    )
+    inpath = basepath + "matern_physical_distances_v_eq_1p5/"
+    outpath = basepath + "matern_physical_distances_v_eq_1p5_filled_in/"
     for month in [m + 1 for m in range(12)]:
-        ncfile = 'sst_' + str(month).zfill(2) + '.nc'
+        ncfile = "sst_" + str(month).zfill(2) + ".nc"
         cubes = iris.load(inpath + ncfile)
-        Lx = cubes.extract('Lx')[0]
-        Ly = cubes.extract('Ly')[0]
-        theta = cubes.extract('theta')[0]
-        sdev = cubes.extract('standard_deviation')[0]
-        qc = cubes.extract('qc_code')[0]
-        ans = infill_scales(Lx, Ly,
-                            theta,
-                            sdev,
-                            qc,
-                            terrain=terrain)
+        Lx = cubes.extract("Lx")[0]
+        Ly = cubes.extract("Ly")[0]
+        theta = cubes.extract("theta")[0]
+        sdev = cubes.extract("standard_deviation")[0]
+        qc = cubes.extract("qc_code")[0]
+        ans = infill_scales(Lx, Ly, theta, sdev, qc, terrain=terrain)
         print(ans)
-        print('Saving to ' + outpath + ncfile)
+        print("Saving to " + outpath + ncfile)
         inc.save(ans, outpath + ncfile)
 
 
 def main():
     """Main - keep calm and does something!"""
-    print('--- MAIN ---')
+    print("--- MAIN ---")
     run_land()
     run_sea()
 

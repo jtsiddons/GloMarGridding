@@ -41,18 +41,23 @@ def haversine2(lon1, lat1, lon2, lat2):
     dlat = lat2 - lat1
 
     def hf(rad):
-        return (np.sin(rad / 2))**2
+        return (np.sin(rad / 2)) ** 2
+
     a = hf(dlat) + np.cos(lat1) * np.cos(lat2) * hf(dlon)
     c = 2 * np.arcsin(np.sqrt(a))
     return c
 
 
-def scalar_cube_great_circle_distance(lat_i, lon_i,  # noqa: C901
-                                      lat_j, lon_j,
-                                      degree_dist=False,
-                                      delta_x_method="Modified_Met_Office",
-                                      use_sklearn_haversine=False,
-                                      verbose=False):
+def scalar_cube_great_circle_distance(
+    lat_i,
+    lon_i,  # noqa: C901
+    lat_j,
+    lon_j,
+    degree_dist=False,
+    delta_x_method="Modified_Met_Office",
+    use_sklearn_haversine=False,
+    verbose=False,
+):
     """
     A number of ways to approximate the vectored displacement in
     physical distances on the surface of Earth, noting that Earth
@@ -178,8 +183,8 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,  # noqa: C901
     xs = np.array([np.deg2rad(lon_i), np.deg2rad(lon_j)])
     yxs = np.column_stack([ys, xs])
     if verbose:
-        print('From: ', np.rad2deg(yxs[0, :]))
-        print('To  : ', np.rad2deg(yxs[1, :]))
+        print("From: ", np.rad2deg(yxs[0, :]))
+        print("To  : ", np.rad2deg(yxs[1, :]))
     #
     # Bottleneck parm_check sklearn
     if use_sklearn_haversine:
@@ -190,10 +195,10 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,  # noqa: C901
         dist0 = haversine2(lon_i, lat_i, lon_j, lat_j)
     dy0 = yxs[1, 0] - yxs[0, 0]
     if verbose:
-        print('Haversine = ', dist0, '[Radians]')
-        print('Haversine = ', np.rad2deg(dist0), '[Degrees]')
-        print('Delta Lat = ', dy0, '[Radians]')
-        print('Delta Lat = ', np.rad2deg(dy0), '[Degrees]')
+        print("Haversine = ", dist0, "[Radians]")
+        print("Haversine = ", np.rad2deg(dist0), "[Degrees]")
+        print("Delta Lat = ", dy0, "[Radians]")
+        print("Delta Lat = ", np.rad2deg(dy0), "[Degrees]")
 
     if delta_x_method == "Met_Office":
         dx0 = yxs[1, 1] - yxs[0, 1]
@@ -214,7 +219,7 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,  # noqa: C901
         average_cos = 0.5 * (np.cos(yxs[1, 0]) + np.cos(yxs[0, 0]))
         dx0 = dx0 * average_cos
     else:
-        raise ValueError('Unknown delta_x_method')
+        raise ValueError("Unknown delta_x_method")
     ##
     dist = dist0 * cube_cov._RADIUS_OF_EARTH / cube_cov._KM2M
     dist_j = dy0 * cube_cov._RADIUS_OF_EARTH / cube_cov._KM2M
@@ -223,10 +228,12 @@ def scalar_cube_great_circle_distance(lat_i, lon_i,  # noqa: C901
     return (dist, dist_j, dist_i)
 
 
-def scalar_cube_great_circle_distance_cube(scalar_cube_i,
-                                           scalar_cube_j,
-                                           degree_dist=False,
-                                           delta_x_method="Modified_Met_Office"):
+def scalar_cube_great_circle_distance_cube(
+    scalar_cube_i,
+    scalar_cube_j,
+    degree_dist=False,
+    delta_x_method="Modified_Met_Office",
+):
     """
     Wrapper for scalar_cube_great_circle_distance but allows input
     as iris scalar cube with latlons
@@ -258,24 +265,32 @@ def scalar_cube_great_circle_distance_cube(scalar_cube_i,
 
     Same as in scalar_cube_great_circle_distance
     """
-    if (len(scalar_cube_i.coord('latitude').points) != 1) or (len(scalar_cube_i.coord('longitude').points) != 1):  # noqa: E501
-        raise ValueError('Scalar cubes only (i)')
-    if (len(scalar_cube_j.coord('latitude').points) != 1) or (len(scalar_cube_j.coord('longitude').points) != 1):  # noqa: E501
-        raise ValueError('Scalar cubes only (j)')
-    lat_i = float(scalar_cube_i.coord('latitude').points)
-    lon_i = float(scalar_cube_i.coord('longitude').points)
-    lat_j = float(scalar_cube_j.coord('latitude').points)
-    lon_j = float(scalar_cube_j.coord('longitude').points)
-    ans = scalar_cube_great_circle_distance(lat_i, lon_i,
-                                            lat_j, lon_j,
-                                            degree_dist=degree_dist,
-                                            delta_x_method=delta_x_method)
+    if (len(scalar_cube_i.coord("latitude").points) != 1) or (
+        len(scalar_cube_i.coord("longitude").points) != 1
+    ):  # noqa: E501
+        raise ValueError("Scalar cubes only (i)")
+    if (len(scalar_cube_j.coord("latitude").points) != 1) or (
+        len(scalar_cube_j.coord("longitude").points) != 1
+    ):  # noqa: E501
+        raise ValueError("Scalar cubes only (j)")
+    lat_i = float(scalar_cube_i.coord("latitude").points)
+    lon_i = float(scalar_cube_i.coord("longitude").points)
+    lat_j = float(scalar_cube_j.coord("latitude").points)
+    lon_j = float(scalar_cube_j.coord("longitude").points)
+    ans = scalar_cube_great_circle_distance(
+        lat_i,
+        lon_i,
+        lat_j,
+        lon_j,
+        degree_dist=degree_dist,
+        delta_x_method=delta_x_method,
+    )
     return ans  # (great circle dist, lat displacement, zonal displacement)
 
 
 def main():
     """=== Main ==="""
-    print('=== Main ===')
+    print("=== Main ===")
 
 
 if __name__ == "__main__":

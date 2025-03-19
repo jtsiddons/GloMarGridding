@@ -1,8 +1,9 @@
-'''
+"""
 Requires numpy, scipy, sklearm
 iris needs to be installed (it is required by other modules within this package
 xarray cubes should work via iris interface
-'''
+"""
+
 import logging
 import re
 import ntpath
@@ -15,17 +16,19 @@ import numpy as np
 
 # All this needs fixing... they are specific to JASMIN scratch storage
 # And mostly applies to some analysis done in past with higher resolution data
-obs_2_default_path = {'ESA_satellite_0p25': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10/',
-                      'ESA_satellite_0p25-mid': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-mid-scale/',
-                      'ESA_satellite_0p25-ukmo': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-UKMO_grid/',
-                      'ESA_satellite_1p00-daily': '/work/scratch-pw2/schan016/NOC-hostace/SST-10x10_daily/',
-                      'ESA_satellite_5p00-monthly': '/work/scratch-pw2/schan016/NOC-hostace/ESA_CCI5deg_month/ANOMALY/',
-                      'ERA5_T2M_0p25': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M-10x10/TenDeg/',
-                      'ERA5_T2M_0p25-daily': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M-10x10-daily/TenDeg/',
-                      'ERA5_T2M_0p25-ukmo-h': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_hres_pent_regridded/10x10/',
-                      'ERA5_T2M_0p25-ukmo-0': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ens0_pent_regridded/10x10/',
-                      'ERA5_T2M_0p25-ukmo-1': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ens1_pent_regridded/10x10/',
-                      'ERA5_T2M_0p25-ukmo-m': '/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ensmean_pent_regridded/10x10/'}
+obs_2_default_path = {
+    "ESA_satellite_0p25": "/work/scratch-pw2/schan016/NOC-hostace/SST-10x10/",
+    "ESA_satellite_0p25-mid": "/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-mid-scale/",
+    "ESA_satellite_0p25-ukmo": "/work/scratch-pw2/schan016/NOC-hostace/SST-10x10-UKMO_grid/",
+    "ESA_satellite_1p00-daily": "/work/scratch-pw2/schan016/NOC-hostace/SST-10x10_daily/",
+    "ESA_satellite_5p00-monthly": "/work/scratch-pw2/schan016/NOC-hostace/ESA_CCI5deg_month/ANOMALY/",
+    "ERA5_T2M_0p25": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M-10x10/TenDeg/",
+    "ERA5_T2M_0p25-daily": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M-10x10-daily/TenDeg/",
+    "ERA5_T2M_0p25-ukmo-h": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_hres_pent_regridded/10x10/",
+    "ERA5_T2M_0p25-ukmo-0": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ens0_pent_regridded/10x10/",
+    "ERA5_T2M_0p25-ukmo-1": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ens1_pent_regridded/10x10/",
+    "ERA5_T2M_0p25-ukmo-m": "/work/scratch-pw2/schan016/NOC-hostace/ERA_T2M_regrid/ANOMALY_ensmean_pent_regridded/10x10/",
+}
 
 
 # Definition of "ocean basins"
@@ -36,44 +39,67 @@ obs_2_default_path = {'ESA_satellite_0p25': '/work/scratch-pw2/schan016/NOC-host
 # "Indian Ocean" below does not reach Australia
 
 # lon: -180 - 180
-basin_2_limit = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (-100, 20)},
-                 'Indian_Ocean': {'latitude': (-60, 30), 'longitude': (20, 110)}, ## Original (60S-30N Indian Ocean) domain
-                 'Indian_Ocean_X': {'latitude': (-60, 60), 'longitude': (20, 110)}, ## Full latitude band
-                 'Indian_Ocean_H': {'latitude': (30, 60), 'longitude': (20, 110)}, ## Missing northern part of Indian_Ocean
-                 'Pacific_Ocean': {'latitude': (-60, 60), 'longitude': (110, -100)},
-                 'Global_No_Poles': {'latitude': (-60, 60), 'longitude': (-180, 180)},
-                 'Global_With_Poles': {'latitude': (-90, 90), 'longitude': (-180, 180)},
-                 'Southern_Ocean': {'latitude': (-80, -60), 'longitude': (-180, 180)},
-                 'Southern_Ocean_X': {'latitude': (-90, -60), 'longitude': (-180, 180)},
-                 'Arctic_Ocean': {'latitude': (60, 80), 'longitude': (-180, 180)},
-                 'Arctic_Ocean_X': {'latitude': (60, 90), 'longitude': (-180, 180)}}
+basin_2_limit = {
+    "Atlantic_Ocean": {"latitude": (-60, 60), "longitude": (-100, 20)},
+    "Indian_Ocean": {
+        "latitude": (-60, 30),
+        "longitude": (20, 110),
+    },  ## Original (60S-30N Indian Ocean) domain
+    "Indian_Ocean_X": {
+        "latitude": (-60, 60),
+        "longitude": (20, 110),
+    },  ## Full latitude band
+    "Indian_Ocean_H": {
+        "latitude": (30, 60),
+        "longitude": (20, 110),
+    },  ## Missing northern part of Indian_Ocean
+    "Pacific_Ocean": {"latitude": (-60, 60), "longitude": (110, -100)},
+    "Global_No_Poles": {"latitude": (-60, 60), "longitude": (-180, 180)},
+    "Global_With_Poles": {"latitude": (-90, 90), "longitude": (-180, 180)},
+    "Southern_Ocean": {"latitude": (-80, -60), "longitude": (-180, 180)},
+    "Southern_Ocean_X": {"latitude": (-90, -60), "longitude": (-180, 180)},
+    "Arctic_Ocean": {"latitude": (60, 80), "longitude": (-180, 180)},
+    "Arctic_Ocean_X": {"latitude": (60, 90), "longitude": (-180, 180)},
+}
 
 # lon: 0 - 360
-basin_2_limit_era = {'Atlantic_Ocean': {'latitude': (-60, 60), 'longitude': (260, 20)},
-                     'Indian_Ocean': {'latitude': (-60, 30), 'longitude': (20, 110)}, ## Original (60S-30N Indian Ocean) domain
-                     'Indian_Ocean_X': {'latitude': (-60, 60), 'longitude': (20, 110)}, ## Full latitude band
-                     'Indian_Ocean_H': {'latitude': (30, 60), 'longitude': (20, 110)}, ## Missing northern part of Indian_Ocean
-                     'Global_No_Poles': {'latitude': (-60, 60), 'longitude': (-180, 180)},
-                     'Pacific_Ocean': {'latitude': (-60, 60), 'longitude': (110, 260)},
-                     'Southern_Ocean': {'latitude': (-80, -60), 'longitude': (0, 360)},
-                     'Southern_Ocean_X': {'latitude': (-90, -60), 'longitude': (0, 360)},
-                     'Arctic_Ocean': {'latitude': (60, 80), 'longitude': (0, 360)},
-                     'Arctic_Ocean_X': {'latitude': (60, 90), 'longitude': (0, 360)}}
+basin_2_limit_era = {
+    "Atlantic_Ocean": {"latitude": (-60, 60), "longitude": (260, 20)},
+    "Indian_Ocean": {
+        "latitude": (-60, 30),
+        "longitude": (20, 110),
+    },  ## Original (60S-30N Indian Ocean) domain
+    "Indian_Ocean_X": {
+        "latitude": (-60, 60),
+        "longitude": (20, 110),
+    },  ## Full latitude band
+    "Indian_Ocean_H": {
+        "latitude": (30, 60),
+        "longitude": (20, 110),
+    },  ## Missing northern part of Indian_Ocean
+    "Global_No_Poles": {"latitude": (-60, 60), "longitude": (-180, 180)},
+    "Pacific_Ocean": {"latitude": (-60, 60), "longitude": (110, 260)},
+    "Southern_Ocean": {"latitude": (-80, -60), "longitude": (0, 360)},
+    "Southern_Ocean_X": {"latitude": (-90, -60), "longitude": (0, 360)},
+    "Arctic_Ocean": {"latitude": (60, 80), "longitude": (0, 360)},
+    "Arctic_Ocean_X": {"latitude": (60, 90), "longitude": (0, 360)},
+}
 
 #
-month_2_constraint = {(month_num+1): iris.Constraint(month_number=month_num+1) for month_num in range(12)}
+month_2_constraint = {
+    (month_num + 1): iris.Constraint(month_number=month_num + 1)
+    for month_num in range(12)
+}
 
 
-def from_one_to_nine_data_lat_lon_convention(ncfile0,
-                                             n_10box=1,
-                                             lat_max=70):
-    '''
+def from_one_to_nine_data_lat_lon_convention(ncfile0, n_10box=1, lat_max=70):
+    """
     Starting with those 10 deg box netcdfs, say data_160_0.nc (160E-170E, 0-10N)
     identify the netcdfs that are n_10box away from it, including diagonal ones
     n_10box == 1: total of  9 files (the original one plus the 8 around it)
     n_10box == 2: total of 25 files
 
-    See "tests_and_examples/extra_R_scripts", that is 
+    See "tests_and_examples/extra_R_scripts", that is
     the original script that breaks up the larger ERA and ESA CCI files into 10 degree boxes
 
     In the newer 5x5 runs, the data is small enough that carving the data into
@@ -96,59 +122,59 @@ def from_one_to_nine_data_lat_lon_convention(ncfile0,
     -------
         ans : list
             List of netcdf file names
-        
+
     Uses lon 0 to 360
-    '''
+    """
     ncfile0_basename = ntpath.basename(ncfile0)
-    match0 = re.findall(r'[^\s_]+', ncfile0_basename)
-    match1 = re.findall(r'[^\s.]+', match0[-1])
+    match0 = re.findall(r"[^\s_]+", ncfile0_basename)
+    match1 = re.findall(r"[^\s.]+", match0[-1])
     lon, lat = int(match0[1]), int(match1[0])
-    lon_b = [lon-10*n for n in range(1, n_10box+1)]
-    lon_n = [lon+10*n for n in range(1, n_10box+1)]
-    lat_b = [lat-10*n for n in range(1, n_10box+1)]
-    lat_n = [lat+10*n for n in range(1, n_10box+1)]
-    lon_b = [(llon+360) if (llon <  -180) else llon for llon in lon_b]
-    lon_n = [(llon-360) if (llon >=  180) else llon for llon in lon_n]
+    lon_b = [lon - 10 * n for n in range(1, n_10box + 1)]
+    lon_n = [lon + 10 * n for n in range(1, n_10box + 1)]
+    lat_b = [lat - 10 * n for n in range(1, n_10box + 1)]
+    lat_n = [lat + 10 * n for n in range(1, n_10box + 1)]
+    lon_b = [(llon + 360) if (llon < -180) else llon for llon in lon_b]
+    lon_n = [(llon - 360) if (llon >= 180) else llon for llon in lon_n]
     #
     ans = []
-    for x in lon_b+[lon]+lon_n:
-        for y in lat_b+[lat]+lat_n:
-            if (y < lat_max) and (y > (-lat_max-10)):
-                ans.append('data_'+str(x)+'_'+str(y)+'.nc')
+    for x in lon_b + [lon] + lon_n:
+        for y in lat_b + [lat] + lat_n:
+            if (y < lat_max) and (y > (-lat_max - 10)):
+                ans.append("data_" + str(x) + "_" + str(y) + ".nc")
     ans.sort()
     return ans
 
 
-def from_one_to_nine_data_lat_lon_convention_era(ncfile0,
-                                                 n_10box=1,
-                                                 lat_max=70):
-    '''
+def from_one_to_nine_data_lat_lon_convention_era(
+    ncfile0, n_10box=1, lat_max=70
+):
+    """
     Same as in from_one_to_nine_data_lat_lon_convention but
     follows the longitude convention -180-180 (ERA/ESA data etc)
-    '''
+    """
     ncfile0_basename = ntpath.basename(ncfile0)
-    match0 = re.findall(r'[^\s_]+', ncfile0_basename)
-    match1 = re.findall(r'[^\s.]+', match0[-1])
+    match0 = re.findall(r"[^\s_]+", ncfile0_basename)
+    match1 = re.findall(r"[^\s.]+", match0[-1])
     lon, lat = int(match0[1]), int(match1[0])
-    lon_b = [lon-10*n for n in range(1, n_10box+1)]
-    lon_n = [lon+10*n for n in range(1, n_10box+1)]
-    lat_b = [lat-10*n for n in range(1, n_10box+1)]
-    lat_n = [lat+10*n for n in range(1, n_10box+1)]
-    lon_b = [(llon+360) if (llon <    0) else llon for llon in lon_b]
-    lon_n = [(llon-360) if (llon >= 360) else llon for llon in lon_n]
+    lon_b = [lon - 10 * n for n in range(1, n_10box + 1)]
+    lon_n = [lon + 10 * n for n in range(1, n_10box + 1)]
+    lat_b = [lat - 10 * n for n in range(1, n_10box + 1)]
+    lat_n = [lat + 10 * n for n in range(1, n_10box + 1)]
+    lon_b = [(llon + 360) if (llon < 0) else llon for llon in lon_b]
+    lon_n = [(llon - 360) if (llon >= 360) else llon for llon in lon_n]
     ##
     ans = []
-    for x in lon_b+[lon]+lon_n:
-        for y in lat_b+[lat]+lat_n:
-            if (y < lat_max) and (y > (-lat_max-10)):
-                ans.append('data_'+str(x)+'_'+str(y)+'.nc')
+    for x in lon_b + [lon] + lon_n:
+        for y in lat_b + [lat] + lat_n:
+            if (y < lat_max) and (y > (-lat_max - 10)):
+                ans.append("data_" + str(x) + "_" + str(y) + ".nc")
     ans.sort()
     return ans
 
 
-def default_files_in_basin(basin_name='Indian_Ocean'):
-    '''
-    Identify all 10 deg box netcdfs files within the 
+def default_files_in_basin(basin_name="Indian_Ocean"):
+    """
+    Identify all 10 deg box netcdfs files within the
     definitions in dictionary basin_2_limit
 
     Parameters
@@ -161,53 +187,55 @@ def default_files_in_basin(basin_name='Indian_Ocean'):
     ans : list
         a list of 10x10 netcdf files
         similar to results from_one_to_nine_data_lat_lon_convention
-    '''
-    lat_bounds = basin_2_limit[basin_name]['latitude']
-    lon_bounds = basin_2_limit[basin_name]['longitude']
+    """
+    lat_bounds = basin_2_limit[basin_name]["latitude"]
+    lon_bounds = basin_2_limit[basin_name]["longitude"]
     lats = np.arange(lat_bounds[0], lat_bounds[1], 10).tolist()
     if lon_bounds[1] > lon_bounds[0]:
         lons = np.arange(lon_bounds[0], lon_bounds[1], 10).tolist()
     else:
         # wrapped around 180E/W
-        lons1 = np.arange(lon_bounds[0],  180, 10).tolist()
+        lons1 = np.arange(lon_bounds[0], 180, 10).tolist()
         lons2 = np.arange(-180, lon_bounds[1], 10).tolist()
-        lons  = np.concatenate((lons1, lons2), axis = None)
+        lons = np.concatenate((lons1, lons2), axis=None)
     ans = []
     for lat in lats:
         for lon in lons:
-            ans.append('data_'+str(lon)+'_'+str(lat)+'.nc')
+            ans.append("data_" + str(lon) + "_" + str(lat) + ".nc")
     return ans
 
 
-def default_files_in_basin_era(basin_name='Indian_Ocean'):
-    '''
-    As in default_files_in_basin but uses the different 
+def default_files_in_basin_era(basin_name="Indian_Ocean"):
+    """
+    As in default_files_in_basin but uses the different
     lon conventions as in from_one_to_nine_data_lat_lon_convention_era
-    '''
-    lat_bounds = basin_2_limit_era[basin_name]['latitude']
-    lon_bounds = basin_2_limit_era[basin_name]['longitude']
+    """
+    lat_bounds = basin_2_limit_era[basin_name]["latitude"]
+    lon_bounds = basin_2_limit_era[basin_name]["longitude"]
     lats = np.arange(lat_bounds[0], lat_bounds[1], 10).tolist()
     if lon_bounds[1] > lon_bounds[0]:
         lons = np.arange(lon_bounds[0], lon_bounds[1], 10).tolist()
     else:
         # wrapped around 180E/W
         lons1 = np.arange(lon_bounds[0], 360, 10).tolist()
-        lons2 = np.arange(  0, lon_bounds[1], 10).tolist()
-        lons  = np.concatenate((lons1, lons2), axis = None)
+        lons2 = np.arange(0, lon_bounds[1], 10).tolist()
+        lons = np.concatenate((lons1, lons2), axis=None)
     ans = []
     for lat in lats:
         for lon in lons:
-            ans.append('data_'+str(lon)+'_'+str(lat)+'.nc')
+            ans.append("data_" + str(lon) + "_" + str(lat) + ".nc")
     return ans
 
 
-def iris_load_cube_plus(ncfiles,
-                        var_name='sst_anomaly',
-                        fudge_negative_longitude=False,
-                        fudge_360plus_longitude=False,
-                        callback=None,
-                        additional_constraints=None):
-    '''
+def iris_load_cube_plus(
+    ncfiles,
+    var_name="sst_anomaly",
+    fudge_negative_longitude=False,
+    fudge_360plus_longitude=False,
+    callback=None,
+    additional_constraints=None,
+):
+    """
     iris.load_cube wrapper
     with additional tools included mostly with the longitudes
     since some dataset are -180 to 180 while some are 0 to 360.
@@ -224,27 +252,27 @@ def iris_load_cube_plus(ncfiles,
         variables in the file). Here you just specify the variable name
     fudge_negative_longitude and fudge_360plus_longitude: bool
         Cannot be set to True together, mutually exclusive
-        
-        fudge_negative_longitude - 
+
+        fudge_negative_longitude -
         this adds 360 to all negative lons
         if this is a -180 to 180 global file, this makes the file 0 - 360
         if this a regional file, the new lons are always positive
         this is originally implemented to fudge lons for the Atlantic
 
-        fudge_360plus_longitude - 
+        fudge_360plus_longitude -
         Used for regional/basin files only
         This forefully add 360 to all lons. It is originally added
         to concat results from different basins
         because the ellipse scales are estimated seperately for each
         when data resolution is high
-    
+
     callback : callable
         This is the same kwarg for iris load
         Consult iris documentation
         Such as:
         https://scitools-iris.readthedocs.io/en/stable/generated/api/iris.html
-    
-    
+
+
     additional_constraints:
         Additional constraints to be applied
         This works the same way as iris
@@ -256,40 +284,48 @@ def iris_load_cube_plus(ncfiles,
     -------
     ans_cube : iris.cube.Cube instance
         The cube wanted
-    '''
+    """
     cubes = iris.load(ncfiles, var_name, callback=callback)
     for cube in cubes:
-        assert 'time' in [coord.name() for coord in cube.coords()]
+        assert "time" in [coord.name() for coord in cube.coords()]
     #
     if fudge_negative_longitude and fudge_360plus_longitude:
-        raise ValueError('fudge_negative_longitude and fudge_360plus_longitude are mutually exclusive')
+        raise ValueError(
+            "fudge_negative_longitude and fudge_360plus_longitude are mutually exclusive"
+        )
     if fudge_negative_longitude:
-        print('fudge_negative_longitude is True')
+        print("fudge_negative_longitude is True")
         for cube_i, cube in enumerate(cubes):
-            cubes[cube_i].coord('longitude').bounds = None
-            #cube.coord('longitude').points.setflags(write = 1)
-            #negative_lons_idx = np.where(cube.coord('longitude').points < 0)
-            #cube.coord('longitude').points[negative_lons_idx] = cube.coord('longitude').points[negative_lons_idx] + 180
-            #cube.coord('longitude').points.setflags(write = 0)
-            any_negative_idx = np.any(cube.coord('longitude').points < 0)
+            cubes[cube_i].coord("longitude").bounds = None
+            # cube.coord('longitude').points.setflags(write = 1)
+            # negative_lons_idx = np.where(cube.coord('longitude').points < 0)
+            # cube.coord('longitude').points[negative_lons_idx] = cube.coord('longitude').points[negative_lons_idx] + 180
+            # cube.coord('longitude').points.setflags(write = 0)
+            any_negative_idx = np.any(cube.coord("longitude").points < 0)
             if any_negative_idx:
-                print('Modifying lons in :', cubes[cube_i].coord('longitude').points[0])
-                cubes[cube_i].coord('longitude').points = cubes[cube_i].coord('longitude').points + 360.0
+                print(
+                    "Modifying lons in :",
+                    cubes[cube_i].coord("longitude").points[0],
+                )
+                cubes[cube_i].coord("longitude").points = (
+                    cubes[cube_i].coord("longitude").points + 360.0
+                )
     #
     if fudge_360plus_longitude:
-        print('fudge_360plus_longitude is True')
+        print("fudge_360plus_longitude is True")
         for cube_i, cube in enumerate(cubes):
-            cubes[cube_i].coord('longitude').bounds = None
-            cube_lons = cube.coord('longitude').points
-            any_wraparound_idx = np.logical_and(cube_lons[-1] <= 180.0,
-                                                cube_lons[0] >= 0.0)
+            cubes[cube_i].coord("longitude").bounds = None
+            cube_lons = cube.coord("longitude").points
+            any_wraparound_idx = np.logical_and(
+                cube_lons[-1] <= 180.0, cube_lons[0] >= 0.0
+            )
             # any_wraparound_idx = np.logical_and(np.any(cube.coord('longitude').points <= 180.0),
             #                                     np.any(cube.coord('longitude').points >=   0.0))
             if any_wraparound_idx:
-                print('Modifying lons:', cube_lons[0], cube_lons[-1])
+                print("Modifying lons:", cube_lons[0], cube_lons[-1])
                 new_cube_lons = cube_lons + 360.0
-                print('New lons: ', new_cube_lons)
-                cubes[cube_i].coord('longitude').points = new_cube_lons
+                print("New lons: ", new_cube_lons)
+                cubes[cube_i].coord("longitude").points = new_cube_lons
     #
     iutil.unify_time_units(cubes)
     # Probably not needed anyway
@@ -297,17 +333,19 @@ def iris_load_cube_plus(ncfiles,
     try:
         iutil.equalise_attributes(cubes)
     except Exception as e:
-        print('The following Python exception detected:')
+        print("The following Python exception detected:")
         logging.error(repr(e))
     ans_cube = cubes.concatenate_cube()
     #
-    for t_meta_gen_func in [icc.add_month_number,
-                            icc.add_day_of_month,
-                            icc.add_year]:
+    for t_meta_gen_func in [
+        icc.add_month_number,
+        icc.add_day_of_month,
+        icc.add_year,
+    ]:
         try:
-            t_meta_gen_func(ans_cube, 'time')
+            t_meta_gen_func(ans_cube, "time")
         except Exception as e:
-            print('Python exception detected (extra t coord probably exist):')
+            print("Python exception detected (extra t coord probably exist):")
             logging.error(repr(e))
     ##
     if additional_constraints is not None:
@@ -317,32 +355,32 @@ def iris_load_cube_plus(ncfiles,
 
 
 def add_proj_fix_mask_callback_ESA_1deg(cube, _, __):
-    '''
+    """
     Some ESA 1x1 (?) files are misssing map projection which makes
     iris or CDO unhappy with it (like you cannot regrid them)
     This fixes it via iris load callback mechanism
-    '''
-    fname = iris.sample_data_path('air_temp.pp')
+    """
+    fname = iris.sample_data_path("air_temp.pp")
     air_temp = iris.load_cube(fname)
-    cube_projection = air_temp.coord('latitude').coord_system
-    cube.coord('lat').units = 'degrees'
-    cube.coord('lon').units = 'degrees'
-    cube.coord('lat').rename('latitude')
-    cube.coord('lon').rename('longitude')
-    cube.coord('latitude').coord_system = cube_projection
-    cube.coord('longitude').coord_system = cube_projection
-    cube.coord('latitude').guess_bounds()
-    cube.coord('longitude').guess_bounds()
+    cube_projection = air_temp.coord("latitude").coord_system
+    cube.coord("lat").units = "degrees"
+    cube.coord("lon").units = "degrees"
+    cube.coord("lat").rename("latitude")
+    cube.coord("lon").rename("longitude")
+    cube.coord("latitude").coord_system = cube_projection
+    cube.coord("longitude").coord_system = cube_projection
+    cube.coord("latitude").guess_bounds()
+    cube.coord("longitude").guess_bounds()
 
 
 def getmask_ESA_with_ice_1deg():
-    '''
+    """
     Read ESA Land|Ice-Sea 1.0x1.0 mask
 
     Includes ice-covered grid points
-    I think Aga created the file; 
+    I think Aga created the file;
     it is the same file in config file in noc_runners'
-    
+
     The file is originally located at:
     /noc/mpoc/surface_data/agfaul/DIFFERENT_EMPIRICAL_COVARIANCES/world/
 
@@ -350,17 +388,19 @@ def getmask_ESA_with_ice_1deg():
     -------
     ls_mask : iris.cube.Cube instance
         The mask
-    '''
-    mask_path = os.path.dirname(__file__)+'/data/'
-    wor_mask = iris.load_cube(mask_path+'world_landmask.nc',
-                              callback=add_proj_fix_mask_callback_ESA_1deg)
-    wor_mask.data = wor_mask.data.astype('int8')
-    wor_mask.rename('land_sea_mask')
+    """
+    mask_path = os.path.dirname(__file__) + "/data/"
+    wor_mask = iris.load_cube(
+        mask_path + "world_landmask.nc",
+        callback=add_proj_fix_mask_callback_ESA_1deg,
+    )
+    wor_mask.data = wor_mask.data.astype("int8")
+    wor_mask.rename("land_sea_mask")
     return wor_mask
 
 
 def getmask_ESA_1deg(threshold=0.8):
-    '''
+    """
     Pure land-sea mask 1.0x1.0 mask, ice ignored
     File is generated by UoR using https://surftemp.net/'
 
@@ -373,20 +413,20 @@ def getmask_ESA_1deg(threshold=0.8):
     -------
     ls_mask : iris.cube.Cube instance
         The mask
-    '''
-    esa_blob_path = os.path.dirname(__file__)+'/data/'
-    esa_cubes = iris.load(esa_blob_path+'19820101_regridded_sst.nc')
-    sea_area_fraction = esa_cubes.extract('sea_area_fraction')[0][0]
+    """
+    esa_blob_path = os.path.dirname(__file__) + "/data/"
+    esa_cubes = iris.load(esa_blob_path + "19820101_regridded_sst.nc")
+    sea_area_fraction = esa_cubes.extract("sea_area_fraction")[0][0]
     ls_mask = sea_area_fraction.copy()
     ls_mask.data[sea_area_fraction.data >= threshold] = 1
-    ls_mask.data[sea_area_fraction.data <  threshold] = 0
-    ls_mask.data = ls_mask.data.astype('int8')
-    ls_mask.rename('land_sea_mask')
+    ls_mask.data[sea_area_fraction.data < threshold] = 0
+    ls_mask.data = ls_mask.data.astype("int8")
+    ls_mask.rename("land_sea_mask")
     return ls_mask
 
 
 def mask_cube_ESA_1deg_with_ice(cube2mask):
-    '''
+    """
     Front end to apply mask in getmask_ESA_with_ice_1deg
     to another 1x1 dataset
 
@@ -399,16 +439,24 @@ def mask_cube_ESA_1deg_with_ice(cube2mask):
     -------
     cube2mask : iris.cube.Cube instance
         The masked 1x1 iris cube
-    '''
+    """
     #
     wor_mask = getmask_ESA_with_ice_1deg()
     #
-    lat_rng = (np.floor(cube2mask.coord('latitude').points.min()),
-               np.ceil (cube2mask.coord('latitude').points.max()))
-    lon_rng = (np.floor(cube2mask.coord('longitude').points.min()),
-               np.ceil (cube2mask.coord('longitude').points.max()))
-    latc = iris.Constraint(latitude  = lambda val: (lat_rng[1]+0.05) > val > (lat_rng[0]-0.05))
-    lonc = iris.Constraint(longitude = lambda val: (lon_rng[1]+0.05) > val > (lon_rng[0]-0.05))
+    lat_rng = (
+        np.floor(cube2mask.coord("latitude").points.min()),
+        np.ceil(cube2mask.coord("latitude").points.max()),
+    )
+    lon_rng = (
+        np.floor(cube2mask.coord("longitude").points.min()),
+        np.ceil(cube2mask.coord("longitude").points.max()),
+    )
+    latc = iris.Constraint(
+        latitude=lambda val: (lat_rng[1] + 0.05) > val > (lat_rng[0] - 0.05)
+    )
+    lonc = iris.Constraint(
+        longitude=lambda val: (lon_rng[1] + 0.05) > val > (lon_rng[0] - 0.05)
+    )
     submask = wor_mask.extract(latc & lonc)
     #
     mask2 = np.broadcast_to(submask.data, cube2mask.data.shape)
@@ -417,13 +465,13 @@ def mask_cube_ESA_1deg_with_ice(cube2mask):
 
 
 def mask_cube_ERA_0p25(cube2mask, use_180_2_180=False):
-    '''
+    """
     This is the original path in CEDA for
     ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc
     _lsmask_file_era_path = '/badc/ecmwf-era5/data/invariants/'
 
-    use_180_2_180 = True (-180 to 180) or 
-    use_180_2_180 = False (0 to 360), 
+    use_180_2_180 = True (-180 to 180) or
+    use_180_2_180 = False (0 to 360),
     both work, but use the one matches your file
 
     However, cube2mask must be checked to make sure for longitude wrap around/discontinuity
@@ -432,7 +480,7 @@ def mask_cube_ERA_0p25(cube2mask, use_180_2_180=False):
     Below are situations that will fail:
     350 (10W) --> 0 or 360 (0E/W) --> 10 (10E)
     170 (170E) --> (-)180 (180E/W) --> -170 (170W)
-    
+
     What will work:
     350 --> 360 --> 370 or  -10 --> 0 --> 10
     170 --> 180 --> 190
@@ -449,19 +497,26 @@ def mask_cube_ERA_0p25(cube2mask, use_180_2_180=False):
     -------
     cube2mask : iris.cube.Cube instance
         The masked 1x1 iris cube
-    '''
+    """
     #
-    _lsmask_file_era_path = os.path.dirname(__file__)+'/data/'
+    _lsmask_file_era_path = os.path.dirname(__file__) + "/data/"
     if use_180_2_180:
-        _lsmask_file_era = _lsmask_file_era_path+'ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.alternative.nc'
+        _lsmask_file_era = (
+            _lsmask_file_era_path
+            + "ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.alternative.nc"
+        )
     else:
-        _lsmask_file_era = _lsmask_file_era_path+'ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc'
+        _lsmask_file_era = (
+            _lsmask_file_era_path
+            + "ecmwf-era5_oper_an_sfc_200001010000.lsm.inv.nc"
+        )
     _lsmask_cube_era = iris.load_cube(_lsmask_file_era)[0]
-    lons = cube2mask.coord('longitude').points
-    lats = cube2mask.coord('latitude').points
-    lsmask_cube_regional = _lsmask_cube_era.intersection(longitude=(lons[0], lons[-1]),
-                                                         latitude=(lats[0], lats[-1]))
-    lsmask_cube_regional = iutil.reverse(lsmask_cube_regional, 'latitude')
+    lons = cube2mask.coord("longitude").points
+    lats = cube2mask.coord("latitude").points
+    lsmask_cube_regional = _lsmask_cube_era.intersection(
+        longitude=(lons[0], lons[-1]), latitude=(lats[0], lats[-1])
+    )
+    lsmask_cube_regional = iutil.reverse(lsmask_cube_regional, "latitude")
     print(repr(lsmask_cube_regional), lsmask_cube_regional.shape)
     mask2 = np.broadcast_to(lsmask_cube_regional.data, cube2mask.data.shape)
     print(mask2.shape)
@@ -482,9 +537,10 @@ def mask_cube_ERA_0p25(cube2mask, use_180_2_180=False):
 #         print(cube)
 #     return
 
+
 def main():
-    ''' MAIN '''
-    print('=== Main ===')
+    """MAIN"""
+    print("=== Main ===")
     # _test_load()
 
 
