@@ -1,6 +1,4 @@
-"""
-Run script for SST and LSAT nonstationary variogram parameter estimation
-"""
+"""Run script for SST and LSAT nonstationary variogram parameter estimation"""
 
 # import datetime
 import logging

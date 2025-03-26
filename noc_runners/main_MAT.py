@@ -34,7 +34,7 @@ from glomar_gridding.grid import assign_to_grid
 from glomar_gridding.interpolation_covariance import load_covariance
 from glomar_gridding.io import load_array, load_dataset
 from glomar_gridding.mask import mask_observations, get_mask_idx
-from glomar_gridding.distances import tau_dist
+from glomar_gridding.distances import tau_dist_from_frame
 from glomar_gridding.utils import get_pentad_range
 
 # NOC Specific Helper Functions
@@ -170,7 +170,7 @@ def _measurement_covariance(
     cov = err_cov.uncorrelated_components(
         df, group_col="data_type", obs_sig_map=obs_bias_map
     )
-    dist, weights = err_cov.dist_weight(df, dist_fn=tau_dist)
+    dist, weights = err_cov.dist_weight(df, dist_fn=tau_dist_from_frame)
     cov = cov + dist
     del dist
     # print(covx1, covx1.shape)

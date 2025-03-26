@@ -1,0 +1,708 @@
+"""Classes and functions for ellipse models"""
+
+import logging
+import math as maths
+import warnings
+from collections import OrderedDict
+from collections.abc import Callable
+from typing import Literal, cast, get_args
+
+import numpy as np
+from cf_units import Unit
+from joblib import Parallel, delayed
+from scipy import stats
+from scipy.optimize import OptimizeResult, minimize
+from scipy.special import gamma
+from scipy.special import kv as modified_bessel_2nd
+
+from glomar_gridding.constants import (
+    DEFAULT_BACKEND,
+    DEFAULT_N_JOBS,
+)
+from glomar_gridding.distances import mahal_dist_func
+from glomar_gridding.utils import deg_to_km
+
+MODEL_TYPE = Literal[
+    "ps2006_kks2011_iso",
+    "ps2006_kks2011_ani",
+    "ps2006_kks2011_ani_r",
+    "ps2006_kks2011_iso_pd",
+    "ps2006_kks2011_ani_pd",
+    "ps2006_kks2011_ani_r_pd",
+]
+
+FFORM = Literal[
+    "anisotropic_rotated",
+    "anisotropic",
+    "isotropic",
+    "anisotropic_rotated_pd",
+    "anisotropic_pd",
+    "isotropic_pd",
+]
+
+SUPERCATEGORY = Literal[
+    "1_param_matern",
+    "2_param_matern",
+    "3_param_matern",
+    "1_param_matern_pd",
+    "2_param_matern_pd",
+    "3_param_matern_pd",
+]
+
+MODEL_TYPE_TO_SUPERCATEGORY: dict[MODEL_TYPE, SUPERCATEGORY] = {
+    "ps2006_kks2011_iso": "1_param_matern",
+    "ps2006_kks2011_ani": "2_param_matern",
+    "ps2006_kks2011_ani_r": "3_param_matern",
+    "ps2006_kks2011_iso_pd": "1_param_matern_pd",
+    "ps2006_kks2011_ani_pd": "2_param_matern_pd",
+    "ps2006_kks2011_ani_r_pd": "3_param_matern_pd",
+}
+
+FFORM_TO_MODELTYPE: dict[FFORM, MODEL_TYPE] = {
+    "anisotropic_rotated": "ps2006_kks2011_ani_r",
+    "anisotropic": "ps2006_kks2011_ani",
+    "isotropic": "ps2006_kks2011_iso",
+    "anisotropic_rotated_pd": "ps2006_kks2011_ani_r_pd",
+    "anisotropic_pd": "ps2006_kks2011_ani_pd",
+    "isotropic_pd": "ps2006_kks2011_iso_pd",
+}
+
+SUPERCATEGORY_PARAMS: dict[SUPERCATEGORY, OrderedDict[str, Unit]] = {
+    "3_param_matern": OrderedDict(
+        [
+            ("Lx", Unit("degrees")),
+            ("Ly", Unit("degrees")),
+            ("theta", Unit("radians")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+    "2_param_matern": OrderedDict(
+        [
+            ("Lx", Unit("degrees")),
+            ("Ly", Unit("degrees")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+    "1_param_matern": OrderedDict(
+        [
+            ("R", Unit("degrees")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+    "3_param_matern_pd": OrderedDict(
+        [
+            ("Lx", Unit("km")),
+            ("Ly", Unit("km")),
+            ("theta", Unit("radians")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+    "2_param_matern_pd": OrderedDict(
+        [
+            ("Lx", Unit("km")),
+            ("Ly", Unit("km")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+    "1_param_matern_pd": OrderedDict(
+        [
+            ("R", Unit("km")),
+            ("standard_deviation", Unit("K")),
+            ("qc_code", Unit("1")),
+            ("number_of_iterations", Unit("1")),
+        ]
+    ),
+}
+
+
+class MaternEllipseModel:
+    """
+    The class that contains variogram/ellipse fitting methods and parameters
+
+    This class assumes your input to be a standardised correlation matrix
+    They are easier to handle because stdevs in the covariance function become 1
+
+    Parameters
+    ----------
+    anisotropic : bool
+        Should the output be an ellipse? Set to False for circle.
+    rotated : bool
+        Can the ellipse be rotated. If anisotropic is False this value cannot
+        be True.
+    physical_distance : bool
+        Use physical distances rather than lat/lon distance.
+    v : float
+        Matern Shape Parameter. Must be > 0.0.
+    unit_sigma=True: bool
+        When MLE fitting the Matern parameters,
+        assuming the Matern parameters themselves
+        are normally distributed,
+        there is standard deviation within the log likelihood function.
+
+        See Wikipedia entry for Maxmimum Likelihood under:
+        - Continuous distribution, continuous parameter space
+
+        Its actual value is not important
+        to the best (MLE) estimate of the Matern parameters.
+        If one assumes the parameters are normally distributed,
+        the mean (best estimate) is independent of its variance.
+        In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1).
+        This value can however be computed. It serves a similar purpose as
+        the original standard deviation:
+        in this case, how the actual observed semivariance disperses
+        around the fitted variogram.
+
+        Here it defaults to 1 just as Karspeck.
+    """
+
+    def __init__(
+        self,
+        anisotropic: bool,
+        rotated: bool,
+        physical_distance: bool,
+        v: float,
+        unit_sigma: bool = False,
+    ) -> None:
+        if v <= 0:
+            raise ValueError("'v' must be > 0")
+        self.anisotropic = anisotropic
+        self.rotated = rotated
+        self.physical_distance = physical_distance
+        self.v = v
+        self.unit_sigma = unit_sigma
+
+        self._get_model_names()
+        self.supercategory_params = SUPERCATEGORY_PARAMS[self.supercategory]
+        self.supercategory_n_params = len(self.supercategory_params)
+
+        self._get_defaults()
+
+        return None
+
+    def _get_model_names(self) -> None:
+        """Determine the fform, model type, and supercategory."""
+        if self.rotated and not self.anisotropic:
+            raise ValueError("Cannot have an isotropic rotated fform")
+
+        fform_builder: list[str] = (
+            ["anisotropic"] if self.anisotropic else ["istropic"]
+        )
+        if self.rotated:
+            fform_builder.append("rotated")
+        if self.physical_distance:
+            fform_builder.append("pd")
+
+        fform_str: str = "_".join(fform_builder)
+        if fform_str not in get_args(FFORM):
+            raise ValueError("Could not compute fform value from inputs")
+
+        self.fform: FFORM = cast(FFORM, fform_str)
+        self.model_type: MODEL_TYPE = FFORM_TO_MODELTYPE[self.fform]
+        self.supercategory: SUPERCATEGORY = MODEL_TYPE_TO_SUPERCATEGORY[
+            self.model_type
+        ]
+
+        return None
+
+    def _get_defaults(self) -> None:  # noqa: C901
+        """Get default values for the MaternEllipseModel."""
+        match self.fform:
+            case "isotropic":
+                self.n_params = 1
+                self.default_guesses = [7.0]
+                self.default_bounds = [(0.5, 50.0)]
+
+                def c_ij(X, **params):
+                    return c_ij_isotropic(self.v, 1, X, **params)
+            case "isotropic_pd":
+                self.n_params = 1
+                self.default_guesses = [deg_to_km(7.0)]
+                self.default_bounds = [
+                    (deg_to_km(0.5), deg_to_km(50)),
+                ]
+
+                def c_ij(X, **params):
+                    return c_ij_isotropic(self.v, 1, X, **params)
+            case "anisotropic":
+                self.n_params = 2
+                self.default_guesses = [7.0, 7.0]
+                self.default_bounds = [(0.5, 50.0), (0.5, 30.0)]
+
+                def c_ij(X, **params):
+                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+            case "anisotropic_pd":
+                self.n_params = 2
+                self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0)]
+                self.default_bounds = [
+                    (deg_to_km(0.5), deg_to_km(50)),
+                    (deg_to_km(0.5), deg_to_km(30)),
+                ]
+
+                def c_ij(X, **params):
+                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+            case "anisotropic_rotated":
+                self.n_params = 3
+                self.default_guesses = [7.0, 7.0, 0.0]
+                self.default_bounds = [
+                    (0.5, 50.0),
+                    (0.5, 30.0),
+                    (-2.0 * np.pi, 2.0 * np.pi),
+                ]
+
+                def c_ij(X, **params):
+                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+            case "anisotropic_rotated_pd":
+                self.n_params = 3
+                self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0), 0.0]
+                self.default_bounds = [
+                    (deg_to_km(0.5), deg_to_km(50)),
+                    (deg_to_km(0.5), deg_to_km(30)),
+                    (-2.0 * maths.pi, 2.0 * maths.pi),
+                ]
+
+                def c_ij(X, **params):
+                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+
+        self.c_ij = c_ij
+
+    def negative_log_likelihood(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        params: tuple[float, ...],
+        arctanh_transform: bool = True,
+        backend: str = DEFAULT_BACKEND,
+        n_jobs: int = DEFAULT_N_JOBS,
+    ) -> float:
+        """
+        Compute the negative log-likelihood given observed X independent
+        observations (displacements) and y dependent variable (the observed
+        correlation), and Matern parameters params. Namely does the Matern
+        covariance function using params, how close it explains the observed
+        displacements and correlations.
+
+        log(LL) = SUM (f (y,x|params) )
+        params = Maximise (log(LL))
+        params = Minimise (-log(LL)) which is how usually the computer solves it
+        assuming errors of params are normally distributed
+
+        There is a hidden scale/standard deviation in
+        stats.norm.logpdf(scale, which defaults to 1)
+        but since we have scaled our values to covariance to correlation (and
+        even used Fisher transform) as part of the function, it can be dropped
+
+        Otherwise, you need to have stdev as the last value of params, and
+        should be set to the scale parameter
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Observed displacements
+        y : np.ndarray
+            Observed correlation
+        params : tuple of Matern parameters
+            (in the current optimize iteration) or if you want to
+            compute the actual negative log-likelihood
+        arctanh_transform : bool
+            Should the Fisher (arctanh) transform be used
+            This is usually option, but it does make the computation
+            more stable if they are close to 1 (or -1; doesn't apply here)
+        backend : str
+            joblib backend
+            See https://joblib.readthedocs.io/en/latest/generated/joblib.Parallel.html
+        n_jobs : int
+            Number of threads/parallel computation
+
+        Returns
+        -------
+        nLL : float
+            The negative log likelihood
+        """
+        sigma = 1
+        if not self.unit_sigma:
+            if len(params) > self.n_params:
+                raise ValueError("Cannot get sigma from params")
+            sigma = params[self.n_params]
+
+        match self.n_params:
+            case 1:  # Circle
+                R = params[0]  # Radius
+                y_LL = self.c_ij(X, R=R)
+            case 2:  # Un-rotated Ellipse
+                Lx = params[0]
+                Ly = params[1]
+                y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
+                    delayed(self.c_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly)
+                    for n_x_j in range(X.shape[0])
+                )
+            case 3:  # Rotated Ellipse
+                Lx = params[0]
+                Ly = params[1]
+                theta = params[2]
+                y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
+                    delayed(self.c_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly, theta=theta)
+                    for n_x_j in range(X.shape[0])
+                )
+            case _:
+                raise ValueError("Unexpected length of self.n_params.")
+
+        y_LL = np.array(y_LL)
+        # if y is correlation,
+        # it might be useful to Fisher transform them before plugging into
+        # norm.logpdf this affects values close to 1 and -1
+        # imposing better behavior to the differences at the tail
+
+        if arctanh_transform:
+            # Warning against arctanh(abs(y) > 1); (TODO: Add correction later)
+            arctanh_threshold = 0.999999
+            # arctanh_threshold = 1.0
+            max_abs_y = np.max(np.abs(y))
+            max_abs_yLL = np.max(np.abs(y_LL))
+            if max_abs_y >= arctanh_threshold:
+                warn_msg = f"abs(y) >= {arctanh_threshold} detected; "
+                warn_msg += f"fudged to threshold; max(abs(y)) = {max_abs_y}"
+                warnings.warn(warn_msg, RuntimeWarning)
+                y[np.abs(y) > arctanh_threshold] = (
+                    np.sign(y[np.abs(y) > arctanh_threshold])
+                    * arctanh_threshold
+                )
+                # y[np.abs(y) > 1] = np.sign(y[np.abs(y) > 1]) * 0.9999
+
+            # if np.any(np.isclose(np.abs(y), 1.0)):
+            #     warn_msg = (
+            #         "abs(y) is close to 1; max(abs(y))="
+            #         + str(max_abs_y)
+            #     )
+            #     warnings.warn(warn_msg, RuntimeWarning)
+            #     y[np.isclose(np.abs(y), 1.0)] = (
+            #         np.sign(y[np.isclose(np.abs(y), 1.0)]) * 0.9999
+            #     )
+
+            if max_abs_yLL >= 1:
+                warn_msg = f"abs(y_LL) >= {arctanh_threshold} detected; "
+
+                warn_msg += f"fudged to threshold; max(abs(y_LL))={max_abs_yLL}"
+                warnings.warn(warn_msg, RuntimeWarning)
+                y_LL[np.abs(y_LL) > arctanh_threshold] = (
+                    np.sign(y_LL[np.abs(y_LL) > arctanh_threshold])
+                    * arctanh_threshold
+                )
+                # y_LL[np.abs(y_LL) > 1] = (
+                #     np.sign(y_LL[np.abs(y_LL) > 1]) * 0.9999
+                # )
+
+            # if np.any(np.isclose(np.abs(y_LL), 1.0)):
+            #     warn_msg = (
+            #         "abs(y_LL) close to 1 detected; max(abs(y_LL))="
+            #         + str(max_abs_yLL)
+            #     )
+            #     warnings.warn(warn_msg, RuntimeWarning)
+            #     y_LL[np.isclose(np.abs(y_LL), 1.0)] = (
+            #         np.sign(y_LL[np.isclose(np.abs(y_LL), 1.0)]) * 0.9999
+            #     )
+
+            nLL = -1.0 * np.sum(
+                stats.norm.logpdf(
+                    np.arctanh(y),
+                    loc=np.arctanh(y_LL),
+                    scale=sigma,
+                )
+            )
+        else:
+            nLL = -1.0 * np.sum(stats.norm.logpdf(y, loc=y_LL, scale=sigma))
+        return nLL
+
+    def negative_log_likelihood_function(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        n_jobs: int = DEFAULT_N_JOBS,
+        backend: str = DEFAULT_BACKEND,
+    ) -> Callable[[tuple[float, ...]], float]:
+        """Creates a function that can be fed into scipy.optimizer.minimize"""
+
+        def f(params: tuple[float, ...]):
+            return self.negative_log_likelihood(
+                X, y, params, n_jobs=n_jobs, backend=backend
+            )
+
+        return f
+
+    def fit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        guesses: list[float] | None = None,
+        bounds: list[tuple[float, ...]] | None = None,
+        opt_method: str = "Nelder-Mead",
+        tol: float | None = None,
+        estimate_SE: str | None = "bootstrap_parallel",
+        n_sim: int = 500,
+        n_jobs: int = DEFAULT_N_JOBS,
+        backend: str = DEFAULT_BACKEND,
+        random_seed: int = 1234,
+    ) -> tuple[OptimizeResult, float | None, list[tuple[float, ...]]]:
+        """
+        Default solver in Nelder-Mead as used in the Karspeck paper
+        https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
+        default max-iter is 200 x (number_of_variables)
+        for 3 variables (Lx, Ly, theta) --> 200x3 = 600
+        note: unlike variogram fitting, no nugget, no sill, and no residue
+        variance (normalised data but Fisher transform needed?)
+        can be adjusted using "maxiter" within "options" kwargs
+
+        Much of the variable names are defined the same way as earlier
+
+        Parameters
+        ----------
+        X, y : np.ndarray
+            distances and observed correlations
+        guesses=None :
+            Tuples/lists of initial values to scipy.optimize.minimize
+        bounds=None :
+            Tuples/lists of bounds for fitted parameters
+        opt_method : str
+            scipy.optimize.minimize optimisation method. Defaults to
+            "Nelder-Mead".
+        tol=None : float
+            scipy.optimize.minimize convergence tolerance
+        estimate_SE='bootstrap_parallel' : str
+            how to estimate standard error if needed
+        n_sim=500 : int
+            number of bootstrap to estimate standard error
+        n_jobs=_default_n_jobs : int
+            number of threads
+        backend=_default_backend : str
+            joblib backend
+        random_seed=1234 : int, random seed for bootstrap
+
+        Returns
+        -------
+        results
+            fitted parameters
+        SE : float | None
+            standard error of the fitted parameters
+        bounds : list[tuple[float, ...]]
+            bounds of fitted parameters
+        """
+        guesses = guesses or self.default_guesses
+        bounds = bounds or self.default_bounds
+
+        if not self.unit_sigma:
+            guesses.append(0.1)
+            bounds.append((0.0001, 0.5))
+
+        LL_observedXy_unknownparams = self.negative_log_likelihood_function(
+            X, y, n_jobs=n_jobs, backend=backend
+        )
+
+        print("X range: ", np.min(X), np.max(X))
+        print("y range: ", np.min(y), np.max(y))
+        zipper = zip(guesses, bounds)
+        for g, b in zipper:
+            print("init: ", g, "bounds: ", b)
+
+        results: OptimizeResult = minimize(
+            LL_observedXy_unknownparams,
+            guesses,
+            bounds=bounds,
+            method=opt_method,
+            tol=tol,
+        )
+
+        # This does not account for standard errors in the
+        # correlation/covariance matrix!
+        if estimate_SE is None:
+            print("Standard error estimates not required")
+            return results, None, bounds
+
+        match estimate_SE:
+            case "bootstrap_serial":
+                # Serial
+                sim_params = np.array(
+                    [
+                        self._bootstrap_once(
+                            X,
+                            y,
+                            guesses,
+                            bounds,
+                            opt_method,
+                            tol=tol,
+                            seed=random_seed + worker,
+                        )
+                        for worker in range(n_sim)
+                    ]
+                )
+            case "bootstrap_parallel":
+                # Parallel
+                # On JASMIN Jupyter: n_jobs = 5 leads to 1/3 wallclock time
+                kwargs_0 = {"n_jobs": n_jobs, "backend": backend}
+                workers = range(n_sim)
+                sim_params = Parallel(**kwargs_0)(
+                    delayed(self._bootstrap_once)(
+                        X,
+                        y,
+                        guesses,
+                        bounds,
+                        opt_method,
+                        tol=tol,
+                        seed=random_seed + worker,
+                    )
+                    for worker in workers
+                )
+                sim_params = np.array(sim_params)
+            case "hessian":
+                # note: autograd does not work with scipy's Bessel functions
+                raise NotImplementedError(
+                    "Second order deriviative (Hessian) of "
+                    + "Fisher Information not implemented"
+                )
+            case _:
+                raise ValueError(f"Unknown estimate_SE value: {estimate_SE}")
+
+        SE = np.std(sim_params, axis=0)
+
+        return results, SE, bounds
+
+    def _bootstrap_once(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        guesses: list[float],
+        bounds: list[tuple[float, ...]],
+        opt_method: str,
+        tol: float | None = None,
+        seed: int = 1234,
+    ) -> np.ndarray:
+        """Bootstrap refit the Matern parameters"""
+        rng = np.random.RandomState(seed)
+        len_obs = len(y)
+        i_obs = np.arange(len_obs)
+        bootstrap_i = rng.choice(i_obs, size=len_obs, replace=True)
+        X_boot = X[bootstrap_i, ...]
+        y_boot = y[bootstrap_i]
+        LL_boot_simulated_params = self.negative_log_likelihood_function(
+            X_boot, y_boot
+        )
+        ans: OptimizeResult = minimize(
+            LL_boot_simulated_params,
+            guesses,
+            bounds=bounds,
+            method=opt_method,
+            tol=tol,
+        )
+        return ans.x
+
+
+def c_ij_anisotropic(
+    v: float,
+    stdev: float,
+    delta_x: np.ndarray,
+    delta_y: np.ndarray,
+    Lx: float,
+    Ly: float,
+    stdev_j: float | None = None,
+    theta: float | None = None,
+) -> np.ndarray:
+    """
+    Covariance structure between base point i and j
+    Assuming local stationarity or slowly varing
+    so that some terms in PS06 drops off (like Sigma_i ~ Sigma_j instead of
+    treating them as different) (aka second_term below)
+    this makes formulation a lot simplier
+    We let stdev_j opens to changes,
+    but in pracitice, we normalise everything to correlation so
+    stdev == stdev_j == 1
+
+    Parameters
+    ----------
+    v : float
+        Matern shape parameter
+    stdev : float, standard deviation, local point
+    delta_x, delta_y : float
+        displacements to remote point as in: (delta_x) i + (delta_y) j in old
+        school vector notation
+    Lx, Ly : float
+        Lx, Ly scale (km or degrees)
+    stdev_j : float | None
+        standard deviation, remote point. If set to None, then 'stdev' is used.
+    theta : float | None
+        rotation angle in radians
+
+    Returns
+    -------
+    c_ij : float
+        Covariance/correlation between local and remote point given displacement
+        and Matern covariance parameters
+    """
+    stdev_j = stdev_j or stdev
+
+    # sigma = sigma_rot_func(Lx, Ly, theta)
+    tau = mahal_dist_func(delta_x, delta_y, Lx, Ly, theta=theta)
+
+    first_term = (stdev * stdev_j) / (gamma(v) * (2.0 ** (v - 1)))
+    # If data is assumed near stationary locally, sigma_i ~ sigma_j same
+    # making (sigma_i)**1/4 (sigma_j)**1/4 / (mean_sigma**1/2) = 1.0
+    # Treating it the otherwise is a major escalation to the computation
+    # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
+    # second_term = 1.0
+    third_term = (2.0 * tau * np.sqrt(v)) ** v
+    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
+    c_ij = first_term * third_term * forth_term
+    # ans = first_term * second_term * third_term * forth_term
+
+    logging.debug(f"{first_term = }, {first_term.shape = }")
+    logging.debug(f"{third_term = }, {third_term.shape = }")
+    logging.debug(f"{forth_term = }, {forth_term.shape = }")
+    logging.debug(f"{c_ij = }, {c_ij.shape = }")
+    return c_ij
+
+
+def c_ij_isotropic(
+    v: float,
+    stdev: float,
+    delta: np.ndarray,
+    R: float,
+    stdev_j: float | None = None,
+) -> np.ndarray:
+    """
+    Isotropic version of c_ij_anisotropic
+
+    Parameters
+    ----------
+    v : float
+        Matern shape parameter
+    stdev : float
+        standard deviation, local point
+    delta : float
+        displacements to remote point
+    R : float
+        range parameter (km or degrees)
+    stdev_j : float
+        standard deviation, remote point
+
+    Returns
+    -------
+    c_ij : float
+        Covariance/correlation between local and remote point given displacement
+        and Matern covariance parameters
+    """
+    stdev_j = stdev_j or stdev
+
+    tau = np.abs(delta) / R
+
+    first_term = (stdev * stdev_j) / (gamma(v) * (2.0 ** (v - 1)))
+    third_term = (2.0 * tau * np.sqrt(v)) ** v
+    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
+    c_ij = first_term * third_term * forth_term
+    return c_ij

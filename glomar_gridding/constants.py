@@ -8,3 +8,6 @@ KM_TO_M: float = 1000.0
 # for lon values)
 NM_PER_LAT: float = 60.0  # 60 nautical miles per degree latitude
 KM_TO_NM: float = 1.852  # 1852 meters per nautical miles
+
+DEFAULT_N_JOBS: int = 4
+DEFAULT_BACKEND: str = "loky"  # loky appears to be fastest

@@ -150,7 +150,7 @@ def euclidean_distance(
     return euclidean_distances(df) * radius
 
 
-def haversine_distance(
+def haversine_distance_from_frame(
     df: pl.DataFrame,
     radius: float = 6371,
 ) -> np.ndarray:
@@ -182,7 +182,7 @@ def haversine_distance(
 
 def calculate_distance_matrix(
     df: pl.DataFrame,
-    dist_func: Callable = haversine_distance,
+    dist_func: Callable = haversine_distance_from_frame,
     lat_col: str = "lat",
     lon_col: str = "lon",
 ) -> np.ndarray:
@@ -283,12 +283,24 @@ def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     return yx[:, None, :] - yx
 
 
-def _Ls2sigma(Lx: float, Ly: float, theta: float) -> np.ndarray:  # noqa: N802
+def _sigma_rot_func(Lx: float, Ly: float, theta: float | None) -> np.ndarray:  # noqa: N802
     """
+    Equation 15 in Karspeck el al 2011 and Equation 6
+    in Paciorek and Schervish 2006,
+    assuming Sigma(Lx, Ly, theta) locally/moving-window invariant or
+    we have already taken the mean (Sigma overbar, PP06 3.1.1)
+
     Lx, Ly - anistropic variogram length scales
     theta - angle relative to lines of constant latitude
     theta should be radians, and the fitting code outputs radians by default
+
+    Returns
+    -------
+    sigma : np.ndarray
+        2d matrix
     """
+    if theta is None:
+        return np.diag(np.array([Lx**2.0, Ly**2.0]))
     R = Rotation.from_rotvec([0, 0, theta])
     R = R.as_matrix()[:2, :2]
     L = np.diag([Lx**2.0, Ly**2.0])
@@ -324,7 +336,7 @@ def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist(df: pl.DataFrame) -> np.ndarray:
+def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
     """
     Compute the tau/Mahalanobis matrix for all records within a gridbox
 
@@ -370,10 +382,44 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
 
     # Get sigma
     Lx, Ly, theta = df.select(["grid_lx", "grid_ly", "grid_theta"]).row(0)
-    sigma = _Ls2sigma(Lx, Ly, theta)
+    sigma = _sigma_rot_func(Lx, Ly, theta)
 
     tau = _compute_tau_wrapper(paired_dist, sigma)
     return np.exp(-tau)
+
+
+def mahal_dist_func(
+    delta_x: np.ndarray,
+    delta_y: np.ndarray,
+    Lx: float,
+    Ly: float,
+    theta: float | None = None,
+) -> np.ndarray:
+    """
+    Calculate tau from displacements, Lx, Ly, and theta (if it is known).
+
+    Parameters
+    ----------
+    delta_x, delta_y : numpy.ndarray
+        displacement to remote point as in: (delta_x) i + (delta_y) j in old
+        school vector notation
+    Lx, Ly : float
+        Lx, Ly scale (km or degrees)
+    theta : float | None
+        rotation angle in radians
+
+    Returns
+    -------
+    tau : float
+        Mahalanobis distance
+    """
+    # sigma is 2x2 matrix
+    if theta is not None:
+        sigma = _sigma_rot_func(Lx, Ly, theta)
+    else:
+        sigma = np.diag(np.array([Lx**2.0, Ly**2.0]))
+
+    return _compute_tau(delta_x, delta_y, sigma)
 
 
 # def _tau_unit_test():

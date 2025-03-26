@@ -3,7 +3,10 @@
 import pytest  # noqa: F401
 from math import sqrt
 import polars as pl
-from glomar_gridding.distances import euclidean_distance, haversine_distance
+from glomar_gridding.distances import (
+    euclidean_distance,
+    haversine_distance_from_frame,
+)
 
 
 def test_euclidean():
@@ -28,7 +31,7 @@ def test_haversine():
         [halifax, southampton], orient="row", schema=["lat", "lon"]
     )
 
-    dist = haversine_distance(df, radius=R)
+    dist = haversine_distance_from_frame(df, radius=R)
 
     assert dist[0, 0] == dist[1, 1] == 0.0
     assert dist[0, 1] == pytest.approx(expected, abs=1)  # Allow 1km out

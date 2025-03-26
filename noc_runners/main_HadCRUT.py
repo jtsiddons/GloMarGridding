@@ -16,7 +16,10 @@ from datetime import datetime
 import os
 import shutil
 
-from glomar_gridding.distances import euclidean_distance, haversine_distance
+from glomar_gridding.distances import (
+    euclidean_distance,
+    haversine_distance_from_frame,
+)
 
 if "POLARS_MAX_THREADS" not in os.environ:
     os.environ["POLARS_MAX_THREADS"] = "16"
@@ -94,7 +97,7 @@ def _generate_cov(
         case "euclidean":
             dist_func = euclidean_distance
         case "haversine":
-            dist_func = haversine_distance
+            dist_func = haversine_distance_from_frame
         case _:
             raise ValueError(f"Unknown distance method: {dist_method}")
     dist: xr.DataArray = grid_to_distance_matrix(
