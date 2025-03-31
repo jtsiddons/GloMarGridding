@@ -11,7 +11,7 @@ import iris
 from iris.util import equalise_attributes
 # from iris.fileformats import netcdf as inc
 
-from ellipse_estimation import cube_covariance
+from glomar_gridding import covariance_cube
 from ellipse_estimation import simulate_ellipse as se_og
 import test_simulate_ellipse as seut
 
@@ -99,7 +99,7 @@ def test_EllipseSimulation_VariableParms_FitRandomData(
     )
     print(repr(random_GP_cube))
     print(random_GP_cube)
-    cov_cube_instance = cube_covariance.CovarianceCube(random_GP_cube)
+    cov_cube_instance = covariance_cube.CovarianceCube(random_GP_cube)
     print(ans.CCPLE_out.cov_ns)
     print(cov_cube_instance.cov / size)
     #

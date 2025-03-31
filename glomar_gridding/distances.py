@@ -283,7 +283,7 @@ def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     return yx[:, None, :] - yx
 
 
-def _sigma_rot_func(Lx: float, Ly: float, theta: float | None) -> np.ndarray:  # noqa: N802
+def sigma_rot_func(Lx: float, Ly: float, theta: float | None) -> np.ndarray:  # noqa: N802
     """
     Equation 15 in Karspeck el al 2011 and Equation 6
     in Paciorek and Schervish 2006,
@@ -382,7 +382,7 @@ def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
 
     # Get sigma
     Lx, Ly, theta = df.select(["grid_lx", "grid_ly", "grid_theta"]).row(0)
-    sigma = _sigma_rot_func(Lx, Ly, theta)
+    sigma = sigma_rot_func(Lx, Ly, theta)
 
     tau = _compute_tau_wrapper(paired_dist, sigma)
     return np.exp(-tau)
@@ -415,7 +415,7 @@ def mahal_dist_func(
     """
     # sigma is 2x2 matrix
     if theta is not None:
-        sigma = _sigma_rot_func(Lx, Ly, theta)
+        sigma = sigma_rot_func(Lx, Ly, theta)
     else:
         sigma = np.diag(np.array([Lx**2.0, Ly**2.0]))
 

@@ -1,7 +1,7 @@
 """
 Requires numpy, scipy, sklearn
 iris needs to be installed (it is required by other modules within this package
-xarray cubes should work via iris interface
+xarray cubes should work via iris interface)
 """
 
 import datetime
@@ -20,7 +20,12 @@ from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
 from statsmodels.stats import correlation_tools
 
-from ellipse_estimation import cube_covariance as cube_cov
+from glomar_gridding.distances import (
+    sigma_rot_func,
+    mahal_dist_func,
+    _compute_tau,
+)
+from glomar_gridding import covariance_cube
 from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
 # from ellipse_estimation.distance_util import scalar_cube_great_circle_distance_cube  # noqa: E501
 
@@ -128,10 +133,10 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
     """
     #
     # Compute sigma_bar
-    sigma_i = cube_cov.sigma_rot_func(
+    sigma_i = sigma_rot_func(
         sigma_parms_i[0], sigma_parms_i[1], sigma_parms_i[2]
     )
-    sigma_j = cube_cov.sigma_rot_func(
+    sigma_j = sigma_rot_func(
         sigma_parms_j[0], sigma_parms_j[1], sigma_parms_j[2]
     )
     sigma_bar = 0.5 * (sigma_i + sigma_j)
@@ -201,16 +206,12 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
         print(f"arcsin  R[0,1]       = {v_ans1}")
         print(f"-arccos R[1,0]       = {v_ans2}")
         print(f"theta_bar            = {v_ans3} (using arctan2)")
-        tau_bar = cube_cov.mahal_dist_func_rot(
-            x_i, x_j, Lx_bar, Ly_bar, theta=theta_bar, verbose=verbose
-        )
+        tau_bar = mahal_dist_func(x_i, x_j, Lx_bar, Ly_bar, theta=theta_bar)
     else:
         # Direct computation without decomposition (faster)
         # This is direct use of right part of Equation 18 in Karspeck et al 2012
         # This is behind else, so one won't be computing stuff twice
-        tau_bar = cube_cov.mahal_dist_func_sigma(
-            x_i, x_j, sigma_bar, verbose=verbose
-        )
+        tau_bar = _compute_tau(x_i, x_j, sigma_bar)
     if verbose:
         print("xi, xj  = ", x_i, x_j)
         print("tau_bar = ", tau_bar)

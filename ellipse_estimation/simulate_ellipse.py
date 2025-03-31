@@ -14,7 +14,7 @@ from numpy.random import multivariate_normal
 from scipy import stats
 import xarray as xr
 
-from ellipse_estimation import cube_covariance
+from glomar_gridding.distances import sigma_rot_func
 from ellipse_estimation import cube_covariance_nonstationary_stich as ccns
 
 
@@ -184,9 +184,7 @@ def average_LxLyTheta(lx, ly, the, check_flip=False):  # noqa: N802
     sigmas = []
     zipper = zip(lx.slices([]), ly.slices([]), the.slices([]))
     for lx_mini, ly_mini, the_mini in zipper:
-        sigma = cube_covariance.sigma_rot_func(
-            lx_mini.data, ly_mini.data, the_mini.data
-        )
+        sigma = sigma_rot_func(lx_mini.data, ly_mini.data, the_mini.data)
         sigmas.append(sigma)
     sigmas = np.array(sigmas)
     print(sigmas.shape)
@@ -284,13 +282,13 @@ def regmean_simulated_ellipse_vs_known_regmean(
 
 def simulated_ellipse_vs_known_regmean(simulated_parms, actuals_parms, n_sims):
     """Test against regional mean"""
-    sigma_hat = cube_covariance.sigma_rot_func(
+    sigma_hat = sigma_rot_func(
         simulated_parms[0], simulated_parms[1], simulated_parms[2]
     )
     logging.debug("sigma_hat:")
     logging.debug(simulated_parms[0], simulated_parms[1], simulated_parms[2])
     logging.debug(sigma_hat)
-    sigma_actual = cube_covariance.sigma_rot_func(
+    sigma_actual = sigma_rot_func(
         actuals_parms[0], actuals_parms[1], actuals_parms[2]
     )
     logging.debug("sigma_0:")

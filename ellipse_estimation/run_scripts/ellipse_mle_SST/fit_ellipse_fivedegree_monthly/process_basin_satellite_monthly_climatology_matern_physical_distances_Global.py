@@ -13,7 +13,7 @@ import yaml
 
 import psutil
 
-from ellipse_estimation import cube_covariance
+from glomar_gridding import covariance_cube
 from glomar_gridding.ellipse import MaternEllipseModel
 from glomar_gridding.utils import init_logging
 
@@ -172,7 +172,7 @@ def main():  # noqa: D103
     logging.debug(f"{surftemp_cube.coord('time') = }")
     print("Large cube built for cov caculations:", repr(surftemp_cube))
     logging.info("Building covariance matrix")
-    super_sst_cov = cube_covariance.CovarianceCube(surftemp_cube)
+    super_sst_cov = covariance_cube.CovarianceCube(surftemp_cube)
     logging.info("Covariance matrix completed")
     #
     sst_cube_not_template = surftemp_cube[surftemp_cube_time_length // 2]
@@ -205,11 +205,11 @@ def main():  # noqa: D103
                 template_cube = super_sst_cov._make_template_cube2(
                     (current_lon, current_lat)
                 )
-                ans = cube_covariance.create_output_cubes(
+                ans = covariance_cube.create_output_cubes(
                     template_cube,
                     model_type=ellipse.model_type,
                     additional_meta_aux_coords=[
-                        cube_covariance.make_v_aux_coord(v)
+                        covariance_cube.make_v_aux_coord(v)
                     ],
                     default_values=defval,
                 )["param_cubelist"]
