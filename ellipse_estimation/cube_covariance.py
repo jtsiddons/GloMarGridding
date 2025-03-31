@@ -489,128 +489,17 @@ class CovarianceCube:
         R2x = self._reverse_mask_from_compress_1d(self.Corr[xy_point, :])
         R2.data = R2x.reshape(self.xy_shape)
         R2.units = "1"
-        ##
-        # dx and dy are in degrees
-        dx = np.array([a - lonlat[0] for a in self.xy[:, 0]])
-        dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])
-        dx[dx > 180.0] -= 360.0
-        dx[dx < -180.0] += 360.0
-        # Delete the origin (can't have dx = dy = 0)
-        dx = np.delete(dx, xy_point)
-        dy = np.delete(dy, xy_point)
-        correlation_vector2 = np.delete(correlation_vector, xy_point)
-        ##
-        # distance is in delta-degrees
-        lonlat_vector = np.column_stack([dx, dy])
-        distance = linalg.norm(lonlat_vector, axis=1)
-        # distance_i = np.abs(dx)
-        # distance_j = np.abs(dy)
-        distance_i = dx
-        distance_j = dy
-        dx_sign = np.sign(dx)
-        ##
-        if matern_ellipse.physical_distance:
-            # There are two ways to do that
-            # (1) Use the Haversine formula and solve for distance_ii
-            # (2) Use the law of cosines, taking inputs of distance_ii and
-            # distance_jj and solve for radial distance <-- this retains the up
-            # and down....
 
-            # Haversine -- (delta_lat, delta_lon)
-            # sklearn.metrics.pairwise.haversine_distances(X, Y=None)[source]
-            # Compute the Haversine distance between samples in X and Y.
-            # The Haversine (or great circle) distance is the angular distance
-            # between two points on the surface of a sphere.
-            # The first coordinate of each point is assumed to be the latitude,
-            # the second is the longitude, given in radians.
-            # The dimension of the data must be 2.
-            latlon_vector2 = np.column_stack(
-                [np.deg2rad(lonlat[1] + dy), np.deg2rad(lonlat[0] + dx)]
-            )
-            latlon2 = np.array([np.deg2rad(lonlat[1]), np.deg2rad(lonlat[0])])
-            latlon2 = latlon2[np.newaxis, :]
-            X_train_radial = haversine_distances(latlon_vector2, latlon2)[:, 0]
-            distance_jj = np.deg2rad(distance_j)
-            #
-            # Law of cosines/Pyth Theroem on a sphere surface:
-            # https://sites.math.washington.edu/~king/coursedir/m445w03/class/02-03-lawcos-answers.html
-            # COS(Haversine Dist) = COS(Delta_Lat) COS(Delta_X)
-            #
-            # Note:
-            # Delta_X != Delta_LON or Delta_Lon x COS LAT
-            # Delta_X itself is a great circle distance
-            # Here meridonal displacement is always defined relative
-            # to the north and south pole!
-            #
-            if delta_x_method == "Spherical_COS_Law":
-                # This doesn't appears to work... nrecheck needed
-                inside_arccos = np.cos(X_train_radial) / np.cos(distance_jj)
-                print("Check, num of inside_arccos vals = ", len(inside_arccos))
-                print(
-                    "Check, num of abs(inside_arccos) > 1.0 = ",
-                    np.sum(np.abs(inside_arccos) > 1.0),
-                )
-                print(
-                    "Check, max(inside_arccos): max(inside_arccos) = ",
-                    inside_arccos.max(),
-                )
-                # Numerical issues may lead to numbers slightly greater than 1.0
-                # or less than -1.0
-                inside_arccos[inside_arccos > 1.0] = 1.0
-                inside_arccos[inside_arccos < -1.0] = -1.0
-                distance_ii = dx_sign * np.arccos(inside_arccos)
-            elif delta_x_method == "Met_Office":
-                # Cylindrical approximation
-                distance_ii = np.deg2rad(dx)
-            elif delta_x_method == "Modified_Met_Office":
-                average_cos = 0.5 * (
-                    np.cos(np.deg2rad(lonlat[1] + dy))
-                    + np.cos(np.deg2rad(lonlat[1]))
-                )
-                distance_ii = np.deg2rad(dx) * average_cos
-            else:
-                raise ValueError("Unknown delta_x_method")
-            ##
-            # Converts dx and dy to physical distance (km)
-            X_train_directional = np.column_stack(
-                [
-                    distance_ii * RADIUS_OF_EARTH_KM,
-                    distance_jj * RADIUS_OF_EARTH_KM,
-                ]
-            )  # noqa: E501
-            X_train_radial = X_train_radial * RADIUS_OF_EARTH_KM
-        else:
-            X_train_directional = np.column_stack([distance_i, distance_j])
-            X_train_radial = distance.copy()
-        y_train = correlation_vector2.copy()
-        ##
-        print("Calculation check for X_train_directional")
-        print(X_train_directional.shape)
-        print(
-            "i-th component range, min, max: ",
-            np.ptp(X_train_directional[:, 0]),
-            np.min(X_train_directional[:, 0]),
-            np.max(X_train_directional[:, 0]),
+        X_train, y_train = self._get_train_data(
+            xy_point=xy_point,
+            min_distance=min_distance,
+            max_distance=max_distance,
+            anisotropic=matern_ellipse.anisotropic,
+            physical_distance=matern_ellipse.physical_distance,
+            delta_x_method=delta_x_method,
         )
-        print(
-            "j-th component range, min, max: ",
-            np.ptp(X_train_directional[:, 1]),
-            np.min(X_train_directional[:, 1]),
-            np.max(X_train_directional[:, 1]),
-        )
-        distance_limit = np.where(distance > max_distance)[0].tolist()
-        distance_threshold = np.where(distance < min_distance)[0].tolist()
-        xys_2_drop = list(set(distance_limit + distance_threshold))
-        X_train_directional = np.delete(X_train_directional, xys_2_drop, axis=0)
-        X_train_radial = np.delete(X_train_radial, xys_2_drop, axis=0)
-        y_train = np.delete(y_train, xys_2_drop)
-        ##
-        if matern_ellipse.anisotropic:
-            X_train = X_train_directional
-        else:
-            X_train = X_train_radial.reshape(-1, 1)
-        ##
-        results, _, bbs = matern_ellipse.fit(
+
+        results, _, bounds = matern_ellipse.fit(
             X_train,
             y_train,
             guesses=guesses,
@@ -687,6 +576,70 @@ class CovarianceCube:
             "Model_Type": matern_ellipse.model_type,
             "Model_as_1D_cube": model_as_cubelist,
         }
+
+    def _get_train_data(
+        self,
+        xy_point: int,
+        min_distance: float,
+        max_distance: float,
+        anisotropic: bool,
+        physical_distance: bool,
+        delta_x_method: DeltaXMethod | None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        lonlat = self.xy[xy_point]
+        y = self.Corr[xy_point, :]
+        # dx and dy are in degrees
+        dx = np.array([a - lonlat[0] for a in self.xy[:, 0]])
+        dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])
+        dx[dx > 180.0] -= 360.0
+        dx[dx < -180.0] += 360.0
+        # distance is in delta-degrees
+        distance = linalg.norm(np.column_stack([dx, dy]), axis=1)
+        valid_dist_idx = np.where(
+            (distance <= max_distance)
+            & (distance >= min_distance)
+            # Delete the origin (can't have dx = dy = 0)
+            & (distance != 0)
+        )
+        distance = distance[valid_dist_idx]
+        dx = dx[valid_dist_idx]
+        dy = dy[valid_dist_idx]
+        y_train = y[valid_dist_idx]
+
+        if physical_distance:
+            if anisotropic:
+                distance_jj = np.deg2rad(dy)
+                if delta_x_method == "Met_Office":
+                    # Cylindrical approximation
+                    distance_ii = np.deg2rad(dx)
+                elif delta_x_method == "Modified_Met_Office":
+                    average_cos = 0.5 * (
+                        np.cos(np.deg2rad(lonlat[1] + dy))
+                        + np.cos(np.deg2rad(lonlat[1]))
+                    )
+                    distance_ii = np.deg2rad(dx) * average_cos
+                else:
+                    raise ValueError(
+                        f"Unknown 'delta_x_method': {delta_x_method}"
+                    )
+
+                X_train = np.column_stack([distance_ii, distance_jj])
+                return X_train * RADIUS_OF_EARTH_KM, y_train
+            else:
+                latlon = np.array(
+                    [np.deg2rad(lonlat[1]), np.deg2rad(lonlat[0])]
+                )
+                latlon_vector = np.column_stack(
+                    [np.deg2rad(lonlat[1] + dy), np.deg2rad(lonlat[0] + dx)]
+                )
+                latlon = latlon[np.newaxis, :]
+                radial = haversine_distances(latlon_vector, latlon)[:, 0]
+                return radial.reshape(-1, 1) * RADIUS_OF_EARTH_KM, y_train
+        else:
+            if anisotropic:
+                return np.column_stack([dx, dy]), y_train
+            else:
+                return distance, y_train
 
     def find_nearest_xy_index_in_cov_matrix(
         self,
