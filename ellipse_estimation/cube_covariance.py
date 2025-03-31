@@ -244,12 +244,7 @@ class CovarianceCube:
         yx_og = np.column_stack([unmeshed_y, unmeshed_x])
         if haversine:
             # Great circle - Earth
-            yx = np.column_stack(
-                [
-                    np.array([np.deg2rad(lat) for lat in unmeshed_y]),
-                    np.array([np.deg2rad(lon) for lon in unmeshed_x]),
-                ]
-            )
+            yx = np.deg2rad(yx_og)
             D = haversine_distances(yx) * RADIUS_OF_EARTH_KM
         else:
             # Delta degrees - locally flat Earth, treating like it an image
@@ -264,13 +259,10 @@ class CovarianceCube:
         # _dx = euclidean_distances(
         #     np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x])
         # )
-        _dy = euclidean_distances(
-            np.column_stack([yx[:, 0], np.zeros_like(unmeshed_y)])
-        )
-        _dx = euclidean_distances(
-            np.column_stack([np.zeros_like(unmeshed_x), yx[:, 1]])
-        )
+        _dy = np.abs(np.subtract.outer(yx[:, 0], yx[:, 0]))
         dy = np.triu(_dy) - np.tril(_dy)
+
+        _dx = np.abs(np.subtract.outer(yx[:, 1], yx[:, 1]))
         dx = np.triu(_dx) - np.tril(_dx)
         # In radians; note, arctan2 can tell if dy and dx are negative
         A = np.arctan2(dy, dx)
