@@ -251,19 +251,14 @@ class CovarianceCube:
             yx = yx_og
             D = euclidean_distances(yx)
 
-        # Angle difference vs x/longitude-axis - below two yields the same
-        # result
-        # _dy = euclidean_distances(
-        #     np.column_stack([unmeshed_y, np.zeros_like(unmeshed_y)])
-        # )
-        # _dx = euclidean_distances(
-        #     np.column_stack([np.zeros_like(unmeshed_x), unmeshed_x])
-        # )
+        # Angle difference vs x/longitude-axis
+        # np.abs(np.subtract.outer) is faster than euclidean_distances
         _dy = np.abs(np.subtract.outer(yx[:, 0], yx[:, 0]))
         dy = np.triu(_dy) - np.tril(_dy)
 
         _dx = np.abs(np.subtract.outer(yx[:, 1], yx[:, 1]))
         dx = np.triu(_dx) - np.tril(_dx)
+
         # In radians; note, arctan2 can tell if dy and dx are negative
         A = np.arctan2(dy, dx)
         ##
@@ -378,7 +373,6 @@ class CovarianceCube:
         lim v-->inf, Gaussian shape
 
         delta_x_method: only meaningful for _pd fits
-            "Spherical_COS_Law": uses COS(C) = COS(A)COS(B)
             "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
             (in radians)
             "Modified_Met_Office": uses the average zonal dist at different lat
