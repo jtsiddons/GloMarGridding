@@ -33,7 +33,7 @@ DeltaXMethod = Literal["Met_Office", "Modified_Met_Office"]
 class CovarianceCube:
     """
     Class to build spatial covariance and correlation matricies
-    Interacts with MLE_c_ij_Builder_Karspeck to build covariance models
+    Interacts with MaternEllipseModel to build covariance models
 
     Parameters
     ----------
@@ -164,10 +164,14 @@ class CovarianceCube:
         xyflatten_data = xyflatten_data - xy_mean
         self.cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
         # xy_cov = _AT_A(xyflatten_data)
-        if correlation:
-            return self._cov2cor(rounding=rounding)
+
         if rounding is not None:
             self.cov = np.round(self.cov, rounding)
+
+        if correlation:
+            self._cov2cor(rounding=rounding)
+
+        return None
 
     def _cov2cor(
         self,
@@ -252,7 +256,7 @@ class CovarianceCube:
             D = euclidean_distances(yx)
 
         # Angle difference vs x/longitude-axis
-        # np.abs(np.subtract.outer) is faster than euclidean_distances
+        # np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
         _dy = np.abs(np.subtract.outer(yx[:, 0], yx[:, 0]))
         dy = np.triu(_dy) - np.tril(_dy)
 
