@@ -1,9 +1,8 @@
 """Run script for SST and LSAT nonstationary variogram parameter estimation"""
 
-# import datetime
+import argparse
 import logging
 from pathlib import Path
-import sys
 
 import iris
 from iris import coord_categorisation as icc
@@ -15,26 +14,92 @@ import yaml
 import psutil
 
 from ellipse_estimation import cube_covariance
+from glomar_gridding.ellipse import MaternEllipseModel
 from glomar_gridding.utils import init_logging
 
-# pylint: disable=logging-fstring-interpolation
 
-yamlf = "process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml"
-with open(yamlf, "r", encoding="utf-8") as f:
-    fit_intel = yaml.safe_load(f)
+parser = argparse.ArgumentParser(
+    prog="Ellipse Parameter Estimation",
+    description="Run script for SST and LSAT nonstationary variogram parameter estimation",  # noqa: E501
+)
+parser.add_argument(
+    "-c",
+    "--config",
+    type=str,
+    default="process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml",
+    help="path to config file",
+)
+parser.add_argument(
+    "-v",
+    "--matern-shape",
+    type=float,
+    default=1.5,
+    help="Matern shape parameter",
+)
+parser.add_argument(
+    "-m",
+    "--month",
+    type=int,
+    default=1,
+    help="Month to process",
+)
+parser.add_argument(
+    "-d",
+    "--data-type",
+    type=str,
+    choices=["sst", "lsat"],
+    default="sst",
+    help="Data type / Variable",
+)
+parser.add_argument(
+    "-a",
+    "--anisotropic",
+    action="store_true",
+    help="Fit an ellipse rather than a circle",
+)
+parser.add_argument(
+    "-r",
+    "--rotated",
+    action="store_true",
+    help="Can the ellipse be rotated, cannot be set if 'anisotropic' is set",
+)
+parser.add_argument(
+    "-p",
+    "--physical-distance",
+    action="store_true",
+    help="Use physical distances in Ellipse fitting",
+)
 
 
-def load_sst():
+def parse_args(parser):
+    args = parser.parse_args()
+    with open(args.config, "r", encoding="utf-8") as f:
+        conf = yaml.safe_load(f)
+
+    ellipse = MaternEllipseModel(
+        anisotropic=args.anisotropic,
+        rotated=args.rotated,
+        physical_distance=args.physical_distance,
+        v=args.matern_shape,
+        unit_sigma=True,
+    )
+    dat_type = args.data_type
+    month = args.month
+
+    return conf, ellipse, dat_type, month
+
+
+def load_sst(conf):
     """Load SST inputs"""
-    ncfile = fit_intel["sst_in"]
+    ncfile = conf["sst_in"]
     cube = iris.load_cube(ncfile)
     icc.add_month_number(cube, "time", name="month_number")
     return cube
 
 
-def load_lsat():
+def load_lsat(conf):
     """Load LSAT inputs"""
-    ncfile = fit_intel["lsat_in"]
+    ncfile = conf["lsat_in"]
     cube = iris.load_cube(ncfile, "land 2 metre temperature")
     icc.add_month_number(cube, "time", name="month_number")
     return cube
@@ -58,59 +123,46 @@ def main():  # noqa: D103
     #
     logging.info("Start")
     #
-    print(psutil.Process().cpu_affinity())
+    logging.info(psutil.Process().cpu_affinity())
     nCPUs = len(psutil.Process().cpu_affinity())
-    print("len(cpu_affinity) = ", nCPUs)
+    logging.info("len(cpu_affinity) = ", nCPUs)
+
+    conf, ellipse, dat_type, month_value = parse_args(parser)
     #
-    dat_type = sys.argv[1]
-    month_value = int(sys.argv[2])
-    v = float(sys.argv[3])
-    fform = sys.argv[4]
+    v = ellipse.v
+    nparms = ellipse.supercategory_n_params
+    defval = [-999.9 for _ in range(nparms)]
+
     everyother = 1
-    for argh, sysargv in enumerate(sys.argv):
-        print("sys.argv[" + str(argh) + "] = ", sysargv)
-    #
-    assert dat_type in ["sst", "lsat"], (
-        "dat_type (sys.argv[1]) must be sst or lsat"
-    )
+
     if dat_type == "lsat":
         data_loader = load_lsat
-        outpath_base = fit_intel["lsat_out_base"]
+        outpath_base = conf["lsat_out_base"]
         print("dat_type is lsat")
     else:
         data_loader = load_sst
-        outpath_base = fit_intel["sst_out_base"]
+        outpath_base = conf["sst_out_base"]
         print("dat_type is sst")
     #
-    print("v = ", v)
+    logging.info(f"{v = }")
     #
     additional_constraints = iris.Constraint(month_number=month_value)
-    surftemp_cube = data_loader()
+    surftemp_cube = data_loader(conf)
     surftemp_cube = surftemp_cube.extract(additional_constraints)
     surftemp_cube = mask_time_union(surftemp_cube)
     #
     surftemp_cube_time_length = len(surftemp_cube.coord("time").points)
-    print(repr(surftemp_cube))
-    #
-    if fform == "anistropic_rotated_pd":
-        nparms = 6
-    elif fform == "anistropic_pd":
-        nparms = 5
-    elif fform == "isotropic_pd":
-        nparms = 4
-    else:
-        raise ValueError("Unknown fform")
-    defval = [-999.9 for _ in range(nparms)]
+    logging.info(repr(surftemp_cube))
     #
     # Init values set to HadCRUT5 defaults
     # no prior distrubtion set around those value
-    init_values = (2000.0, 2000.0, 0)
+    init_values = [2000.0, 2000.0, 0]
     # Uniformative prior of parameter range
-    fit_bounds = (
+    fit_bounds = [
         (300.0, 30000.0),
         (300.0, 30000.0),
         (-2.0 * np.pi, 2.0 * np.pi),
-    )
+    ]
     #
     super_cube_list = iris.cube.CubeList()
     #
@@ -147,21 +199,19 @@ def main():  # noqa: D103
                         [current_lon, current_lat], use_full=True
                     )
                 )
-                kwargs = {
-                    "model_type": cube_covariance.FFORM_TO_MODELTYPE[fform],
-                    "additional_meta_aux_coords": [
-                        cube_covariance.make_v_aux_coord(v)
-                    ],
-                    "default_values": defval,
-                }
-                print(super_sst_cov.data_cube)
-                print(super_sst_cov.data_cube.coord("latitude"))
-                print(super_sst_cov.data_cube.coord("longitude"))
+                logging.debug(super_sst_cov.data_cube)
+                logging.debug(super_sst_cov.data_cube.coord("latitude"))
+                logging.debug(super_sst_cov.data_cube.coord("longitude"))
                 template_cube = super_sst_cov._make_template_cube2(
                     (current_lon, current_lat)
                 )
                 ans = cube_covariance.create_output_cubes(
-                    template_cube, **kwargs
+                    template_cube,
+                    model_type=ellipse.model_type,
+                    additional_meta_aux_coords=[
+                        cube_covariance.make_v_aux_coord(v)
+                    ],
+                    default_values=defval,
                 )["param_cubelist"]
                 ansH = "MASKED"
             else:
@@ -173,27 +223,27 @@ def main():  # noqa: D103
                 )
                 # Note:
                 # Possible cause for convergence failure are ENSO grid points;
-                # max_distance is originally introduced to keep moving window fits consistent
-                # (i.e. always using 20x20 deg squares around central gp), but is too small
-                # for ENSO signals.
-                # Now with global inputs this can be relaxed, and use of global inputs will
-                # ensure correlations from far away grid points be accounted for <--- this cannot be
-                # done for moving window fits.
-                kwargs = {
-                    "v": v,
-                    "fform": fform,
-                    "guesses": init_values,
-                    "bounds": fit_bounds,
-                    "max_distance": 60.0,
-                    "n_jobs": nCPUs,
-                }
-                ansX = super_sst_cov.fit_ellipse_model(xy, **kwargs)
+                # max_distance is originally introduced to keep moving window
+                # fits consistent (i.e. always using 20x20 deg squares around
+                # central gp), but is too small for ENSO signals.
+                # Now with global inputs this can be relaxed, and use of global
+                # inputs will ensure correlations from far away grid points be
+                # accounted for <--- this cannot be done for moving window fits.
+                ansX = super_sst_cov.fit_ellipse_model(
+                    xy,
+                    matern_ellipse=ellipse,
+                    max_distance=60.0,
+                    guesses=init_values,
+                    bounds=fit_bounds,
+                    n_jobs=nCPUs,
+                )
                 ans = ansX["Model_as_1D_cube"]
                 ansH = (ansX["Model"].x, ansX["Model"].x[-1] * 180.0 / np.pi)
             ans_lon = ans[0].coord("longitude").points
             ans_lat = ans[0].coord("latitude").points
-            logging.info(
-                f"{zonal} || {box_count} {xy} {actual_latlon} {ans_lon} {ans_lat} {ansH}"
+            logging.debug(
+                f"{zonal} || "
+                + f"{box_count} {xy} {actual_latlon} {ans_lon} {ans_lat} {ansH}"
             )
             for individual_ans in ans:
                 zonal_cube_list.append(individual_ans)
@@ -205,10 +255,10 @@ def main():  # noqa: D103
     equalise_attributes(super_cube_list)
     try:
         super_cube_list = super_cube_list.concatenate()
-    except:
-        pass
+    except Exception as e:
+        logging.error(f"Error concatenating cubelist: {e}")
     #
-    vstring = sys.argv[3].replace(".", "p")
+    vstring = str(v).replace(".", "p")
     vstring = "_v_eq_" + vstring
     #
     outpath = outpath_base + "matern_physical_distances" + vstring + "/"
@@ -216,8 +266,8 @@ def main():  # noqa: D103
     #
     outncfilename = outpath + dat_type + "_"
     outncfilename += f"{month_value:02d}.nc"
-    print("Results to be saved...")
-    print(super_cube_list)
+    logging.debug("Results to be saved...")
+    logging.debug(super_cube_list)
     logging.info(f"Saving results to {outncfilename}")
     inc.save(super_cube_list, outncfilename)
     logging.info("Completed")
