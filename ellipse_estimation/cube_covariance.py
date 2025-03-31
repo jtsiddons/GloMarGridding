@@ -5,7 +5,7 @@ xarray cubes should work via iris interface)
 """
 
 import math
-from typing import Any
+from typing import Any, Literal
 
 import iris
 import iris.coords as icoords
@@ -25,6 +25,9 @@ from glomar_gridding.ellipse import (
     SUPERCATEGORY_PARAMS,
     MaternEllipseModel,
 )
+
+
+DeltaXMethod = Literal["Met_Office", "Modified_Met_Office"]
 
 
 class CovarianceCube:
@@ -350,13 +353,13 @@ class CovarianceCube:
         dummy_cube.units = cube_unit
         return dummy_cube
 
-    def ps2006_kks2011_model(
+    def fit_ellipse_model(
         self,
         xy_point: int,
         matern_ellipse: MaternEllipseModel,
         max_distance: float = 20.0,
         min_distance: float = 0.3,
-        delta_x_method: str = "Modified_Met_Office",
+        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
         bounds: list[tuple[float, ...]] | None = None,
         opt_method: str = "Nelder-Mead",
@@ -367,13 +370,14 @@ class CovarianceCube:
         """
         Fit ellipses/covariance models using adhoc local covariances
 
-        the form of the covariance model depends on "fform"
-        isotropic (radial distance only)
-        anistropic (x and y are different, but not rotated)
-        anistropic_rotated (rotated)
+        the form of the covariance model depends on the "fform" attribute of the
+        Ellipse model:
+            isotropic (radial distance only)
+            anistropic (x and y are different, but not rotated)
+            anistropic_rotated (rotated)
 
-        add _pd to fform uses phyiscal distances instead of degrees
-        without _pd, estimation uses degree lat lons
+        If the "fform" attribued ends with _pd then phyiscal distances are used
+        instead of degrees
 
         range is defined max_distance (either in km and degrees)
         default is in degrees, but needs to be km if fform is from _pd series
@@ -444,8 +448,8 @@ class CovarianceCube:
             For higher resolution fits, this often interacts with
             the limit of the data you can put into the fit the optimizer
             may fail to converge if the input data is very smooth (aka ENSO
-            region, where anomalies are smooth over very large
-            (~10000km) scales.
+            region, where anomalies are smooth over very large (~10000km)
+            scales).
 
         opt_method='Nelder-Mead': str
             scipy optimizer method. Nelder-Mead is the one used by Karspeck.
@@ -462,7 +466,7 @@ class CovarianceCube:
             Since it affects accuracy of all values including rotation
             rotation angle 0.001 rad ~ 0.05 deg
 
-        estimate_SE=None
+        estimate_SE=None : str | None
             The code can estimate the standard error if the Matern parameters.
             This is not usually used or discussed for the purpose of kriging.
             Certain opt_method (gradient descent) can do this automatically
@@ -472,7 +476,7 @@ class CovarianceCube:
             (such as Nelder-Mead).
             The code does it using bootstrapping.
 
-        n_jobs=_default_n_jobs: int
+        n_jobs=DEFAULT_N_JOBS: int
             If parallel processing, number of threads to use.
 
         Returns
@@ -481,10 +485,6 @@ class CovarianceCube:
             Dictionary with results of the fit
             and the observed correlation matrix
         """
-        ##
-        lonlat = self.xy[xy_point]
-        correlation_vector = self.Corr[xy_point, :]
-        ##
         R2 = self.data_cube[0].copy()
         R2x = self._reverse_mask_from_compress_1d(self.Corr[xy_point, :])
         R2.data = R2x.reshape(self.xy_shape)
@@ -620,13 +620,13 @@ class CovarianceCube:
             estimate_SE=estimate_SE,
             n_jobs=n_jobs,
         )
-        ##
-        if matern_ellipse.unit_sigma:
-            model_params = results.x.tolist()
-            stdev = None
-        else:
+
+        model_params = results.x.tolist()
+        stdev = None
+        if not matern_ellipse.unit_sigma:
             model_params = results.x.tolist()[:-1]
             stdev = results.x.tolist()[-1]
+
         # Meaning of fit_success (int)
         # 0: success
         # 1: success but with one parameter reaching lower bounadries
@@ -670,7 +670,7 @@ class CovarianceCube:
         model_params.append(np.sqrt(self.Cov[xy_point, xy_point] / self.time_n))
         model_params.append(fit_success)
         model_params.append(results.nit)
-        ##
+
         v_coord = make_v_aux_coord(matern_ellipse.v)
         template_cube = self._make_template_cube(xy_point)
         model_as_cubelist = create_output_cubes(
@@ -679,7 +679,7 @@ class CovarianceCube:
             additional_meta_aux_coords=[v_coord],
             default_values=model_params,
         )["param_cubelist"]
-        ##
+
         return {
             "Correlation": R2,
             "MaternObj": matern_ellipse,
