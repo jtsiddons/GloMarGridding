@@ -508,11 +508,11 @@ class MaternEllipseModel:
             X, y, n_jobs=n_jobs, backend=backend
         )
 
-        print("X range: ", np.min(X), np.max(X))
-        print("y range: ", np.min(y), np.max(y))
+        logging.debug(f"X range: {np.min(X)}, {np.max(X)}")
+        logging.debug(f"y range: {np.min(y)}, {np.max(y)}")
         zipper = zip(guesses, bounds)
         for g, b in zipper:
-            print("init: ", g, "bounds: ", b)
+            logging.debug(f"init guess: {g}, bounds: {b}")
 
         results: OptimizeResult = minimize(
             LL_observedXy_unknownparams,
@@ -525,7 +525,7 @@ class MaternEllipseModel:
         # This does not account for standard errors in the
         # correlation/covariance matrix!
         if estimate_SE is None:
-            print("Standard error estimates not required")
+            logging.info("Standard error estimates not required")
             return results, None, bounds
 
         match estimate_SE:
