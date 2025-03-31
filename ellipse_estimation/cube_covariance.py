@@ -525,30 +525,7 @@ class CovarianceCube:
         # 9: fail, probably due to running out of maxiter
         #    (see scipy.optimize.minimize kwargs "options)"
         if results.success:
-            fit_success: int = 0
-            for model_param, bb in zip(model_params, bbs):
-                left_check = math.isclose(model_param, bb[0], rel_tol=0.01)
-                right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
-                left_advisory = (
-                    "near_left_bnd" if left_check else "not_near_left_bnd"
-                )
-                right_advisory = (
-                    "near_right_bnd" if right_check else "not_near_rgt_bnd"
-                )
-                print(
-                    "Convergence success after ",
-                    results.nit,
-                    " iterations :) : ",
-                    model_param,
-                    bb[0],
-                    bb[1],
-                    left_advisory,
-                    right_advisory,
-                )
-                if left_check:
-                    fit_success = 1 if fit_success == 0 else 3
-                if right_check:
-                    fit_success = 2 if fit_success == 0 else 3
+            fit_success = _get_fit_score(model_params, bounds, results.nit)
             print("RMSE of multivariate norm fit = ", stdev)
         else:
             print("Convergence fail after ", results.nit, " iterations.")
@@ -763,6 +740,30 @@ def create_output_cubes(
             param_cube.data.mask = template_cube.data.mask
         ans_cubelist.append(param_cube)
     return {"param_cubelist": ans_cubelist, "param_names": ans_paramlist}
+
+
+def _get_fit_score(model_params, bounds, niter) -> int:
+    fit_success: int = 0
+    for model_param, bb in zip(model_params, bounds):
+        left_check = math.isclose(model_param, bb[0], rel_tol=0.01)
+        right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
+        left_advisory = "near_left_bnd" if left_check else "not_near_left_bnd"
+        right_advisory = "near_right_bnd" if right_check else "not_near_rgt_bnd"
+        print(
+            "Convergence success after ",
+            niter,
+            " iterations :) : ",
+            model_param,
+            bb[0],
+            bb[1],
+            left_advisory,
+            right_advisory,
+        )
+        if left_check:
+            fit_success = 1 if fit_success == 0 else 3
+        if right_check:
+            fit_success = 2 if fit_success == 0 else 3
+    return fit_success
 
 
 def make_v_aux_coord(v: float) -> icoords.AuxCoord:
