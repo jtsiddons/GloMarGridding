@@ -222,8 +222,8 @@ class MaternEllipseModel:
                 self.default_guesses = [7.0]
                 self.default_bounds = [(0.5, 50.0)]
 
-                def c_ij(X, **params):
-                    return c_ij_isotropic(self.v, 1, X, **params)
+                def cov_ij(X, **params):
+                    return cov_ij_isotropic(self.v, 1, X, **params)
             case "isotropic_pd":
                 self.n_params = 1
                 self.default_guesses = [deg_to_km(7.0)]
@@ -231,15 +231,15 @@ class MaternEllipseModel:
                     (deg_to_km(0.5), deg_to_km(50)),
                 ]
 
-                def c_ij(X, **params):
-                    return c_ij_isotropic(self.v, 1, X, **params)
+                def cov_ij(X, **params):
+                    return cov_ij_isotropic(self.v, 1, X, **params)
             case "anisotropic":
                 self.n_params = 2
                 self.default_guesses = [7.0, 7.0]
                 self.default_bounds = [(0.5, 50.0), (0.5, 30.0)]
 
-                def c_ij(X, **params):
-                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+                def cov_ij(X, **params):
+                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_pd":
                 self.n_params = 2
                 self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0)]
@@ -248,8 +248,8 @@ class MaternEllipseModel:
                     (deg_to_km(0.5), deg_to_km(30)),
                 ]
 
-                def c_ij(X, **params):
-                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+                def cov_ij(X, **params):
+                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_rotated":
                 self.n_params = 3
                 self.default_guesses = [7.0, 7.0, 0.0]
@@ -259,8 +259,8 @@ class MaternEllipseModel:
                     (-2.0 * np.pi, 2.0 * np.pi),
                 ]
 
-                def c_ij(X, **params):
-                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+                def cov_ij(X, **params):
+                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_rotated_pd":
                 self.n_params = 3
                 self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0), 0.0]
@@ -270,10 +270,10 @@ class MaternEllipseModel:
                     (-2.0 * maths.pi, 2.0 * maths.pi),
                 ]
 
-                def c_ij(X, **params):
-                    return c_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+                def cov_ij(X, **params):
+                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
 
-        self.c_ij = c_ij
+        self.cov_ij = cov_ij
 
     def negative_log_likelihood(
         self,
@@ -337,12 +337,12 @@ class MaternEllipseModel:
         match self.n_params:
             case 1:  # Circle
                 R = params[0]  # Radius
-                y_LL = self.c_ij(X, R=R)
+                y_LL = self.cov_ij(X, R=R)
             case 2:  # Un-rotated Ellipse
                 Lx = params[0]
                 Ly = params[1]
                 y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
-                    delayed(self.c_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly)
+                    delayed(self.cov_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly)
                     for n_x_j in range(X.shape[0])
                 )
             case 3:  # Rotated Ellipse
@@ -350,7 +350,7 @@ class MaternEllipseModel:
                 Ly = params[1]
                 theta = params[2]
                 y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
-                    delayed(self.c_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly, theta=theta)
+                    delayed(self.cov_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly, theta=theta)
                     for n_x_j in range(X.shape[0])
                 )
             case _:
@@ -465,8 +465,10 @@ class MaternEllipseModel:
 
         Parameters
         ----------
-        X, y : np.ndarray
-            distances and observed correlations
+        X : np.ndarray
+            distances
+        y : np.ndarray
+            observed correlations
         guesses=None :
             Tuples/lists of initial values to scipy.optimize.minimize
         bounds=None :
@@ -480,9 +482,9 @@ class MaternEllipseModel:
             how to estimate standard error if needed
         n_sim=500 : int
             number of bootstrap to estimate standard error
-        n_jobs=_default_n_jobs : int
+        n_jobs=DEFAULT_N_JOBS : int
             number of threads
-        backend=_default_backend : str
+        backend=DEFAULT_BACKEND : str
             joblib backend
         random_seed=1234 : int, random seed for bootstrap
 
@@ -604,7 +606,7 @@ class MaternEllipseModel:
         return ans.x
 
 
-def c_ij_anisotropic(
+def cov_ij_anisotropic(
     v: float,
     stdev: float,
     delta_x: np.ndarray,
@@ -641,7 +643,7 @@ def c_ij_anisotropic(
 
     Returns
     -------
-    c_ij : float
+    cov_ij : float
         Covariance/correlation between local and remote point given displacement
         and Matern covariance parameters
     """
@@ -658,17 +660,17 @@ def c_ij_anisotropic(
     # second_term = 1.0
     third_term = (2.0 * tau * np.sqrt(v)) ** v
     forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
-    c_ij = first_term * third_term * forth_term
+    cov_ij = first_term * third_term * forth_term
     # ans = first_term * second_term * third_term * forth_term
 
     logging.debug(f"{first_term = }, {first_term.shape = }")
     logging.debug(f"{third_term = }, {third_term.shape = }")
     logging.debug(f"{forth_term = }, {forth_term.shape = }")
-    logging.debug(f"{c_ij = }, {c_ij.shape = }")
-    return c_ij
+    logging.debug(f"{cov_ij = }, {cov_ij.shape = }")
+    return cov_ij
 
 
-def c_ij_isotropic(
+def cov_ij_isotropic(
     v: float,
     stdev: float,
     delta: np.ndarray,
@@ -676,7 +678,7 @@ def c_ij_isotropic(
     stdev_j: float | None = None,
 ) -> np.ndarray:
     """
-    Isotropic version of c_ij_anisotropic
+    Isotropic version of cov_ij_anisotropic
 
     Parameters
     ----------
@@ -693,7 +695,7 @@ def c_ij_isotropic(
 
     Returns
     -------
-    c_ij : float
+    cov_ij : float
         Covariance/correlation between local and remote point given displacement
         and Matern covariance parameters
     """
@@ -704,5 +706,5 @@ def c_ij_isotropic(
     first_term = (stdev * stdev_j) / (gamma(v) * (2.0 ** (v - 1)))
     third_term = (2.0 * tau * np.sqrt(v)) ** v
     forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
-    c_ij = first_term * third_term * forth_term
-    return c_ij
+    cov_ij = first_term * third_term * forth_term
+    return cov_ij
