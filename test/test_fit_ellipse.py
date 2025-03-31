@@ -116,7 +116,7 @@ def test_EllipseSimulation_UniformParms_FitRandomData(
     print(random_GP_cube)
     cov_cube_instance = cube_covariance.CovarianceCube(random_GP_cube)
     print(ans.CCPLE_out.cov_ns)
-    print(cov_cube_instance.Cov / size)
+    print(cov_cube_instance.cov / size)
     #
     super_cube_list = iris.cube.CubeList()
     for _, zonal_slice in enumerate(ans.Lx[4:-4].slices(["longitude"])):

@@ -148,10 +148,6 @@ class CovarianceCube:
             to state if you want a correlation (normalised covariance or not)
         rounding : int
             round the values of the output
-
-        Returns
-        -------
-        None
         """
         # Reshape data to (t, xy),
         # get rid of mask values -- cannot caculate cov for such data
@@ -166,12 +162,12 @@ class CovarianceCube:
         # even data that says "SST anomalies" don't have zero mean (?!)
         xy_mean = np.mean(xyflatten_data, axis=0, keepdims=True)
         xyflatten_data = xyflatten_data - xy_mean
-        self.Cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
+        self.cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
         # xy_cov = _AT_A(xyflatten_data)
         if correlation:
             return self._cov2cor(rounding=rounding)
         if rounding is not None:
-            self.Cov = np.round(self.Cov, rounding)
+            self.cov = np.round(self.cov, rounding)
 
     def _cov2cor(
         self,
@@ -186,22 +182,18 @@ class CovarianceCube:
         ----------
         rounding : int
             round the values of the output
-
-        Returns
-        -------
-        None
         """
-        stdevs = np.sqrt(np.diag(self.Cov))
+        stdevs = np.sqrt(np.diag(self.cov))
         normalisation = np.outer(stdevs, stdevs)
-        self.Corr = self.Cov / normalisation
-        self.Corr[self.Cov == 0] = 0
+        self.cor = self.cov / normalisation
+        self.cor[self.cov == 0] = 0
         # sigma_inverse = np.zeros_like(self.Cov)
         # np.fill_diagonal(sigma_inverse,
         #                  np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
         # ans = np.matmul(np.matmul(sigma_inverse, self.Cov), sigma_inverse)
         # #ans = _Dinv_A_Dinv(self.Cov)
         if rounding is not None:
-            self.Corr = np.round(self.Corr, rounding)
+            self.cor = np.round(self.cor, rounding)
         return None
 
     def calc_distance_angle_selfcube(
@@ -486,7 +478,7 @@ class CovarianceCube:
             and the observed correlation matrix
         """
         R2 = self.data_cube[0].copy()
-        R2x = self._reverse_mask_from_compress_1d(self.Corr[xy_point, :])
+        R2x = self._reverse_mask_from_compress_1d(self.cor[xy_point, :])
         R2.data = R2x.reshape(self.xy_shape)
         R2.units = "1"
 
@@ -533,7 +525,7 @@ class CovarianceCube:
             fit_success = 9
         print("QC flag = ", fit_success)
         # append standard deviation
-        model_params.append(np.sqrt(self.Cov[xy_point, xy_point] / self.time_n))
+        model_params.append(np.sqrt(self.cov[xy_point, xy_point] / self.time_n))
         model_params.append(fit_success)
         model_params.append(results.nit)
 
@@ -564,7 +556,7 @@ class CovarianceCube:
         delta_x_method: DeltaXMethod | None,
     ) -> tuple[np.ndarray, np.ndarray]:
         lonlat = self.xy[xy_point]
-        y = self.Corr[xy_point, :]
+        y = self.cor[xy_point, :]
         # dx and dy are in degrees
         dx = np.array([a - lonlat[0] for a in self.xy[:, 0]])
         dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])
