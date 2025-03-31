@@ -54,11 +54,29 @@ class CovarianceCube:
         self,
         data_cube,
     ) -> None:
+        # Defining the input data
+        self.data_cube = data_cube
+        self.xy_shape = self.data_cube[0].shape
+        if len(self.xy_shape) != 2:
+            raise ValueError(
+                "Time slice maps should be 2D; check extra dims (ensemble?)"
+            )
+        self.big_covar_size = np.prod(self.xy_shape)
+
+        self._parse_coords()
+        self._detect_mask()
+
+        # Calculate the actual covariance and correlation matrix:
+        self._calc_cov(correlation=True)
+
+        return None
+
+    def _parse_coords(self) -> None:
         # Check input data_cube is actually usable
         self.tcoord_pos = -1
         self.xycoords_pos = []
         self.xycoords_name = []
-        for i, coord in enumerate(data_cube.coords()):
+        for i, coord in enumerate(self.data_cube.coords()):
             if coord.standard_name == "time":
                 self.tcoord_pos = i
             if coord.standard_name in ["latitude", "longitude"]:
@@ -77,15 +95,12 @@ class CovarianceCube:
         # if 'lat' in self.xycoords_name[0]:
         #     self.xycoords_name = self.xycoords_name[::-1]
 
-        # Defining the input data
-        self.data_cube = data_cube
-        self.xy_shape = self.data_cube[0].shape
-        if len(self.xy_shape) != 2:
-            raise ValueError(
-                "Time slice maps should be 2D; check extra dims (ensemble?)"
-            )
-        self.big_covar_size = np.prod(self.xy_shape)
+        # Length of time dimension
+        self.time_n = len(self.data_cube.coord("time").points)
 
+        return None
+
+    def _detect_mask(self) -> None:
         # Detect data mask and determine dimension of array without masked data
         # Almost certain True near the coast
         self.data_has_mask = ma.is_masked(self.data_cube.data)
@@ -100,7 +115,9 @@ class CovarianceCube:
             self._self_mask()
             self.small_covar_size = np.sum(np.logical_not(self.cube_mask))
         else:
-            self.cube_mask = np.zeros_like(data_cube[0].data.data, dtype=bool)
+            self.cube_mask = np.zeros_like(
+                self.data_cube[0].data.data, dtype=bool
+            )
             self.cube_mask_1D = self.cube_mask.flatten()
             self.small_covar_size = self.big_covar_size
 
@@ -113,12 +130,6 @@ class CovarianceCube:
         self.ym = ma.masked_where(self.cube_mask, self.yy)
         self.xy = np.column_stack([self.xm.compressed(), self.ym.compressed()])
         self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
-
-        # Length of time dimension
-        self.time_n = len(self.data_cube.coord("time").points)
-
-        # Calculate the actual covariance and correlation matrix:
-        self._calc_cov(correlation=True)
 
         return None
 
@@ -290,6 +301,14 @@ class CovarianceCube:
         Since there are lot of flatten and compressing going on for observations
         and fitted parameters, this reverses the 1D array to the original 2D map
 
+        DANGER WARNING, use different fill_value depending on situation
+        This affects how signal and image processing module interacts
+        with missing and masked values.
+        They don't ignore them, so a fill_value like 0 may be sensible
+        for covariance (-999.99 will do funny things if it finds its way to a
+        convolution and filter) iris doesn't care, but should use something like
+        -999.99 or something.
+
         Parameters
         ----------
         compressed_1D_vector : np.ndarray (1D) shape = (NUM,)
@@ -303,14 +322,6 @@ class CovarianceCube:
         -------
         ans : np.ndarray (2D) shape = (NUM,NUM)
             The 2D map array
-
-        DANGER WARNING, use different fill_value depending on situation
-        This affects how signal and image processing module interacts
-        with missing and masked values
-        They don't ignore them, so a fill_value like 0 may be sensible
-        for covariance (-999.99 will
-        do funny things if it finds its way to a convolution and filter)
-        iris doesn't care, but should use something like -999.99 or something
         """
         compressed_counter = 0
         ans = np.zeros_like(self.cube_mask_1D, dtype=dtype)
