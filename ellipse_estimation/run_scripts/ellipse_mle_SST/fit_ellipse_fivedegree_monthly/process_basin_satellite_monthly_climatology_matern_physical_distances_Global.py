@@ -187,7 +187,7 @@ def main():  # noqa: D103
                     "max_distance": 60.0,
                     "n_jobs": nCPUs,
                 }
-                ansX = super_sst_cov.ps2006_kks2011_model(xy, **kwargs)
+                ansX = super_sst_cov.fit_ellipse_model(xy, **kwargs)
                 ans = ansX["Model_as_1D_cube"]
                 ansH = (ansX["Model"].x, ansX["Model"].x[-1] * 180.0 / np.pi)
             ans_lon = ans[0].coord("longitude").points
