@@ -191,11 +191,6 @@ class CovarianceCube:
         normalisation = np.outer(stdevs, stdevs)
         self.cor = self.cov / normalisation
         self.cor[self.cov == 0] = 0
-        # sigma_inverse = np.zeros_like(self.Cov)
-        # np.fill_diagonal(sigma_inverse,
-        #                  np.reciprocal(np.sqrt(np.diagonal(self.Cov))))
-        # ans = np.matmul(np.matmul(sigma_inverse, self.Cov), sigma_inverse)
-        # #ans = _Dinv_A_Dinv(self.Cov)
         if rounding is not None:
             self.cor = np.round(self.cor, rounding)
         return None
@@ -255,13 +250,8 @@ class CovarianceCube:
             yx = yx_og
             D = euclidean_distances(yx)
 
-        # Angle difference vs x/longitude-axis
-        # np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
-        _dy = np.abs(np.subtract.outer(yx[:, 0], yx[:, 0]))
-        dy = np.triu(_dy) - np.tril(_dy)
-
-        _dx = np.abs(np.subtract.outer(yx[:, 1], yx[:, 1]))
-        dx = np.triu(_dx) - np.tril(_dx)
+        dy = _angle_diff(yx[:, 0])
+        dx = _angle_diff(yx[:, 1])
 
         # In radians; note, arctan2 can tell if dy and dx are negative
         A = np.arctan2(dy, dx)
@@ -724,6 +714,20 @@ def create_output_cubes(
     return {"param_cubelist": ans_cubelist, "param_names": ans_paramlist}
 
 
+def make_v_aux_coord(v: float) -> icoords.AuxCoord:
+    """Create an iris coord for the Matern (positive) shape parameter"""
+    return icoords.AuxCoord(v, long_name="v_shape", units="no_unit")
+
+
+def _angle_diff(angles: np.ndarray) -> np.ndarray:
+    """
+    Angle difference vs x/longitude-axis
+    np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
+    """
+    abs_diff = np.abs(np.subtract.outer(angles, angles))
+    return np.triu(abs_diff) - np.tril(abs_diff)
+
+
 def _get_fit_score(model_params, bounds, niter) -> int:
     fit_success: int = 0
     for model_param, bb in zip(model_params, bounds):
@@ -746,8 +750,3 @@ def _get_fit_score(model_params, bounds, niter) -> int:
         if right_check:
             fit_success = 2 if fit_success == 0 else 3
     return fit_success
-
-
-def make_v_aux_coord(v: float) -> icoords.AuxCoord:
-    """Create an iris coord for the Matern (positive) shape parameter"""
-    return icoords.AuxCoord(v, long_name="v_shape", units="no_unit")
