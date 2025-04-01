@@ -16,6 +16,7 @@ import psutil
 from glomar_gridding import covariance_cube
 from glomar_gridding.ellipse import MaternEllipseModel
 from glomar_gridding.utils import init_logging
+from glomar_gridding.io import get_recurse
 
 
 parser = argparse.ArgumentParser(
@@ -41,16 +42,26 @@ parser.add_argument(
     "--month",
     type=int,
     default=1,
+    choices=list(range(1, 13)),
     help="Month to process",
 )
+# fmt: off
 parser.add_argument(
     "-d",
     "--data-type",
     type=str,
-    choices=["sst", "lsat"],
+    choices=[
+        "sst",  # Sea surface temp
+        "at",   # Land surface air temp
+        "dpt",  # Dew point temp
+        "slp",  # Sea level pressure
+        "ws",   # Wind speed
+        "cl",   # Cloud cover
+    ],
     default="sst",
     help="Data type / Variable",
 )
+# fmt: on
 parser.add_argument(
     "-a",
     "--anisotropic",
@@ -71,10 +82,11 @@ parser.add_argument(
 )
 
 
-def parse_args(parser):
+def parse_args(parser) -> tuple[dict, MaternEllipseModel, str, int]:
+    """Parse input arguments"""
     args = parser.parse_args()
-    with open(args.config, "r", encoding="utf-8") as f:
-        conf = yaml.safe_load(f)
+    with open(args.config, "r", encoding="utf-8") as io:
+        conf = yaml.safe_load(io)
 
     ellipse = MaternEllipseModel(
         anisotropic=args.anisotropic,
@@ -83,26 +95,40 @@ def parse_args(parser):
         v=args.matern_shape,
         unit_sigma=True,
     )
-    dat_type = args.data_type
+    variable = args.data_type
     month = args.month
 
-    return conf, ellipse, dat_type, month
+    return conf, ellipse, variable, month
 
 
-def load_sst(conf):
+def load_sst(file: str) -> iris.cube.Cube:
     """Load SST inputs"""
-    ncfile = conf["sst_in"]
-    cube = iris.load_cube(ncfile)
+    cube = iris.load_cube(file)
     icc.add_month_number(cube, "time", name="month_number")
     return cube
 
 
-def load_lsat(conf):
+def load_at(file: str) -> iris.cube.Cube:
     """Load LSAT inputs"""
-    ncfile = conf["lsat_in"]
-    cube = iris.load_cube(ncfile, "land 2 metre temperature")
+    cube = iris.load_cube(file, "land 2 metre temperature")
     icc.add_month_number(cube, "time", name="month_number")
     return cube
+
+
+def load_data(conf: dict, variable: str) -> iris.cube.Cube:
+    """Load data"""
+    in_path = get_recurse(conf, variable, "in_path")
+    if in_path is None:
+        raise KeyError(f"Missing key {variable}.in_path in config file")
+    match variable:
+        case "sst":
+            return load_sst(in_path)
+        case "at":
+            return load_at(in_path)
+        case _:
+            raise NotImplementedError(
+                f"Not implemented for data variable: {variable}"
+            )
 
 
 def mask_time_union(cube):
@@ -118,42 +144,36 @@ def mask_time_union(cube):
 
 
 def main():  # noqa: D103
-    #
     init_logging(level="WARN")
-    #
+
     logging.info("Start")
-    #
+
     logging.info(psutil.Process().cpu_affinity())
     nCPUs = len(psutil.Process().cpu_affinity())
     logging.info("len(cpu_affinity) = ", nCPUs)
 
-    conf, ellipse, dat_type, month_value = parse_args(parser)
-    #
+    conf, ellipse, variable, month_value = parse_args(parser)
+
     v = ellipse.v
     nparms = ellipse.supercategory_n_params
     defval = [-999.9 for _ in range(nparms)]
 
     everyother = 1
 
-    if dat_type == "lsat":
-        data_loader = load_lsat
-        outpath_base = conf["lsat_out_base"]
-        print("dat_type is lsat")
-    else:
-        data_loader = load_sst
-        outpath_base = conf["sst_out_base"]
-        print("dat_type is sst")
-    #
+    out_path = get_recurse(conf, variable, "out_path")
+    if out_path is None:
+        raise KeyError(f"Missing key {variable}.out_path in config file")
+
     logging.info(f"{v = }")
-    #
+
     additional_constraints = iris.Constraint(month_number=month_value)
-    surftemp_cube = data_loader(conf)
-    surftemp_cube = surftemp_cube.extract(additional_constraints)
-    surftemp_cube = mask_time_union(surftemp_cube)
-    #
-    surftemp_cube_time_length = len(surftemp_cube.coord("time").points)
-    logging.info(repr(surftemp_cube))
-    #
+    data_cube = load_data(conf, variable)
+    data_cube = data_cube.extract(additional_constraints)
+    data_cube = mask_time_union(data_cube)
+
+    data_cube_time_length = len(data_cube.coord("time").points)
+    logging.info(repr(data_cube))
+
     # Init values set to HadCRUT5 defaults
     # no prior distrubtion set around those value
     init_values = [2000.0, 2000.0, 0]
@@ -163,21 +183,21 @@ def main():  # noqa: D103
         (300.0, 30000.0),
         (-2.0 * np.pi, 2.0 * np.pi),
     ]
-    #
+
     super_cube_list = iris.cube.CubeList()
-    #
-    logging.info(repr(surftemp_cube))
-    logging.debug(f"{surftemp_cube.coord('latitude') = }")
-    logging.debug(f"{surftemp_cube.coord('longitude') = }")
-    logging.debug(f"{surftemp_cube.coord('time') = }")
-    print("Large cube built for cov caculations:", repr(surftemp_cube))
+
+    logging.info(repr(data_cube))
+    logging.debug(f"{data_cube.coord('latitude') = }")
+    logging.debug(f"{data_cube.coord('longitude') = }")
+    logging.debug(f"{data_cube.coord('time') = }")
+
     logging.info("Building covariance matrix")
-    super_sst_cov = covariance_cube.CovarianceCube(surftemp_cube)
+    cov_cube = covariance_cube.CovarianceCube(data_cube)
     logging.info("Covariance matrix completed")
-    #
-    sst_cube_not_template = surftemp_cube[surftemp_cube_time_length // 2]
+
+    data_cube_not_template = data_cube[data_cube_time_length // 2]
     for zonal, zonal_slice in enumerate(
-        sst_cube_not_template.slices(["longitude"])
+        data_cube_not_template.slices(["longitude"])
     ):
         # Zonal slices
         logging.info(f"{zonal} {repr(zonal_slice)}")
@@ -185,24 +205,23 @@ def main():  # noqa: D103
             continue
         zonal_cube_list = iris.cube.CubeList()
         for box_count, invidiual_box in enumerate(zonal_slice.slices([])):
-            #
             if (box_count % everyother) != 0:
                 continue
             logging.info(f"{zonal} || {box_count} {repr(invidiual_box)}")
-            #
+
             current_lon = invidiual_box.coord("longitude").points[0]
             current_lat = invidiual_box.coord("latitude").points[0]
             logging.info(f"{zonal} || {box_count} {current_lon} {current_lat}")
             if np.ma.is_masked(invidiual_box.data):
                 xy, actual_latlon = (
-                    super_sst_cov.find_nearest_xy_index_in_cov_matrix(
+                    cov_cube.find_nearest_xy_index_in_cov_matrix(
                         [current_lon, current_lat], use_full=True
                     )
                 )
-                logging.debug(super_sst_cov.data_cube)
-                logging.debug(super_sst_cov.data_cube.coord("latitude"))
-                logging.debug(super_sst_cov.data_cube.coord("longitude"))
-                template_cube = super_sst_cov._make_template_cube2(
+                logging.debug(cov_cube.data_cube)
+                logging.debug(cov_cube.data_cube.coord("latitude"))
+                logging.debug(cov_cube.data_cube.coord("longitude"))
+                template_cube = cov_cube._make_template_cube2(
                     (current_lon, current_lat)
                 )
                 ans = covariance_cube.create_output_cubes(
@@ -217,7 +236,7 @@ def main():  # noqa: D103
             else:
                 # Nearest valid point
                 xy, actual_latlon = (
-                    super_sst_cov.find_nearest_xy_index_in_cov_matrix(
+                    cov_cube.find_nearest_xy_index_in_cov_matrix(
                         [current_lon, current_lat]
                     )
                 )
@@ -229,7 +248,7 @@ def main():  # noqa: D103
                 # Now with global inputs this can be relaxed, and use of global
                 # inputs will ensure correlations from far away grid points be
                 # accounted for <--- this cannot be done for moving window fits.
-                ansX = super_sst_cov.fit_ellipse_model(
+                ansX = cov_cube.fit_ellipse_model(
                     xy,
                     matern_ellipse=ellipse,
                     max_distance=60.0,
@@ -257,14 +276,14 @@ def main():  # noqa: D103
         super_cube_list = super_cube_list.concatenate()
     except Exception as e:
         logging.error(f"Error concatenating cubelist: {e}")
-    #
+
     vstring = str(v).replace(".", "p")
     vstring = "_v_eq_" + vstring
-    #
-    outpath = outpath_base + "matern_physical_distances" + vstring + "/"
+
+    outpath = out_path + "matern_physical_distances" + vstring + "/"
     Path(outpath).mkdir(parents=True, exist_ok=True)
-    #
-    outncfilename = outpath + dat_type + "_"
+
+    outncfilename = outpath + variable + "_"
     outncfilename += f"{month_value:02d}.nc"
     logging.debug("Results to be saved...")
     logging.debug(super_cube_list)

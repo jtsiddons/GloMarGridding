@@ -1,4 +1,6 @@
-sst_in: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/esa_cci_sst_5deg_monthly_1982_2022.nc"
-lsat_in: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/era5_t2m_monthly_mean_1979_2023_5x5.nc"
-sst_out_base: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/"
-lsat_out_base: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/"
+sst:
+  in_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/esa_cci_sst_5deg_monthly_1982_2022.nc"
+  out_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/"
+at:
+  in_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/era5_t2m_monthly_mean_1979_2023_5x5.nc"
+  out_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/"
