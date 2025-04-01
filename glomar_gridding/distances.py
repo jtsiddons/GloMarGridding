@@ -308,7 +308,7 @@ def sigma_rot_func(Lx: float, Ly: float, theta: float | None) -> np.ndarray:  # 
     return sigma
 
 
-def _compute_tau(
+def tau_dist(
     dE: np.ndarray,
     dN: np.ndarray,
     sigma: np.ndarray,
@@ -330,7 +330,7 @@ def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     DN = dyx[:, :, 0]
 
     def compute_tau2(dE, dN):
-        return _compute_tau(dE, dN, sigma)
+        return tau_dist(dE, dN, sigma)
 
     compute_tau_vectorised = np.vectorize(compute_tau2)
     return compute_tau_vectorised(DE, DN)
@@ -419,7 +419,7 @@ def mahal_dist_func(
     else:
         sigma = np.diag(np.array([Lx**2.0, Ly**2.0]))
 
-    return _compute_tau(delta_x, delta_y, sigma)
+    return tau_dist(delta_x, delta_y, sigma)
 
 
 # def _tau_unit_test():

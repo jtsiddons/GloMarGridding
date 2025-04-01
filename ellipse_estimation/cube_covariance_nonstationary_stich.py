@@ -23,7 +23,7 @@ from statsmodels.stats import correlation_tools
 from glomar_gridding.distances import (
     sigma_rot_func,
     mahal_dist_func,
-    _compute_tau,
+    tau_dist,
 )
 from glomar_gridding import covariance_cube
 from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
@@ -210,7 +210,7 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
         # Direct computation without decomposition (faster)
         # This is direct use of right part of Equation 18 in Karspeck et al 2012
         # This is behind else, so one won't be computing stuff twice
-        tau_bar = _compute_tau(x_i, x_j, sigma_bar)
+        tau_bar = tau_dist(x_i, x_j, sigma_bar)
     if verbose:
         print("xi, xj  = ", x_i, x_j)
         print("tau_bar = ", tau_bar)
