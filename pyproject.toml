@@ -24,6 +24,7 @@ dependencies = [
   "pyarrow",
   "scikit-learn",
   "scipy",
+  "statsmodels>=0.14.4",
   "tqdm",
   "xarray",
 ]
