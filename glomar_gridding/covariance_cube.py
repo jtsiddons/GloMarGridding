@@ -5,7 +5,7 @@ xarray cubes should work via iris interface)
 """
 
 import math
-from typing import Any, Literal
+from typing import Any
 
 import iris
 import iris.coords as icoords
@@ -20,14 +20,11 @@ from glomar_gridding.constants import (
     RADIUS_OF_EARTH_KM,
 )
 from glomar_gridding.ellipse import (
-    MODEL_TYPE,
     MODEL_TYPE_TO_SUPERCATEGORY,
     SUPERCATEGORY_PARAMS,
     MaternEllipseModel,
 )
-
-
-DeltaXMethod = Literal["Met_Office", "Modified_Met_Office"]
+from glomar_gridding.types import MODEL_TYPE, DELTA_X_METHOD
 
 
 class CovarianceCube:
@@ -332,7 +329,7 @@ class CovarianceCube:
         matern_ellipse: MaternEllipseModel,
         max_distance: float = 20.0,
         min_distance: float = 0.3,
-        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
+        delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
         bounds: list[tuple[float, ...]] | None = None,
         opt_method: str = "Nelder-Mead",
@@ -485,8 +482,7 @@ class CovarianceCube:
         model_params = results.x.tolist()
         stdev = None
         if not matern_ellipse.unit_sigma:
-            model_params = results.x.tolist()[:-1]
-            stdev = results.x.tolist()[-1]
+            stdev = model_params.pop()
 
         # Meaning of fit_success (int)
         # 0: success
@@ -533,7 +529,7 @@ class CovarianceCube:
         max_distance: float,
         anisotropic: bool,
         physical_distance: bool,
-        delta_x_method: DeltaXMethod | None,
+        delta_x_method: DELTA_X_METHOD | None,
     ) -> tuple[np.ndarray, np.ndarray]:
         lonlat = self.xy[xy_point]
         y = self.cor[xy_point, :]
@@ -720,10 +716,8 @@ def make_v_aux_coord(v: float) -> icoords.AuxCoord:
 
 
 def _angle_diff(angles: np.ndarray) -> np.ndarray:
-    """
-    Angle difference vs x/longitude-axis
-    np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
-    """
+    """Angle difference vs x/longitude-axis"""
+    # np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
     abs_diff = np.abs(np.subtract.outer(angles, angles))
     return np.triu(abs_diff) - np.tril(abs_diff)
 
@@ -738,7 +732,7 @@ def _get_fit_score(model_params, bounds, niter) -> int:
         print(
             "Convergence success after ",
             niter,
-            " iterations :) : ",
+            " iterations: ",
             model_param,
             bb[0],
             bb[1],

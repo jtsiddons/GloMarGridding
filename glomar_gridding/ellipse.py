@@ -5,7 +5,7 @@ import math as maths
 import warnings
 from collections import OrderedDict
 from collections.abc import Callable
-from typing import Literal, cast, get_args
+from typing import cast, get_args
 
 import numpy as np
 from cf_units import Unit
@@ -21,33 +21,8 @@ from glomar_gridding.constants import (
 )
 from glomar_gridding.distances import mahal_dist_func
 from glomar_gridding.utils import deg_to_km
+from glomar_gridding.types import MODEL_TYPE, FFORM, SUPERCATEGORY
 
-MODEL_TYPE = Literal[
-    "ps2006_kks2011_iso",
-    "ps2006_kks2011_ani",
-    "ps2006_kks2011_ani_r",
-    "ps2006_kks2011_iso_pd",
-    "ps2006_kks2011_ani_pd",
-    "ps2006_kks2011_ani_r_pd",
-]
-
-FFORM = Literal[
-    "anisotropic_rotated",
-    "anisotropic",
-    "isotropic",
-    "anisotropic_rotated_pd",
-    "anisotropic_pd",
-    "isotropic_pd",
-]
-
-SUPERCATEGORY = Literal[
-    "1_param_matern",
-    "2_param_matern",
-    "3_param_matern",
-    "1_param_matern_pd",
-    "2_param_matern_pd",
-    "3_param_matern_pd",
-]
 
 MODEL_TYPE_TO_SUPERCATEGORY: dict[MODEL_TYPE, SUPERCATEGORY] = {
     "ps2006_kks2011_iso": "1_param_matern",
