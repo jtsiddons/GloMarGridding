@@ -5,7 +5,8 @@ xarray cubes should work via iris interface)
 """
 
 import datetime
-from functools import reduce
+
+import logging
 import numbers
 import sys
 import tracemalloc
@@ -13,6 +14,7 @@ import tracemalloc
 from joblib import Parallel, delayed  # Developmental
 
 # from iris import analysis as ia
+import iris
 import numpy as np
 from numpy import ma
 from numpy import linalg
@@ -25,21 +27,13 @@ from glomar_gridding.distances import (
     mahal_dist_func,
     tau_dist,
 )
-from glomar_gridding import covariance_cube
+from glomar_gridding.constants import DEFAULT_N_JOBS, DEFAULT_BACKEND
 from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
-# from ellipse_estimation.distance_util import scalar_cube_great_circle_distance_cube  # noqa: E501
+from glomar_gridding.types import DELTA_X_METHOD
 
 # Below is in theory redudant, but the view/controller bits of the code
 # has not been integrated to the package; for now, keeping this in case
 # of breaking other code
-
-# Developmental functions that I do not have time to explore much
-_default_n_jobs = 4
-# This is the only one would work if you want to modify self covariance
-# array inside method; slow
-# _default_backend = 'threading'
-# Method is modified to return a list of numbers, hence not restricted to
-_default_backend = "loky"
 
 # _MAX_DEG_Kar = 20.0  # Karspeck et al distance threshold in degrees latlon
 # _MAX_DIST_Kar = cube_cov._deg2km(_MAX_DEG_Kar)  # to km @ lat = 0.0 (2222km)
@@ -47,7 +41,7 @@ _default_backend = "loky"
 # _MAX_DIST_UKMO = 10000.0  # UKMO uses 10000km range to fit the non-rot ellipse
 # _MAX_DEG_UKMO = cube_cov._km2deg(_MAX_DIST_UKMO)
 
-_MAX_DIST_compromise = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
+MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 # _MAX_DEG_compromise = cube_cov._km2deg(_MAX_DIST_compromise)
 
 # _MIN_CORR_Threshold = 0.5 / np.e
@@ -76,7 +70,7 @@ def mask_cube(cube: iris.cube.Cube) -> iris.cube.Cube:
     raise TypeError("Input cube is not a numpy array.")
 
 
-def sizeof_fmt(num, suffix="B"):
+def sizeof_fmt(num: int, suffix="B") -> str:
     """
     Convert numbers to kilo/mega... bytes,
     for interactive printing of code progress
@@ -88,9 +82,16 @@ def sizeof_fmt(num, suffix="B"):
     return f"{num:.1f}Yi{suffix}"
 
 
-def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
-    v, sdev_i, sdev_j, x_i, x_j, sigma_parms_i, sigma_parms_j, verbose=False
-):
+def c_ij_anistropic_rotated_nonstationary(
+    v: float,
+    sdev_i: float,
+    sdev_j: float,
+    x_i: np.ndarray,
+    x_j: np.ndarray,
+    sigma_parms_i: list[float],
+    sigma_parms_j: list[float],
+    decompose: bool = False,
+) -> float:
     """
     Compute the nonstationary spatially-varying covariance between
     point i and j with covariance model parameters sigma_parms_i, sigma_parms_j
@@ -122,15 +123,14 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
         iterable with a length of 3 each, that states Lx, Ly, theta
         Dimensions of Lx, Ly, x_i and x_j must be the same (i.e. km with km
         not km with degrees)
-    verbose=False: bool
-        More stuff gets printed out to stdout!
+    decompose: bool
+        Optionally decompose sigma_bar.
 
     Returns
     -------
-    ans : float
+    c_ij : float
         the covariance between the two points
     """
-    #
     # Compute sigma_bar
     sigma_i = sigma_rot_func(
         sigma_parms_i[0], sigma_parms_i[1], sigma_parms_i[2]
@@ -139,9 +139,9 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
         sigma_parms_j[0], sigma_parms_j[1], sigma_parms_j[2]
     )
     sigma_bar = 0.5 * (sigma_i + sigma_j)
-    if verbose:
-        print("sigma_bar = ", sigma_bar)
-    #
+
+    logging.debug(f"{sigma_bar = }")
+
     # sigma_bar can be broken down to new sigma parameters
     # aka a new Lx, Ly and theta using eigenvalue decomposition
     # Sigma_bar = R(theta_bar) @ [[Lx_bar**2 0][0 Ly_bar**2]] @ R(theta_bar)^-1
@@ -152,39 +152,36 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
     # there are a possibility of floating point issue
     # i.e. eigenvalues and eigenvectors become "complex"
     # when off-diagonal are a very small float (1E-10)
-    #
-    near_zero_check = np.isclose(sigma_bar, 0.0)
-    if np.any(near_zero_check):
-        # This gets annoying if running istropic unit tests...
-        # print('Adjustments made to small off diagonal terms of sigma_bar')
-        sigma_bar[near_zero_check] = 0.0
-    #
-    if verbose:
-        # Decomposing sigma_bar as an optional verbose
+
+    # This gets annoying if running istropic unit tests...
+    # print('Adjustments made to small off diagonal terms of sigma_bar')
+    sigma_bar[np.isclose(sigma_bar, 0.0)] = 0.0
+
+    if decompose:
+        # Decomposing sigma_bar
         # sigma_bar = R_bar x [( Lx_bar**2 0 ) (0 Ly_bar**2)] x R_bar_transpose
         sigma_bar_eigval, sigma_bar_eigvec = linalg.eig(sigma_bar)
-        #
+
         # If numerical instability is detected, resulting in complex number,
         # take the real part
-        try:
-            assert np.all(np.isreal(sigma_bar_eigval)) and np.all(  # noqa: S101
-                np.isreal(sigma_bar_eigvec)
-            )
-        except AssertionError:
-            print("Complex eigenvalues detected!")
-            print("sigma_bar_eigval = ", sigma_bar_eigval)
-            print("sigma_bar_eigvec = ", sigma_bar_eigvec)
+        if not (
+            np.all(np.isreal(sigma_bar_eigval))
+            and np.all(np.isreal(sigma_bar_eigvec))
+        ):
+            logging.warning("Complex eigenvalues detected!")
+            logging.warning(f"{sigma_bar_eigval = }")
+            logging.warning(f"{sigma_bar_eigvec = }")
             sigma_bar_eigval = sigma_bar_eigval.real
             sigma_bar_eigvec = sigma_bar_eigvec.real
         # Actual Lx, Ly are square roots of the eigenvalues
         Lx_bar = np.sqrt(sigma_bar_eigval[0])
         Ly_bar = np.sqrt(sigma_bar_eigval[1])
-        #
+
         # https://stackoverflow.com/questions/15022630/how-to-calculate-the-angle-from-rotation-matrix
-        #
-        print(f"Eigvals of sigma_bar = {sigma_bar_eigval}")
-        print(f"(Lx_bar, Ly_bar) = ({Lx_bar},{Ly_bar})")
-        print(f"Eigvec of sigma_bar  = {sigma_bar_eigvec}")
+
+        logging.debug(f"Eigvals of sigma_bar = {sigma_bar_eigval}")
+        logging.debug(f"{(Lx_bar, Ly_bar) = }")
+        logging.debug(f"Eigvec of sigma_bar  = {sigma_bar_eigvec}")
         # Use arctan2 to compute rotation angle '''
         theta_bar = np.arctan2(sigma_bar_eigvec[1, 0], sigma_bar_eigvec[0, 0])
         # Below should show the same angle in radians
@@ -201,20 +198,21 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
             np.rad2deg(-np.arcsin(sigma_bar_eigvec[1, 0])),
         )
         v_ans3 = (theta_bar, np.rad2deg(theta_bar))
-        print(f"arccos  R[0,0][1, 1] = {v_ans0} (>0 for ang within +/- pi/2)")
-        print(f"arcsin  R[0,1]       = {v_ans1}")
-        print(f"-arccos R[1,0]       = {v_ans2}")
-        print(f"theta_bar            = {v_ans3} (using arctan2)")
+        logging.debug(
+            f"arccos  R[0,0][1, 1] = {v_ans0} (>0 for ang within +/- pi/2)"
+        )
+        logging.debug(f"arcsin  R[0,1]       = {v_ans1}")
+        logging.debug(f"-arccos R[1,0]       = {v_ans2}")
+        logging.debug(f"theta_bar            = {v_ans3} (using arctan2)")
         tau_bar = mahal_dist_func(x_i, x_j, Lx_bar, Ly_bar, theta=theta_bar)
     else:
         # Direct computation without decomposition (faster)
         # This is direct use of right part of Equation 18 in Karspeck et al 2012
         # This is behind else, so one won't be computing stuff twice
         tau_bar = tau_dist(x_i, x_j, sigma_bar)
-    if verbose:
-        print("xi, xj  = ", x_i, x_j)
-        print("tau_bar = ", tau_bar)
-    #
+    logging.debug(f"{(x_i, x_j) = }")
+    logging.debug(f"{tau_bar = }")
+
     # Eq 17 in Karspeck et al 2012
     # ans = first_term x second_term x third_term x fourth_term '''
     first_term = (sdev_i * sdev_j) / (gamma(v) * (2.0 ** (v - 1)))
@@ -229,29 +227,27 @@ def c_ij_anistropic_rotated_nonstationary(  # noqa: C901
 
     # second_term_u = root4(linalg.det(sigma_i))*root4(linalg.det(sigma_j))
     # second_term_d = np.sqrt(linalg.det(sigma_bar))
-    second_term_u = root4(det22(sigma_i)) * root4(det22(sigma_j))
-    second_term_d = np.sqrt(det22(sigma_bar))
-    second_term = second_term_u / second_term_d
+    second_term_num = root4(det22(sigma_i)) * root4(det22(sigma_j))
+    second_term_denom = np.sqrt(det22(sigma_bar))
+    second_term = second_term_num / second_term_denom
     third_term = (2.0 * tau_bar * np.sqrt(v)) ** v
     forth_term = modified_bessel_2nd(v, 2.0 * tau_bar * np.sqrt(v))
-    ##
-    if verbose:
-        print("Check: first_term  = ", first_term)
-        print("Check: second_term = ", second_term)
-        print("Check: third_term  = ", third_term)
-        print("Check: forth_term  = ", forth_term)
-    ##
-    ans = first_term * second_term * third_term * forth_term
-    if verbose:
-        print("Check: sdev_i * sdev_j = ", sdev_i * sdev_j)
-        print("Check: ans (cov)       = ", ans)
-        print("Check: ans (cor)       = ", ans / (sdev_i * sdev_j))
+
+    logging.debug(f"Check: {first_term = }")
+    logging.debug(f"Check: {second_term = }")
+    logging.debug(f"Check: {third_term = }")
+    logging.debug(f"Check: {forth_term = }")
+
+    c_ij = first_term * second_term * third_term * forth_term
+    logging.debug(f"Check: sdev_i * sdev_j = {sdev_i * sdev_j}")
+    logging.debug(f"Check: ans (cov)       = {c_ij}")
+    logging.debug(f"Check: ans (cor)       = {c_ij / (sdev_i * sdev_j)}")
     # Don't know why I added the below, I have never seen it triggered...
     # in which you are not supposed to as it will indicate bug elsewhere
     # the original check is much more
-    if ans > (sdev_i * sdev_j):
+    if c_ij > (sdev_i * sdev_j):
         raise ValueError("sdev_i * sdev_j should always be smaller than ans")
-    return ans
+    return c_ij
 
 
 def check_symmetric(a, rtol=1e-05, atol=1e-08):
@@ -279,7 +275,7 @@ def perturb_sym_matrix_2_positive_definite(square_sym_matrix):
         or not check_symmetric(square_sym_matrix)
     ):
         raise ValueError("Matrix is not square and/or symmetric.")
-    ##
+
     eigenvalues = linalg.eigvalsh(square_sym_matrix)
     min_eigen = np.min(eigenvalues)
     max_eigen = np.max(eigenvalues)
@@ -292,7 +288,7 @@ def perturb_sym_matrix_2_positive_definite(square_sym_matrix):
         print("Matrix is already positive (semi-)definite.")
         return square_sym_matrix
     ans = correlation_tools.cov_nearest(square_sym_matrix)
-    #
+
     eigenvalues_adj = linalg.eigvalsh(ans)
     min_eigen_adj = np.min(eigenvalues_adj)
     max_eigen_adj = np.max(eigenvalues_adj)
@@ -431,7 +427,7 @@ class CovarianceCube_PreStichedLocalEstimates:
     v=3: float
         Matern shape parameter
     output_floatprecision :
-        Float point precision of the ouput covariance
+        Float point precision of the output covariance
         numpy defaults to float64,
         noting that float32 halves the storage and halves the memory to use
     max_dist : float
@@ -469,7 +465,7 @@ class CovarianceCube_PreStichedLocalEstimates:
         cause a major slow down.
 
     verbose : bool
-        More stdout stuff!
+           More stdout stuff!
     """
 
     def __init__(  # noqa: C901
@@ -480,13 +476,13 @@ class CovarianceCube_PreStichedLocalEstimates:
         sdev_cube,
         v=3,
         output_floatprecision=np.float64,
-        max_dist=_MAX_DIST_compromise,
+        max_dist=MAX_DIST_COMPROMISE,
         degree_dist=False,
-        delta_x_method="Modified_Met_Office",
+        delta_x_method: DELTA_X_METHOD = "Modified_Met_Office",
         check_positive_definite=False,
         use_joblib=False,
-        n_jobs=_default_n_jobs,
-        backend=_default_backend,
+        n_jobs=DEFAULT_N_JOBS,
+        backend=DEFAULT_BACKEND,
         nolazy=False,
         use_sklearn_haversine=False,
         verbose=False,
@@ -498,8 +494,7 @@ class CovarianceCube_PreStichedLocalEstimates:
             ove_start_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-        if not use_joblib:
-            n_jobs = 1
+        n_jobs = n_jobs if use_joblib else 1
 
         if not isinstance(max_dist, numbers.Number):
             raise ValueError("max_dist must be a number")
@@ -512,7 +507,7 @@ class CovarianceCube_PreStichedLocalEstimates:
         self.sdev_local_estimates = mask_cube(sdev_cube)
         self.max_dist = max_dist
         self.degree_dist = degree_dist
-        self.delta_x_method = delta_x_method
+        self.delta_x_method: DELTA_X_METHOD = delta_x_method
         self.check_positive_definite = check_positive_definite
         self.use_sklearn_haversine = use_sklearn_haversine
 
@@ -534,7 +529,7 @@ class CovarianceCube_PreStichedLocalEstimates:
 
         # The cov and corr matrix will be sq matrix of this
         self.xy_shape = self.Lx_local_estimates.shape
-        self.n_elements = reduce(lambda x, y: x * y, self.xy_shape)
+        self.n_elements = np.prod(self.xy_shape)
         self.data_has_mask = ma.is_masked(self.Lx_local_estimates.data)
         if self.data_has_mask:
             print("Masked pixels detected in input files")
@@ -569,7 +564,6 @@ class CovarianceCube_PreStichedLocalEstimates:
             (self.covar_size, self.covar_size), dtype=np.float16
         )
 
-        ##
         print("Compressing (masked) array to 1D")
         self.Lx_local_estimates_compressed = (
             self.Lx_local_estimates.data.compressed()
@@ -603,7 +597,6 @@ class CovarianceCube_PreStichedLocalEstimates:
         )
         print("Time ellipsed: ", ove_end_time - ove_start_time)
 
-        #
         # Fill in the covariance matrix by looping over grid points
         # with different sigma matricies
         ii_index = range(self.covar_size)
@@ -631,16 +624,16 @@ class CovarianceCube_PreStichedLocalEstimates:
                 self.lon_grid_compressed[ii]
             )
             jj_index = range(ii + 1, self.covar_size)
-            #
+
             # New -- moved this outside the loop,
             # may make things slightly faster
             # (code will at least look cleaner)
             sdev_i = self.sdev_local_estimates_compressed[ii].copy()
-            sigma_parms_i = (
+            sigma_parms_i = [
                 self.Lx_local_estimates_compressed[ii].copy(),
                 self.Ly_local_estimates_compressed[ii].copy(),
                 self.theta_local_estimates_compressed[ii].copy(),
-            )
+            ]
             lat_grid_compressed_i = self.lat_grid_compressed[ii].copy()
             lon_grid_compressed_i = self.lon_grid_compressed[ii].copy()
             if verbose:
@@ -651,14 +644,14 @@ class CovarianceCube_PreStichedLocalEstimates:
                     lat_grid_compressed_i,
                     lon_grid_compressed_i,
                 )  # For checking use
-            ##
+
             # Potential for improvement --
             # it should be possible to make this faster
             # as it is is embarrassingly parallel
             # Nevertheless it doesn't run slow.
             # Estimating the individual local sigma (cube_covariance.py)
             # is much slower
-            #
+
             # interface info: _single_cell_process_parallel(self, ii, jj, verbose)  # noqa: E501
             if not use_joblib:
                 # Serial mode (fastest currently)
@@ -690,42 +683,38 @@ class CovarianceCube_PreStichedLocalEstimates:
                         self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = 0.0
                     else:
                         sdev_j = self.sdev_local_estimates_compressed[jj]
-                        sigma_parms_j = (
+                        sigma_parms_j = [
                             self.Lx_local_estimates_compressed[jj],
                             self.Ly_local_estimates_compressed[jj],
                             self.theta_local_estimates_compressed[jj],
+                        ]
+                        logging.debug(ii, jj, x_i, x_j)
+                        logging.debug(
+                            ii,
+                            sdev_i,
+                            sigma_parms_i,
+                            np.rad2deg(sigma_parms_i[-1]),
                         )
-                        if verbose:
-                            print(ii, jj, x_i, x_j)
-                            print(
-                                ii,
-                                sdev_i,
-                                sigma_parms_i,
-                                np.rad2deg(sigma_parms_i[-1]),
-                            )
-                            print(
-                                jj,
-                                sdev_j,
-                                sigma_parms_j,
-                                np.rad2deg(sigma_parms_j[-1]),
-                            )
+                        logging.debug(
+                            jj,
+                            sdev_j,
+                            sigma_parms_j,
+                            np.rad2deg(sigma_parms_j[-1]),
+                        )
                         # Compute eq 17 in Karspeck et al at each grid point
                         cov_bar = c_ij_anistropic_rotated_nonstationary(
                             v,
                             sdev_i,
                             sdev_j,
-                            x_i,
-                            x_j,
+                            np.asarray(x_i),
+                            np.asarray(x_j),
                             sigma_parms_i,
                             sigma_parms_j,
-                            verbose=verbose,
+                            decompose=verbose,
                         )
                         """ Fill in symmetric matrix """
                         self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = cov_bar
             else:
-                if verbose:
-                    for jj in jj_index:
-                        print(ii, jj)
 
                 def spnip(jj):
                     return self._single_cell_process_notinplace(
@@ -743,12 +732,11 @@ class CovarianceCube_PreStichedLocalEstimates:
                     delayed(spnip)(jj) for jj in jj_index
                 )
                 # Fill in symmetric matrix
-                if verbose:
-                    print(
-                        len(jj_index),
-                        [cov_bars[jjjj] for jjjj in range(10)],
-                        cov_bars[-1],
-                    )  # For checking use
+                logging.debug(
+                    len(jj_index),
+                    [cov_bars[jjjj] for jjjj in range(10)],
+                    cov_bars[-1],
+                )  # For checking use
                 for j_index, jj in enumerate(jj_index):
                     self.lat_mat_i[ii, jj] = self.lat_mat_i[jj, ii] = (
                         self.lat_grid_compressed[ii]
@@ -766,11 +754,13 @@ class CovarianceCube_PreStichedLocalEstimates:
                     self.cov_ns[jj, ii] = cov_bars[j_index]
 
         cov_end_time = datetime.datetime.now()
-        print(
+        logging.info(
             "Cov processing ended: ", cov_end_time.strftime("%Y-%m-%d %H:%M:%S")
         )
-        print("Time ellipsed: ", cov_end_time - cov_start_time)
-        print("Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns)))
+        logging.info("Time ellipsed: ", cov_end_time - cov_start_time)
+        logging.info(
+            "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
+        )
 
         # Code now reports eigvals and determinant of the constructed matrix
         self.cov_eig = np.sort(linalg.eigvalsh(self.cov_ns))
@@ -781,27 +771,29 @@ class CovarianceCube_PreStichedLocalEstimates:
             # in production runs, but is still useful for unit tests
             # Perturb cov matrix to positive semi-definite if needed
             # Tests shows small negative eigval (most neg ~ -0.3 K**2) possible
-            print("positive_definite_check is enabled")
-            print("FYI, determinant = ", self.cov_det)
-            print("FYI, eigenvalues sorted (first 10, last 10):")
-            print(self.cov_eig[:10], "...", self.cov_eig[-10:])
+            logging.info("positive_definite_check is enabled")
+            logging.debug("FYI, determinant = ", self.cov_det)
+            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
+            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
             if np.min(self.cov_eig) < 0:
                 # On the fly eigenvalue clipping
-                print("Negative eigval detected; corrections will be applied.")
+                logging.warning(
+                    "Negative eigval detected; corrections will be applied."
+                )
                 self.positive_definite_check()
             else:
-                print("Corrections are not needed.")
+                logging.debug("Corrections are not needed.")
+            logging.info("Positive (semi-)definite checks complete.")
         else:
-            print("positive_definite_check not enabled")
-            print("FYI, determinant = ", self.cov_det)
-            print("FYI, eigenvalues sorted (first 10, last 10):")
-            print(self.cov_eig[:10], "...", self.cov_eig[-10:])
-        print("Positive (semi-)definite checks complete.")
+            logging.info("positive_definite_check not enabled")
+            logging.debug("FYI, determinant = ", self.cov_det)
+            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
+            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
 
         # Compute correlation matrix
-        print("Get reciprocal of covariance diagonal")
+        logging.info("Getting reciprocal of covariance diagonal")
         sigma_inverse = np.diag(np.reciprocal(np.sqrt(np.diag(self.cov_ns))))
-        print("Computing correlation matrix")
+        logging.info("Computing correlation matrix")
         self.cor_ns = sigma_inverse @ self.cov_ns @ sigma_inverse
         # Check for numerical errors
         print("Checking non-1 values in diagonal of correlation")
@@ -837,11 +829,11 @@ class CovarianceCube_PreStichedLocalEstimates:
             cov_bar = 0.0
         else:
             sdev_j = self.sdev_local_estimates_compressed[jj]
-            sigma_parms_j = (
+            sigma_parms_j = [
                 self.Lx_local_estimates_compressed[jj],
                 self.Ly_local_estimates_compressed[jj],
                 self.theta_local_estimates_compressed[jj],
-            )
+            ]
             if verbose:
                 print(ii, jj, x_i, x_j)
                 print(ii, sdev_i, sigma_parms_i, np.rad2deg(sigma_parms_i[-1]))
@@ -855,7 +847,7 @@ class CovarianceCube_PreStichedLocalEstimates:
                 x_j,
                 sigma_parms_i,
                 sigma_parms_j,
-                verbose=verbose,
+                decompose=verbose,
             )
         return cov_bar
 
@@ -895,8 +887,8 @@ class CovarianceCube_PreStichedLocalEstimates:
         self, compressed_vector, cube_name="stuff", cube_unit="1"
     ):
         """
-        This reverse one row/column of the covariance/correlation matrix
-        to a plottable iris cube, using mask defined in class
+        Reverse one row/column of the covariance/correlation matrix to a
+        plottable iris cube, using mask defined in class.
         """
         dummy_cube = self.Lx_local_estimates.copy()
         masked_vector = self._reverse_mask_from_compress_1D(compressed_vector)
