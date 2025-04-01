@@ -422,8 +422,8 @@ class CovarianceCube_PreStichedLocalEstimates:
     float (km) or (degrees if you want to work in degrees), default 6000km
     if you want infinite distance, just set it to some stupidly large number,
     fun numbers to use:
-    1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance)
-    5.0E9 (average distance between Earth and not-a-planet-anymore Pluto
+    1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
+    5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
 
     Parameters
     ----------
