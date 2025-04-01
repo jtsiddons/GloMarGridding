@@ -53,28 +53,27 @@ _MAX_DIST_compromise = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 # _MIN_CORR_Threshold = 0.5 / np.e
 
 
-def convert_cube_data_2_MaskedArray_if_not(cube):  # noqa: N802
+def mask_cube(cube: iris.cube.Cube) -> iris.cube.Cube:
     """
     Forces cube.data to be an instance of np.ma.MaskedArray
 
     Parameters
     ----------
-    cube : instance to iris.cube.Cube
-        iris.cube.Cube.data can be masked or not masked
+    cube : iris.cube.Cube
+        Can be masked or not masked
 
     Returns
     -------
-    cube : instance to iris.cube.Cube
-        Perhaps the data within the cube is now an instance of np.ma.MaskedArray
+    cube : iris.cube.Cube
+        'data' attribute within the cube is now an instance of np.ma.MaskedArray
     """
-    np_array = cube.data
-    print(type(np_array))
-    assert isinstance(np_array, np.ndarray), "Not a numpy array (masked or not)"  # noqa: S101
-    if not isinstance(np_array, np.ma.MaskedArray):
-        print("Ad hoc conversion to np.ma.MaskedArray")
-        cube.data = np.ma.MaskedArray(np_array)
+    if isinstance(cube.data, np.ma.MaskedArray):
         return cube
-    return cube
+    if isinstance(cube.data, np.ndarray):
+        logging.info("Ad hoc conversion to np.ma.MaskedArray")
+        cube.data = np.ma.MaskedArray(cube.data)
+        return cube
+    raise TypeError("Input cube is not a numpy array.")
 
 
 def sizeof_fmt(num, suffix="B"):
@@ -507,18 +506,10 @@ class CovarianceCube_PreStichedLocalEstimates:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx_local_estimates = convert_cube_data_2_MaskedArray_if_not(
-            Lx_cube
-        )
-        self.Ly_local_estimates = convert_cube_data_2_MaskedArray_if_not(
-            Ly_cube
-        )
-        self.theta_local_estimates = convert_cube_data_2_MaskedArray_if_not(
-            theta_cube
-        )
-        self.sdev_local_estimates = convert_cube_data_2_MaskedArray_if_not(
-            sdev_cube
-        )
+        self.Lx_local_estimates = mask_cube(Lx_cube)
+        self.Ly_local_estimates = mask_cube(Ly_cube)
+        self.theta_local_estimates = mask_cube(theta_cube)
+        self.sdev_local_estimates = mask_cube(sdev_cube)
         self.max_dist = max_dist
         self.degree_dist = degree_dist
         self.delta_x_method = delta_x_method
