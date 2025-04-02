@@ -438,3 +438,43 @@ def is_iter(val: Any) -> bool:
         return True
     except TypeError:
         return False
+
+
+def uncompress_masked(
+    compressed_array: np.ndarray,
+    mask: np.ndarray,
+    fill_value: Any = 0.0,
+    apply_mask: bool = False,
+) -> np.ndarray | np.ma.MaskedArray:
+    """
+    Un-compress a compressed array using a mask.
+
+    Parameters
+    ----------
+    compressed_array : numpy.ndarray
+        The compressed array, originally compressed by the mask
+    mask : numpy.ndarray
+        The mask - a boolean numpy array
+    fill_value : Any
+        The value to fill masked points. If `apply_mask` is set, then this will
+        be removed in the output.
+    apply_mask : bool
+        Apply the mask to the result, returning a MaskedArray rather than a
+        ndarray.
+
+    Returns
+    -------
+    uncompressed : numpy.ndarray | numpy.ma.MaskedArray
+        The uncompressed array, masked points are filled with the fill_value if
+        apply_mask is False. If apply_mask is True, then the result is an
+        instance of numpy.ma.MaskedArray with the mask applied to the
+        uncompressed result.
+    """
+    not_mask = np.logical_not(mask)
+    if np.sum(not_mask) != len(compressed_array):
+        raise ValueError("Length of compressed_array does not align with mask")
+    uncompressed = np.repeat(fill_value, len(mask))
+    uncompressed[not_mask] = compressed_array
+    if apply_mask:
+        uncompressed = np.ma.masked_where(mask, uncompressed)
+    return uncompressed

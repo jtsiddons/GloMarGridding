@@ -30,6 +30,7 @@ from glomar_gridding.distances import (
 from glomar_gridding.constants import DEFAULT_N_JOBS, DEFAULT_BACKEND
 from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
 from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.utils import uncompress_masked
 
 # Below is in theory redudant, but the view/controller bits of the code
 # has not been integrated to the package; for now, keeping this in case
@@ -859,39 +860,22 @@ class CovarianceCube_PreStichedLocalEstimates:
             if cube.coord(coord).has_lazy_points():
                 cube.coord(coord).points  # pylint: disable=expression-not-assigned
 
-    def _reverse_mask_from_compress_1D(  # noqa: N802
-        self, compressed_1D_vector, fill_value=0.0, dtype=np.float32
-    ):
-        """
-        A method called by remap_one_point_2_map
-        It is used to create covariance/correlation maps from a single point
-
-        DANGER WARNING, use different fill_value depending on situation
-        This affects how signal and image processing module interacts
-        with missing and masked values
-        They don't ignore them, so a fill_value like 0 may be sensible
-        for covariance (-999.99 will do funny things)
-        iris doesn't care, but should use something like -999.99 or something
-        """
-        compressed_counter = 0
-        ans = np.zeros_like(self.cube_mask_1D, dtype=dtype)
-        for i in range(len(self.cube_mask_1D)):
-            if not self.cube_mask_1D[i]:
-                ans[i] = compressed_1D_vector[compressed_counter]
-                compressed_counter += 1
-        ma.set_fill_value(ans, fill_value)
-        ans = ma.masked_where(self.cube_mask_1D, ans)
-        return ans
-
     def remap_one_point_2_map(
-        self, compressed_vector, cube_name="stuff", cube_unit="1"
+        self,
+        compressed_vector: np.ndarray,
+        cube_name: str = "stuff",
+        cube_unit: str = "1",
     ):
         """
         Reverse one row/column of the covariance/correlation matrix to a
         plottable iris cube, using mask defined in class.
         """
         dummy_cube = self.Lx_local_estimates.copy()
-        masked_vector = self._reverse_mask_from_compress_1D(compressed_vector)
+        masked_vector = uncompress_masked(
+            compressed_vector,
+            mask=self.cube_mask_1D,
+            apply_mask=True,
+        )
         dummy_cube.data = masked_vector.reshape(self.xy_shape)
         dummy_cube.rename(cube_name)
         dummy_cube.units = cube_unit
