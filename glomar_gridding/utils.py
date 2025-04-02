@@ -445,6 +445,7 @@ def uncompress_masked(
     mask: np.ndarray,
     fill_value: Any = 0.0,
     apply_mask: bool = False,
+    dtype: type | None = None,
 ) -> np.ndarray | np.ma.MaskedArray:
     """
     Un-compress a compressed array using a mask.
@@ -461,6 +462,9 @@ def uncompress_masked(
     apply_mask : bool
         Apply the mask to the result, returning a MaskedArray rather than a
         ndarray.
+    dtype : type | None
+        Optionally set a dtype for the returned array, if not set then the
+        dtype of the compressed_array is used.
 
     Returns
     -------
@@ -473,8 +477,14 @@ def uncompress_masked(
     not_mask = np.logical_not(mask)
     if np.sum(not_mask) != len(compressed_array):
         raise ValueError("Length of compressed_array does not align with mask")
-    uncompressed = np.repeat(fill_value, len(mask))
-    uncompressed[not_mask] = compressed_array
+
+    dtype = dtype or compressed_array.dtype
+
+    uncompressed = np.empty_like(mask, dtype=dtype)
+    np.place(uncompressed, not_mask, compressed_array)
+
     if apply_mask:
-        uncompressed = np.ma.masked_where(mask, uncompressed)
+        return np.ma.masked_where(mask, uncompressed)
+
+    np.place(uncompressed, mask, fill_value)
     return uncompressed
