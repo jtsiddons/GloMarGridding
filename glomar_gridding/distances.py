@@ -283,7 +283,11 @@ def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     return yx[:, None, :] - yx
 
 
-def sigma_rot_func(Lx: float, Ly: float, theta: float | None) -> np.ndarray:  # noqa: N802
+def sigma_rot_func(
+    Lx: float,
+    Ly: float,
+    theta: float | None,
+) -> np.ndarray:
     """
     Equation 15 in Karspeck el al 2011 and Equation 6
     in Paciorek and Schervish 2006,
