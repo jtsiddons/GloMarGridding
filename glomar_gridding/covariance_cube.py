@@ -24,6 +24,7 @@ from glomar_gridding.ellipse import (
     SUPERCATEGORY_PARAMS,
     MaternEllipseModel,
 )
+from glomar_gridding.distances import displacements
 from glomar_gridding.types import MODEL_TYPE, DELTA_X_METHOD
 from glomar_gridding.utils import cov_2_cor
 
@@ -391,7 +392,6 @@ class CovarianceCube:
             min_distance=min_distance,
             max_distance=max_distance,
             anisotropic=matern_ellipse.anisotropic,
-            physical_distance=matern_ellipse.physical_distance,
             delta_x_method=delta_x_method,
         )
 
@@ -455,63 +455,51 @@ class CovarianceCube:
         min_distance: float,
         max_distance: float,
         anisotropic: bool,
-        physical_distance: bool,
         delta_x_method: DELTA_X_METHOD | None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        lonlat = self.xy[xy_point]
+        lonlat = self.xy_masked[xy_point]
         y = self.cor[xy_point, :]
-        # dx and dy are in degrees
-        dx = np.array([a - lonlat[0] for a in self.xy[:, 0]])
-        dy = np.array([a - lonlat[1] for a in self.xy[:, 1]])
-        dx[dx > 180.0] -= 360.0
-        dx[dx < -180.0] += 360.0
-        # distance is in delta-degrees
-        distance = linalg.norm(np.column_stack([dx, dy]), axis=1)
+        disp_y, disp_x = displacements(
+            self.xy_masked[:, 1],
+            self.xy_masked[:, 0],
+            lonlat[1],
+            lonlat[0],
+            delta_x_method=delta_x_method,
+        )
+        if delta_x_method is None:
+            # disp_y and disp_x are in degrees
+            deg_distance = linalg.norm(
+                np.column_stack([disp_x, disp_y]), axis=1
+            )
+            valid_dist_idx = np.where(
+                (deg_distance <= max_distance)
+                & (deg_distance >= min_distance)
+                # Delete the origin (can't have dx = dy = 0)
+                & (deg_distance != 0)
+            )
+            y_train = y[valid_dist_idx]
+            if anisotropic:
+                X_train = np.column_stack([disp_x, disp_y])[valid_dist_idx, :]
+                return X_train, y_train
+            return deg_distance[valid_dist_idx], y_train
+
+        # disp_y and disp_x are in radians
+        latlons = np.radians(
+            np.column_stack([self.xy_masked[:, 1], self.xy_masked[:, 0]])
+        )
+        latlon = np.radians(np.array([lonlat[1], lonlat[0]])).reshape(1, -1)
+        distance = haversine_distances(latlon, latlons)[0] * RADIUS_OF_EARTH_KM
         valid_dist_idx = np.where(
             (distance <= max_distance)
             & (distance >= min_distance)
             # Delete the origin (can't have dx = dy = 0)
             & (distance != 0)
         )
-        distance = distance[valid_dist_idx]
-        dx = dx[valid_dist_idx]
-        dy = dy[valid_dist_idx]
         y_train = y[valid_dist_idx]
-
-        if physical_distance:
-            if anisotropic:
-                distance_jj = np.deg2rad(dy)
-                if delta_x_method == "Met_Office":
-                    # Cylindrical approximation
-                    distance_ii = np.deg2rad(dx)
-                elif delta_x_method == "Modified_Met_Office":
-                    average_cos = 0.5 * (
-                        np.cos(np.deg2rad(lonlat[1] + dy))
-                        + np.cos(np.deg2rad(lonlat[1]))
-                    )
-                    distance_ii = np.deg2rad(dx) * average_cos
-                else:
-                    raise ValueError(
-                        f"Unknown 'delta_x_method': {delta_x_method}"
-                    )
-
-                X_train = np.column_stack([distance_ii, distance_jj])
-                return X_train * RADIUS_OF_EARTH_KM, y_train
-            else:
-                latlon = np.array(
-                    [np.deg2rad(lonlat[1]), np.deg2rad(lonlat[0])]
-                )
-                latlon_vector = np.column_stack(
-                    [np.deg2rad(lonlat[1] + dy), np.deg2rad(lonlat[0] + dx)]
-                )
-                latlon = latlon[np.newaxis, :]
-                radial = haversine_distances(latlon_vector, latlon)[:, 0]
-                return radial.reshape(-1, 1) * RADIUS_OF_EARTH_KM, y_train
-        else:
-            if anisotropic:
-                return np.column_stack([dx, dy]), y_train
-            else:
-                return distance, y_train
+        if anisotropic:
+            X_train = np.column_stack([disp_x, disp_y])[valid_dist_idx, :]
+            return RADIUS_OF_EARTH_KM * X_train, y_train
+        return distance[valid_dist_idx], y_train
 
     def find_nearest_xy_index_in_cov_matrix(
         self,

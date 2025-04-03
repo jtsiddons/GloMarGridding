@@ -483,13 +483,13 @@ def mahal_dist_func(
 def displacements(
     lats: np.ndarray,
     lons: np.ndarray,
+    lats2: np.ndarray | None = None,
+    lons2: np.ndarray | None = None,
     delta_x_method: DELTA_X_METHOD | None = None,
-    to_radians: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate east-west and north-south displacement matrices for all pairs
-    of input positions. If n positions are provided, the results will be n x n
-    matrices. This makes use of `np.ufunc.outer` functions.
+    of input positions.
 
     The results are not scaled by any radius, this should be performed outside
     of this function.
@@ -497,20 +497,21 @@ def displacements(
     Parameters
     ----------
     lats : numpy.ndarray
-        The latitudes of the positions, should be provided in degrees. If the
-        values are already in radians, set `to_radians` to False.
+        The latitudes of the positions, should be provided in degrees.
     lons : numpy.ndarray
-        The longitudes of the positions, should be provided in degrees. If the
-        values are already in radians, set `to_radians` to False.
+        The longitudes of the positions, should be provided in degrees.
+    lats2 : numpy.ndarray
+        The latitudes of the optional second positions, should be provided in
+        degrees.
+    lons2 : numpy.ndarray
+        The longitudes of the optional second positions, should be provided in
+        degrees.
     delta_x_method : str | None
         One of "Met_Office" or "Modified_Met_Office". If set to None, the
         displacements will be returned in degrees, rather than actual distance
         values. Set to "Met_Office" to use a cylindrical approximation, set
         to "Modified_Met_Office" to use an approximation that uses the average
         of the latitudes to set the horizontal displacement scale.
-    to_radians : bool
-        Optionally convert the positions to radians. This is ignored if
-        "delta_x_method" is set to None. The value defaults to True.
 
     Returns
     -------
@@ -525,17 +526,30 @@ def displacements(
         raise ValueError(
             f"Unknown 'delta_x_method' value, got '{delta_x_method}'"
         )
-    if to_radians or (delta_x_method is None):
-        lons = np.radians(lons)
-        lats = np.radians(lats)
-    disp_y = np.subtract.outer(lats, lats)
-    disp_x = np.subtract.outer(lons, lons)
+    _l2none = lats2 is None
+    lats2 = lats2 if lats2 is not None else lats
+    lons2 = lons2 if lons2 is not None else lons
+
+    disp_y = np.subtract.outer(lats, lats2)
+    disp_x = np.subtract.outer(lons, lons2)
+    disp_x[disp_x > 180.0] -= 360.0
+    disp_x[disp_x < -180.0] += 360.0
+
     if delta_x_method is None:
         return disp_y, disp_x
 
+    disp_y = np.deg2rad(disp_y)
+    disp_x = np.deg2rad(disp_x)
+
     if delta_x_method == "Modified_Met_Office":
+        lats = np.radians(lats)
         cos_lats = np.cos(lats)
-        y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats)
+        if _l2none:
+            y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats)
+        else:
+            cos_lats2 = np.cos(lats2)
+            y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats2)
+
         disp_x = disp_x * y_cos_mean
 
     return disp_y, disp_x
