@@ -188,16 +188,23 @@ class MaternEllipseModel:
 
         return None
 
-    def _get_defaults(self) -> None:  # noqa: C901
+    def _get_defaults(self) -> None:
         """Get default values for the MaternEllipseModel."""
+        if self.anisotropic:
+
+            def cov_ij(X, **params):
+                return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+        else:
+
+            def cov_ij(X, **params):
+                return cov_ij_isotropic(self.v, 1, X, **params)
+
         match self.fform:
             case "isotropic":
                 self.n_params = 1
                 self.default_guesses = [7.0]
                 self.default_bounds = [(0.5, 50.0)]
 
-                def cov_ij(X, **params):
-                    return cov_ij_isotropic(self.v, 1, X, **params)
             case "isotropic_pd":
                 self.n_params = 1
                 self.default_guesses = [deg_to_km(7.0)]
@@ -205,15 +212,11 @@ class MaternEllipseModel:
                     (deg_to_km(0.5), deg_to_km(50)),
                 ]
 
-                def cov_ij(X, **params):
-                    return cov_ij_isotropic(self.v, 1, X, **params)
             case "anisotropic":
                 self.n_params = 2
                 self.default_guesses = [7.0, 7.0]
                 self.default_bounds = [(0.5, 50.0), (0.5, 30.0)]
 
-                def cov_ij(X, **params):
-                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_pd":
                 self.n_params = 2
                 self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0)]
@@ -222,8 +225,6 @@ class MaternEllipseModel:
                     (deg_to_km(0.5), deg_to_km(30)),
                 ]
 
-                def cov_ij(X, **params):
-                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_rotated":
                 self.n_params = 3
                 self.default_guesses = [7.0, 7.0, 0.0]
@@ -233,8 +234,6 @@ class MaternEllipseModel:
                     (-2.0 * np.pi, 2.0 * np.pi),
                 ]
 
-                def cov_ij(X, **params):
-                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
             case "anisotropic_rotated_pd":
                 self.n_params = 3
                 self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0), 0.0]
@@ -244,9 +243,6 @@ class MaternEllipseModel:
                     (-2.0 * maths.pi, 2.0 * maths.pi),
                 ]
 
-                def cov_ij(X, **params):
-                    return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
-
         self.cov_ij = cov_ij
 
     def negative_log_likelihood(
@@ -255,8 +251,6 @@ class MaternEllipseModel:
         y: np.ndarray,
         params: tuple[float, ...],
         arctanh_transform: bool = True,
-        backend: str = DEFAULT_BACKEND,
-        n_jobs: int = DEFAULT_N_JOBS,
     ) -> float:
         """
         Compute the negative log-likelihood given observed X independent
@@ -310,31 +304,15 @@ class MaternEllipseModel:
 
         match self.n_params:
             case 1:  # Circle
-                R = params[0]  # Radius
-                y_LL = self.cov_ij(X, R=R)
+                kwargs = {"R": params[0]}  # Radius
             case 2:  # Un-rotated Ellipse
-                Lx = params[0]
-                Ly = params[1]
-                y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
-                    delayed(self.cov_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly)
-                    for n_x_j in range(X.shape[0])
-                )
+                kwargs = {"Lx": params[0], "Ly": params[1]}
             case 3:  # Rotated Ellipse
-                Lx = params[0]
-                Ly = params[1]
-                theta = params[2]
-                y_LL = Parallel(n_jobs=n_jobs, backend=backend)(
-                    delayed(self.cov_ij)(X[n_x_j, :], Lx=Lx, Ly=Ly, theta=theta)
-                    for n_x_j in range(X.shape[0])
-                )
+                kwargs = {"Lx": params[0], "Ly": params[1], "theta": params[2]}
             case _:
                 raise ValueError("Unexpected length of self.n_params.")
 
-        y_LL = np.array(y_LL)
-        # if y is correlation,
-        # it might be useful to Fisher transform them before plugging into
-        # norm.logpdf this affects values close to 1 and -1
-        # imposing better behavior to the differences at the tail
+        y_LL = self.cov_ij(X, **kwargs)
 
         if arctanh_transform:
             # Warning against arctanh(abs(y) > 1); (TODO: Add correction later)
@@ -400,14 +378,14 @@ class MaternEllipseModel:
         self,
         X: np.ndarray,
         y: np.ndarray,
-        n_jobs: int = DEFAULT_N_JOBS,
-        backend: str = DEFAULT_BACKEND,
     ) -> Callable[[tuple[float, ...]], float]:
         """Creates a function that can be fed into scipy.optimizer.minimize"""
 
         def f(params: tuple[float, ...]):
             return self.negative_log_likelihood(
-                X, y, params, n_jobs=n_jobs, backend=backend
+                X,
+                y,
+                params,
             )
 
         return f
@@ -479,7 +457,7 @@ class MaternEllipseModel:
             bounds.append((0.0001, 0.5))
 
         LL_observedXy_unknownparams = self.negative_log_likelihood_function(
-            X, y, n_jobs=n_jobs, backend=backend
+            X, y
         )
 
         logging.debug(f"X range: {np.min(X)}, {np.max(X)}")
