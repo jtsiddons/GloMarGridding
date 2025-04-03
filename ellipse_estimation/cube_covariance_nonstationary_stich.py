@@ -1,8 +1,4 @@
-"""
-Requires numpy, scipy, sklearn
-iris needs to be installed (it is required by other modules within this package
-xarray cubes should work via iris interface)
-"""
+"""Class to compute covariance matrix from ellipse parameters and positions."""
 
 import datetime
 
@@ -15,7 +11,6 @@ from itertools import combinations
 
 from sklearn.metrics.pairwise import haversine_distances
 
-# from iris import analysis as ia
 import numpy as np
 from numpy import ma
 from numpy import linalg
@@ -133,13 +128,13 @@ class EllipseCovarianceBuilder:
 
     v = Matern covariance shape parameter
 
-    Lx - an iris (or xarray2iris-converted?) cube of horizontal length scales (
-    Ly - an iris (or xarray2iris-converted?) cube of meridonal length scales
-    theta - an iris cube of rotation angles (RADIANS ONLY)
+    Lx - an numpy array of horizontal length scales (
+    Ly - an numpy array of meridonal length scales
+    theta - an numpy array of rotation angles (RADIANS ONLY)
 
-    sdev - standard deviation -- right now it just takes a number cube
+    sdev - standard deviation -- right now it just takes a numeric array
     if you have multiple contribution to sdev (uncertainities derived from
-    different sources), you need to put them into one cube
+    different sources), you need to put them into one array
 
     Rules:
     Valid (ocean) point:
@@ -158,7 +153,7 @@ class EllipseCovarianceBuilder:
 
     Parameters
     ----------
-    Lx_cube, Ly_cube, theta_cube, sdev_cube: numpy.ndarray
+    Lx, Ly, theta, stdev: numpy.ndarray
         arrays with non-stationary parameters
     lats, lons : numpy.ndarray
         arrays containing the latitude and longitude values
@@ -166,7 +161,6 @@ class EllipseCovarianceBuilder:
         Matern shape parameter
     delta_x_method : str
         How are displacements computed between points
-        The default is the same as in cube_covariance "Modified_Met_Office"
     max_dist : float
         If the Haversine distance between 2 points exceed max_dist,
         covariance is set to 0
@@ -184,10 +178,10 @@ class EllipseCovarianceBuilder:
 
     def __init__(
         self,
-        Lx_cube: np.ndarray,
-        Ly_cube: np.ndarray,
-        theta_cube: np.ndarray,
-        sdev_cube: np.ndarray,
+        Lx: np.ndarray,
+        Ly: np.ndarray,
+        theta: np.ndarray,
+        stdev: np.ndarray,
         lats: np.ndarray,
         lons: np.ndarray,
         v: float = 3.0,
@@ -208,10 +202,10 @@ class EllipseCovarianceBuilder:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx_local_estimates = mask_array(Lx_cube)
-        self.Ly_local_estimates = mask_array(Ly_cube)
-        self.theta_local_estimates = mask_array(theta_cube)
-        self.sdev_local_estimates = mask_array(sdev_cube)
+        self.Lx = mask_array(Lx)
+        self.Ly = mask_array(Ly)
+        self.theta = mask_array(theta)
+        self.stdev = mask_array(stdev)
         self.max_dist = max_dist
         self.delta_x_method: DELTA_X_METHOD | None = delta_x_method
         self.check_positive_definite = check_positive_definite
@@ -219,7 +213,7 @@ class EllipseCovarianceBuilder:
         self.lons = lons
 
         # The cov and corr matrix will be sq matrix of this
-        self.xy_shape = self.Lx_local_estimates.shape
+        self.xy_shape = self.Lx.shape
         self.n_elements = np.prod(self.xy_shape)
 
         self._get_mask()
@@ -287,41 +281,34 @@ class EllipseCovarianceBuilder:
             np.fill_diagonal(self.cor_ns, 1.0)
 
     def _get_mask(self) -> None:
-        self.data_has_mask = ma.is_masked(self.Lx_local_estimates.data)
+        self.data_has_mask = ma.is_masked(self.Lx.data)
         if self.data_has_mask:
             print("Masked pixels detected in input files")
-            self.data_mask = self.Lx_local_estimates.mask
+            self.data_mask = self.Lx.mask
             self.covar_size = np.sum(np.logical_not(self.data_mask))
         else:
             print("No masked pixels")
-            self.data_mask = np.zeros_like(
-                self.Lx_local_estimates.data.data, dtype=bool
-            )
+            self.data_mask = np.zeros_like(self.Lx.data.data, dtype=bool)
             self.covar_size = self.n_elements
 
         print("Compressing (masked) array to 1D")
-        self.Lx_local_estimates_compressed = (
-            self.Lx_local_estimates.data.compressed()
-        )
-        self.Ly_local_estimates_compressed = (
-            self.Ly_local_estimates.data.compressed()
-        )
-        self.theta_local_estimates_compressed = (
-            self.theta_local_estimates.data.compressed()
-        )
-        self.sdev_local_estimates_compressed = (
-            self.sdev_local_estimates.data.compressed()
-        )
+        self.Lx_compressed = self.Lx.data.compressed()
+        self.Ly_compressed = self.Ly.data.compressed()
+        self.theta_compressed = self.theta.data.compressed()
+        self.stdev_compressed = self.stdev.data.compressed()
 
-        self.xx, self.yy = np.meshgrid(self.lons, self.lats)
-        self.xm = np.ma.masked_where(self.data_mask, self.xx)
-        self.ym = np.ma.masked_where(self.data_mask, self.yy)
-        self.lat_grid_compressed = self.ym.compressed()
-        self.lon_grid_compressed = self.xm.compressed()
-        self.xy = np.column_stack(
+        self.x_grid, self.y_grid = np.meshgrid(self.lons, self.lats)
+        self.x_mask = np.ma.masked_where(self.data_mask, self.x_grid)
+        self.y_mask = np.ma.masked_where(self.data_mask, self.y_grid)
+        self.lat_grid_compressed = self.y_mask.compressed()
+        self.lon_grid_compressed = self.x_mask.compressed()
+
+        self.xy_compressed = np.column_stack(
             [self.lon_grid_compressed, self.lat_grid_compressed]
         )
-        self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
+        self.xy_full = np.column_stack(
+            [self.x_mask.flatten(), self.y_mask.flatten()]
+        )
         return None
 
     def calculate_covariance(self, output_floatprecision: type) -> None:
@@ -356,12 +343,12 @@ class EllipseCovarianceBuilder:
         # Calculate covariance values
         cij = c_ij_anisotropic_array(
             v=self.v,
-            Lxs=self.Lx_local_estimates_compressed,
-            Lys=self.Ly_local_estimates_compressed,
-            thetas=self.theta_local_estimates_compressed,
+            Lxs=self.Lx_compressed,
+            Lys=self.Ly_compressed,
+            thetas=self.theta_compressed,
             x_is=disp_x_comp,
             x_js=disp_y_comp,
-            stdevs=self.sdev_local_estimates_compressed,
+            stdevs=self.stdev_compressed,
         )
         cij[dists_comp > self.max_dist] = 0.0
 
@@ -372,9 +359,7 @@ class EllipseCovarianceBuilder:
         self.cov_ns = self.cov_ns + self.cor_ns.T
 
         # Set diagonal elements
-        self.cov_nx = self.cov_ns + np.diag(
-            self.sdev_local_estimates_compressed**2
-        )
+        self.cov_nx = self.cov_ns + np.diag(self.stdev_compressed**2)
         return None
 
     def positive_definite_check(self):
