@@ -439,9 +439,9 @@ class MaternEllipseModel:
 
         Parameters
         ----------
-        X : np.ndarray
+        X : numpy.ndarray
             distances
-        y : np.ndarray
+        y : numpy.ndarray
             observed correlations
         guesses=None :
             Tuples/lists of initial values to scipy.optimize.minimize
