@@ -25,6 +25,7 @@ from glomar_gridding.ellipse import (
     MaternEllipseModel,
 )
 from glomar_gridding.types import MODEL_TYPE, DELTA_X_METHOD
+from glomar_gridding.utils import cov_2_cor
 
 
 class CovarianceCube:
@@ -166,18 +167,7 @@ class CovarianceCube:
             self.cov = np.round(self.cov, rounding)
 
         if correlation:
-            self._cov2cor(rounding=rounding)
-
-        return None
-
-    def _cov2cor(
-        self,
-        rounding: int | None = None,
-    ) -> None:
-        """
-        Normalises the covariance matrices within the class instance
-        and return correlation matrices
-        https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+            self.cor = cov_2_cor(self.cov, rounding=rounding)
 
         Parameters
         ----------

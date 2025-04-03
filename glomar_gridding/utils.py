@@ -488,3 +488,51 @@ def uncompress_masked(
 
     np.place(uncompressed, mask, fill_value)
     return uncompressed
+
+
+def cov_2_cor(
+    cov: np.ndarray,
+    rounding: int | None = None,
+) -> np.ndarray:
+    """
+    Normalises the covariance matrices within the class instance
+    and return correlation matrices
+    https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+
+    Parameters
+    ----------
+    cov : numpy.ndarray
+        Covariance matrix
+    rounding : int
+        round the values of the output
+    """
+    stdevs = np.sqrt(np.diag(cov))
+    normalisation = np.outer(stdevs, stdevs)
+    cor = cov / normalisation
+    cor[cov == 0] = 0
+    if rounding is not None:
+        cor = np.round(cor, rounding)
+    return cor
+
+
+def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
+    """
+    Forces numpy array to be an instance of np.ma.MaskedArray
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Can be masked or not masked
+
+    Returns
+    -------
+    arr : np.ndarray
+        array is now an instance of np.ma.MaskedArray
+    """
+    if isinstance(arr, np.ma.MaskedArray):
+        return arr
+    if isinstance(arr, np.ndarray):
+        logging.info("Ad hoc conversion to np.ma.MaskedArray")
+        arr = np.ma.MaskedArray(arr)
+        return arr
+    raise TypeError("Input is not a numpy array.")

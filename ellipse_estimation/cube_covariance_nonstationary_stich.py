@@ -27,31 +27,9 @@ from glomar_gridding.constants import (
     RADIUS_OF_EARTH_KM,
 )
 from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.utils import cov_2_cor, mask_array
 
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
-
-
-def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
-    """
-    Forces numpy array to be an instance of np.ma.MaskedArray
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        Can be masked or not masked
-
-    Returns
-    -------
-    arr : np.ndarray
-        array is now an instance of np.ma.MaskedArray
-    """
-    if isinstance(arr, np.ma.MaskedArray):
-        return arr
-    if isinstance(arr, np.ndarray):
-        logging.info("Ad hoc conversion to np.ma.MaskedArray")
-        arr = np.ma.MaskedArray(arr)
-        return arr
-    raise TypeError("Input is not a numpy array.")
 
 
 def sizeof_fmt(num: float, suffix="B") -> str:
@@ -267,9 +245,8 @@ class EllipseCovarianceBuilder:
 
         # Compute correlation matrix
         logging.info("Getting reciprocal of covariance diagonal")
-        sigma_inverse = np.diag(np.reciprocal(np.sqrt(np.diag(self.cov_ns))))
-        logging.info("Computing correlation matrix")
-        self.cor_ns = sigma_inverse @ self.cov_ns @ sigma_inverse
+        self.cor_ns = cov_2_cor(self.cov_ns)
+
         # Check for numerical errors
         print("Checking non-1 values in diagonal of correlation")
         diag_values = np.diag(self.cor_ns)
