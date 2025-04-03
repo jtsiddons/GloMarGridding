@@ -8,7 +8,6 @@ from collections.abc import Callable
 from typing import cast, get_args
 
 import numpy as np
-from cf_units import Unit
 from joblib import Parallel, delayed
 from scipy import stats
 from scipy.optimize import OptimizeResult, minimize
@@ -42,59 +41,59 @@ FFORM_TO_MODELTYPE: dict[FFORM, MODEL_TYPE] = {
     "isotropic_pd": "ps2006_kks2011_iso_pd",
 }
 
-SUPERCATEGORY_PARAMS: dict[SUPERCATEGORY, OrderedDict[str, Unit]] = {
+SUPERCATEGORY_PARAMS: dict[SUPERCATEGORY, OrderedDict[str, str]] = {
     "3_param_matern": OrderedDict(
         [
-            ("Lx", Unit("degrees")),
-            ("Ly", Unit("degrees")),
-            ("theta", Unit("radians")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("Lx", "degrees"),
+            ("Ly", "degrees"),
+            ("theta", "radians"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
     "2_param_matern": OrderedDict(
         [
-            ("Lx", Unit("degrees")),
-            ("Ly", Unit("degrees")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("Lx", "degrees"),
+            ("Ly", "degrees"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
     "1_param_matern": OrderedDict(
         [
-            ("R", Unit("degrees")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("R", "degrees"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
     "3_param_matern_pd": OrderedDict(
         [
-            ("Lx", Unit("km")),
-            ("Ly", Unit("km")),
-            ("theta", Unit("radians")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("Lx", "km"),
+            ("Ly", "km"),
+            ("theta", "radians"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
     "2_param_matern_pd": OrderedDict(
         [
-            ("Lx", Unit("km")),
-            ("Ly", Unit("km")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("Lx", "km"),
+            ("Ly", "km"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
     "1_param_matern_pd": OrderedDict(
         [
-            ("R", Unit("km")),
-            ("standard_deviation", Unit("K")),
-            ("qc_code", Unit("1")),
-            ("number_of_iterations", Unit("1")),
+            ("R", "km"),
+            ("standard_deviation", "K"),
+            ("qc_code", "1"),
+            ("number_of_iterations", "1"),
         ]
     ),
 }
