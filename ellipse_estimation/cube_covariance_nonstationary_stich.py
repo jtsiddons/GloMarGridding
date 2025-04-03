@@ -167,24 +167,22 @@ class EllipseCovarianceBuilder:
         cubes with non-stationary parameters
     v=3: float
         Matern shape parameter
+    delta_x_method : str
+        How are displacements computed between points
+        The default is the same as in cube_covariance "Modified_Met_Office"
+    max_dist : float
+        If the Haversine distance between 2 points exceed max_dist,
+        covariance is set to 0
     output_floatprecision :
         Float point precision of the output covariance
         numpy defaults to float64,
         noting that float32 halves the storage and halves the memory to use
-    max_dist : float
-        If the Haversine distance between 2 points exceed max_dist,
-        covariance is set to 0
-    delta_x_method : str
-        How are displacements computed between points
-        The default is the same as in cube_covariance "Modified_Met_Office"
-
     check_positive_definite : bool
         For production this should be False
         but for unit testing it should be True,
         if True a quick on the fly eigenvalue clipping
         will be conducted, if constructed covariance is not
         positive (semi)definite.
-
     nolazy : bool
         Manually forces computation to occur
     """
