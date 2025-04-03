@@ -29,7 +29,7 @@ from glomar_gridding.types import MODEL_TYPE, DELTA_X_METHOD
 from glomar_gridding.utils import cov_2_cor
 
 
-class CovarianceCube:
+class EllipseBuilder:
     """
     Class to build spatial covariance and correlation matricies
     Interacts with MaternEllipseModel to build covariance models

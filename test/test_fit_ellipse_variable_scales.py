@@ -99,7 +99,7 @@ def test_EllipseSimulation_VariableParms_FitRandomData(
     )
     print(repr(random_GP_cube))
     print(random_GP_cube)
-    cov_cube_instance = covariance_cube.CovarianceCube(random_GP_cube)
+    cov_cube_instance = covariance_cube.EllipseBuilder(random_GP_cube)
     print(ans.CCPLE_out.cov_ns)
     print(cov_cube_instance.cov / size)
     #

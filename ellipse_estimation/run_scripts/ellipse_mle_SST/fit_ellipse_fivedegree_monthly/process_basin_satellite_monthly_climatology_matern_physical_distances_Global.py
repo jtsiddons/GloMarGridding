@@ -192,7 +192,7 @@ def main():  # noqa: D103
     logging.debug(f"{data_cube.coord('time') = }")
 
     logging.info("Building covariance matrix")
-    cov_cube = covariance_cube.CovarianceCube(data_cube)
+    cov_cube = covariance_cube.EllipseBuilder(data_cube)
     logging.info("Covariance matrix completed")
 
     data_cube_not_template = data_cube[data_cube_time_length // 2]
