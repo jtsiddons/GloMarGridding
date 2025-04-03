@@ -7,11 +7,9 @@ xarray cubes should work via iris interface)
 import math
 from typing import Any
 
-import iris
-import iris.coords as icoords
-import iris.util as iutil
+import xarray as xr
 import numpy as np
-from numpy import linalg, ma
+
 from sklearn.metrics.pairwise import haversine_distances
 
 # from astropy.constants import R_earth
@@ -19,14 +17,10 @@ from glomar_gridding.constants import (
     DEFAULT_N_JOBS,
     RADIUS_OF_EARTH_KM,
 )
-from glomar_gridding.ellipse import (
-    MODEL_TYPE_TO_SUPERCATEGORY,
-    SUPERCATEGORY_PARAMS,
-    MaternEllipseModel,
-)
+from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.distances import displacements
-from glomar_gridding.types import MODEL_TYPE, DELTA_X_METHOD
-from glomar_gridding.utils import cov_2_cor
+from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.utils import cov_2_cor, mask_array
 
 
 class EllipseBuilder:
@@ -54,11 +48,12 @@ class EllipseBuilder:
 
     def __init__(
         self,
-        data_cube,
+        data_array: xr.DataArray,
     ) -> None:
         # Defining the input data
-        self.data_cube = data_cube
-        self.xy_shape = self.data_cube[0].shape
+        self.data = mask_array(data_array.values)
+        self.coords = data_array.coords
+        self.xy_shape = self.data[0].shape
         if len(self.xy_shape) != 2:
             raise ValueError(
                 "Time slice maps should be 2D; check extra dims (ensemble?)"
@@ -69,7 +64,7 @@ class EllipseBuilder:
         self._detect_mask()
 
         # Calculate the actual covariance and correlation matrix:
-        self._calc_cov(correlation=True)
+        self.calc_cov()
 
         return None
 
@@ -78,12 +73,12 @@ class EllipseBuilder:
         self.tcoord_pos = -1
         self.xycoords_pos = []
         self.xycoords_name = []
-        for i, coord in enumerate(self.data_cube.coords()):
-            if coord.standard_name == "time":
+        for i, coord in enumerate(self.coords):
+            if coord == "time":
                 self.tcoord_pos = i
-            if coord.standard_name in ["latitude", "longitude"]:
+            if coord in ["latitude", "longitude"]:
                 self.xycoords_pos.append(i)
-                self.xycoords_name.append(coord.standard_name)
+                self.xycoords_name.append(coord)
         if self.tcoord_pos == -1:
             raise ValueError("Input cube needs a time dimension")
         if self.tcoord_pos != 0:
@@ -94,69 +89,62 @@ class EllipseBuilder:
                 + "('latitude' and 'longitude')"
             )
         self.xycoords_pos = tuple(self.xycoords_pos)
-        # if 'lat' in self.xycoords_name[0]:
-        #     self.xycoords_name = self.xycoords_name[::-1]
 
+        # Look-up table of the coordinates
+        self.xx, self.yy = np.meshgrid(
+            self.coords["longitude"].points,
+            self.coords["latitude"].points,
+        )
         # Length of time dimension
-        self.time_n = len(self.data_cube.coord("time").points)
+        self.time_n = len(self.coords["time"].points)
 
         return None
 
     def _detect_mask(self) -> None:
         # Detect data mask and determine dimension of array without masked data
         # Almost certain True near the coast
-        self.data_has_mask = ma.is_masked(self.data_cube.data)
+        self.data_has_mask = np.ma.is_masked(self.data)
         if self.data_has_mask:
             # Depending on dataset, the mask might not be invariant
             # (like sea ice)
             # xys with time varying mask are currently discarded.
             # If analysis is conducted seasonally
             # this should normally not a problem unless in high latitudes
-            self.cube_mask = np.any(self.data_cube.data.mask, axis=0)
-            self.cube_mask_1D = self.cube_mask.flatten()
+            self.mask = np.any(self.data.mask, axis=0)
+            self.mask_1D = self.mask.flatten()
             self._self_mask()
-            self.small_covar_size = np.sum(np.logical_not(self.cube_mask))
+            self.small_covar_size = np.sum(np.logical_not(self.mask))
         else:
-            self.cube_mask = np.zeros_like(
-                self.data_cube[0].data.data, dtype=bool
-            )
-            self.cube_mask_1D = self.cube_mask.flatten()
+            self.mask = np.zeros_like(self.data[0], dtype=bool)
+            self.mask_1D = self.mask.flatten()
             self.small_covar_size = self.big_covar_size
-
-        # Look-up table of the coordinates
-        self.xx, self.yy = np.meshgrid(
-            self.data_cube.coord("longitude").points,
-            self.data_cube.coord("latitude").points,
+        self.x_masked = np.ma.masked_where(self.mask, self.xx)
+        self.y_masked = np.ma.masked_where(self.mask, self.yy)
+        self.xy_masked = np.column_stack(
+            [self.x_masked.compressed(), self.y_masked.compressed()]
         )
-        self.xm = ma.masked_where(self.cube_mask, self.xx)
-        self.ym = ma.masked_where(self.cube_mask, self.yy)
-        self.xy = np.column_stack([self.xm.compressed(), self.ym.compressed()])
-        self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
+        self.xy_full = np.column_stack(
+            [self.x_masked.flatten(), self.y_masked.flatten()]
+        )
 
         return None
 
-    def _calc_cov(
+    def calc_cov(
         self,
-        correlation: bool = False,
         rounding: int | None = None,
     ) -> None:
         """
+        Calculate covariance and correlation matrices.
+
         Parameters
         ----------
-        correlation : bool
-            to state if you want a correlation (normalised covariance or not)
         rounding : int
             round the values of the output
         """
         # Reshape data to (t, xy),
         # get rid of mask values -- cannot caculate cov for such data
-        xyflatten_data = self.data_cube.data.reshape(
-            (
-                len(self.data_cube.coord("time").points),
-                self.big_covar_size,
-            )
-        )
-        xyflatten_data = ma.compress_rowcols(xyflatten_data, -1)
+        xyflatten_data = self.data.reshape((self.time_n, self.big_covar_size))
+        xyflatten_data = np.ma.compress_rowcols(xyflatten_data, -1)
         # Remove mean --
         # even data that says "SST anomalies" don't have zero mean (?!)
         xy_mean = np.mean(xyflatten_data, axis=0, keepdims=True)
@@ -167,30 +155,14 @@ class EllipseBuilder:
         if rounding is not None:
             self.cov = np.round(self.cov, rounding)
 
-        if correlation:
-            self.cor = cov_2_cor(self.cov, rounding=rounding)
+        self.cor = cov_2_cor(self.cov, rounding=rounding)
 
-        Parameters
-        ----------
-        rounding : int
-            round the values of the output
-        """
-        stdevs = np.sqrt(np.diag(self.cov))
-        normalisation = np.outer(stdevs, stdevs)
-        self.cor = self.cov / normalisation
-        self.cor[self.cov == 0] = 0
-        if rounding is not None:
-            self.cor = np.round(self.cor, rounding)
         return None
 
     def _self_mask(self) -> None:
         """Broadcast cube_mask to all observations"""
-        broadcasted_mask = np.broadcast_to(
-            self.cube_mask, self.data_cube.data.shape
-        )
-        self.data_cube.data = ma.masked_where(
-            broadcasted_mask, self.data_cube.data
-        )
+        broadcasted_mask = np.broadcast_to(self.mask, self.data.shape)
+        self.data = np.ma.masked_where(broadcasted_mask, self.data)
 
     def _reverse_mask_from_compress_1d(
         self,
@@ -225,31 +197,14 @@ class EllipseBuilder:
             The 2D map array
         """
         compressed_counter = 0
-        ans = np.zeros_like(self.cube_mask_1D, dtype=dtype)
-        for i in range(len(self.cube_mask_1D)):
-            if not self.cube_mask_1D[i]:
+        ans = np.zeros_like(self.mask_1D, dtype=dtype)
+        for i in range(len(self.mask_1D)):
+            if not self.mask_1D[i]:
                 ans[i] = compressed_1D_vector[compressed_counter]
                 compressed_counter += 1
-        ma.set_fill_value(ans, fill_value)
-        ans = ma.masked_where(self.cube_mask_1D, ans)
+        np.ma.set_fill_value(ans, fill_value)
+        ans = np.ma.masked_where(self.mask_1D, ans)
         return ans
-
-    def remap_one_point_2_map(
-        self,
-        compressed_vector: np.ndarray,
-        cube_name: str = "stuff",
-        cube_unit: str = "1",
-    ) -> iris.cube.Cube:
-        """
-        Reverse one row/column of the covariance/correlation matrix
-        to a plottable iris cube using mask defined in class
-        """
-        dummy_cube = self.data_cube[0, :, :].copy()
-        masked_vector = self._reverse_mask_from_compress_1d(compressed_vector)
-        dummy_cube.data = masked_vector.reshape(self.xy_shape)
-        dummy_cube.rename(cube_name)
-        dummy_cube.units = cube_unit
-        return dummy_cube
 
     def fit_ellipse_model(
         self,
@@ -382,7 +337,7 @@ class EllipseBuilder:
             Dictionary with results of the fit
             and the observed correlation matrix
         """
-        R2 = self.data_cube[0].copy()
+        R2 = self.data[0].copy()
         R2x = self._reverse_mask_from_compress_1d(self.cor[xy_point, :])
         R2.data = R2x.reshape(self.xy_shape)
         R2.units = "1"
@@ -427,26 +382,15 @@ class EllipseBuilder:
             print(model_params)
             fit_success = 9
         print("QC flag = ", fit_success)
-        # append standard deviation
-        model_params.append(np.sqrt(self.cov[xy_point, xy_point] / self.time_n))
-        model_params.append(fit_success)
-        model_params.append(results.nit)
-
-        v_coord = make_v_aux_coord(matern_ellipse.v)
-        template_cube = self._make_template_cube(xy_point)
-        model_as_cubelist = create_output_cubes(
-            template_cube,
-            model_type=matern_ellipse.model_type,
-            additional_meta_aux_coords=[v_coord],
-            default_values=model_params,
-        )["param_cubelist"]
 
         return {
             "Correlation": R2,
-            "MaternObj": matern_ellipse,
-            "Model": results,
-            "Model_Type": matern_ellipse.model_type,
-            "Model_as_1D_cube": model_as_cubelist,
+            "Results": results,
+            "ModelParams": model_params,
+            "Success": fit_success,
+            "StandardDeviation": np.sqrt(
+                self.cov[xy_point, xy_point] / self.time_n
+            ),
         }
 
     def _get_train_data(
@@ -468,7 +412,7 @@ class EllipseBuilder:
         )
         if delta_x_method is None:
             # disp_y and disp_x are in degrees
-            deg_distance = linalg.norm(
+            deg_distance = np.linalg.norm(
                 np.column_stack([disp_x, disp_y]), axis=1
             )
             valid_dist_idx = np.where(
@@ -512,129 +456,27 @@ class EllipseBuilder:
         """
         lon, lat, *_ = lonlat
 
-        a = self.xy_full if use_full else self.xy
+        a = self.xy_full if use_full else self.xy_masked
         idx = int(((a[:, 0] - lon) ** 2.0 + (a[:, 1] - lat) ** 2.0).argmin())
         return idx, a[idx, :]
 
     def _xy_2_xy_full_index(self, xy_point: int) -> int:
         """
         Given xy index in that corresponding to a latlon
-        in the covariance (masked value ma.MaskedArray compressed),
+        in the covariance (masked value np.ma.MaskedArray compressed),
         what is its index with masked values (i.e. ndarray flatten)
         """
         return int(
             np.argwhere(
-                np.all((self.xy_full - self.xy[xy_point, :]) == 0, axis=1)
+                np.all(
+                    (self.xy_full - self.xy_masked[xy_point, :]) == 0, axis=1
+                )
             )[0]
         )
-
-    def _make_template_cube(self, xy_point: int) -> iris.cube.Cube:
-        """Make a template cube for lat lon corresponding to xy_point index"""
-        xy = self.xy[xy_point, :]
-        return self._make_template_cube2(xy)
-        # t_len = len(self.data_cube.coord('time').points)
-        # template_cube = self.data_cube[t_len // 2].intersection(
-        #     longitude=(xy[0] - 0.05, xy[0] + 0.05),
-        #     latitude=(xy[1] - 0.05, xy[1] + 0.05),
-        # )
-        # return template_cube
-
-    def _make_template_cube2(self, lonlat: np.ndarray) -> iris.cube.Cube:
-        """Make a template cube for lat lon"""
-        t_len = len(self.data_cube.coord("time").points)
-        template_cube = self.data_cube[t_len // 2].intersection(
-            longitude=(lonlat[0] - 0.05, lonlat[0] + 0.05),
-            latitude=(lonlat[1] - 0.05, lonlat[1] + 0.05),
-        )
-        return template_cube
 
     def __str__(self):
         return str(self.__class__)
         # return str(self.__class__) + ": " + str(self.__dict__)
-
-
-def create_output_cubes(
-    template_cube,
-    model_type: MODEL_TYPE = "ps2006_kks2011_iso",
-    default_values: list[float] | None = None,
-    additional_meta_aux_coords: list | None = None,
-    dtype=np.float32,
-) -> dict:
-    """
-    For data presentation, create template iris cubes to insert data
-
-    Parameters
-    ----------
-    template_cube : iris.cube.Cube
-        A cube to be copied as the template
-    model_type : MODEL_TYPE
-        See dict at top, string to add auxcoord for outputs
-    default_values : list[float]
-        Default values to be put in cube, not neccessary a masked/fill value
-    additional_meta_aux_coords : list of icoords.AuxCoord
-        Whatever additional auxcoord metadata you want to add
-    dtype=np.float32 : numpy number type
-        The number type to be used in the cube usually np.float32 or
-        np.float(64)
-
-    Returns
-    -------
-    dictionary:
-        "param_cubelist"
-            Instance of iris.cube.CubeList() that contains cubes to be filled in
-        "param_names"
-            the names of the variable that get added to param_cubelist
-    """
-    default_values = default_values or [-999.9, -999.9, -999.9]
-
-    supercategory = MODEL_TYPE_TO_SUPERCATEGORY[model_type]
-    params_dict = SUPERCATEGORY_PARAMS[supercategory]
-
-    model_type_coord = icoords.AuxCoord(
-        model_type, long_name="fitting_model", units="no_unit"
-    )
-    supercategory_coord = icoords.AuxCoord(
-        supercategory,
-        long_name="supercategory_of_fitting_model",
-        units="no_unit",
-    )
-
-    ans_cubelist = iris.cube.CubeList()
-    ans_paramlist = []
-
-    for param, default_value in zip(params_dict, default_values):
-        ans_paramlist.append(param)
-        param_cube = template_cube.copy()
-        param_cube.rename(param)
-        param_cube.long_name = param
-        param_cube.add_aux_coord(model_type_coord)
-        param_cube.add_aux_coord(supercategory_coord)
-        param_cube.units = params_dict[param]
-        if additional_meta_aux_coords is not None:
-            for add_coord in additional_meta_aux_coords:
-                param_cube.add_aux_coord(add_coord)
-        if param_cube.ndim == 0:
-            param_cube = iutil.new_axis(
-                iutil.new_axis(param_cube, "longitude"), "latitude"
-            )
-        param_cube.data[:] = default_value
-        param_cube.data = param_cube.data.astype(dtype)
-        if ma.isMaskedArray(template_cube.data):
-            param_cube.data.mask = template_cube.data.mask
-        ans_cubelist.append(param_cube)
-    return {"param_cubelist": ans_cubelist, "param_names": ans_paramlist}
-
-
-def make_v_aux_coord(v: float) -> icoords.AuxCoord:
-    """Create an iris coord for the Matern (positive) shape parameter"""
-    return icoords.AuxCoord(v, long_name="v_shape", units="no_unit")
-
-
-def _angle_diff(angles: np.ndarray) -> np.ndarray:
-    """Angle difference vs x/longitude-axis"""
-    # np.abs(np.subtract.outer) is faster than euclidean_distances for 1d
-    abs_diff = np.abs(np.subtract.outer(angles, angles))
-    return np.triu(abs_diff) - np.tril(abs_diff)
 
 
 def _get_fit_score(model_params, bounds, niter) -> int:
