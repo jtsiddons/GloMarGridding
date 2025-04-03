@@ -14,7 +14,7 @@ import yaml
 import psutil
 
 from glomar_gridding import covariance_cube
-from glomar_gridding.ellipse import MaternEllipseModel
+from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.utils import init_logging
 from glomar_gridding.io import get_recurse
 
@@ -82,13 +82,13 @@ parser.add_argument(
 )
 
 
-def parse_args(parser) -> tuple[dict, MaternEllipseModel, str, int]:
+def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
     """Parse input arguments"""
     args = parser.parse_args()
     with open(args.config, "r", encoding="utf-8") as io:
         conf = yaml.safe_load(io)
 
-    ellipse = MaternEllipseModel(
+    ellipse = EllipseModel(
         anisotropic=args.anisotropic,
         rotated=args.rotated,
         physical_distance=args.physical_distance,

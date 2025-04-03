@@ -254,7 +254,7 @@ class EllipseBuilder:
     def fit_ellipse_model(
         self,
         xy_point: int,
-        matern_ellipse: MaternEllipseModel,
+        matern_ellipse: EllipseModel,
         max_distance: float = 20.0,
         min_distance: float = 0.3,
         delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",

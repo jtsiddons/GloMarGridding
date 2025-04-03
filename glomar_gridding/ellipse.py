@@ -99,7 +99,7 @@ SUPERCATEGORY_PARAMS: dict[SUPERCATEGORY, OrderedDict[str, str]] = {
 }
 
 
-class MaternEllipseModel:
+class EllipseModel:
     """
     The class that contains variogram/ellipse fitting methods and parameters
 
@@ -285,11 +285,6 @@ class MaternEllipseModel:
             Should the Fisher (arctanh) transform be used
             This is usually option, but it does make the computation
             more stable if they are close to 1 (or -1; doesn't apply here)
-        backend : str
-            joblib backend
-            See https://joblib.readthedocs.io/en/latest/generated/joblib.Parallel.html
-        n_jobs : int
-            Number of threads/parallel computation
 
         Returns
         -------
@@ -460,11 +455,11 @@ class MaternEllipseModel:
             X, y
         )
 
-        logging.debug(f"X range: {np.min(X)}, {np.max(X)}")
-        logging.debug(f"y range: {np.min(y)}, {np.max(y)}")
-        zipper = zip(guesses, bounds)
-        for g, b in zipper:
-            logging.debug(f"init guess: {g}, bounds: {b}")
+        # logging.debug(f"X range: {np.min(X)}, {np.max(X)}")
+        # logging.debug(f"y range: {np.min(y)}, {np.max(y)}")
+        # zipper = zip(guesses, bounds)
+        # for g, b in zipper:
+        #     logging.debug(f"init guess: {g}, bounds: {b}")
 
         results: OptimizeResult = minimize(
             LL_observedXy_unknownparams,
