@@ -10,6 +10,7 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 """
 
 from collections.abc import Callable
+from typing import get_args
 
 import numpy as np
 import polars as pl
@@ -19,6 +20,8 @@ import geopandas as gpd
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 from scipy.spatial.transform import Rotation
 from shapely.geometry import Point
+
+from glomar_gridding.types import DELTA_X_METHOD
 
 from .utils import check_cols
 
@@ -457,3 +460,64 @@ def mahal_dist_func(
 #     print("tau:")
 #     print(tau_mat)
 #     return {"tau": tau_mat, "sigma": sigma, "grid": df}
+
+
+def displacements(
+    lats: np.ndarray,
+    lons: np.ndarray,
+    delta_x_method: DELTA_X_METHOD | None = None,
+    to_radians: bool = True,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate east-west and north-south displacement matrices for all pairs
+    of input positions. If n positions are provided, the results will be n x n
+    matrices. This makes use of `np.ufunc.outer` functions.
+
+    The results are not scaled by any radius, this should be performed outside
+    of this function.
+
+    Parameters
+    ----------
+    lats : numpy.ndarray
+        The latitudes of the positions, should be provided in degrees. If the
+        values are already in radians, set `to_radians` to False.
+    lons : numpy.ndarray
+        The longitudes of the positions, should be provided in degrees. If the
+        values are already in radians, set `to_radians` to False.
+    delta_x_method : str | None
+        One of "Met_Office" or "Modified_Met_Office". If set to None, the
+        displacements will be returned in degrees, rather than actual distance
+        values. Set to "Met_Office" to use a cylindrical approximation, set
+        to "Modified_Met_Office" to use an approximation that uses the average
+        of the latitudes to set the horizontal displacement scale.
+    to_radians : bool
+        Optionally convert the positions to radians. This is ignored if
+        "delta_x_method" is set to None. The value defaults to True.
+
+    Returns
+    -------
+    disp_y : numpy.ndarray
+        The north-south displacements.
+    disp_x : numpy.ndarray
+        The east-west displacements.
+    """
+    if delta_x_method is not None and delta_x_method not in get_args(
+        DELTA_X_METHOD
+    ):
+        raise ValueError(
+            f"Unknown 'delta_x_method' value, got '{delta_x_method}'"
+        )
+    if to_radians or (delta_x_method is None):
+        lons = np.radians(lons)
+        lats = np.radians(lats)
+    disp_y = np.subtract.outer(lats, lats)
+    disp_x = np.subtract.outer(lons, lons)
+    if delta_x_method is None:
+        return disp_y, disp_x
+
+    if delta_x_method == "Modified_Met_Office":
+        cos_lats = np.cos(lats)
+        y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats)
+        disp_x = disp_x * y_cos_mean
+
+    return disp_y, disp_x
