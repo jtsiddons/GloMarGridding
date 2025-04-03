@@ -95,6 +95,10 @@ class EllipseBuilder:
             self.coords["longitude"].points,
             self.coords["latitude"].points,
         )
+        self.xi, self.yi = np.meshgrid(
+            np.arange(self.coords["longitude"].points),
+            np.arange(self.coords["latitude"].points),
+        )
         # Length of time dimension
         self.time_n = len(self.coords["time"].points)
 
@@ -120,6 +124,8 @@ class EllipseBuilder:
             self.small_covar_size = self.big_covar_size
         self.x_masked = np.ma.masked_where(self.mask, self.xx)
         self.y_masked = np.ma.masked_where(self.mask, self.yy)
+        self.xi_masked = np.ma.masked_where(self.mask, self.xi)
+        self.yi_masked = np.ma.masked_where(self.mask, self.yi)
         self.xy_masked = np.column_stack(
             [self.x_masked.compressed(), self.y_masked.compressed()]
         )
