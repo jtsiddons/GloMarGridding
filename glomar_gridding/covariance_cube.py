@@ -12,7 +12,7 @@ import iris.coords as icoords
 import iris.util as iutil
 import numpy as np
 from numpy import linalg, ma
-from sklearn.metrics.pairwise import euclidean_distances, haversine_distances
+from sklearn.metrics.pairwise import haversine_distances
 
 # from astropy.constants import R_earth
 from glomar_gridding.constants import (
@@ -181,69 +181,6 @@ class CovarianceCube:
         if rounding is not None:
             self.cor = np.round(self.cor, rounding)
         return None
-
-    def calc_distance_angle_selfcube(
-        self,
-        haversine: bool = False,
-        compressed: bool = True,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Compute distances between grid points of cube data stored
-        within class instance
-
-        Parameters
-        ----------
-        haversine : bool
-            Use the haversine instead
-        compressed : bool
-            Do a np.ma.MaskedArray.comressed, this get rids of masked points...
-
-        Returns
-        -------
-        D, A : np.ndarray [float]
-            D (distance in km), A (distance in angle)
-        """
-        xx, yy = np.meshgrid(
-            self.data_cube.coord("longitude").points,
-            self.data_cube.coord("latitude").points,
-        )
-        xx = ma.masked_where(self.cube_mask, xx)
-        yy = ma.masked_where(self.cube_mask, yy)
-        if compressed:
-            unmeshed_x = xx.compressed()
-            unmeshed_y = yy.compressed()
-        else:
-            unmeshed_x = xx.flatten()
-            unmeshed_y = yy.flatten()
-        D, A = self._calc_distance_angle(
-            unmeshed_x, unmeshed_y, haversine=haversine
-        )
-        return D, A
-
-    def _calc_distance_angle(
-        self,
-        unmeshed_x: np.ndarray,
-        unmeshed_y: np.ndarray,
-        haversine: bool = False,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Compute distance and angle between all points."""
-        yx_og = np.column_stack([unmeshed_y, unmeshed_x])
-        if haversine:
-            # Great circle - Earth
-            yx = np.deg2rad(yx_og)
-            D = haversine_distances(yx) * RADIUS_OF_EARTH_KM
-        else:
-            # Delta degrees - locally flat Earth, treating like it an image
-            yx = yx_og
-            D = euclidean_distances(yx)
-
-        dy = _angle_diff(yx[:, 0])
-        dx = _angle_diff(yx[:, 1])
-
-        # In radians; note, arctan2 can tell if dy and dx are negative
-        A = np.arctan2(dy, dx)
-        ##
-        return D, A  # Both D and A are square matrices
 
     def _self_mask(self) -> None:
         """Broadcast cube_mask to all observations"""
