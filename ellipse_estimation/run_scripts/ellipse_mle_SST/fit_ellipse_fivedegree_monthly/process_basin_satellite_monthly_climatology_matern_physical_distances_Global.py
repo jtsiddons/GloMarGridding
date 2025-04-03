@@ -4,11 +4,8 @@ import argparse
 import logging
 from pathlib import Path
 
-import iris
-from iris import coord_categorisation as icc
-from iris.fileformats import netcdf as inc
-from iris.util import equalise_attributes
 import numpy as np
+import xarray as xr
 import yaml
 
 import psutil
@@ -16,7 +13,7 @@ import psutil
 from glomar_gridding import covariance_cube
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.utils import init_logging
-from glomar_gridding.io import get_recurse
+from glomar_gridding.io import get_recurse, load_array
 
 
 parser = argparse.ArgumentParser(
@@ -62,24 +59,24 @@ parser.add_argument(
     help="Data type / Variable",
 )
 # fmt: on
-parser.add_argument(
-    "-a",
-    "--anisotropic",
-    action="store_true",
-    help="Fit an ellipse rather than a circle",
-)
-parser.add_argument(
-    "-r",
-    "--rotated",
-    action="store_true",
-    help="Can the ellipse be rotated, cannot be set if 'anisotropic' is set",
-)
-parser.add_argument(
-    "-p",
-    "--physical-distance",
-    action="store_true",
-    help="Use physical distances in Ellipse fitting",
-)
+# parser.add_argument(
+#     "-a",
+#     "--anisotropic",
+#     action="store_true",
+#     help="Fit an ellipse rather than a circle",
+# )
+# parser.add_argument(
+#     "-r",
+#     "--rotated",
+#     action="store_true",
+#     help="Can the ellipse be rotated, cannot be set if 'anisotropic' is set",
+# )
+# parser.add_argument(
+#     "-p",
+#     "--physical-distance",
+#     action="store_true",
+#     help="Use physical distances in Ellipse fitting",
+# )
 
 
 def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
@@ -89,9 +86,9 @@ def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
         conf = yaml.safe_load(io)
 
     ellipse = EllipseModel(
-        anisotropic=args.anisotropic,
-        rotated=args.rotated,
-        physical_distance=args.physical_distance,
+        anisotropic=True,
+        rotated=True,
+        physical_distance=True,
         v=args.matern_shape,
         unit_sigma=True,
     )
@@ -101,21 +98,20 @@ def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
     return conf, ellipse, variable, month
 
 
-def load_sst(file: str) -> iris.cube.Cube:
+def load_sst(file: str) -> xr.DataArray:
     """Load SST inputs"""
-    cube = iris.load_cube(file)
-    icc.add_month_number(cube, "time", name="month_number")
-    return cube
+    arr = load_array(file)
+    # icc.add_month_number(arr, "time", name="month_number")
+    return arr
 
 
-def load_at(file: str) -> iris.cube.Cube:
+def load_at(file: str) -> xr.DataArray:
     """Load LSAT inputs"""
-    cube = iris.load_cube(file, "land 2 metre temperature")
-    icc.add_month_number(cube, "time", name="month_number")
-    return cube
+    arr = load_array(file, "land 2 metre temperature")
+    return arr
 
 
-def load_data(conf: dict, variable: str) -> iris.cube.Cube:
+def load_data(conf: dict, variable: str) -> xr.DataArray:
     """Load data"""
     in_path = get_recurse(conf, variable, "in_path")
     if in_path is None:
@@ -156,9 +152,7 @@ def main():  # noqa: D103
 
     v = ellipse.v
     nparms = ellipse.supercategory_n_params
-    defval = [-999.9 for _ in range(nparms)]
-
-    everyother = 1
+    default_values = [-999.9 for _ in range(nparms)]
 
     out_path = get_recurse(conf, variable, "out_path")
     if out_path is None:
@@ -166,13 +160,17 @@ def main():  # noqa: D103
 
     logging.info(f"{v = }")
 
-    additional_constraints = iris.Constraint(month_number=month_value)
-    data_cube = load_data(conf, variable)
-    data_cube = data_cube.extract(additional_constraints)
-    data_cube = mask_time_union(data_cube)
+    data_array = load_data(conf, variable)
+    data_array = data_array.where(
+        data_array.time.dt.month == month_value,
+        drop=True,
+    )
 
-    data_cube_time_length = len(data_cube.coord("time").points)
-    logging.info(repr(data_cube))
+    # Initialise Output arrays
+    outputs: list[np.ndarray] = [
+        np.ones_like(data_array.values[0, :, :]) * default
+        for default in default_values
+    ]
 
     # Init values set to HadCRUT5 defaults
     # no prior distrubtion set around those value
@@ -184,98 +182,40 @@ def main():  # noqa: D103
         (-2.0 * np.pi, 2.0 * np.pi),
     ]
 
-    super_cube_list = iris.cube.CubeList()
-
-    logging.info(repr(data_cube))
-    logging.debug(f"{data_cube.coord('latitude') = }")
-    logging.debug(f"{data_cube.coord('longitude') = }")
-    logging.debug(f"{data_cube.coord('time') = }")
+    logging.info(repr(data_array))
+    logging.debug(f"{data_array.coord['latitude'] = }")
+    logging.debug(f"{data_array.coord['longitude'] = }")
+    logging.debug(f"{data_array.coord['time'] = }")
 
     logging.info("Building covariance matrix")
-    cov_cube = covariance_cube.EllipseBuilder(data_cube)
+    cov_cube = covariance_cube.EllipseBuilder(data_array)
     logging.info("Covariance matrix completed")
 
-    data_cube_not_template = data_cube[data_cube_time_length // 2]
-    for zonal, zonal_slice in enumerate(
-        data_cube_not_template.slices(["longitude"])
+    for mask_i, (grid_i, grid_j) in enumerate(
+        zip(cov_cube.xi_masked, cov_cube.yi_masked)
     ):
-        # Zonal slices
-        logging.info(f"{zonal} {repr(zonal_slice)}")
-        if (zonal % everyother) != 0:
-            continue
-        zonal_cube_list = iris.cube.CubeList()
-        for box_count, invidiual_box in enumerate(zonal_slice.slices([])):
-            if (box_count % everyother) != 0:
-                continue
-            logging.info(f"{zonal} || {box_count} {repr(invidiual_box)}")
+        # current_lon = data_array.coords["longitude"][grid_i]
+        # current_lat = data_array.coords["latitude"][grid_j]
 
-            current_lon = invidiual_box.coord("longitude").points[0]
-            current_lat = invidiual_box.coord("latitude").points[0]
-            logging.info(f"{zonal} || {box_count} {current_lon} {current_lat}")
-            if np.ma.is_masked(invidiual_box.data):
-                xy, actual_latlon = (
-                    cov_cube.find_nearest_xy_index_in_cov_matrix(
-                        [current_lon, current_lat], use_full=True
-                    )
-                )
-                logging.debug(cov_cube.data_cube)
-                logging.debug(cov_cube.data_cube.coord("latitude"))
-                logging.debug(cov_cube.data_cube.coord("longitude"))
-                template_cube = cov_cube._make_template_cube2(
-                    (current_lon, current_lat)
-                )
-                ans = covariance_cube.create_output_cubes(
-                    template_cube,
-                    model_type=ellipse.model_type,
-                    additional_meta_aux_coords=[
-                        covariance_cube.make_v_aux_coord(v)
-                    ],
-                    default_values=defval,
-                )["param_cubelist"]
-                ansH = "MASKED"
-            else:
-                # Nearest valid point
-                xy, actual_latlon = (
-                    cov_cube.find_nearest_xy_index_in_cov_matrix(
-                        [current_lon, current_lat]
-                    )
-                )
-                # Note:
-                # Possible cause for convergence failure are ENSO grid points;
-                # max_distance is originally introduced to keep moving window
-                # fits consistent (i.e. always using 20x20 deg squares around
-                # central gp), but is too small for ENSO signals.
-                # Now with global inputs this can be relaxed, and use of global
-                # inputs will ensure correlations from far away grid points be
-                # accounted for <--- this cannot be done for moving window fits.
-                ansX = cov_cube.fit_ellipse_model(
-                    xy,
-                    matern_ellipse=ellipse,
-                    max_distance=60.0,
-                    guesses=init_values,
-                    bounds=fit_bounds,
-                    n_jobs=nCPUs,
-                )
-                ans = ansX["Model_as_1D_cube"]
-                ansH = (ansX["Model"].x, ansX["Model"].x[-1] * 180.0 / np.pi)
-            ans_lon = ans[0].coord("longitude").points
-            ans_lat = ans[0].coord("latitude").points
-            logging.debug(
-                f"{zonal} || "
-                + f"{box_count} {xy} {actual_latlon} {ans_lon} {ans_lat} {ansH}"
-            )
-            for individual_ans in ans:
-                zonal_cube_list.append(individual_ans)
-                zonal_cube_list.concatenate()
-        for zonal_ans_cube in zonal_cube_list:
-            super_cube_list.append(zonal_ans_cube)
-            equalise_attributes(super_cube_list)
+        # Note:
+        # Possible cause for convergence failure are ENSO grid points;
+        # max_distance is originally introduced to keep moving window
+        # fits consistent (i.e. always using 20x20 deg squares around
+        # central gp), but is too small for ENSO signals.
+        # Now with global inputs this can be relaxed, and use of global
+        # inputs will ensure correlations from far away grid points be
+        # accounted for <--- this cannot be done for moving window fits.
+        ansX = cov_cube.fit_ellipse_model(
+            mask_i,
+            matern_ellipse=ellipse,
+            max_distance=60.0,
+            guesses=init_values,
+            bounds=fit_bounds,
+            n_jobs=nCPUs,
+        )
+        for output, param in zip(outputs, ansX["Params"]):
+            output[grid_i, grid_j] = param
     logging.info("Grid box loop is completed")
-    equalise_attributes(super_cube_list)
-    try:
-        super_cube_list = super_cube_list.concatenate()
-    except Exception as e:
-        logging.error(f"Error concatenating cubelist: {e}")
 
     vstring = str(v).replace(".", "p")
     vstring = "_v_eq_" + vstring
@@ -286,10 +226,6 @@ def main():  # noqa: D103
     outncfilename = outpath + variable + "_"
     outncfilename += f"{month_value:02d}.nc"
     logging.debug("Results to be saved...")
-    logging.debug(super_cube_list)
-    logging.info(f"Saving results to {outncfilename}")
-    inc.save(super_cube_list, outncfilename)
-    logging.info("Completed")
 
 
 if __name__ == "__main__":
