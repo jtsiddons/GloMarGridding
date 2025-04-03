@@ -116,7 +116,7 @@ class _EllipseSimulation:
                 "delta_x_method": "Modified_Met_Office",
                 "check_positive_definite": True,
             }
-        self.CCPLE_out = ccns.CovarianceCube_PreStichedLocalEstimates(
+        self.CCPLE_out = ccns.EllipseCovarianceBuilder(
             self.Lx, self.Ly, self.theta, self.sdev, v=self.v, **kwargs4CC_PLE
         )
 

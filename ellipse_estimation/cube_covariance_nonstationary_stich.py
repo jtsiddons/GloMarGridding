@@ -11,8 +11,9 @@ import numbers
 import sys
 import tracemalloc
 
-from joblib import Parallel, delayed  # Developmental
-from itertools import product, combinations
+from itertools import combinations
+
+from sklearn.metrics.pairwise import haversine_distances
 
 # from iris import analysis as ia
 import iris
@@ -24,29 +25,17 @@ from scipy.special import gamma
 from statsmodels.stats import correlation_tools
 
 from glomar_gridding.distances import (
+    displacements,
     sigma_rot_func,
-    mahal_dist_func,
     tau_dist,
 )
-from glomar_gridding.constants import DEFAULT_N_JOBS, DEFAULT_BACKEND
-from ellipse_estimation.distance_util import scalar_cube_great_circle_distance
+from glomar_gridding.constants import (
+    RADIUS_OF_EARTH_KM,
+)
 from glomar_gridding.types import DELTA_X_METHOD
 from glomar_gridding.utils import uncompress_masked
 
-# Below is in theory redudant, but the view/controller bits of the code
-# has not been integrated to the package; for now, keeping this in case
-# of breaking other code
-
-# _MAX_DEG_Kar = 20.0  # Karspeck et al distance threshold in degrees latlon
-# _MAX_DIST_Kar = cube_cov._deg2km(_MAX_DEG_Kar)  # to km @ lat = 0.0 (2222km)
-
-# _MAX_DIST_UKMO = 10000.0  # UKMO uses 10000km range to fit the non-rot ellipse
-# _MAX_DEG_UKMO = cube_cov._km2deg(_MAX_DIST_UKMO)
-
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
-# _MAX_DEG_compromise = cube_cov._km2deg(_MAX_DIST_compromise)
-
-# _MIN_CORR_Threshold = 0.5 / np.e
 
 
 def mask_cube(cube: iris.cube.Cube) -> iris.cube.Cube:
@@ -82,165 +71,6 @@ def sizeof_fmt(num: float, suffix="B") -> str:
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
-
-
-def c_ij_anistropic_rotated_nonstationary(
-    v: float,
-    sdev_i: float,
-    sdev_j: float,
-    x_i: np.ndarray,
-    x_j: np.ndarray,
-    sigma_parms_i: list[float],
-    sigma_parms_j: list[float],
-    decompose: bool = False,
-) -> float:
-    """
-    Compute the nonstationary spatially-varying covariance between
-    point i and j with covariance model parameters sigma_parms_i, sigma_parms_j
-    and local standard deviations of sdev_i, sdev_j
-
-    x_i = zonal displacement (NOT COORDINATES OF point i)
-    x_j = meridonal displacement (NOT COORDINATES OF point j)
-    Use scalar_cube_great_circle_distance to compute displacement and distance
-
-    ans of scalar_cube_great_circle_distance: x_i = ans[2] and x_j = ans[1]
-    (ans[0] is the great circle dist)
-
-    sigma_parms_i = (Lx_i, Ly_i, theta_i)
-    sigma_parms_j = (Lx_j, Ly_j, theta_j)
-
-    original equation:
-    1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-    2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
-
-    Parameters
-    ----------
-    v : float
-        Matern shape parameter
-    sdev_i, sdev_j: float
-        Standard deviations of the two points
-    x_i, x_j: float
-        Components of the vector displacement between the two points
-    sigma_parms_i, sigma_parms_j: iterable
-        iterable with a length of 3 each, that states Lx, Ly, theta
-        Dimensions of Lx, Ly, x_i and x_j must be the same (i.e. km with km
-        not km with degrees)
-    decompose: bool
-        Optionally decompose sigma_bar.
-
-    Returns
-    -------
-    c_ij : float
-        the covariance between the two points
-    """
-    # Compute sigma_bar
-    sigma_i = sigma_rot_func(
-        sigma_parms_i[0], sigma_parms_i[1], sigma_parms_i[2]
-    )
-    sigma_j = sigma_rot_func(
-        sigma_parms_j[0], sigma_parms_j[1], sigma_parms_j[2]
-    )
-    sigma_bar = 0.5 * (sigma_i + sigma_j)
-
-    logging.debug(f"{sigma_bar = }")
-
-    # sigma_bar can be broken down to new sigma parameters
-    # aka a new Lx, Ly and theta using eigenvalue decomposition
-    # Sigma_bar = R(theta_bar) @ [[Lx_bar**2 0][0 Ly_bar**2]] @ R(theta_bar)^-1
-    # In which eigenvalues to Sigma Bar forms
-    # the diagonal matrix of Lx_bar Ly_bar
-    # and eigenvectors are rotation matrix R(theta_bar)
-    # if sigma_bar is nearly circle,
-    # there are a possibility of floating point issue
-    # i.e. eigenvalues and eigenvectors become "complex"
-    # when off-diagonal are a very small float (1E-10)
-
-    # This gets annoying if running istropic unit tests...
-    # print('Adjustments made to small off diagonal terms of sigma_bar')
-    sigma_bar[np.isclose(sigma_bar, 0.0)] = 0.0
-
-    if decompose:
-        # Decomposing sigma_bar
-        # sigma_bar = R_bar x [( Lx_bar**2 0 ) (0 Ly_bar**2)] x R_bar_transpose
-        sigma_bar_eigval, sigma_bar_eigvec = linalg.eig(sigma_bar)
-
-        # If numerical instability is detected, resulting in complex number,
-        # take the real part
-        if np.any(np.iscomplex(sigma_bar_eigval)) or np.any(
-            np.iscomplex(sigma_bar_eigvec)
-        ):
-            logging.warning("Complex eigenvalues detected!")
-            logging.warning(f"{sigma_bar_eigval = }")
-            logging.warning(f"{sigma_bar_eigvec = }")
-            sigma_bar_eigval = sigma_bar_eigval.real
-            sigma_bar_eigvec = sigma_bar_eigvec.real
-        # Actual Lx, Ly are square roots of the eigenvalues
-        Lx_bar = np.sqrt(sigma_bar_eigval[0])
-        Ly_bar = np.sqrt(sigma_bar_eigval[1])
-
-        # https://stackoverflow.com/questions/15022630/how-to-calculate-the-angle-from-rotation-matrix
-
-        logging.debug(f"Eigvals of sigma_bar = {sigma_bar_eigval}")
-        logging.debug(f"{(Lx_bar, Ly_bar) = }")
-        logging.debug(f"Eigvec of sigma_bar  = {sigma_bar_eigvec}")
-        # Use arctan2 to compute rotation angle '''
-        theta_bar = np.arctan2(sigma_bar_eigvec[1, 0], sigma_bar_eigvec[0, 0])
-        # Below should show the same angle in radians
-        v_ans0 = (
-            np.arccos(sigma_bar_eigvec[0, 0]),
-            np.rad2deg(np.arccos(sigma_bar_eigvec[0, 0])),
-        )
-        v_ans1 = (
-            np.arcsin(sigma_bar_eigvec[0, 1]),
-            np.rad2deg(np.arcsin(sigma_bar_eigvec[0, 1])),
-        )
-        v_ans2 = (
-            -np.arcsin(sigma_bar_eigvec[1, 0]),
-            np.rad2deg(-np.arcsin(sigma_bar_eigvec[1, 0])),
-        )
-        v_ans3 = (theta_bar, np.rad2deg(theta_bar))
-        logging.debug(
-            f"arccos  R[0,0][1, 1] = {v_ans0} (>0 for ang within +/- pi/2)"
-        )
-        logging.debug(f"arcsin  R[0,1]       = {v_ans1}")
-        logging.debug(f"-arccos R[1,0]       = {v_ans2}")
-        logging.debug(f"theta_bar            = {v_ans3} (using arctan2)")
-        tau_bar = mahal_dist_func(x_i, x_j, Lx_bar, Ly_bar, theta=theta_bar)
-    else:
-        # Direct computation without decomposition (faster)
-        # This is direct use of right part of Equation 18 in Karspeck et al 2012
-        # This is behind else, so one won't be computing stuff twice
-        tau_bar = tau_dist(x_i, x_j, sigma_bar)
-    logging.debug(f"{(x_i, x_j) = }")
-    logging.debug(f"{tau_bar = }")
-
-    # Eq 17 in Karspeck et al 2012
-    # ans = first_term x second_term x third_term x fourth_term '''
-    first_term = (sdev_i * sdev_j) / (gamma(v) * (2.0 ** (v - 1)))
-
-    # second_term_u = root4(linalg.det(sigma_i))*root4(linalg.det(sigma_j))
-    # second_term_d = np.sqrt(linalg.det(sigma_bar))
-    second_term_num = root4(det22(sigma_i)) * root4(det22(sigma_j))
-    second_term_denom = np.sqrt(det22(sigma_bar))
-    second_term = second_term_num / second_term_denom
-    third_term = (2.0 * tau_bar * np.sqrt(v)) ** v
-    forth_term = modified_bessel_2nd(v, 2.0 * tau_bar * np.sqrt(v))
-
-    logging.debug(f"Check: {first_term = }")
-    logging.debug(f"Check: {second_term = }")
-    logging.debug(f"Check: {third_term = }")
-    logging.debug(f"Check: {forth_term = }")
-
-    c_ij = first_term * second_term * third_term * forth_term
-    logging.debug(f"Check: sdev_i * sdev_j = {sdev_i * sdev_j}")
-    logging.debug(f"Check: ans (cov)       = {c_ij}")
-    logging.debug(f"Check: ans (cor)       = {c_ij / (sdev_i * sdev_j)}")
-    # Don't know why I added the below, I have never seen it triggered...
-    # in which you are not supposed to as it will indicate bug elsewhere
-    # the original check is much more
-    if c_ij > (sdev_i * sdev_j):
-        raise ValueError("sdev_i * sdev_j should always be smaller than ans")
-    return c_ij
 
 
 def check_symmetric(a, rtol=1e-05, atol=1e-08):
@@ -299,95 +129,7 @@ def perturb_sym_matrix_2_positive_definite(
     return ans
 
 
-# def seaice_anti_hubris_field(cube, land_mask, ice_fill_value=None):
-#     '''
-#     We have other ways to fill in data gaps now,
-#     like using HadCRUT5 parameters...
-#     but this function can be resurrected in the future
-#
-#     assuming sea == 1 and land == 0 in land_mask
-#     replace where xor(land_mask, original_cube) (aka masked sea points)
-#     with ice_fill value
-#     default for ice_fill_value are applicable
-#
-#     WARNING:
-#     Inserting same values over multiple rows and columns
-#     lead to degenerate matrices!!!
-#
-#     Possible solution:
-#     Instead of simple infilling, add a random pertubation on top
-#     '''
-#     cube2 = cube.copy()
-#     cube2.data.mask = False
-#     cube2.data = np.ma.masked_where(land_mask.data < 0.95, cube2.data)
-#     where_are_the_ice = np.logical_xor(cube.data.mask, cube2.data.mask)
-#     if ice_fill_value is None:
-#         if cube.units == 'km':
-#             ice_fill_value = 100.0
-#         elif cube.units == 'radians':
-#             ice_fill_value = 0.0
-#         else:
-#             err_msg = 'ice_fill_value not provided, no defaults for cube units'  # noqa: E501
-#             raise ValueError(err_msg)
-#     ##
-#     if isinstance(ice_fill_value, numbers.Number):
-#         print('Replacing all xor(land_mask, cube) points with ', ice_fill_value)  # noqa: E501
-#         cube2.data[where_are_the_ice] = ice_fill_value
-#         return cube2
-#     elif np.ndim(ice_fill_value) != 0:
-#         ''' This allow a fillin by user-provided vector/list, length needs to match '''  # noqa: E501
-#         ice_fill_value2 = np.array(ice_fill_value)
-#         ice_fill_value2 = ice_fill_value2[:, np.newaxis]
-#         where_are_the_ice2 = where_are_the_ice.astype(float)
-#         fill_in_matrix = np.multiply(ice_fill_value2, where_are_the_ice2)
-#         cube2.data[where_are_the_ice] = 0.0
-#         cube2.data = cube2.data + fill_in_matrix
-#         print('Replacing all xor(land_mask, cube) points with ',ice_fill_value[0],' ... ', ice_fill_value[-1])  # noqa: E501
-#         return cube2
-#     elif isinstance(ice_fill_value, str):
-#         '''
-#         Variations of mean sub in imputation
-#         for distances imputation by minimum (anti-hubris value)
-#         for angles, "minimum" approach would be unrealistic, so we can use median (or angular mean, but that isn't implemented in iris)  # noqa: E501
-#         '''
-#         if ice_fill_value == 'zonal_min_substitution':
-#             zonal_mean = cube.collapsed('longitude', ia.MIN)
-#             zonal_mean_val = zonal_mean.data
-#             zonal_mean_val = zonal_mean_val[:, np.newaxis]
-#             cube2.data[where_are_the_ice] = 0.0
-#             fill_in_matrix = np.multiply(zonal_mean_val, where_are_the_ice.astype(float))  # noqa: E501
-#             cube2.data = cube2.data + fill_in_matrix
-#             print('Replacing all xor(land_mask, cube) points with ',zonal_mean.data[0],' ... ', zonal_mean.data[-1])  # noqa: E501
-#             return cube2
-#         elif ice_fill_value == 'zonal_median_substitution':
-#             zonal_mean = cube.collapsed('longitude', ia.MEDIAN)
-#             zonal_mean_val = zonal_mean.data
-#             zonal_mean_val = zonal_mean_val[:, np.newaxis]
-#             cube2.data[where_are_the_ice] = 0.0
-#             fill_in_matrix = np.multiply(zonal_mean_val, where_are_the_ice.astype(float))  # noqa: E501
-#             cube2.data = cube2.data + fill_in_matrix
-#             print('Replacing all xor(land_mask, cube) points with ', zonal_mean.data[0], ' ... ', zonal_mean.data[-1])  # noqa: E501
-#             return cube2
-#         elif ice_fill_value == 'zonal_mean_substitution':
-#             zonal_mean = cube.collapsed('longitude', ia.MEAN)
-#             zonal_mean_val = zonal_mean.data
-#             zonal_mean_val = zonal_mean_val[:, np.newaxis]
-#             cube2.data[where_are_the_ice] = 0.0
-#             fill_in_matrix = np.multiply(zonal_mean_val,
-#                                          where_are_the_ice.astype(float))
-#             cube2.data = cube2.data + fill_in_matrix
-#             print('Replacing all xor(land_mask, cube) points with ',
-#                   zonal_mean.data[0],
-#                   ' ... ',
-#                   zonal_mean.data[-1])
-#             return cube2
-#         else:
-#             raise ValueError('Unknown string input for ice_fill_value')
-#     else:
-#         raise ValueError('Unknown input for ice_fill_value')
-
-
-class CovarianceCube_PreStichedLocalEstimates:
+class EllipseCovarianceBuilder:
     """
     The class that takes multiple iris cubes of
     non-stationary variogram parameters to build
@@ -432,8 +174,6 @@ class CovarianceCube_PreStichedLocalEstimates:
     max_dist : float
         If the Haversine distance between 2 points exceed max_dist,
         covariance is set to 0
-    degree_dist : bool
-        Distances are based on degrees
     delta_x_method : str
         How are displacements computed between points
         The default is the same as in cube_covariance "Modified_Met_Office"
@@ -445,26 +185,8 @@ class CovarianceCube_PreStichedLocalEstimates:
         will be conducted, if constructed covariance is not
         positive (semi)definite.
 
-    use_joblib : bool
-        Should joblib parallel processing be used
-
-    n_jobs : int
-        Number of parallel thread, only matter of use_joblib is
-        true. Otherwise numpy will uses its own parallelisation
-
-    backend : str
-        backend of joblib
-
     nolazy : bool
         Manually forces computation to occur
-
-    use_sklearn_haversine: bool
-        sklearn has haversine function, but its preformance
-        is inconsistent between different machines, and can
-        cause a major slow down.
-
-    verbose : bool
-           More stdout stuff!
     """
 
     def __init__(
@@ -474,17 +196,11 @@ class CovarianceCube_PreStichedLocalEstimates:
         theta_cube: iris.cube.Cube,
         sdev_cube: iris.cube.Cube,
         v: float = 3,
-        delta_x_method: DELTA_X_METHOD = "Modified_Met_Office",
+        delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
         output_floatprecision=np.float64,
-        degree_dist: bool = False,
         check_positive_definite: bool = False,
-        use_joblib: bool = False,
         nolazy: bool = False,
-        use_sklearn_haversine: bool = False,
-        verbose: bool = False,
-        backend: str = DEFAULT_BACKEND,
-        n_jobs: int = DEFAULT_N_JOBS,
     ):
         tracemalloc.start()
         ove_start_time = datetime.datetime.now()
@@ -492,8 +208,6 @@ class CovarianceCube_PreStichedLocalEstimates:
             "Overhead processing start: ",
             ove_start_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
-
-        n_jobs = n_jobs if use_joblib else 1
 
         if not isinstance(max_dist, numbers.Number):
             raise ValueError("max_dist must be a number")
@@ -505,17 +219,8 @@ class CovarianceCube_PreStichedLocalEstimates:
         self.theta_local_estimates = mask_cube(theta_cube)
         self.sdev_local_estimates = mask_cube(sdev_cube)
         self.max_dist = max_dist
-        self.degree_dist = degree_dist
-        self.delta_x_method: DELTA_X_METHOD = delta_x_method
+        self.delta_x_method: DELTA_X_METHOD | None = delta_x_method
         self.check_positive_definite = check_positive_definite
-        self.use_sklearn_haversine = use_sklearn_haversine
-
-        # print('Fortran ordering check')
-        # for selfcubes in [self.Lx_local_estimates,
-        #                   self.Ly_local_estimates,
-        #                   self.theta_local_estimates,
-        #                   self.sdev_local_estimates]:
-        #     print(repr(selfcubes), np.isfortran(selfcubes.data))
 
         if nolazy:
             for selfcubes in [
@@ -532,8 +237,6 @@ class CovarianceCube_PreStichedLocalEstimates:
 
         self._get_mask()
 
-        self._init_dummy_arrays(output_floatprecision)
-
         ove_end_time = datetime.datetime.now()
         print(
             "Overhead processing ended: ",
@@ -541,160 +244,8 @@ class CovarianceCube_PreStichedLocalEstimates:
         )
         print("Time ellipsed: ", ove_end_time - ove_start_time)
 
-        # Fill in the covariance matrix by looping over grid points
-        # with different sigma matricies
-        ii_index = range(self.covar_size)
         cov_start_time = datetime.datetime.now()
-        print(
-            "Covariance processing start: ",
-            cov_start_time.strftime("%Y-%m-%d %H:%M:%S"),
-        )
-        for ii in ii_index:
-            curr, peak = tracemalloc.get_traced_memory()
-            rt_row_info = (
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ": "
-            )
-            rt_row_info += "Row " + str(ii) + "/" + str(ii_index[-1]) + "; "
-            rt_row_info += f"current & peak mem: {curr / (1024 * 1024)} {peak / (1024 * 1024)} MB"  # noqa: E501
-            rt_row_info += "; n_jobs = " + str(n_jobs)
-            print(rt_row_info)
-            self.cov_ns[ii, ii] = (
-                self.sdev_local_estimates_compressed[ii] ** 2.0
-            )
-            self.lat_mat_i[ii, ii] = self.lat_mat_j[ii, ii] = (
-                self.lat_grid_compressed[ii]
-            )
-            self.lon_mat_i[ii, ii] = self.lon_mat_j[ii, ii] = (
-                self.lon_grid_compressed[ii]
-            )
-            jj_index = range(ii + 1, self.covar_size)
-
-            # New -- moved this outside the loop,
-            # may make things slightly faster
-            # (code will at least look cleaner)
-            sdev_i = self.sdev_local_estimates_compressed[ii].copy()
-            sigma_parms_i = [
-                self.Lx_local_estimates_compressed[ii].copy(),
-                self.Ly_local_estimates_compressed[ii].copy(),
-                self.theta_local_estimates_compressed[ii].copy(),
-            ]
-            lat_grid_compressed_i = self.lat_grid_compressed[ii].copy()
-            lon_grid_compressed_i = self.lon_grid_compressed[ii].copy()
-            logging.debug(
-                ii,
-                sdev_i,
-                sigma_parms_i,
-                lat_grid_compressed_i,
-                lon_grid_compressed_i,
-            )  # For checking use
-
-            # Potential for improvement --
-            # it should be possible to make this faster
-            # as it is is embarrassingly parallel
-            # Nevertheless it doesn't run slow.
-            # Estimating the individual local sigma (cube_covariance.py)
-            # is much slower
-
-            # interface info: _single_cell_process_parallel(self, ii, jj, verbose)  # noqa: E501
-            if not use_joblib:
-                # Serial mode (fastest currently)
-                for jj in jj_index:
-                    if verbose:
-                        print(ii, jj)
-                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj, ii] = (
-                        lat_grid_compressed_i
-                    )
-                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj, ii] = (
-                        lon_grid_compressed_i
-                    )
-                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj, ii] = (
-                        self.lat_grid_compressed[jj]
-                    )
-                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj, ii] = (
-                        self.lon_grid_compressed[jj]
-                    )
-                    abs_x, x_j, x_i = scalar_cube_great_circle_distance(
-                        lat_grid_compressed_i,
-                        lon_grid_compressed_i,
-                        self.lat_grid_compressed[jj],
-                        self.lon_grid_compressed[jj],
-                        degree_dist=self.degree_dist,
-                        delta_x_method=self.delta_x_method,
-                        use_sklearn_haversine=self.use_sklearn_haversine,
-                    )
-                    if abs_x > self.max_dist:
-                        self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = 0.0
-                    else:
-                        sdev_j = self.sdev_local_estimates_compressed[jj]
-                        sigma_parms_j = [
-                            self.Lx_local_estimates_compressed[jj],
-                            self.Ly_local_estimates_compressed[jj],
-                            self.theta_local_estimates_compressed[jj],
-                        ]
-                        logging.debug(ii, jj, x_i, x_j)
-                        logging.debug(
-                            ii,
-                            sdev_i,
-                            sigma_parms_i,
-                            np.rad2deg(sigma_parms_i[-1]),
-                        )
-                        logging.debug(
-                            jj,
-                            sdev_j,
-                            sigma_parms_j,
-                            np.rad2deg(sigma_parms_j[-1]),
-                        )
-                        # Compute eq 17 in Karspeck et al at each grid point
-                        cov_bar = c_ij_anistropic_rotated_nonstationary(
-                            v,
-                            sdev_i,
-                            sdev_j,
-                            np.asarray(x_i),
-                            np.asarray(x_j),
-                            sigma_parms_i,
-                            sigma_parms_j,
-                            decompose=verbose,
-                        )
-                        # Fill in symmetric matrix
-                        self.cov_ns[ii, jj] = self.cov_ns[jj, ii] = cov_bar
-            else:
-
-                def spnip(jj):
-                    return self._single_cell_process_notinplace(
-                        ii,
-                        jj,
-                        sdev_i,
-                        sigma_parms_i,
-                        lat_grid_compressed_i,
-                        lon_grid_compressed_i,
-                        verbose,
-                    )
-
-                parallel_kwargs = {"n_jobs": n_jobs, "backend": backend}
-                cov_bars = Parallel(**parallel_kwargs)(
-                    delayed(spnip)(jj) for jj in jj_index
-                )
-                # Fill in symmetric matrix
-                logging.debug(
-                    len(jj_index),
-                    [cov_bars[jjjj] for jjjj in range(10)],
-                    cov_bars[-1],
-                )  # For checking use
-                for j_index, jj in enumerate(jj_index):
-                    self.lat_mat_i[ii, jj] = self.lat_mat_i[jj, ii] = (
-                        self.lat_grid_compressed[ii]
-                    )
-                    self.lon_mat_i[ii, jj] = self.lon_mat_i[jj, ii] = (
-                        self.lon_grid_compressed[ii]
-                    )
-                    self.lat_mat_j[ii, jj] = self.lat_mat_j[jj, ii] = (
-                        self.lat_grid_compressed[jj]
-                    )
-                    self.lon_mat_j[ii, jj] = self.lon_mat_j[jj, ii] = (
-                        self.lon_grid_compressed[jj]
-                    )
-                    self.cov_ns[ii, jj] = cov_bars[j_index]
-                    self.cov_ns[jj, ii] = cov_bars[j_index]
+        self.calculate_covariance(output_floatprecision)
 
         cov_end_time = datetime.datetime.now()
         logging.info(
@@ -791,84 +342,68 @@ class CovarianceCube_PreStichedLocalEstimates:
         self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
         return None
 
-    def _init_dummy_arrays(self, output_floatprecision) -> None:
-        # Prepare matricies
-        # i and j represent data pairs, the original point follows _i,
-        # remote point is _j
-        logging.info("Creating dummy arrays")
-        self.cov_ns = np.zeros(
-            (self.covar_size, self.covar_size), dtype=output_floatprecision
-        )
-        self.lat_mat_i = np.zeros(
-            (self.covar_size, self.covar_size), dtype=np.float16
-        )
-        self.lon_mat_i = np.zeros(
-            (self.covar_size, self.covar_size), dtype=np.float16
-        )
-        self.lat_mat_j = np.zeros(
-            (self.covar_size, self.covar_size), dtype=np.float16
-        )
-        self.lon_mat_j = np.zeros(
-            (self.covar_size, self.covar_size), dtype=np.float16
-        )
-        return None
-
-    def _single_cell_process_notinplace(
-        self,
-        ii,
-        jj,
-        sdev_i,
-        sigma_parms_i,
-        lat_grid_compressed_i,
-        lon_grid_compressed_i,
-        decompose: bool = False,
-    ):
-        """Standard safe way to do the covariance computation"""
-        abs_x, x_j, x_i = scalar_cube_great_circle_distance(
-            lat_grid_compressed_i,
-            lon_grid_compressed_i,
-            self.lat_grid_compressed[jj],
-            self.lon_grid_compressed[jj],
-            degree_dist=self.degree_dist,
-            delta_x_method=self.delta_x_method,
-            use_sklearn_haversine=self.use_sklearn_haversine,
-        )
-        if abs_x > self.max_dist:
-            cov_bar = 0.0
-        else:
-            sdev_j = self.sdev_local_estimates_compressed[jj]
-            sigma_parms_j = [
-                self.Lx_local_estimates_compressed[jj],
-                self.Ly_local_estimates_compressed[jj],
-                self.theta_local_estimates_compressed[jj],
-            ]
-            logging.debug(ii, jj, x_i, x_j)
-            logging.debug(
-                ii, sdev_i, sigma_parms_i, np.rad2deg(sigma_parms_i[-1])
-            )
-            logging.debug(
-                jj, sdev_j, sigma_parms_j, np.rad2deg(sigma_parms_j[-1])
-            )
-            # Compute eq 17 in Karspeck et al at each grid point
-            cov_bar = c_ij_anistropic_rotated_nonstationary(
-                self.v,
-                sdev_i,
-                sdev_j,
-                np.asarray(x_i),
-                np.asarray(x_j),
-                sigma_parms_i,
-                sigma_parms_j,
-                decompose=decompose,
-            )
-        return cov_bar
-
-    def _no_lazy_data(self, cube):
+    def _no_lazy_data(self, cube) -> None:
         """Disable iris cube lazy data"""
         if cube.has_lazy_data():
             cube.data  # pylint: disable=pointless-statement
         for coord in ["latitude", "longitude"]:
             if cube.coord(coord).has_lazy_points():
                 cube.coord(coord).points  # pylint: disable=expression-not-assigned
+
+        return None
+
+    def calculate_covariance(self, output_floatprecision: type) -> None:
+        """Calculate the covariance matrix from the ellipse parameters"""
+        # Calculate distances & Displacements
+        disp_y, disp_x = displacements(
+            self.lat_grid_compressed,
+            self.lon_grid_compressed,
+            delta_x_method=self.delta_x_method,
+            to_radians=True,
+        )
+        dists = haversine_distances(
+            np.radians(
+                np.column_stack(
+                    [self.lat_grid_compressed, self.lon_grid_compressed]
+                )
+            )
+        )
+        disp_y = RADIUS_OF_EARTH_KM * disp_y
+        disp_x = RADIUS_OF_EARTH_KM * disp_x
+        dists = RADIUS_OF_EARTH_KM * dists
+
+        # Initialise Covariance
+        self.cov_ns = np.zeros_like(dists, dtype=output_floatprecision)
+
+        # Mask to upper triangular (exclude diagonal)
+        tri_mask = np.triu(np.ones_like(dists), 1) == 0
+        disp_y_comp = np.ma.masked_where(tri_mask, disp_y)
+        disp_x_comp = np.ma.masked_where(tri_mask, disp_x)
+        dists_comp = np.ma.masked_where(tri_mask, dists)
+
+        # Calculate covariance values
+        cij = c_ij_anisotropic_array(
+            v=self.v,
+            Lxs=self.Lx_local_estimates_compressed,
+            Lys=self.Ly_local_estimates_compressed,
+            thetas=self.theta_local_estimates_compressed,
+            x_is=disp_x_comp,
+            x_js=disp_y_comp,
+            stdevs=self.sdev_local_estimates_compressed,
+        )
+        cij[dists_comp > self.max_dist] = 0.0
+
+        # Re-populate upper triangular
+        np.place(self.cor_ns, ~tri_mask, cij)
+
+        # Add transpose
+        self.cov_ns = self.cov_ns + self.cor_ns.T
+
+        # Set diagonal elements
+        self.cov_nx = self.cov_ns + np.diag(
+            self.sdev_local_estimates_compressed**2
+        )
+        return None
 
     def remap_one_point_2_map(
         self,
@@ -909,7 +444,7 @@ def root4(val):
     return np.sqrt(np.sqrt(val))
 
 
-def c_ij_batched(
+def c_ij_anisotropic_array(
     v: float,
     Lxs: np.ndarray,
     Lys: np.ndarray,
@@ -918,7 +453,64 @@ def c_ij_batched(
     x_js: np.ndarray,
     stdevs: np.ndarray,
 ) -> np.ndarray:
-    """DOCUMENTATION"""
+    """
+    Compute the covariances between pairs of ellipses, at displacements.
+
+    Each ellipse is defined by values from Lxs, Lys, and thetas, with standard
+    deviation in stdevs.
+
+    The displacements between each pair of ellipses are x_is and x_js.
+
+    For N ellipses, the number of displacements should be 1/2 * N * (N - 1),
+    i.e. the displacement between each pair combination of ellipses. This
+    function will return the upper triangular values of the covariance
+    matrix (excluding the diagonal).
+
+    `itertools.combinations` is used to handle ordering, so the displacements
+    must be ordered in the same way.
+
+    Reference
+    ---------
+    1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
+    2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+
+    Parameters
+    ----------
+    v : float
+        Matern shape parameter
+    Lxs : numpy.ndarray
+        A vector containing the Lx values - the ellipse semi-major axis length
+        scales. These are the values for each ellipse (not duplicated).
+    Lys : numpy.ndarray
+        A vector containing the Ly values - the ellipse semi-minor axis length
+        scales. These are the values for each ellipse (not duplicated).
+    thetas : numpy.ndarray
+        A vector containing the theta values - the ellipse angles (in radians).
+        These are the values for each ellipse (not duplicated).
+    x_is : np.ndarray
+        A vector containing the east-west displacements. It is expected that the
+        size of this array is 0.5 * N * (N - 1) where N is the length of the Lxs
+        vector. These are the displacements between each pair of ellipses, and
+        must follow the ordering one would achieve with
+        `itertools.combinations`. Note these values should be distances, and not
+        degree displacements.
+    x_js : np.ndarray
+        A vector containing the north-south displacements. It is expected that
+        the size of this array is 0.5 * N * (N - 1) where N is the length of the
+        Lxs vector. These are the displacements between each pair of ellipses,
+        and must follow the ordering one would achieve with
+        `itertools.combinations`. Note these values should be distances, and not
+        degree displacements.
+    stdevs : np.ndarray
+        A vector containing the standard deviation for each ellipse.
+
+    Returns
+    -------
+    c_ij : numpy.ndarray
+        A vector containing the covariance values between each pair of ellipses.
+        This will return the components of the upper triangle of the covariance
+        matrix as a vector (excluding the diagonal).
+    """
     stdev_prod = np.asarray(
         [stdev_i * stdev_j for stdev_i, stdev_j in combinations(stdevs, 2)]
     )

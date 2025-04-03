@@ -145,7 +145,7 @@ def main():
 
     # stich is an instance to CovarianceCube_PreStichedLocalEstimates
     # See cube_covariance_nonstationary_stich.py in nonstationary_cov module
-    stich = cube_cov_stich.CovarianceCube_PreStichedLocalEstimates(
+    stich = cube_cov_stich.EllipseCovarianceBuilder(
         Lx,
         Ly,
         theta,
