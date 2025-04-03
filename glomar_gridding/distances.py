@@ -18,12 +18,22 @@ import pandas as pd
 import geopandas as gpd
 
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
-from scipy.spatial.transform import Rotation
 from shapely.geometry import Point
 
 from glomar_gridding.types import DELTA_X_METHOD
 
 from .utils import check_cols
+
+
+def rot_mat(angle: float) -> np.ndarray:
+    """
+    Compute a 2d rotation matrix from an angle.
+
+    The input angle must be in radians
+    """
+    c_ang = np.cos(angle)
+    s_ang = np.sin(angle)
+    return np.array([[c_ang, -s_ang], [s_ang, c_ang]])
 
 
 # NOTE: This is a Variogram result
@@ -306,11 +316,10 @@ def sigma_rot_func(
     sigma : np.ndarray
         2d matrix
     """
-    if theta is None:
-        return np.diag(np.array([Lx**2.0, Ly**2.0]))
-    R = Rotation.from_rotvec([0, 0, theta])
-    R = R.as_matrix()[:2, :2]
     L = np.diag([Lx**2.0, Ly**2.0])
+    if theta is None:
+        return L
+    R = rot_mat(theta)
     sigma = R @ L @ R.T
     return sigma
 
