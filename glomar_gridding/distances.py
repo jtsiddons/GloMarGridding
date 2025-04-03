@@ -36,6 +36,15 @@ def rot_mat(angle: float) -> np.ndarray:
     return np.array([[c_ang, -s_ang], [s_ang, c_ang]])
 
 
+def inv_2d(mat: np.ndarray) -> np.ndarray:
+    """Compute the inverse of a 2 x 2 matrix"""
+    det_denom = mat[0, 0] * mat[1, 1] - mat[0, 1] * mat[1, 0]
+    if det_denom == 0:
+        raise ValueError("Denominator is 0")
+    inv = np.array([[mat[1, 1], -mat[0, 1]], [-mat[1, 0], mat[0, 0]]])
+    return inv / det_denom
+
+
 # NOTE: This is a Variogram result
 def haversine_gaussian(
     df: pl.DataFrame,
@@ -314,7 +323,7 @@ def sigma_rot_func(
     Returns
     -------
     sigma : np.ndarray
-        2d matrix
+        2 x 2 matrix
     """
     L = np.diag([Lx**2.0, Ly**2.0])
     if theta is None:
@@ -337,7 +346,7 @@ def tau_dist(
     10.1002/qj.900
     """
     dx_vec = np.array([dE, dN])
-    return np.sqrt(dx_vec.T @ np.linalg.inv(sigma) @ dx_vec)
+    return np.sqrt(dx_vec.T @ inv_2d(sigma) @ dx_vec)
 
 
 def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
