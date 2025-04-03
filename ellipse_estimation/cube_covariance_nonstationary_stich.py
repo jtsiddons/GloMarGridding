@@ -16,7 +16,6 @@ from itertools import combinations
 from sklearn.metrics.pairwise import haversine_distances
 
 # from iris import analysis as ia
-import iris
 import numpy as np
 from numpy import ma
 from numpy import linalg
@@ -33,32 +32,31 @@ from glomar_gridding.constants import (
     RADIUS_OF_EARTH_KM,
 )
 from glomar_gridding.types import DELTA_X_METHOD
-from glomar_gridding.utils import uncompress_masked
 
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 
 
-def mask_cube(cube: iris.cube.Cube) -> iris.cube.Cube:
+def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
     """
-    Forces cube.data to be an instance of np.ma.MaskedArray
+    Forces numpy array to be an instance of np.ma.MaskedArray
 
     Parameters
     ----------
-    cube : iris.cube.Cube
+    arr : np.ndarray
         Can be masked or not masked
 
     Returns
     -------
-    cube : iris.cube.Cube
-        'data' attribute within the cube is now an instance of np.ma.MaskedArray
+    arr : np.ndarray
+        array is now an instance of np.ma.MaskedArray
     """
-    if isinstance(cube.data, np.ma.MaskedArray):
-        return cube
-    if isinstance(cube.data, np.ndarray):
+    if isinstance(arr, np.ma.MaskedArray):
+        return arr
+    if isinstance(arr, np.ndarray):
         logging.info("Ad hoc conversion to np.ma.MaskedArray")
-        cube.data = np.ma.MaskedArray(cube.data)
-        return cube
-    raise TypeError("Input cube is not a numpy array.")
+        arr = np.ma.MaskedArray(arr)
+        return arr
+    raise TypeError("Input is not a numpy array.")
 
 
 def sizeof_fmt(num: float, suffix="B") -> str:
@@ -131,13 +129,10 @@ def perturb_sym_matrix_2_positive_definite(
 
 class EllipseCovarianceBuilder:
     """
-    The class that takes multiple iris cubes of
-    non-stationary variogram parameters to build
-    and save covariance matrices
+    Compute covariance from Ellipse parameters and positions.
 
     v = Matern covariance shape parameter
 
-    As not shown on TV (Karspeck et al)...
     Lx - an iris (or xarray2iris-converted?) cube of horizontal length scales (
     Ly - an iris (or xarray2iris-converted?) cube of meridonal length scales
     theta - an iris cube of rotation angles (RADIANS ONLY)
@@ -156,15 +151,17 @@ class EllipseCovarianceBuilder:
 
     max_dist:
     float (km) or (degrees if you want to work in degrees), default 6000km
-    if you want infinite distance, just set it to some stupidly large number,
-    fun numbers to use:
-    1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
-    5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
+    if you want infinite distance, just set it to a large number, some fun
+    numbers to use:
+        1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
+        5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
 
     Parameters
     ----------
-    Lx_cube, Ly_cube, theta_cube, sdev_cube: instances to iris.cube.Cube
-        cubes with non-stationary parameters
+    Lx_cube, Ly_cube, theta_cube, sdev_cube: numpy.ndarray
+        arrays with non-stationary parameters
+    lats, lons : numpy.ndarray
+        arrays containing the latitude and longitude values
     v=3: float
         Matern shape parameter
     delta_x_method : str
@@ -183,22 +180,21 @@ class EllipseCovarianceBuilder:
         if True a quick on the fly eigenvalue clipping
         will be conducted, if constructed covariance is not
         positive (semi)definite.
-    nolazy : bool
-        Manually forces computation to occur
     """
 
     def __init__(
         self,
-        Lx_cube: iris.cube.Cube,
-        Ly_cube: iris.cube.Cube,
-        theta_cube: iris.cube.Cube,
-        sdev_cube: iris.cube.Cube,
-        v: float = 3,
+        Lx_cube: np.ndarray,
+        Ly_cube: np.ndarray,
+        theta_cube: np.ndarray,
+        sdev_cube: np.ndarray,
+        lats: np.ndarray,
+        lons: np.ndarray,
+        v: float = 3.0,
         delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
         output_floatprecision=np.float64,
         check_positive_definite: bool = False,
-        nolazy: bool = False,
     ):
         tracemalloc.start()
         ove_start_time = datetime.datetime.now()
@@ -212,22 +208,15 @@ class EllipseCovarianceBuilder:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx_local_estimates = mask_cube(Lx_cube)
-        self.Ly_local_estimates = mask_cube(Ly_cube)
-        self.theta_local_estimates = mask_cube(theta_cube)
-        self.sdev_local_estimates = mask_cube(sdev_cube)
+        self.Lx_local_estimates = mask_array(Lx_cube)
+        self.Ly_local_estimates = mask_array(Ly_cube)
+        self.theta_local_estimates = mask_array(theta_cube)
+        self.sdev_local_estimates = mask_array(sdev_cube)
         self.max_dist = max_dist
         self.delta_x_method: DELTA_X_METHOD | None = delta_x_method
         self.check_positive_definite = check_positive_definite
-
-        if nolazy:
-            for selfcubes in [
-                self.Lx_local_estimates,
-                self.Ly_local_estimates,
-                self.theta_local_estimates,
-                self.sdev_local_estimates,
-            ]:
-                self._no_lazy_data(selfcubes)
+        self.lats = lats
+        self.lons = lons
 
         # The cov and corr matrix will be sq matrix of this
         self.xy_shape = self.Lx_local_estimates.shape
@@ -236,11 +225,11 @@ class EllipseCovarianceBuilder:
         self._get_mask()
 
         ove_end_time = datetime.datetime.now()
-        print(
+        logging.info(
             "Overhead processing ended: ",
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
-        print("Time ellipsed: ", ove_end_time - ove_start_time)
+        logging.info("Time ellipsed: ", ove_end_time - ove_start_time)
 
         cov_start_time = datetime.datetime.now()
         self.calculate_covariance(output_floatprecision)
@@ -301,15 +290,13 @@ class EllipseCovarianceBuilder:
         self.data_has_mask = ma.is_masked(self.Lx_local_estimates.data)
         if self.data_has_mask:
             print("Masked pixels detected in input files")
-            self.cube_mask = self.Lx_local_estimates.data.mask
-            self.cube_mask_1D = self.cube_mask.flatten()
-            self.covar_size = np.sum(np.logical_not(self.cube_mask))
+            self.data_mask = self.Lx_local_estimates.mask
+            self.covar_size = np.sum(np.logical_not(self.data_mask))
         else:
             print("No masked pixels")
-            self.cube_mask = np.zeros_like(
+            self.data_mask = np.zeros_like(
                 self.Lx_local_estimates.data.data, dtype=bool
             )
-            self.cube_mask_1D = self.cube_mask.flatten()
             self.covar_size = self.n_elements
 
         print("Compressing (masked) array to 1D")
@@ -326,28 +313,15 @@ class EllipseCovarianceBuilder:
             self.sdev_local_estimates.data.compressed()
         )
 
-        self.xx, self.yy = np.meshgrid(
-            self.Lx_local_estimates.coord("longitude").points,
-            self.Lx_local_estimates.coord("latitude").points,
-        )
-        self.xm = np.ma.masked_where(self.cube_mask, self.xx)
-        self.ym = np.ma.masked_where(self.cube_mask, self.yy)
+        self.xx, self.yy = np.meshgrid(self.lons, self.lats)
+        self.xm = np.ma.masked_where(self.data_mask, self.xx)
+        self.ym = np.ma.masked_where(self.data_mask, self.yy)
         self.lat_grid_compressed = self.ym.compressed()
         self.lon_grid_compressed = self.xm.compressed()
         self.xy = np.column_stack(
             [self.lon_grid_compressed, self.lat_grid_compressed]
         )
         self.xy_full = np.column_stack([self.xm.flatten(), self.ym.flatten()])
-        return None
-
-    def _no_lazy_data(self, cube) -> None:
-        """Disable iris cube lazy data"""
-        if cube.has_lazy_data():
-            cube.data  # pylint: disable=pointless-statement
-        for coord in ["latitude", "longitude"]:
-            if cube.coord(coord).has_lazy_points():
-                cube.coord(coord).points  # pylint: disable=expression-not-assigned
-
         return None
 
     def calculate_covariance(self, output_floatprecision: type) -> None:
@@ -403,27 +377,6 @@ class EllipseCovarianceBuilder:
         )
         return None
 
-    def remap_one_point_2_map(
-        self,
-        compressed_vector: np.ndarray,
-        cube_name: str = "stuff",
-        cube_unit: str = "1",
-    ):
-        """
-        Reverse one row/column of the covariance/correlation matrix to a
-        plottable iris cube, using mask defined in class.
-        """
-        dummy_cube = self.Lx_local_estimates.copy()
-        masked_vector = uncompress_masked(
-            compressed_vector,
-            mask=self.cube_mask_1D,
-            apply_mask=True,
-        )
-        dummy_cube.data = masked_vector.reshape(self.xy_shape)
-        dummy_cube.rename(cube_name)
-        dummy_cube.units = cube_unit
-        return dummy_cube
-
     def positive_definite_check(self):
         """On the fly checking positive semidefinite and eigenvalue clipping"""
         self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
@@ -435,11 +388,6 @@ def det22(m22):
     """Explict computation of determinant of 2x2 matrix"""
     m22[np.isclose(m22, 0)] = 0
     return m22[0, 0] * m22[1, 1] - m22[0, 1] * m22[1, 0]
-
-
-def root4(val):
-    """4th root"""
-    return np.sqrt(np.sqrt(val))
 
 
 def c_ij_anisotropic_array(
