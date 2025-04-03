@@ -632,8 +632,9 @@ def cov_ij_anisotropic(
     # Treating it the otherwise is a major escalation to the computation
     # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
     # second_term = 1.0
-    third_term = (2.0 * tau * np.sqrt(v)) ** v
-    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
+    inner = 2.0 * tau * np.sqrt(v)
+    third_term = np.pow(inner, v)
+    forth_term = modified_bessel_2nd(v, inner)
     cov_ij = first_term * third_term * forth_term
     # ans = first_term * second_term * third_term * forth_term
 
@@ -677,8 +678,9 @@ def cov_ij_isotropic(
 
     tau = np.abs(delta) / R
 
+    inner = 2.0 * tau * np.sqrt(v)
     first_term = (stdev * stdev_j) / (gamma(v) * (2.0 ** (v - 1)))
-    third_term = (2.0 * tau * np.sqrt(v)) ** v
-    forth_term = modified_bessel_2nd(v, 2.0 * tau * np.sqrt(v))
+    third_term = (inner) ** v
+    forth_term = modified_bessel_2nd(v, inner)
     cov_ij = first_term * third_term * forth_term
     return cov_ij
