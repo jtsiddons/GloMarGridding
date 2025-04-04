@@ -92,15 +92,15 @@ class EllipseBuilder:
 
         # Look-up table of the coordinates
         self.xx, self.yy = np.meshgrid(
-            self.coords["longitude"].points,
-            self.coords["latitude"].points,
+            self.coords["longitude"].values,
+            self.coords["latitude"].values,
         )
         self.xi, self.yi = np.meshgrid(
-            np.arange(self.coords["longitude"].points),
-            np.arange(self.coords["latitude"].points),
+            np.arange(len(self.coords["longitude"].values)),
+            np.arange(len(self.coords["latitude"].values)),
         )
         # Length of time dimension
-        self.time_n = len(self.coords["time"].points)
+        self.time_n = len(self.coords["time"].values)
 
         return None
 
@@ -156,6 +156,7 @@ class EllipseBuilder:
         xy_mean = np.mean(xyflatten_data, axis=0, keepdims=True)
         xyflatten_data = xyflatten_data - xy_mean
         self.cov = np.matmul(np.transpose(xyflatten_data), xyflatten_data)
+        self.cov /= self.time_n - 1
         # xy_cov = _AT_A(xyflatten_data)
 
         if rounding is not None:
@@ -343,10 +344,8 @@ class EllipseBuilder:
             Dictionary with results of the fit
             and the observed correlation matrix
         """
-        R2 = self.data[0].copy()
         R2x = self._reverse_mask_from_compress_1d(self.cor[xy_point, :])
-        R2.data = R2x.reshape(self.xy_shape)
-        R2.units = "1"
+        R2 = R2x.reshape(self.xy_shape)
 
         X_train, y_train = self._get_train_data(
             xy_point=xy_point,
@@ -382,12 +381,12 @@ class EllipseBuilder:
         #    (see scipy.optimize.minimize kwargs "options)"
         if results.success:
             fit_success = _get_fit_score(model_params, bounds, results.nit)
-            print("RMSE of multivariate norm fit = ", stdev)
+            # print("RMSE of multivariate norm fit = ", stdev)
         else:
-            print("Convergence fail after ", results.nit, " iterations.")
-            print(model_params)
+            # print("Convergence fail after ", results.nit, " iterations.")
+            # print(model_params)
             fit_success = 9
-        print("QC flag = ", fit_success)
+        # print("QC flag = ", fit_success)
 
         return {
             "Correlation": R2,
@@ -426,7 +425,7 @@ class EllipseBuilder:
                 & (deg_distance >= min_distance)
                 # Delete the origin (can't have dx = dy = 0)
                 & (deg_distance != 0)
-            )
+            )[0]
             y_train = y[valid_dist_idx]
             if anisotropic:
                 X_train = np.column_stack([disp_x, disp_y])[valid_dist_idx, :]
@@ -444,7 +443,7 @@ class EllipseBuilder:
             & (distance >= min_distance)
             # Delete the origin (can't have dx = dy = 0)
             & (distance != 0)
-        )
+        )[0]
         y_train = y[valid_dist_idx]
         if anisotropic:
             X_train = np.column_stack([disp_x, disp_y])[valid_dist_idx, :]
@@ -492,16 +491,16 @@ def _get_fit_score(model_params, bounds, niter) -> int:
         right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
         left_advisory = "near_left_bnd" if left_check else "not_near_left_bnd"
         right_advisory = "near_right_bnd" if right_check else "not_near_rgt_bnd"
-        print(
-            "Convergence success after ",
-            niter,
-            " iterations: ",
-            model_param,
-            bb[0],
-            bb[1],
-            left_advisory,
-            right_advisory,
-        )
+        # print(
+        #     "Convergence success after ",
+        #     niter,
+        #     " iterations: ",
+        #     model_param,
+        #     bb[0],
+        #     bb[1],
+        #     left_advisory,
+        #     right_advisory,
+        # )
         if left_check:
             fit_success = 1 if fit_success == 0 else 3
         if right_check:
