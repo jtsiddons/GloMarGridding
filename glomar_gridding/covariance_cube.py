@@ -226,6 +226,7 @@ class EllipseBuilder:
         tol: float = 0.001,
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
+        n_sim: int = 500,
     ) -> dict[str, Any]:
         """
         Fit ellipses/covariance models using adhoc local covariances
@@ -338,6 +339,9 @@ class EllipseBuilder:
         n_jobs=DEFAULT_N_JOBS: int
             If parallel processing, number of threads to use.
 
+        n_sim : int
+            Number of simulations to bootstrap for SE estimation.
+
         Returns
         -------
         ans : dictionary
@@ -355,7 +359,7 @@ class EllipseBuilder:
             delta_x_method=delta_x_method,
         )
 
-        results, _, bounds = matern_ellipse.fit(
+        results, SE, bounds = matern_ellipse.fit(
             X_train,
             y_train,
             guesses=guesses,
@@ -364,6 +368,7 @@ class EllipseBuilder:
             tol=tol,
             estimate_SE=estimate_SE,
             n_jobs=n_jobs,
+            n_sim=n_sim,
         )
 
         model_params = results.x.tolist()
@@ -388,14 +393,18 @@ class EllipseBuilder:
             fit_success = 9
         # print("QC flag = ", fit_success)
 
+        std_dev = np.sqrt(self.cov[xy_point, xy_point])
+        model_params.append(std_dev)
+        model_params.append(fit_success)
+        model_params.append(results.nit)
+
         return {
             "Correlation": R2,
             "Results": results,
             "ModelParams": model_params,
             "Success": fit_success,
-            "StandardDeviation": np.sqrt(
-                self.cov[xy_point, xy_point] / self.time_n
-            ),
+            "StandardDeviation": std_dev,
+            "StandardError": SE,
         }
 
     def _get_train_data(
