@@ -258,21 +258,21 @@ class EllipseCovarianceBuilder:
             np.fill_diagonal(self.cor_ns, 1.0)
 
     def _get_mask(self) -> None:
-        self.data_has_mask = ma.is_masked(self.Lx.data)
+        self.data_has_mask = ma.is_masked(self.Lx)
         if self.data_has_mask:
-            print("Masked pixels detected in input files")
+            logging.info("Masked pixels detected in input files")
             self.data_mask = self.Lx.mask
             self.covar_size = np.sum(np.logical_not(self.data_mask))
         else:
-            print("No masked pixels")
-            self.data_mask = np.zeros_like(self.Lx.data.data, dtype=bool)
+            logging.info("No masked pixels")
+            self.data_mask = np.zeros_like(self.Lx, dtype=bool)
             self.covar_size = self.n_elements
 
-        print("Compressing (masked) array to 1D")
-        self.Lx_compressed = self.Lx.data.compressed()
-        self.Ly_compressed = self.Ly.data.compressed()
-        self.theta_compressed = self.theta.data.compressed()
-        self.stdev_compressed = self.stdev.data.compressed()
+        logging.info("Compressing (masked) array to 1D")
+        self.Lx_compressed = self.Lx.compressed()
+        self.Ly_compressed = self.Ly.compressed()
+        self.theta_compressed = self.theta.compressed()
+        self.stdev_compressed = self.stdev.compressed()
 
         self.x_grid, self.y_grid = np.meshgrid(self.lons, self.lats)
         self.x_mask = np.ma.masked_where(self.data_mask, self.x_grid)
