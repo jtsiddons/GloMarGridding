@@ -193,7 +193,7 @@ class EllipseModel:
         if self.anisotropic:
 
             def cov_ij(X, **params):
-                return cov_ij_anisotropic(self.v, 1, X[0], X[1], **params)
+                return cov_ij_anisotropic(self.v, 1, X[:, 0], X[:, 1], **params)
         else:
 
             def cov_ij(X, **params):
@@ -608,14 +608,14 @@ def cov_ij_anisotropic(
     inner = 2.0 * tau * np.sqrt(v)
     third_term = np.pow(inner, v)
     forth_term = modified_bessel_2nd(v, inner)
-    cov_ij = first_term * third_term * forth_term
+    return first_term * third_term * forth_term
     # ans = first_term * second_term * third_term * forth_term
 
-    logging.debug(f"{first_term = }, {first_term.shape = }")
-    logging.debug(f"{third_term = }, {third_term.shape = }")
-    logging.debug(f"{forth_term = }, {forth_term.shape = }")
-    logging.debug(f"{cov_ij = }, {cov_ij.shape = }")
-    return cov_ij
+    # logging.debug(f"{first_term = }, {first_term.shape = }")
+    # logging.debug(f"{third_term = }, {third_term.shape = }")
+    # logging.debug(f"{forth_term = }, {forth_term.shape = }")
+    # logging.debug(f"{cov_ij = }, {cov_ij.shape = }")
+    # return cov_ij
 
 
 def cov_ij_isotropic(
