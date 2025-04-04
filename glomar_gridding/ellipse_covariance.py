@@ -329,10 +329,10 @@ class EllipseCovarianceBuilder:
         cij[dists_comp > self.max_dist] = 0.0
 
         # Re-populate upper triangular
-        np.place(self.cor_ns, ~tri_mask, cij)
+        np.place(self.cov_ns, ~tri_mask, cij)
 
         # Add transpose
-        self.cov_ns = self.cov_ns + self.cor_ns.T
+        self.cov_ns = self.cov_ns + self.cov_ns.T
 
         # Set diagonal elements
         self.cov_ns = self.cov_ns + np.diag(self.stdev_compressed**2)
