@@ -18,10 +18,11 @@ from scipy.special import kv as modified_bessel_2nd
 from scipy.special import gamma
 from statsmodels.stats import correlation_tools
 
+import polars as pl
+
 from glomar_gridding.distances import (
     displacements,
     sigma_rot_func,
-    tau_dist,
 )
 from glomar_gridding.constants import (
     RADIUS_OF_EARTH_KM,
@@ -197,11 +198,11 @@ class EllipseCovarianceBuilder:
         self._get_mask()
 
         ove_end_time = datetime.datetime.now()
-        logging.info(
+        print(
             "Overhead processing ended: ",
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
-        logging.info("Time ellipsed: ", ove_end_time - ove_start_time)
+        print("Time ellapsed: ", ove_end_time - ove_start_time)
 
         cov_start_time = datetime.datetime.now()
         self.calculate_covariance(output_floatprecision)
@@ -210,7 +211,7 @@ class EllipseCovarianceBuilder:
         logging.info(
             "Cov processing ended: ", cov_end_time.strftime("%Y-%m-%d %H:%M:%S")
         )
-        logging.info("Time ellipsed: ", cov_end_time - cov_start_time)
+        print("Time ellapsed: ", cov_end_time - cov_start_time)
         logging.info(
             "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
         )
@@ -430,17 +431,49 @@ def c_ij_anisotropic_array(
     sqrt_dets = np.sqrt(sigma_dets)
     sqrt_dets = np.asarray([d1 * d2 for d1, d2 in combinations(sqrt_dets, 2)])
 
-    sigma_bars = [
-        0.5 * (sigma_i + sigma_j)
-        for sigma_i, sigma_j in combinations(sigmas, 2)
-    ]
-    sigma_bar_dets = np.asarray([det22(sigma) for sigma in sigma_bars])
-    taus = np.asarray(
-        [
-            tau_dist(x_i, x_j, sigma)
-            for x_i, x_j, sigma in zip(x_is, x_js, sigma_bars)
-        ]
+    sigma_bars = (
+        pl.from_numpy(
+            # Turn the sigma_bar values into a polars frame
+            np.asarray(
+                [
+                    (0.5 * (sigma_i + sigma_j)).reshape(-1)
+                    for sigma_i, sigma_j in combinations(sigmas, 2)
+                ]
+            ),
+            schema=["a", "b", "c", "d"],
+        )
+        .with_columns(
+            (pl.col("a") * pl.col("d") - pl.col("b") * pl.col("c")).alias(
+                "det"
+            ),
+            pl.Series("x_i", x_is),
+            pl.Series("x_j", x_js),
+        )
+        # Compute Tau directly from displacements and matrix values
+        # inv([[a, b], [c, d]]) = 1/det [[d, -b], [-c, a]]
+        .select(
+            pl.col("det"),
+            (
+                (
+                    pl.col("x_i")
+                    * (
+                        pl.col("x_i") * pl.col("d")
+                        - pl.col("x_j") * pl.col("b")
+                    )
+                    + pl.col("x_j")
+                    * (
+                        -pl.col("x_i") * pl.col("c")
+                        + pl.col("x_j") * pl.col("a")
+                    )
+                )
+                / pl.col("det")
+            )
+            .sqrt()
+            .alias("tau"),
+        )
     )
+    sigma_bar_dets = sigma_bars.get_column("det").to_numpy()
+    taus = sigma_bars.get_column("tau").to_numpy()
     del sigma_bars
 
     c_ij = c_ij * np.sqrt(np.divide(sqrt_dets, sigma_bar_dets))
