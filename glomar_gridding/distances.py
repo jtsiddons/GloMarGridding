@@ -334,8 +334,8 @@ def sigma_rot_func(
 
 
 def tau_dist(
-    dE: np.ndarray,
-    dN: np.ndarray,
+    dE: float,
+    dN: float,
     sigma: np.ndarray,
 ) -> np.ndarray:
     """
@@ -444,7 +444,12 @@ def mahal_dist_func(
     else:
         sigma = np.diag(np.array([Lx**2.0, Ly**2.0]))
 
-    return tau_dist(delta_x, delta_y, sigma)
+    sigma_inv = inv_2d(sigma)
+    # Direct computation of result
+    return np.sqrt(
+        delta_x * (delta_x * sigma_inv[0, 0] + delta_y * sigma_inv[0, 1])
+        + delta_y * (delta_x * sigma_inv[1, 0] + delta_y * sigma_inv[1, 1])
+    )
 
 
 # def _tau_unit_test():
