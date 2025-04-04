@@ -312,9 +312,9 @@ class EllipseCovarianceBuilder:
 
         # Mask to upper triangular (exclude diagonal)
         tri_mask = np.triu(np.ones_like(dists), 1) == 0
-        disp_y_comp = np.ma.masked_where(tri_mask, disp_y)
-        disp_x_comp = np.ma.masked_where(tri_mask, disp_x)
-        dists_comp = np.ma.masked_where(tri_mask, dists)
+        disp_y_comp = np.ma.masked_where(tri_mask, disp_y).compressed()
+        disp_x_comp = np.ma.masked_where(tri_mask, disp_x).compressed()
+        dists_comp = np.ma.masked_where(tri_mask, dists).compressed()
 
         # Calculate covariance values
         cij = c_ij_anisotropic_array(
