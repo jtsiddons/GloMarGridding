@@ -295,7 +295,6 @@ class EllipseCovarianceBuilder:
             self.lat_grid_compressed,
             self.lon_grid_compressed,
             delta_x_method=self.delta_x_method,
-            to_radians=True,
         )
         dists = haversine_distances(
             np.radians(
