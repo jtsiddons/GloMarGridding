@@ -336,7 +336,7 @@ class EllipseCovarianceBuilder:
         self.cov_ns = self.cov_ns + self.cor_ns.T
 
         # Set diagonal elements
-        self.cov_nx = self.cov_ns + np.diag(self.stdev_compressed**2)
+        self.cov_ns = self.cov_ns + np.diag(self.stdev_compressed**2)
         return None
 
     def positive_definite_check(self):
