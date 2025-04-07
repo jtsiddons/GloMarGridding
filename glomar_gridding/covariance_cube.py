@@ -4,7 +4,7 @@ over time. These values are used to estimate the ellipse parameters with an
 instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
 """
 
-import math
+import math as maths
 from typing import Any
 
 import xarray as xr
@@ -448,8 +448,8 @@ class EllipseBuilder:
 def _get_fit_score(model_params, bounds, niter) -> int:
     fit_success: int = 0
     for model_param, bb in zip(model_params, bounds):
-        left_check = math.isclose(model_param, bb[0], rel_tol=0.01)
-        right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
+        left_check = maths.isclose(model_param, bb[0], rel_tol=0.01)
+        right_check = maths.isclose(model_param, bb[1], rel_tol=0.01)
         # left_advisory = (
         #     "near_left_bnd" if left_check else "not_near_left_bnd"
         # )

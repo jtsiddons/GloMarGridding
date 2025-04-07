@@ -3,7 +3,7 @@ Fills masked and failed to coverge pixels with HadCRUT5 defaults
 Borders of infilled and noninfilled points are also adjusted
 """
 
-import math
+import math as maths
 
 import iris
 from iris.analysis import maths as iam
@@ -36,7 +36,7 @@ def sigma_2_parms(sigma, degrees=False):
     v = v[:, w_order]
     Lx = np.sqrt(w)[0].astype(np.float32)
     Ly = np.sqrt(w)[1].astype(np.float32)
-    if math.isclose(Lx, Ly, rel_tol=0.01):
+    if maths.isclose(Lx, Ly, rel_tol=0.01):
         return (Lx, Ly, 0.0)
     v_padded = np.pad(v, ((0, 1), (0, 1)))
     v_padded[2, 2] = 1
