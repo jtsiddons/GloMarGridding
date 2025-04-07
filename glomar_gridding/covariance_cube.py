@@ -1,7 +1,7 @@
 """
-Requires numpy, scipy, sklearm
-iris needs to be installed (it is required by other modules within this package
-xarray cubes should work via iris interface)
+Class to calculate the covariance (and correlation) of gridded observed data
+over time. These values are used to estimate the ellipse parameters with an
+instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
 """
 
 import math
