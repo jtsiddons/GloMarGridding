@@ -12,7 +12,6 @@ import numpy as np
 
 from sklearn.metrics.pairwise import haversine_distances
 
-# from astropy.constants import R_earth
 from glomar_gridding.constants import (
     DEFAULT_N_JOBS,
     RADIUS_OF_EARTH_KM,
@@ -20,30 +19,22 @@ from glomar_gridding.constants import (
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.distances import displacements
 from glomar_gridding.types import DELTA_X_METHOD
-from glomar_gridding.utils import cov_2_cor, mask_array
+from glomar_gridding.utils import cov_2_cor, mask_array, uncompress_masked
 
 
 class EllipseBuilder:
     """
-    Class to build spatial covariance and correlation matrices
-    Interacts with MaternEllipseModel to build covariance models
+    Class to build spatial covariance and correlation matrices used to estimate
+    ellipse parameterss using an instance of EllipseModel which sets up the
+    defaults for a given configuration.
+
+    To fit ellipse parameters to the correlation of the input data_array, call
+    self.fit_ellipse_model.
 
     Parameters
     ----------
-    data_cube : instance of iris.cube.Cube
-        Training data stored within iris cube
-
-        Some modification probably needed to work with instances
-        of xa.dataarray
-        The biggest hurdle is that iris cube handle masked data differently
-        than xarray
-
-        While both iris.cube.Cube.data and xa.DataArray.data are instances
-        to numpy.ndarray...
-
-        A masked array under iris.cube.Cube.data is always an instance of
-        np.ma.MaskedArray
-        In xarray, xa.DataArray.data is always unmasked.
+    data_cube : instance of xarray.DataArray
+        Training data stored within an array with coordinates
     """
 
     def __init__(
@@ -124,6 +115,7 @@ class EllipseBuilder:
             self.small_covar_size = self.big_covar_size
         self.x_masked = np.ma.masked_where(self.mask, self.xx)
         self.y_masked = np.ma.masked_where(self.mask, self.yy)
+        # Add grid indices for convenience
         self.xi_masked = np.ma.masked_where(self.mask, self.xi)
         self.yi_masked = np.ma.masked_where(self.mask, self.yi)
         self.xy_masked = np.column_stack(
@@ -170,48 +162,6 @@ class EllipseBuilder:
         """Broadcast cube_mask to all observations"""
         broadcasted_mask = np.broadcast_to(self.mask, self.data.shape)
         self.data = np.ma.masked_where(broadcasted_mask, self.data)
-
-    def _reverse_mask_from_compress_1d(
-        self,
-        compressed_1D_vector: np.ndarray,
-        fill_value: float = 0.0,
-        dtype=np.float32,
-    ) -> np.ndarray:
-        """
-        Since there are lot of flatten and compressing going on for observations
-        and fitted parameters, this reverses the 1D array to the original 2D map
-
-        DANGER WARNING, use different fill_value depending on situation
-        This affects how signal and image processing module interacts
-        with missing and masked values.
-        They don't ignore them, so a fill_value like 0 may be sensible
-        for covariance (-999.99 will do funny things if it finds its way to a
-        convolution and filter) iris doesn't care, but should use something like
-        -999.99 or something.
-
-        Parameters
-        ----------
-        compressed_1D_vector : np.ndarray (1D) shape = (NUM,)
-            1D vector that is a compressed/flatten version of a 2D map
-        fill_value: float
-            Fill value for masked point
-        dtype: valid numpy float type
-            The dtype for 2D array.
-
-        Returns
-        -------
-        uncompressed : np.ndarray (2D) shape = (NUM,NUM)
-            The 2D map array
-        """
-        compressed_counter = 0
-        uncompressed = np.zeros_like(self.mask_1D, dtype=dtype)
-        for i in range(len(self.mask_1D)):
-            if not self.mask_1D[i]:
-                uncompressed[i] = compressed_1D_vector[compressed_counter]
-                compressed_counter += 1
-        np.ma.set_fill_value(uncompressed, fill_value)
-        uncompressed = np.ma.masked_where(self.mask_1D, uncompressed)
-        return uncompressed
 
     def fit_ellipse_model(
         self,
@@ -348,8 +298,9 @@ class EllipseBuilder:
             Dictionary with results of the fit and the observed correlation
             matrix.
         """
-        R2x = self._reverse_mask_from_compress_1d(self.cor[xy_point, :])
-        R2 = R2x.reshape(self.xy_shape)
+        R2 = uncompress_masked(self.cor[xy_point, :], self.mask_1D).reshape(
+            self.xy_shape
+        )
 
         X_train, y_train = self._get_train_data(
             xy_point=xy_point,
