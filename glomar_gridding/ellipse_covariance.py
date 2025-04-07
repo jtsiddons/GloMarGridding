@@ -84,13 +84,15 @@ def perturb_sym_matrix_2_positive_definite(
     if min_eigen >= 0.0:
         print("Matrix is already positive (semi-)definite.")
         return square_sym_matrix
-    ans = correlation_tools.cov_nearest(square_sym_matrix, return_all=False)
-    if not isinstance(ans, np.ndarray):
+    perturbed = correlation_tools.cov_nearest(
+        square_sym_matrix, return_all=False
+    )
+    if not isinstance(perturbed, np.ndarray):
         raise TypeError(
             "Output of correlation_tools.cov_nearest is not a numpy array"
         )
 
-    eigenvalues_adj = linalg.eigvalsh(ans)
+    eigenvalues_adj = linalg.eigvalsh(perturbed)
     min_eigen_adj = np.min(eigenvalues_adj)
     max_eigen_adj = np.max(eigenvalues_adj)
     n_negatives_adj = np.sum(eigenvalues_adj < 0.0)
@@ -98,7 +100,7 @@ def perturb_sym_matrix_2_positive_definite(
     print("Number of negative eigenvalues (post_adj) = ", n_negatives_adj)
     print("Largest eigenvalue (post_adj)  = ", max_eigen_adj)
     print("Smallest eigenvalue (post_adj) = ", min_eigen_adj)
-    return ans
+    return perturbed
 
 
 class EllipseCovarianceBuilder:
@@ -112,7 +114,7 @@ class EllipseCovarianceBuilder:
     theta - an numpy array of rotation angles (RADIANS ONLY)
 
     sdev - standard deviation -- right now it just takes a numeric array
-    if you have multiple contribution to sdev (uncertainities derived from
+    if you have multiple contribution to sdev (uncertainties derived from
     different sources), you need to put them into one array
 
     Rules:
@@ -202,7 +204,7 @@ class EllipseCovarianceBuilder:
             "Overhead processing ended: ",
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
-        print("Time ellapsed: ", ove_end_time - ove_start_time)
+        print("Time elaped: ", ove_end_time - ove_start_time)
 
         cov_start_time = datetime.datetime.now()
         self.calculate_covariance(output_floatprecision)
@@ -211,7 +213,7 @@ class EllipseCovarianceBuilder:
         logging.info(
             "Cov processing ended: ", cov_end_time.strftime("%Y-%m-%d %H:%M:%S")
         )
-        print("Time ellapsed: ", cov_end_time - cov_start_time)
+        print("Time elaped: ", cov_end_time - cov_start_time)
         logging.info(
             "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
         )
@@ -347,7 +349,7 @@ class EllipseCovarianceBuilder:
 
 
 def det22(m22):
-    """Explict computation of determinant of 2x2 matrix"""
+    """Explicit computation of determinant of 2x2 matrix"""
     m22[np.isclose(m22, 0)] = 0
     return m22[0, 0] * m22[1, 1] - m22[0, 1] * m22[1, 0]
 

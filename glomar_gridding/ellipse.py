@@ -123,7 +123,7 @@ class EllipseModel:
         are normally distributed,
         there is standard deviation within the log likelihood function.
 
-        See Wikipedia entry for Maxmimum Likelihood under:
+        See Wikipedia entry for Maximum Likelihood under:
         - Continuous distribution, continuous parameter space
 
         Its actual value is not important
@@ -376,7 +376,7 @@ class EllipseModel:
     ) -> Callable[[tuple[float, ...]], float]:
         """Creates a function that can be fed into scipy.optimizer.minimize"""
 
-        def f(params: tuple[float, ...]):
+        def f(params: tuple[float, ...]) -> float:
             return self.negative_log_likelihood(
                 X,
                 y,
@@ -543,14 +543,14 @@ class EllipseModel:
         LL_boot_simulated_params = self.negative_log_likelihood_function(
             X_boot, y_boot
         )
-        ans: OptimizeResult = minimize(
+        result: OptimizeResult = minimize(
             LL_boot_simulated_params,
             guesses,
             bounds=bounds,
             method=opt_method,
             tol=tol,
         )
-        return ans.x
+        return result.x
 
 
 def cov_ij_anisotropic(
@@ -565,10 +565,10 @@ def cov_ij_anisotropic(
 ) -> np.ndarray:
     """
     Covariance structure between base point i and j
-    Assuming local stationarity or slowly varing
+    Assuming local stationarity or slowly varying
     so that some terms in PS06 drops off (like Sigma_i ~ Sigma_j instead of
     treating them as different) (aka second_term below)
-    this makes formulation a lot simplier
+    this makes formulation a lot more simple
     We let stdev_j opens to changes,
     but in pracitice, we normalise everything to correlation so
     stdev == stdev_j == 1
@@ -609,7 +609,6 @@ def cov_ij_anisotropic(
     third_term = np.pow(inner, v)
     forth_term = modified_bessel_2nd(v, inner)
     return first_term * third_term * forth_term
-    # ans = first_term * second_term * third_term * forth_term
 
     # logging.debug(f"{first_term = }, {first_term.shape = }")
     # logging.debug(f"{third_term = }, {third_term.shape = }")

@@ -421,7 +421,9 @@ def mahal_dist_func(
     theta: float | None = None,
 ) -> np.ndarray:
     """
-    Calculate tau from displacements, Lx, Ly, and theta (if it is known).
+    Calculate tau from displacements, Lx, Ly, and theta (if it is known). For
+    an array of displacements, for a set of scalar ellipse parameters, Lx, Ly,
+    and theta.
 
     Parameters
     ----------

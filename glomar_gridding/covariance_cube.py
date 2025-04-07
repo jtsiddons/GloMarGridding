@@ -25,7 +25,7 @@ from glomar_gridding.utils import cov_2_cor, mask_array
 
 class EllipseBuilder:
     """
-    Class to build spatial covariance and correlation matricies
+    Class to build spatial covariance and correlation matrices
     Interacts with MaternEllipseModel to build covariance models
 
     Parameters
@@ -148,7 +148,7 @@ class EllipseBuilder:
             round the values of the output
         """
         # Reshape data to (t, xy),
-        # get rid of mask values -- cannot caculate cov for such data
+        # get rid of mask values -- cannot calculate cov for such data
         xyflatten_data = self.data.reshape((self.time_n, self.big_covar_size))
         xyflatten_data = np.ma.compress_rowcols(xyflatten_data, -1)
         # Remove mean --
@@ -200,18 +200,18 @@ class EllipseBuilder:
 
         Returns
         -------
-        ans : np.ndarray (2D) shape = (NUM,NUM)
+        uncompressed : np.ndarray (2D) shape = (NUM,NUM)
             The 2D map array
         """
         compressed_counter = 0
-        ans = np.zeros_like(self.mask_1D, dtype=dtype)
+        uncompressed = np.zeros_like(self.mask_1D, dtype=dtype)
         for i in range(len(self.mask_1D)):
             if not self.mask_1D[i]:
-                ans[i] = compressed_1D_vector[compressed_counter]
+                uncompressed[i] = compressed_1D_vector[compressed_counter]
                 compressed_counter += 1
-        np.ma.set_fill_value(ans, fill_value)
-        ans = np.ma.masked_where(self.mask_1D, ans)
-        return ans
+        np.ma.set_fill_value(uncompressed, fill_value)
+        uncompressed = np.ma.masked_where(self.mask_1D, uncompressed)
+        return uncompressed
 
     def fit_ellipse_model(
         self,
@@ -237,7 +237,7 @@ class EllipseBuilder:
             anistropic (x and y are different, but not rotated)
             anistropic_rotated (rotated)
 
-        If the "fform" attribued ends with _pd then phyiscal distances are used
+        If the "fform" attribute ends with _pd then physical distances are used
         instead of degrees
 
         range is defined max_distance (either in km and degrees)
@@ -265,12 +265,12 @@ class EllipseBuilder:
             The index point where ellipses will be fitted to
 
         max_distance : float
-            Maximum seperation in distance unit that data will be fed
+            Maximum separation in distance unit that data will be fed
             into parameter fitting
             Units depend on fform (it is usually either degrees or km)
 
         min_distance: float
-            Minimum seperation in distance unit that data
+            Minimum separation in distance unit that data
             will be fed into parameter fitting
             Units depend on fform (it is usually either degrees or km)
             Note: Due to the way we compute the Matern function,
@@ -278,13 +278,13 @@ class EllipseBuilder:
 
         delta_x_method="Modified_Met_Office": str
             How to compute distances between grid points
-            For istropic variogram/covariances, this is a trival problem;
+            For istropic variogram/covariances, this is a trivial problem;
             you can just take the haversine or
-            Euclidian ("tunnel") distance as they are non-directional.
+            Euclidean ("tunnel") distance as they are non-directional.
 
-            But it is non trival for anistropic cases,
+            But it is non trivial for anistropic cases,
             you have to define a set of orthogonal space. In HadSST4,
-            Earth is assumed to be cyclindrical "tin can" Earth,
+            Earth is assumed to be cylindrical "tin can" Earth,
             so you can just define the orthogonal space by
             lines of constant lat and lon (delta_x_method="Met_Office").
 
@@ -330,7 +330,7 @@ class EllipseBuilder:
             The code can estimate the standard error if the Matern parameters.
             This is not usually used or discussed for the purpose of kriging.
             Certain opt_method (gradient descent) can do this automatically
-            using Fisher Info for certain covariance funciton,
+            using Fisher Info for certain covariance function,
             but is not possible for some nasty functions (aka Bessel
             func) gets involved nor it is possible for some optimisers
             (such as Nelder-Mead).
@@ -344,9 +344,9 @@ class EllipseBuilder:
 
         Returns
         -------
-        ans : dictionary
-            Dictionary with results of the fit
-            and the observed correlation matrix
+        dict
+            Dictionary with results of the fit and the observed correlation
+            matrix.
         """
         R2x = self._reverse_mask_from_compress_1d(self.cor[xy_point, :])
         R2 = R2x.reshape(self.xy_shape)
@@ -378,8 +378,8 @@ class EllipseBuilder:
 
         # Meaning of fit_success (int)
         # 0: success
-        # 1: success but with one parameter reaching lower bounadries
-        # 2: success but with one parameter reaching upper bounadries
+        # 1: success but with one parameter reaching lower boundaries
+        # 2: success but with one parameter reaching upper boundaries
         # 3: success with multiple parameters reaching the boundaries
         #    (aka both Lx and Ly), can be both at lower or upper boundaries
         # 9: fail, probably due to running out of maxiter
@@ -405,6 +405,7 @@ class EllipseBuilder:
             "Success": fit_success,
             "StandardDeviation": std_dev,
             "StandardError": SE,
+            "RMSE": stdev,
         }
 
     def _get_train_data(
@@ -498,8 +499,12 @@ def _get_fit_score(model_params, bounds, niter) -> int:
     for model_param, bb in zip(model_params, bounds):
         left_check = math.isclose(model_param, bb[0], rel_tol=0.01)
         right_check = math.isclose(model_param, bb[1], rel_tol=0.01)
-        left_advisory = "near_left_bnd" if left_check else "not_near_left_bnd"
-        right_advisory = "near_right_bnd" if right_check else "not_near_rgt_bnd"
+        # left_advisory = (
+        #     "near_left_bnd" if left_check else "not_near_left_bnd"
+        # )
+        # right_advisory = (
+        #     "near_right_bnd" if right_check else "not_near_rgt_bnd"
+        # )
         # print(
         #     "Convergence success after ",
         #     niter,
