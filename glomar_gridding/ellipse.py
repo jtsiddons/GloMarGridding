@@ -296,11 +296,7 @@ class EllipseModel:
         nLL : float
             The negative log likelihood
         """
-        sigma = 1
-        if not self.unit_sigma:
-            if len(params) > self.n_params:
-                raise ValueError("Cannot get sigma from params")
-            sigma = params[self.n_params]
+        sigma = 1 if self.unit_sigma else params[self.n_params]
 
         match self.n_params:
             case 1:  # Circle
