@@ -1,16 +1,18 @@
+#!/usr/bin/env python
+
 """Run script for SST and LSAT nonstationary variogram parameter estimation"""
 
 import argparse
 import logging
-from pathlib import Path
+import os
 
 import numpy as np
 import xarray as xr
 import yaml
 
-import psutil
+# import psutil
 
-from glomar_gridding import covariance_cube
+from glomar_gridding.covariance_cube import EllipseBuilder
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.utils import init_logging
 from glomar_gridding.io import get_recurse, load_array
@@ -24,7 +26,7 @@ parser.add_argument(
     "-c",
     "--config",
     type=str,
-    default="process_basin_satellite_monthly_climatology_matern_physical_distances_Global.yaml",
+    default="ellipse_parameter_estimation_config.yaml",
     help="path to config file",
 )
 parser.add_argument(
@@ -59,24 +61,24 @@ parser.add_argument(
     help="Data type / Variable",
 )
 # fmt: on
-# parser.add_argument(
-#     "-a",
-#     "--anisotropic",
-#     action="store_true",
-#     help="Fit an ellipse rather than a circle",
-# )
-# parser.add_argument(
-#     "-r",
-#     "--rotated",
-#     action="store_true",
-#     help="Can the ellipse be rotated, cannot be set if 'anisotropic' is set",
-# )
-# parser.add_argument(
-#     "-p",
-#     "--physical-distance",
-#     action="store_true",
-#     help="Use physical distances in Ellipse fitting",
-# )
+parser.add_argument(
+    "-a",
+    "--anisotropic",
+    action="store_true",
+    help="Fit an ellipse rather than a circle",
+)
+parser.add_argument(
+    "-r",
+    "--rotated",
+    action="store_true",
+    help="Can the ellipse be rotated, cannot be set if 'anisotropic' is set",
+)
+parser.add_argument(
+    "-p",
+    "--physical-distance",
+    action="store_true",
+    help="Use physical distances in Ellipse fitting",
+)
 
 
 def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
@@ -86,9 +88,9 @@ def parse_args(parser) -> tuple[dict, EllipseModel, str, int]:
         conf = yaml.safe_load(io)
 
     ellipse = EllipseModel(
-        anisotropic=True,
-        rotated=True,
-        physical_distance=True,
+        anisotropic=args.anisotropic,
+        rotated=args.rotated,
+        physical_distance=args.physical_distance,
         v=args.matern_shape,
         unit_sigma=True,
     )
@@ -127,16 +129,16 @@ def load_data(conf: dict, variable: str) -> xr.DataArray:
             )
 
 
-def mask_time_union(cube):
-    """
-    Make sure mask is same for all time
-    If a single masking occur,
-    masks all other time as well
-    """
-    cube_mask = cube.data.mask
-    common_mask = np.any(cube_mask, axis=0)
-    cube.data.mask = common_mask
-    return cube
+# def mask_time_union(cube):
+#     """
+#     Make sure mask is same for all time
+#     If a single masking occur,
+#     masks all other time as well
+#     """
+#     cube_mask = cube.data.mask
+#     common_mask = np.any(cube_mask, axis=0)
+#     cube.data.mask = common_mask
+#     return cube
 
 
 def main():  # noqa: D103
@@ -144,9 +146,9 @@ def main():  # noqa: D103
 
     logging.info("Start")
 
-    logging.info(psutil.Process().cpu_affinity())
-    nCPUs = len(psutil.Process().cpu_affinity())
-    logging.info("len(cpu_affinity) = ", nCPUs)
+    # logging.info(psutil.Process().cpu_affinity())
+    # nCPUs = len(psutil.Process().cpu_affinity())
+    # logging.info("len(cpu_affinity) = ", nCPUs)
 
     conf, ellipse, variable, month_value = parse_args(parser)
 
@@ -188,7 +190,7 @@ def main():  # noqa: D103
     logging.debug(f"{data_array.coord['time'] = }")
 
     logging.info("Building covariance matrix")
-    cov_cube = covariance_cube.EllipseBuilder(data_array)
+    cov_cube = EllipseBuilder(data_array)
     logging.info("Covariance matrix completed")
 
     for mask_i, (grid_i, grid_j) in enumerate(
@@ -205,27 +207,43 @@ def main():  # noqa: D103
         # Now with global inputs this can be relaxed, and use of global
         # inputs will ensure correlations from far away grid points be
         # accounted for <--- this cannot be done for moving window fits.
-        ansX = cov_cube.fit_ellipse_model(
+        result = cov_cube.fit_ellipse_model(
             mask_i,
             matern_ellipse=ellipse,
             max_distance=60.0,
             guesses=init_values,
             bounds=fit_bounds,
-            n_jobs=nCPUs,
+            # n_jobs=nCPUs,
         )
-        for output, param in zip(outputs, ansX["Params"]):
+        for output, param in zip(outputs, result["ModelParams"]):
             output[grid_i, grid_j] = param
+
+    output_coordinates = xr.Coordinates(
+        {
+            "latitude": cov_cube.coords["latitude"],
+            "longitude": cov_cube.coords["longitude"],
+        }
+    )
+    output_dataset = xr.Dataset(coords=output_coordinates)
+    # TODO: Attrs
+    for output, (variable_name, unit) in zip(
+        outputs, ellipse.supercategory_params.items()
+    ):
+        output_dataset[variable_name] = output
+        output_dataset[variable_name].attrs["standard_name"] = variable_name
+        output_dataset[variable_name].attrs["unit"] = unit
+
     logging.info("Grid box loop is completed")
 
     vstring = str(v).replace(".", "p")
     vstring = "_v_eq_" + vstring
 
-    outpath = out_path + "matern_physical_distances" + vstring + "/"
-    Path(outpath).mkdir(parents=True, exist_ok=True)
+    outpath = out_path + "matern_physical_distances" + vstring
+    os.makedirs(out_path)
 
-    outncfilename = outpath + variable + "_"
-    outncfilename += f"{month_value:02d}.nc"
-    logging.debug("Results to be saved...")
+    outncfilename = os.path.join(outpath, f"{variable}_{month_value:02d}.nc")
+    logging.info("Saving outputs")
+    output_dataset.to_netcdf(outncfilename)
 
 
 if __name__ == "__main__":
