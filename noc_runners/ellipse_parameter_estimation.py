@@ -210,7 +210,7 @@ def main():  # noqa: D103
         result = cov_cube.fit_ellipse_model(
             mask_i,
             matern_ellipse=ellipse,
-            max_distance=60.0,
+            max_distance=6000.0 if ellipse.physical_distance else 60.0,
             guesses=init_values,
             bounds=fit_bounds,
             # n_jobs=nCPUs,
