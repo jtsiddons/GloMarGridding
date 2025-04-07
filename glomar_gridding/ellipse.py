@@ -5,7 +5,7 @@ import math as maths
 import warnings
 from collections import OrderedDict
 from collections.abc import Callable
-from typing import cast, get_args
+from typing import Any, cast, get_args
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -93,6 +93,52 @@ SUPERCATEGORY_PARAMS: dict[SuperCategory, OrderedDict[str, str]] = {
             ("number_of_iterations", "1"),
         ]
     ),
+}
+
+FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
+    "isotropic": {
+        "n_params": 1,
+        "default_guesses": [7.0],
+        "default_bounds": [(0.5, 50.0)],
+    },
+    "isotropic_pd": {
+        "n_params": 1,
+        "default_guesses": [deg_to_km(7.0)],
+        "default_bounds": [
+            (deg_to_km(0.5), deg_to_km(50)),
+        ],
+    },
+    "anisotropic": {
+        "n_params": 2,
+        "default_guesses": [7.0, 7.0],
+        "default_bounds": [(0.5, 50.0), (0.5, 30.0)],
+    },
+    "anisotropic_pd": {
+        "n_params": 2,
+        "default_guesses": [deg_to_km(7.0), deg_to_km(7.0)],
+        "default_bounds": [
+            (deg_to_km(0.5), deg_to_km(50)),
+            (deg_to_km(0.5), deg_to_km(30)),
+        ],
+    },
+    "anisotropic_rotated": {
+        "n_params": 3,
+        "default_guesses": [7.0, 7.0, 0.0],
+        "default_bounds": [
+            (0.5, 50.0),
+            (0.5, 30.0),
+            (-2.0 * np.pi, 2.0 * np.pi),
+        ],
+    },
+    "anisotropic_rotated_pd": {
+        "n_params": 3,
+        "default_guesses": [deg_to_km(7.0), deg_to_km(7.0), 0.0],
+        "default_bounds": [
+            (deg_to_km(0.5), deg_to_km(50)),
+            (deg_to_km(0.5), deg_to_km(30)),
+            (-2.0 * maths.pi, 2.0 * maths.pi),
+        ],
+    },
 }
 
 
@@ -196,49 +242,10 @@ class EllipseModel:
             def cov_ij(X, **params):
                 return cov_ij_isotropic(self.v, 1, X, **params)
 
-        match self.fform:
-            case "isotropic":
-                self.n_params = 1
-                self.default_guesses = [7.0]
-                self.default_bounds = [(0.5, 50.0)]
-
-            case "isotropic_pd":
-                self.n_params = 1
-                self.default_guesses = [deg_to_km(7.0)]
-                self.default_bounds = [
-                    (deg_to_km(0.5), deg_to_km(50)),
-                ]
-
-            case "anisotropic":
-                self.n_params = 2
-                self.default_guesses = [7.0, 7.0]
-                self.default_bounds = [(0.5, 50.0), (0.5, 30.0)]
-
-            case "anisotropic_pd":
-                self.n_params = 2
-                self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0)]
-                self.default_bounds = [
-                    (deg_to_km(0.5), deg_to_km(50)),
-                    (deg_to_km(0.5), deg_to_km(30)),
-                ]
-
-            case "anisotropic_rotated":
-                self.n_params = 3
-                self.default_guesses = [7.0, 7.0, 0.0]
-                self.default_bounds = [
-                    (0.5, 50.0),
-                    (0.5, 30.0),
-                    (-2.0 * np.pi, 2.0 * np.pi),
-                ]
-
-            case "anisotropic_rotated_pd":
-                self.n_params = 3
-                self.default_guesses = [deg_to_km(7.0), deg_to_km(7.0), 0.0]
-                self.default_bounds = [
-                    (deg_to_km(0.5), deg_to_km(50)),
-                    (deg_to_km(0.5), deg_to_km(30)),
-                    (-2.0 * maths.pi, 2.0 * maths.pi),
-                ]
+        params = FFORM_PARAMETERS[self.fform]
+        self.n_params: int = params["n_params"]
+        self.default_guesses: list[float] = params["default_guesses"]
+        self.default_bounds: list[tuple[float, ...]] = params["default_bounds"]
 
         self.cov_ij = cov_ij
 
