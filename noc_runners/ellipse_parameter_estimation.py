@@ -193,6 +193,8 @@ def main():  # noqa: D103
     cov_cube = EllipseBuilder(data_array)
     logging.info("Covariance matrix completed")
 
+    fit_max_distance = 6000.0 if ellipse.physical_distance else 60.0
+
     for mask_i, (grid_i, grid_j) in enumerate(
         zip(cov_cube.xi_masked, cov_cube.yi_masked)
     ):
@@ -210,7 +212,7 @@ def main():  # noqa: D103
         result = cov_cube.fit_ellipse_model(
             mask_i,
             matern_ellipse=ellipse,
-            max_distance=6000.0 if ellipse.physical_distance else 60.0,
+            max_distance=fit_max_distance,
             guesses=init_values,
             bounds=fit_bounds,
             # n_jobs=nCPUs,
