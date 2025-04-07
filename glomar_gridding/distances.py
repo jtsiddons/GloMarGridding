@@ -22,7 +22,7 @@ from shapely.geometry import Point
 
 from glomar_gridding.types import DeltaXMethod
 
-from .utils import check_cols
+from glomar_gridding.utils import check_cols
 
 
 def rot_mat(angle: float) -> np.ndarray:
@@ -88,7 +88,7 @@ def radial_dist(
     lon2: float,
 ) -> float:
     """
-     Computes a distance matrix of the coordinates using a spherical metric.
+    Computes a distance matrix of the coordinates using a spherical metric.
 
     Parameters
     ----------

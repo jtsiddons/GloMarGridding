@@ -20,13 +20,8 @@ from statsmodels.stats import correlation_tools
 
 import polars as pl
 
-from glomar_gridding.distances import (
-    displacements,
-    sigma_rot_func,
-)
-from glomar_gridding.constants import (
-    RADIUS_OF_EARTH_KM,
-)
+from glomar_gridding.distances import displacements, sigma_rot_func
+from glomar_gridding.constants import RADIUS_OF_EARTH_KM
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array
 

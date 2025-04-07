@@ -14,10 +14,7 @@ from scipy.optimize import OptimizeResult, minimize
 from scipy.special import gamma
 from scipy.special import kv as modified_bessel_2nd
 
-from glomar_gridding.constants import (
-    DEFAULT_BACKEND,
-    DEFAULT_N_JOBS,
-)
+from glomar_gridding.constants import DEFAULT_BACKEND, DEFAULT_N_JOBS
 from glomar_gridding.distances import mahal_dist_func
 from glomar_gridding.utils import deg_to_km
 from glomar_gridding.types import ModelType, FForm, SuperCategory
