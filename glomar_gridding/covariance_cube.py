@@ -7,8 +7,8 @@ instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
 import math as maths
 from typing import Any
 
-import xarray as xr
 import numpy as np
+import xarray as xr
 
 from sklearn.metrics.pairwise import haversine_distances
 
@@ -16,8 +16,8 @@ from glomar_gridding.constants import (
     DEFAULT_N_JOBS,
     RADIUS_OF_EARTH_KM,
 )
-from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.distances import displacements
+from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array, uncompress_masked
 

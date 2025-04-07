@@ -13,15 +13,14 @@ from collections.abc import Callable
 from typing import get_args
 
 import numpy as np
-import polars as pl
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
+import polars as pl
 
-from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 from shapely.geometry import Point
+from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 
 from glomar_gridding.types import DeltaXMethod
-
 from glomar_gridding.utils import check_cols
 
 

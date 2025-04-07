@@ -1,7 +1,6 @@
 """Class to compute covariance matrix from ellipse parameters and positions."""
 
 import datetime
-
 import logging
 import numbers
 import sys
@@ -9,19 +8,16 @@ import tracemalloc
 
 from itertools import combinations
 
-from sklearn.metrics.pairwise import haversine_distances
-
 import numpy as np
-from numpy import ma
-from numpy import linalg
-from scipy.special import kv as modified_bessel_2nd
+import polars as pl
 from scipy.special import gamma
+from scipy.special import kv as modified_bessel_2nd
+from sklearn.metrics.pairwise import haversine_distances
 from statsmodels.stats import correlation_tools
 
-import polars as pl
 
-from glomar_gridding.distances import displacements, sigma_rot_func
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
+from glomar_gridding.distances import displacements, sigma_rot_func
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array
 
@@ -68,7 +64,7 @@ def perturb_sym_matrix_2_positive_definite(
     ):
         raise ValueError("Matrix is not square and/or symmetric.")
 
-    eigenvalues = linalg.eigvalsh(square_sym_matrix)
+    eigenvalues = np.linalg.eigvalsh(square_sym_matrix)
     min_eigen = np.min(eigenvalues)
     max_eigen = np.max(eigenvalues)
     n_negatives = np.sum(eigenvalues < 0.0)
@@ -87,7 +83,7 @@ def perturb_sym_matrix_2_positive_definite(
             "Output of correlation_tools.cov_nearest is not a numpy array"
         )
 
-    eigenvalues_adj = linalg.eigvalsh(perturbed)
+    eigenvalues_adj = np.linalg.eigvalsh(perturbed)
     min_eigen_adj = np.min(eigenvalues_adj)
     max_eigen_adj = np.max(eigenvalues_adj)
     n_negatives_adj = np.sum(eigenvalues_adj < 0.0)
@@ -214,8 +210,8 @@ class EllipseCovarianceBuilder:
         )
 
         # Code now reports eigvals and determinant of the constructed matrix
-        self.cov_eig = np.sort(linalg.eigvalsh(self.cov_ns))
-        self.cov_det = linalg.det(self.cov_ns)
+        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
+        self.cov_det = np.linalg.det(self.cov_ns)
         if self.check_positive_definite:
             # The purpose of this bit been replaced by
             # repair_damaged_covariance.py
@@ -256,7 +252,7 @@ class EllipseCovarianceBuilder:
             np.fill_diagonal(self.cor_ns, 1.0)
 
     def _get_mask(self) -> None:
-        self.data_has_mask = ma.is_masked(self.Lx)
+        self.data_has_mask = np.ma.is_masked(self.Lx)
         if self.data_has_mask:
             logging.info("Masked pixels detected in input files")
             self.data_mask = self.Lx.mask
@@ -339,8 +335,8 @@ class EllipseCovarianceBuilder:
     def positive_definite_check(self):
         """On the fly checking positive semidefinite and eigenvalue clipping"""
         self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
-        self.cov_eig = np.sort(linalg.eigvalsh(self.cov_ns))
-        self.cov_det = linalg.det(self.cov_ns)
+        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
+        self.cov_det = np.linalg.det(self.cov_ns)
 
 
 def det22(m22):

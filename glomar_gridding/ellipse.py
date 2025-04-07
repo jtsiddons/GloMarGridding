@@ -3,12 +3,13 @@
 import logging
 import math as maths
 import warnings
+
 from collections import OrderedDict
 from collections.abc import Callable
+from joblib import Parallel, delayed
 from typing import Any, cast, get_args
 
 import numpy as np
-from joblib import Parallel, delayed
 from scipy import stats
 from scipy.optimize import OptimizeResult, minimize
 from scipy.special import gamma
@@ -16,8 +17,8 @@ from scipy.special import kv as modified_bessel_2nd
 
 from glomar_gridding.constants import DEFAULT_BACKEND, DEFAULT_N_JOBS
 from glomar_gridding.distances import mahal_dist_func
+from glomar_gridding.types import FForm, ModelType, SuperCategory
 from glomar_gridding.utils import deg_to_km
-from glomar_gridding.types import ModelType, FForm, SuperCategory
 
 
 MODEL_TYPE_TO_SUPERCATEGORY: dict[ModelType, SuperCategory] = {
@@ -105,7 +106,7 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
         "n_params": 1,
         "default_guesses": [deg_to_km(7.0)],
         "default_bounds": [
-            (deg_to_km(0.5), deg_to_km(50)),
+            (deg_to_km(0.5), deg_to_km(50.0)),
         ],
     },
     "anisotropic": {
@@ -117,8 +118,8 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
         "n_params": 2,
         "default_guesses": [deg_to_km(7.0), deg_to_km(7.0)],
         "default_bounds": [
-            (deg_to_km(0.5), deg_to_km(50)),
-            (deg_to_km(0.5), deg_to_km(30)),
+            (deg_to_km(0.5), deg_to_km(50.0)),
+            (deg_to_km(0.5), deg_to_km(30.0)),
         ],
     },
     "anisotropic_rotated": {
@@ -134,8 +135,8 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
         "n_params": 3,
         "default_guesses": [deg_to_km(7.0), deg_to_km(7.0), 0.0],
         "default_bounds": [
-            (deg_to_km(0.5), deg_to_km(50)),
-            (deg_to_km(0.5), deg_to_km(30)),
+            (deg_to_km(0.5), deg_to_km(50.0)),
+            (deg_to_km(0.5), deg_to_km(30.0)),
             (-2.0 * maths.pi, 2.0 * maths.pi),
         ],
     },

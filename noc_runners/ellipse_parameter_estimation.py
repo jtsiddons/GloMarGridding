@@ -5,17 +5,17 @@
 import argparse
 import logging
 import os
+# import psutil
 
 import numpy as np
 import xarray as xr
 import yaml
 
-# import psutil
 
 from glomar_gridding.covariance_cube import EllipseBuilder
 from glomar_gridding.ellipse import EllipseModel
-from glomar_gridding.utils import init_logging
 from glomar_gridding.io import get_recurse, load_array
+from glomar_gridding.utils import init_logging
 
 
 parser = argparse.ArgumentParser(
