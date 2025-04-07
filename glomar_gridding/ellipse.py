@@ -20,10 +20,10 @@ from glomar_gridding.constants import (
 )
 from glomar_gridding.distances import mahal_dist_func
 from glomar_gridding.utils import deg_to_km
-from glomar_gridding.types import MODEL_TYPE, FFORM, SUPERCATEGORY
+from glomar_gridding.types import ModelType, FForm, SuperCategory
 
 
-MODEL_TYPE_TO_SUPERCATEGORY: dict[MODEL_TYPE, SUPERCATEGORY] = {
+MODEL_TYPE_TO_SUPERCATEGORY: dict[ModelType, SuperCategory] = {
     "ps2006_kks2011_iso": "1_param_matern",
     "ps2006_kks2011_ani": "2_param_matern",
     "ps2006_kks2011_ani_r": "3_param_matern",
@@ -32,7 +32,7 @@ MODEL_TYPE_TO_SUPERCATEGORY: dict[MODEL_TYPE, SUPERCATEGORY] = {
     "ps2006_kks2011_ani_r_pd": "3_param_matern_pd",
 }
 
-FFORM_TO_MODELTYPE: dict[FFORM, MODEL_TYPE] = {
+FFORM_TO_MODELTYPE: dict[FForm, ModelType] = {
     "anisotropic_rotated": "ps2006_kks2011_ani_r",
     "anisotropic": "ps2006_kks2011_ani",
     "isotropic": "ps2006_kks2011_iso",
@@ -41,7 +41,7 @@ FFORM_TO_MODELTYPE: dict[FFORM, MODEL_TYPE] = {
     "isotropic_pd": "ps2006_kks2011_iso_pd",
 }
 
-SUPERCATEGORY_PARAMS: dict[SUPERCATEGORY, OrderedDict[str, str]] = {
+SUPERCATEGORY_PARAMS: dict[SuperCategory, OrderedDict[str, str]] = {
     "3_param_matern": OrderedDict(
         [
             ("Lx", "degrees"),
@@ -177,12 +177,12 @@ class EllipseModel:
             fform_builder.append("pd")
 
         fform_str: str = "_".join(fform_builder)
-        if fform_str not in get_args(FFORM):
+        if fform_str not in get_args(FForm):
             raise ValueError("Could not compute fform value from inputs")
 
-        self.fform: FFORM = cast(FFORM, fform_str)
-        self.model_type: MODEL_TYPE = FFORM_TO_MODELTYPE[self.fform]
-        self.supercategory: SUPERCATEGORY = MODEL_TYPE_TO_SUPERCATEGORY[
+        self.fform: FForm = cast(FForm, fform_str)
+        self.model_type: ModelType = FFORM_TO_MODELTYPE[self.fform]
+        self.supercategory: SuperCategory = MODEL_TYPE_TO_SUPERCATEGORY[
             self.model_type
         ]
 

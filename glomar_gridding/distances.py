@@ -20,7 +20,7 @@ import geopandas as gpd
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 from shapely.geometry import Point
 
-from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.types import DeltaXMethod
 
 from .utils import check_cols
 
@@ -492,7 +492,7 @@ def displacements(
     lons: np.ndarray,
     lats2: np.ndarray | None = None,
     lons2: np.ndarray | None = None,
-    delta_x_method: DELTA_X_METHOD | None = None,
+    delta_x_method: DeltaXMethod | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate east-west and north-south displacement matrices for all pairs
@@ -528,7 +528,7 @@ def displacements(
         The east-west displacements.
     """
     if delta_x_method is not None and delta_x_method not in get_args(
-        DELTA_X_METHOD
+        DeltaXMethod
     ):
         raise ValueError(
             f"Unknown 'delta_x_method' value, got '{delta_x_method}'"

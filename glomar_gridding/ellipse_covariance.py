@@ -27,7 +27,7 @@ from glomar_gridding.distances import (
 from glomar_gridding.constants import (
     RADIUS_OF_EARTH_KM,
 )
-from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array
 
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
@@ -166,7 +166,7 @@ class EllipseCovarianceBuilder:
         lats: np.ndarray,
         lons: np.ndarray,
         v: float = 3.0,
-        delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",
+        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
         output_floatprecision=np.float64,
         check_positive_definite: bool = False,
@@ -188,7 +188,7 @@ class EllipseCovarianceBuilder:
         self.theta = mask_array(theta)
         self.stdev = mask_array(stdev)
         self.max_dist = max_dist
-        self.delta_x_method: DELTA_X_METHOD | None = delta_x_method
+        self.delta_x_method: DeltaXMethod | None = delta_x_method
         self.check_positive_definite = check_positive_definite
         self.lats = lats
         self.lons = lons

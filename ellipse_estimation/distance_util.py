@@ -9,7 +9,7 @@ import logging
 from sklearn.metrics.pairwise import haversine_distances
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
-from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.types import DeltaXMethod
 
 
 def haversine_single(
@@ -66,7 +66,7 @@ def scalar_cube_great_circle_distance(
     lat_j: float,
     lon_j: float,
     degree_dist: bool = False,
-    delta_x_method: DELTA_X_METHOD = "Modified_Met_Office",
+    delta_x_method: DeltaXMethod = "Modified_Met_Office",
     use_sklearn_haversine=False,
 ) -> tuple[float, float, float]:
     """
@@ -215,7 +215,7 @@ def scalar_cube_great_circle_distance_cube(
     scalar_cube_i: iris.cube.Cube,
     scalar_cube_j: iris.cube.Cube,
     degree_dist: bool = False,
-    delta_x_method: DELTA_X_METHOD = "Modified_Met_Office",
+    delta_x_method: DeltaXMethod = "Modified_Met_Office",
 ) -> tuple[float, float, float]:
     """
     Wrapper for scalar_cube_great_circle_distance but allows input

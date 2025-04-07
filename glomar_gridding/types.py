@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-MODEL_TYPE = Literal[
+ModelType = Literal[
     "ps2006_kks2011_iso",
     "ps2006_kks2011_ani",
     "ps2006_kks2011_ani_r",
@@ -11,7 +11,7 @@ MODEL_TYPE = Literal[
     "ps2006_kks2011_ani_r_pd",
 ]
 
-FFORM = Literal[
+FForm = Literal[
     "anisotropic_rotated",
     "anisotropic",
     "isotropic",
@@ -20,7 +20,7 @@ FFORM = Literal[
     "isotropic_pd",
 ]
 
-SUPERCATEGORY = Literal[
+SuperCategory = Literal[
     "1_param_matern",
     "2_param_matern",
     "3_param_matern",
@@ -29,4 +29,4 @@ SUPERCATEGORY = Literal[
     "3_param_matern_pd",
 ]
 
-DELTA_X_METHOD = Literal["Met_Office", "Modified_Met_Office"]
+DeltaXMethod = Literal["Met_Office", "Modified_Met_Office"]

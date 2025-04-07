@@ -18,7 +18,7 @@ from glomar_gridding.constants import (
 )
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.distances import displacements
-from glomar_gridding.types import DELTA_X_METHOD
+from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array, uncompress_masked
 
 
@@ -169,7 +169,7 @@ class EllipseBuilder:
         matern_ellipse: EllipseModel,
         max_distance: float = 20.0,
         min_distance: float = 0.3,
-        delta_x_method: DELTA_X_METHOD | None = "Modified_Met_Office",
+        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
         bounds: list[tuple[float, ...]] | None = None,
         opt_method: str = "Nelder-Mead",
@@ -365,7 +365,7 @@ class EllipseBuilder:
         min_distance: float,
         max_distance: float,
         anisotropic: bool,
-        delta_x_method: DELTA_X_METHOD | None,
+        delta_x_method: DeltaXMethod | None,
     ) -> tuple[np.ndarray, np.ndarray]:
         lonlat = self.xy_masked[xy_point]
         y = self.cor[xy_point, :]
