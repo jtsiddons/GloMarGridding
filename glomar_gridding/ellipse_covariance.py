@@ -315,8 +315,8 @@ class EllipseCovarianceBuilder:
             Lxs=self.Lx_compressed,
             Lys=self.Ly_compressed,
             thetas=self.theta_compressed,
-            x_is=disp_x_comp,
-            x_js=disp_y_comp,
+            delta_x=disp_x_comp,
+            delta_y=disp_y_comp,
             stdevs=self.stdev_compressed,
         )
         cij[dists_comp > self.max_dist] = 0.0
@@ -349,8 +349,8 @@ def c_ij_anisotropic_array(
     Lxs: np.ndarray,
     Lys: np.ndarray,
     thetas: np.ndarray,
-    x_is: np.ndarray,
-    x_js: np.ndarray,
+    delta_x: np.ndarray,
+    delta_y: np.ndarray,
     stdevs: np.ndarray,
 ) -> np.ndarray:
     """
@@ -387,14 +387,14 @@ def c_ij_anisotropic_array(
     thetas : numpy.ndarray
         A vector containing the theta values - the ellipse angles (in radians).
         These are the values for each ellipse (not duplicated).
-    x_is : np.ndarray
+    delta_x : np.ndarray
         A vector containing the east-west displacements. It is expected that the
         size of this array is 0.5 * N * (N - 1) where N is the length of the Lxs
         vector. These are the displacements between each pair of ellipses, and
         must follow the ordering one would achieve with
         `itertools.combinations`. Note these values should be distances, and not
         degree displacements.
-    x_js : np.ndarray
+    delta_y : np.ndarray
         A vector containing the north-south displacements. It is expected that
         the size of this array is 0.5 * N * (N - 1) where N is the length of the
         Lxs vector. These are the displacements between each pair of ellipses,
@@ -438,8 +438,8 @@ def c_ij_anisotropic_array(
             (pl.col("a") * pl.col("d") - pl.col("b") * pl.col("c")).alias(
                 "det"
             ),
-            pl.Series("x_i", x_is),
-            pl.Series("x_j", x_js),
+            pl.Series("dx", delta_x),
+            pl.Series("dy", delta_y),
         )
         # Compute Tau directly from displacements and matrix values
         # inv([[a, b], [c, d]]) = 1/det [[d, -b], [-c, a]]
@@ -447,16 +447,10 @@ def c_ij_anisotropic_array(
             pl.col("det"),
             (
                 (
-                    pl.col("x_i")
-                    * (
-                        pl.col("x_i") * pl.col("d")
-                        - pl.col("x_j") * pl.col("b")
-                    )
-                    + pl.col("x_j")
-                    * (
-                        -pl.col("x_i") * pl.col("c")
-                        + pl.col("x_j") * pl.col("a")
-                    )
+                    pl.col("dx")
+                    * (pl.col("dx") * pl.col("d") - pl.col("dy") * pl.col("b"))
+                    + pl.col("dy")
+                    * (-pl.col("dx") * pl.col("c") + pl.col("dy") * pl.col("a"))
                 )
                 / pl.col("det")
             )
