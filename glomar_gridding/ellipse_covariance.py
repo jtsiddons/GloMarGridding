@@ -126,9 +126,9 @@ class EllipseCovarianceBuilder:
     Parameters
     ----------
     Lx, Ly, theta, stdev: numpy.ndarray
-        arrays with non-stationary parameters
+        Arrays with non-stationary parameters
     lats, lons : numpy.ndarray
-        arrays containing the latitude and longitude values
+        Arrays containing the latitude and longitude values
     v=3: float
         Matern shape parameter
     delta_x_method : str
@@ -136,10 +136,9 @@ class EllipseCovarianceBuilder:
     max_dist : float
         If the Haversine distance between 2 points exceed max_dist,
         covariance is set to 0
-    output_floatprecision :
-        Float point precision of the output covariance
-        numpy defaults to float64,
-        noting that float32 halves the storage and halves the memory to use
+    output_floatprecision : type
+        Float point precision of the output covariance numpy defaults to float64
+        Noting that float32 halves the storage and halves the memory to use
     check_positive_definite : bool
         For production this should be False
         but for unit testing it should be True,

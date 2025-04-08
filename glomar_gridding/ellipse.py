@@ -246,7 +246,9 @@ class EllipseModel:
         params = FFORM_PARAMETERS[self.fform]
         self.n_params: int = params["n_params"]
         self.default_guesses: list[float] = params["default_guesses"]
-        self.default_bounds: list[tuple[float, ...]] = params["default_bounds"]
+        self.default_bounds: list[tuple[float, float]] = params[
+            "default_bounds"
+        ]
 
         self.cov_ij = cov_ij
 
@@ -254,7 +256,7 @@ class EllipseModel:
         self,
         X: np.ndarray,
         y: np.ndarray,
-        params: tuple[float, ...],
+        params: list[float],
         arctanh_transform: bool = True,
     ) -> float:
         """
@@ -280,12 +282,12 @@ class EllipseModel:
         Parameters
         ----------
         X : np.ndarray
-            Observed displacements
+            Observed displacements to the centre of the ellipse.
         y : np.ndarray
-            Observed correlation
-        params : tuple of Matern parameters
-            (in the current optimize iteration) or if you want to
-            compute the actual negative log-likelihood
+            Observed correlation against the centre of the ellipse.
+        params : list[float]
+            Ellipse parameters (in the current optimize iteration) or if you
+            want to compute the actual negative log-likelihood.
         arctanh_transform : bool
             Should the Fisher (arctanh) transform be used
             This is usually option, but it does make the computation
@@ -374,10 +376,10 @@ class EllipseModel:
         self,
         X: np.ndarray,
         y: np.ndarray,
-    ) -> Callable[[tuple[float, ...]], float]:
+    ) -> Callable[[list[float]], float]:
         """Creates a function that can be fed into scipy.optimizer.minimize"""
 
-        def f(params: tuple[float, ...]) -> float:
+        def f(params: list[float]) -> float:
             return self.negative_log_likelihood(
                 X,
                 y,
@@ -391,7 +393,7 @@ class EllipseModel:
         X: np.ndarray,
         y: np.ndarray,
         guesses: list[float] | None = None,
-        bounds: list[tuple[float, ...]] | None = None,
+        bounds: list[tuple[float, float]] | None = None,
         opt_method: str = "Nelder-Mead",
         tol: float | None = None,
         estimate_SE: str | None = "bootstrap_parallel",
@@ -399,7 +401,7 @@ class EllipseModel:
         n_jobs: int = DEFAULT_N_JOBS,
         backend: str = DEFAULT_BACKEND,
         random_seed: int = 1234,
-    ) -> tuple[OptimizeResult, float | None, list[tuple[float, ...]]]:
+    ) -> tuple[OptimizeResult, float | None, list[tuple[float, float]]]:
         """
         Default solver in Nelder-Mead as used in the Karspeck paper
         https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
@@ -414,36 +416,47 @@ class EllipseModel:
         Parameters
         ----------
         X : numpy.ndarray
-            distances
+            Array of displacements. Expected to be 1-dimensional if the ellipse
+            model is not anisotropic, 2-dimensional otherwise. In units of km if
+            the ellipse uses physical distances, otherwise in degrees. The
+            displacements are from each position within the test region to the
+            centre of the ellipse.
         y : numpy.ndarray
-            observed correlations
-        guesses=None :
-            Tuples/lists of initial values to scipy.optimize.minimize
-        bounds=None :
-            Tuples/lists of bounds for fitted parameters
+            Vector of observed correlations between the centre of the ellipse
+            and each test point.
+        guesses=None : list[float] | None
+            List of initial values to scipy.optimize.minimize, default guesses
+            for the ellipse model are used if not set.
+        bounds=None : list[tuple[float, float]] | None
+            Tuples/lists of bounds for fitted parameters. Default bounds for
+            the ellipse model are used if not set.
         opt_method : str
             scipy.optimize.minimize optimisation method. Defaults to
-            "Nelder-Mead".
-        tol=None : float
+            "Nelder-Mead". See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html
+            for valid values.
+        tol=None : float | None
             scipy.optimize.minimize convergence tolerance
-        estimate_SE='bootstrap_parallel' : str
-            how to estimate standard error if needed
+        estimate_SE='bootstrap_parallel' : str | None
+            How to estimate standard error if needed. If not set no standard
+            error is computed.
         n_sim=500 : int
-            number of bootstrap to estimate standard error
+            Number of bootstrap to estimate standard error
         n_jobs=DEFAULT_N_JOBS : int
-            number of threads
+            Number of threads for bootstrapping if `estimate_SE` is set to
+            "bootstrap_parallel".
         backend=DEFAULT_BACKEND : str
-            joblib backend
-        random_seed=1234 : int, random seed for bootstrap
+            joblib backend for bootstrapping.
+        random_seed=1234 : int
+            Random seed for bootstrap
 
         Returns
         -------
-        results
-            fitted parameters
+        results : OptimizeResult
+            Output of scipy.optimize.minimize
         SE : float | None
-            standard error of the fitted parameters
+            Standard error of the fitted parameters
         bounds : list[tuple[float, ...]]
-            bounds of fitted parameters
+            Bounds of fitted parameters
         """
         guesses = guesses or self.default_guesses
         bounds = bounds or self.default_bounds
@@ -578,16 +591,17 @@ def cov_ij_anisotropic(
     ----------
     v : float
         Matern shape parameter
-    stdev : float, standard deviation, local point
+    stdev : float
+        Standard deviation at the centre of the ellipse
     delta_x, delta_y : float
-        displacements to remote point as in: (delta_x) i + (delta_y) j in old
+        Displacements to remote point as in: (delta_x) i + (delta_y) j in old
         school vector notation
     Lx, Ly : float
         Lx, Ly scale (km or degrees)
     stdev_j : float | None
-        standard deviation, remote point. If set to None, then 'stdev' is used.
+        Standard deviation, remote point. If set to None, then 'stdev' is used.
     theta : float | None
-        rotation angle in radians
+        Rotation angle of the ellipse in radians.
 
     Returns
     -------
@@ -626,20 +640,21 @@ def cov_ij_isotropic(
     stdev_j: float | None = None,
 ) -> np.ndarray:
     """
-    Isotropic version of cov_ij_anisotropic
+    Isotropic version of cov_ij_anisotropic. This makes the assumption that
+    Lx = Ly = R, i.e. that the model is a circle.
 
     Parameters
     ----------
     v : float
         Matern shape parameter
     stdev : float
-        standard deviation, local point
+        Standard deviation, local point
     delta : float
-        displacements to remote point
+        Displacements to remote point
     R : float
-        range parameter (km or degrees)
+        Range parameter (km or degrees)
     stdev_j : float
-        standard deviation, remote point
+        Standard deviation, remote point
 
     Returns
     -------

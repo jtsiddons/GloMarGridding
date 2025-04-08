@@ -136,8 +136,8 @@ class EllipseBuilder:
 
         Parameters
         ----------
-        rounding : int
-            round the values of the output
+        rounding : int | None
+            Round the values of the output.
         """
         # Reshape data to (t, xy),
         # get rid of mask values -- cannot calculate cov for such data
@@ -171,7 +171,7 @@ class EllipseBuilder:
         min_distance: float = 0.3,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
-        bounds: list[tuple[float, ...]] | None = None,
+        bounds: list[tuple[float, float]] | None = None,
         opt_method: str = "Nelder-Mead",
         tol: float = 0.001,
         estimate_SE: str | None = None,
@@ -262,12 +262,12 @@ class EllipseBuilder:
             scales).
 
         opt_method='Nelder-Mead': str
-            scipy optimizer method. Nelder-Mead is the one used by Karspeck.
+            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
             See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
             for valid options
 
         tol=0.001: float
-            set convergence tolerance for scipy optimize.
+            Set convergence tolerance for scipy optimize.
             See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
 
             Note on new tol kwarg:
