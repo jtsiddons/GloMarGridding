@@ -13,10 +13,7 @@ import xarray as xr
 
 from sklearn.metrics.pairwise import haversine_distances
 
-from glomar_gridding.constants import (
-    DEFAULT_N_JOBS,
-    RADIUS_OF_EARTH_KM,
-)
+from glomar_gridding.constants import DEFAULT_N_JOBS, RADIUS_OF_EARTH_KM
 from glomar_gridding.distances import displacements
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.types import DeltaXMethod
