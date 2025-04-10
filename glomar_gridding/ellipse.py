@@ -105,9 +105,7 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
     "isotropic_pd": {
         "n_params": 1,
         "default_guesses": [deg_to_km(7.0)],
-        "default_bounds": [
-            (deg_to_km(0.5), deg_to_km(50.0)),
-        ],
+        "default_bounds": [(deg_to_km(0.5), deg_to_km(50.0))],
     },
     "anisotropic": {
         "n_params": 2,
@@ -180,7 +178,7 @@ class EllipseModel:
         in this case, how the actual observed semivariance disperses
         around the fitted variogram.
 
-        Here it defaults to 1 just as Karspeck.
+        The choice to default to 1 follows Karspeck et al. 2012
     """
 
     def __init__(

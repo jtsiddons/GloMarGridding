@@ -553,7 +553,7 @@ def displacements(
         if _l2none:
             y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats)
         else:
-            cos_lats2 = np.cos(lats2)
+            cos_lats2 = np.cos(np.radians(lats2))
             y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats2)
 
         disp_x = disp_x * y_cos_mean

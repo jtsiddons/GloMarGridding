@@ -190,7 +190,7 @@ def main():  # noqa: D103
     logging.debug(f"{data_array.coord['time'] = }")
 
     logging.info("Building covariance matrix")
-    cov_cube = EllipseBuilder(data_array)
+    cov_cube = EllipseBuilder(data_array.values, data_array.coords)
     logging.info("Covariance matrix completed")
 
     fit_max_distance = 6000.0 if ellipse.physical_distance else 60.0
