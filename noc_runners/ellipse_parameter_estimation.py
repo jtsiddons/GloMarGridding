@@ -217,6 +217,8 @@ def main():  # noqa: D103
             bounds=fit_bounds,
             # n_jobs=nCPUs,
         )
+        if result is None:
+            continue
         for output, param in zip(outputs, result["ModelParams"]):
             output[grid_i, grid_j] = param
 

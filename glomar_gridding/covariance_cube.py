@@ -6,6 +6,7 @@ instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
 
 import math as maths
 from typing import Any
+from warnings import warn
 
 import numpy as np
 import xarray as xr
@@ -182,7 +183,7 @@ class EllipseBuilder:
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
-    ) -> dict[str, Any]:
+    ) -> dict[str, Any] | None:
         """
         Fit ellipses/covariance models using adhoc local covariances
 
@@ -314,6 +315,10 @@ class EllipseBuilder:
             anisotropic=matern_ellipse.anisotropic,
             delta_x_method=delta_x_method,
         )
+
+        if len(y_train) == 0:
+            warn(f"No training data for idx {xy_point}")
+            return None
 
         results, SE, bounds = matern_ellipse.fit(
             X_train,
