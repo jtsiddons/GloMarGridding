@@ -211,7 +211,7 @@ class EllipseModel:
             raise ValueError("Cannot have an isotropic rotated fform")
 
         fform_builder: list[str] = (
-            ["anisotropic"] if self.anisotropic else ["istropic"]
+            ["anisotropic"] if self.anisotropic else ["isotropic"]
         )
         if self.rotated:
             fform_builder.append("rotated")
