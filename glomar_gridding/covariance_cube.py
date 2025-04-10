@@ -33,17 +33,22 @@ class EllipseBuilder:
 
     Parameters
     ----------
-    data_cube : instance of xarray.DataArray
-        Training data stored within an array with coordinates
+    data_array : numpy.ndarray | numpy.ma.MaskedArray
+        Training data stored within a numpy array. In general, this input should
+        be extracted from an xarray.DataArray, and masked appropriately.
+    coords : xarray.Coordinates
+        The coordinates associated with the data_array value. It is expected
+        that these are ["time", "latitude", "longitude"]
     """
 
     def __init__(
         self,
-        data_array: xr.DataArray,
+        data_array: np.ndarray,
+        coords: xr.Coordinates,
     ) -> None:
         # Defining the input data
-        self.data = mask_array(data_array.values)
-        self.coords = data_array.coords
+        self.data = mask_array(data_array)
+        self.coords = coords
         self.xy_shape = self.data[0].shape
         if len(self.xy_shape) != 2:
             raise ValueError(
