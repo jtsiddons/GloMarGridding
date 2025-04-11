@@ -611,11 +611,15 @@ def _haversine(
     dlon = lon0 - lon1
     dlat = lat0 - lat1
 
+    if abs(dlon) < 1e-6 and abs(dlat) < 1e-6:
+        return 0
+
     a = (
         np.sin(dlat / 2) ** 2
         + np.cos(lat0) * np.cos(lat1) * np.sin(dlon / 2) ** 2
     )
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+    c = 2 * np.arcsin(np.sqrt(a))
+
     return RADIUS_OF_EARTH_KM * c
 
 
