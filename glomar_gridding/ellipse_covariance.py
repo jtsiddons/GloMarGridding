@@ -165,7 +165,7 @@ class EllipseCovarianceBuilder:
         v: float = 3.0,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
-        output_floatprecision=np.float64,
+        output_float_precision=np.float32,
         check_positive_definite: bool = False,
         low_memory: bool = False,
     ):
@@ -181,10 +181,10 @@ class EllipseCovarianceBuilder:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx = mask_array(Lx)
-        self.Ly = mask_array(Ly)
-        self.theta = mask_array(theta)
-        self.stdev = mask_array(stdev)
+        self.Lx = mask_array(Lx.astype(output_float_precision))
+        self.Ly = mask_array(Ly.astype(output_float_precision))
+        self.theta = mask_array(theta.astype(output_float_precision))
+        self.stdev = mask_array(stdev.astype(output_float_precision))
         self.max_dist = max_dist
         self.delta_x_method: DeltaXMethod | None = delta_x_method
         self.check_positive_definite = check_positive_definite
@@ -212,9 +212,9 @@ class EllipseCovarianceBuilder:
             )
             low_memory = True
         if low_memory:
-            self.calculate_covariance_loop(output_floatprecision)
+            self.calculate_covariance_loop(output_float_precision)
         else:
-            self.calculate_covariance(output_floatprecision)
+            self.calculate_covariance(output_float_precision)
 
         cov_end_time = datetime.datetime.now()
         logging.info(
@@ -387,7 +387,7 @@ class EllipseCovarianceBuilder:
         gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
         sqrt_v_term = np.sqrt(self.v) * 2
 
-        # Precomupte to radians for convenience
+        # Precompute to radians for convenience
         lats = np.deg2rad(self.lat_grid_compressed)
         lons = np.deg2rad(self.lon_grid_compressed)
 
