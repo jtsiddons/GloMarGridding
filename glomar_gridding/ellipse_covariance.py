@@ -7,6 +7,7 @@ import sys
 import tracemalloc
 
 from itertools import combinations
+from warnings import warn
 
 import numpy as np
 import polars as pl
@@ -204,7 +205,13 @@ class EllipseCovarianceBuilder:
         print("Time elapsed: ", ove_end_time - ove_start_time)
 
         cov_start_time = datetime.datetime.now()
-        if low_memory or len(self.Lx_compressed) > 10_000:
+        if len(self.Lx_compressed) > 10_000 and not low_memory:
+            warn(
+                "Number of grid-points > 10_000, setting to low-memory mode "
+                + f"(num grid-points = {len(self.Lx_compressed)}"
+            )
+            low_memory = True
+        if low_memory:
             self.calculate_covariance_loop(output_floatprecision)
         else:
             self.calculate_covariance(output_floatprecision)
