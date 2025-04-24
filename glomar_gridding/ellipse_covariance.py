@@ -414,7 +414,7 @@ class EllipseCovarianceBuilder:
                 continue
 
             sigma_bar = 0.5 * (self.sigmas[i] + self.sigmas[j])
-            sigma_bar_det = _det_22(sigma_bar)
+            sigma_bar_det = _det_22_single(sigma_bar)
             # Leave as zero if cannot invert the sigma_bar matrix
             if sigma_bar_det == 0:
                 continue
@@ -594,7 +594,7 @@ def _sigma_rot_func_multi(
     )
 
 
-def _det_22(
+def _det_22_single(
     mats: np.ndarray,
 ) -> np.ndarray:
     return mats[0] * mats[3] - mats[1] * mats[2]
