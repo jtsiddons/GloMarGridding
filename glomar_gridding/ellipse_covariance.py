@@ -473,7 +473,23 @@ class EllipseCovarianceBuilder:
         batch_size: int,
         precision: type,
     ) -> None:
-        """Batched version"""
+        """
+        Compute the covariance matrix from ellipse parameters, using a batched
+        approach.
+        This approach is more memory safe and appropriate for low-memory
+        operations, but is slower than self.calculate_covariance
+        which uses a lot of pre-computation and a vectorised approach.
+
+        Each ellipse is defined by values from Lxs, Lys, and thetas, with
+        standard deviation in stdevs.
+
+        Requires a batch_size parameter.
+
+        Reference
+        ---------
+        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
+        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        """
         match self.delta_x_method:
             case "Modified_Met_Office":
                 disp_fn = _mod_mo_disp_multi
