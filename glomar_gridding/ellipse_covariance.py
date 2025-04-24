@@ -214,49 +214,9 @@ class EllipseCovarianceBuilder:
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
         print("Time elapsed: ", ove_end_time - ove_start_time)
-        self._calulate_covariance()
-
-        # Code now reports eigvals and determinant of the constructed matrix
-        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
-        self.cov_det = np.linalg.det(self.cov_ns)
-        if self.check_positive_definite:
-            # The purpose of this bit been replaced by
-            # repair_damaged_covariance.py
-            # in production runs, but is still useful for unit tests
-            # Perturb cov matrix to positive semi-definite if needed
-            # Tests shows small negative eigval (most neg ~ -0.3 K**2) possible
-            logging.info("positive_definite_check is enabled")
-            logging.debug("FYI, determinant = ", self.cov_det)
-            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
-            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
-            if np.min(self.cov_eig) < 0:
-                # On the fly eigenvalue clipping
-                logging.warning(
-                    "Negative eigval detected; corrections will be applied."
-                )
-                self.positive_definite_check()
-            else:
-                logging.debug("Corrections are not needed.")
-            logging.info("Positive (semi-)definite checks complete.")
-        else:
-            logging.info("positive_definite_check not enabled")
-            logging.debug("FYI, determinant = ", self.cov_det)
-            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
-            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
-
-        # Compute correlation matrix
-        logging.info("Getting reciprocal of covariance diagonal")
-        self.cor_ns = cov_2_cor(self.cov_ns)
-
-        # Check for numerical errors
-        print("Checking non-1 values in diagonal of correlation")
-        diag_values = np.diag(self.cor_ns)
-        where_not_one = diag_values != 1.0
-        if np.any(where_not_one):
-            largest_weird_value = np.max(np.abs(diag_values[where_not_one]))
-            print("Ad hoc fix to numerical issues to corr matrix diag != 1.0")
-            print("Largest error = ", largest_weird_value)
-            np.fill_diagonal(self.cor_ns, 1.0)
+        self._calculate_covariance()
+        self._validate_cov()
+        self._calculate_cor()
 
     def _get_mask(self) -> None:
         self.data_has_mask = np.ma.is_masked(self.Lx)
@@ -312,7 +272,7 @@ class EllipseCovarianceBuilder:
                 )
         return None
 
-    def _calulate_covariance(self) -> None:
+    def _calculate_covariance(self) -> None:
         cov_start_time = datetime.datetime.now()
         if (
             len(self.Lx_compressed) > 10_000
@@ -526,9 +486,9 @@ class EllipseCovarianceBuilder:
         Parameters
         ----------
         i_s : numpy.ndarray
-            The row indicies for the covariance matrix.
+            The row indices for the covariance matrix.
         j_s : numpy.ndarray
-            The column indicies for the covariance matrix.
+            The column indices for the covariance matrix.
 
         Returns
         -------
@@ -559,17 +519,63 @@ class EllipseCovarianceBuilder:
             )
             / sigma_bar_dets
         )
-        del sigma_bars, sigma_bar_dets
+        del sigma_bars, sigma_bar_dets, dy, dx
         c_ij *= np.power(inner, self.v)
         c_ij *= modified_bessel_2nd(self.v, inner)
 
         return c_ij.astype(self.precision)
 
-    def positive_definite_check(self):
+    def _validate_cov(self) -> None:
+        # Code now reports eigvals and determinant of the constructed matrix
+        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
+        self.cov_det = np.linalg.det(self.cov_ns)
+        if self.check_positive_definite:
+            # The purpose of this bit been replaced by
+            # repair_damaged_covariance.py
+            # in production runs, but is still useful for unit tests
+            # Perturb cov matrix to positive semi-definite if needed
+            # Tests shows small negative eigval (most neg ~ -0.3 K**2) possible
+            logging.info("positive_definite_check is enabled")
+            logging.debug("FYI, determinant = ", self.cov_det)
+            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
+            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
+            if np.min(self.cov_eig) < 0:
+                # On the fly eigenvalue clipping
+                logging.warning(
+                    "Negative eigval detected; corrections will be applied."
+                )
+                self.positive_definite_check()
+            else:
+                logging.debug("Corrections are not needed.")
+            logging.info("Positive (semi-)definite checks complete.")
+        else:
+            logging.info("positive_definite_check not enabled")
+            logging.debug("FYI, determinant = ", self.cov_det)
+            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
+            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
+        return None
+
+    def _calculate_cor(self) -> None:
+        self.cor_ns = cov_2_cor(self.cov_ns)
+
+        # Check for numerical errors
+        print("Checking non-1 values in diagonal of correlation")
+        diag_values = np.diag(self.cor_ns)
+        where_not_one = diag_values != 1.0
+        if np.any(where_not_one):
+            largest_weird_value = np.max(np.abs(diag_values[where_not_one]))
+            print("Ad hoc fix to numerical issues to corr matrix diag != 1.0")
+            print("Largest error = ", largest_weird_value)
+            np.fill_diagonal(self.cor_ns, 1.0)
+
+        return None
+
+    def positive_definite_check(self) -> None:
         """On the fly checking positive semidefinite and eigenvalue clipping"""
         self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
         self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
         self.cov_det = np.linalg.det(self.cov_ns)
+        return None
 
 
 def _sigma_rot_func_multi(
