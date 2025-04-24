@@ -2,7 +2,6 @@
 
 import datetime
 import logging
-import numbers
 import sys
 
 from itertools import combinations
@@ -184,7 +183,7 @@ class EllipseCovarianceBuilder:
             ove_start_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-        if not isinstance(max_dist, numbers.Number):
+        if not isinstance(max_dist, (int, float)):
             raise ValueError("max_dist must be a number")
 
         # Defining the input data
