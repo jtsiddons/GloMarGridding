@@ -4,7 +4,6 @@ import datetime
 import logging
 import numbers
 import sys
-import tracemalloc
 
 from itertools import combinations
 from warnings import warn
@@ -178,8 +177,7 @@ class EllipseCovarianceBuilder:
         check_positive_definite: bool = False,
         covariance_method: CovarianceMethod = "array",
         batch_size: int | None = None,
-    ):
-        tracemalloc.start()
+    ) -> None:
         ove_start_time = datetime.datetime.now()
         logging.info(
             "Overhead processing start: ",
