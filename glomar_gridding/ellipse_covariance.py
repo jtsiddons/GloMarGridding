@@ -10,15 +10,12 @@ from itertools import combinations
 from warnings import warn
 
 import numpy as np
-import polars as pl
 from scipy.special import gamma
 from scipy.special import kv as modified_bessel_2nd
-from sklearn.metrics.pairwise import haversine_distances
 from statsmodels.stats import correlation_tools
 
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
-from glomar_gridding.distances import displacements
 from glomar_gridding.types import CovarianceMethod, DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array
 
@@ -196,6 +193,10 @@ class EllipseCovarianceBuilder:
         self.check_positive_definite = check_positive_definite
         self.lats = lats
         self.lons = lons
+        self.covariance_method = covariance_method
+        self.delta_x_method = delta_x_method
+        self.batch_size = batch_size
+        self.precision = output_float_precision
 
         # The cov and corr matrix will be sq matrix of this
         self.xy_shape = self.Lx.shape
@@ -209,9 +210,8 @@ class EllipseCovarianceBuilder:
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
         print("Time elapsed: ", ove_end_time - ove_start_time)
-        self._calulate_covariance(
-            covariance_method, output_float_precision, batch_size
-        )
+        self._get_disp_fn()
+        self._calulate_covariance()
 
         # Code now reports eigvals and determinant of the constructed matrix
         self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
@@ -286,35 +286,62 @@ class EllipseCovarianceBuilder:
         )
         return None
 
-    def _calulate_covariance(
-        self,
-        covariance_method: CovarianceMethod,
-        output_float_precision: type,
-        batch_size: int | None,
-    ) -> None:
+    def _get_disp_fn(self) -> None:
+        if self.covariance_method == "low_memory":
+            match self.delta_x_method:
+                case "Modified_Met_Office":
+                    self.disp_fn = _mod_mo_disp_single
+                case "Met_Office":
+                    self.disp_fn = _mo_disp_single
+                case _:
+                    raise ValueError(
+                        f"Unknown 'delta_x_method' value: {self.delta_x_method}"
+                    )
+            return None
+        match self.delta_x_method:
+            case "Modified_Met_Office":
+                self.disp_fn = _mod_mo_disp_multi
+            case "Met_Office":
+                self.disp_fn = _mo_disp_multi
+            case _:
+                raise ValueError(
+                    f"Unknown 'delta_x_method' value: {self.delta_x_method}"
+                )
+        return None
+
+    def _calulate_covariance(self) -> None:
         cov_start_time = datetime.datetime.now()
-        if len(self.Lx_compressed) > 10_000 and covariance_method == "array":
+        if (
+            len(self.Lx_compressed) > 10_000
+            and self.covariance_method == "array"
+        ):
             warn(
                 "Number of grid-points > 10_000, setting to low-memory mode "
                 + f"(num grid-points = {len(self.Lx_compressed)}"
             )
-            covariance_method = "low_memory"
-        match covariance_method:
+            self.covariance_method = "low_memory"
+        # Precomupte common terms
+        # Note, these are 1x4 rather than 2x2 for convenience
+        self.sigmas = _sigma_rot_func_multi(
+            self.Lx_compressed, self.Ly_compressed, self.theta_compressed
+        )
+        self.sqrt_dets = np.sqrt(_det_22_multi(self.sigmas))
+        self.gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
+        self.sqrt_v_term = np.sqrt(self.v) * 2
+
+        N = len(self.Lx_compressed)
+        self.cov_ns = np.zeros((N, N), dtype=self.precision)
+
+        match self.covariance_method:
             case "low_memory":
-                self.calculate_covariance_loop(output_float_precision)
+                self.calculate_covariance_loop()
             case "array":
-                self.calculate_covariance_array(output_float_precision)
+                self.calculate_covariance_array()
             case "batched":
-                if batch_size is None:
-                    raise ValueError(
-                        "batch_size must be set if using 'batched' method"
-                    )
-                self.calculate_covariance_batched(
-                    batch_size, output_float_precision
-                )
+                self.calculate_covariance_batched()
             case _:
                 raise ValueError(
-                    f"Unknown covariance_method: {covariance_method}"
+                    f"Unknown covariance_method: {self.covariance_method}"
                 )
 
         cov_end_time = datetime.datetime.now()
@@ -325,64 +352,38 @@ class EllipseCovarianceBuilder:
         logging.info(
             "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
         )
+        self.cov_ns += np.diag(self.stdev_compressed**2).astype(self.precision)
+
         return None
 
-    def calculate_covariance_array(self, precision: type) -> None:
+    def calculate_covariance_array(self) -> None:
         """Calculate the covariance matrix from the ellipse parameters"""
+        N = len(self.Lx_compressed)
+
         # Calculate distances & Displacements
-        dists = haversine_distances(
-            np.radians(
-                np.column_stack(
-                    [self.lat_grid_compressed, self.lon_grid_compressed]
-                )
-            )
+        i_s, j_s = np.asarray(list(combinations(range(N), 2))).transpose()
+        dists = _haversine_multi(
+            np.deg2rad(self.lat_grid_compressed[i_s]),
+            np.deg2rad(self.lon_grid_compressed[i_s]),
+            np.deg2rad(self.lat_grid_compressed[j_s]),
+            np.deg2rad(self.lon_grid_compressed[j_s]),
         )
-        disp_y, disp_x = displacements(
-            self.lat_grid_compressed,
-            self.lon_grid_compressed,
-            delta_x_method=self.delta_x_method,
-        )
-
-        # Initialise Covariance
-        self.cov_ns = np.zeros_like(dists, dtype=precision)
-
-        # Mask to upper triangular (exclude diagonal)
-        tri_mask = np.triu(np.ones_like(dists), 1) == 0
-        disp_y = np.ma.masked_where(tri_mask, disp_y).compressed()
-        disp_x = np.ma.masked_where(tri_mask, disp_x).compressed()
-        dists = np.ma.masked_where(tri_mask, dists).compressed()
-
-        # Earth scale and set to float32
-        disp_y = RADIUS_OF_EARTH_KM * disp_y.astype(np.float32)
-        disp_x = RADIUS_OF_EARTH_KM * disp_x.astype(np.float32)
-        dists = RADIUS_OF_EARTH_KM * dists.astype(np.float32)
+        mask = dists > self.max_dist
+        del dists
+        i_s = i_s.compress(~mask)
+        j_s = j_s.compress(~mask)
 
         # Calculate covariance values
-        cij = c_ij_anisotropic_array(
-            v=self.v,
-            Lxs=self.Lx_compressed,
-            Lys=self.Ly_compressed,
-            thetas=self.theta_compressed,
-            delta_x=disp_x,
-            delta_y=disp_y,
-            stdevs=self.stdev_compressed,
-        ).astype(precision)
-        cij[dists > self.max_dist] = 0.0
-
-        # Re-populate upper triangular
-        np.place(self.cov_ns, ~tri_mask, cij)
+        cij = self.c_ij_anisotropic_array(i_s, j_s)
+        self.cov_ns[i_s, j_s] = cij
+        del cij
 
         # Add transpose
         self.cov_ns = self.cov_ns + self.cov_ns.T
 
-        # Set diagonal elements
-        self.cov_ns = self.cov_ns + np.diag(self.stdev_compressed**2)
         return None
 
-    def calculate_covariance_loop(
-        self,
-        precision: type,
-    ) -> None:
+    def calculate_covariance_loop(self) -> None:
         """
         Compute the covariance matrix from ellipse parameters, using a loop.
         This approach is more memory safe and appropriate for low-memory
@@ -397,32 +398,12 @@ class EllipseCovarianceBuilder:
         1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
         2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
         """
-        match self.delta_x_method:
-            case "Modified_Met_Office":
-                disp_fn = _mod_mo_disp_single
-            case "Met_Office":
-                disp_fn = _mo_disp_single
-            case _:
-                raise ValueError(
-                    f"Unknown 'delta_x_method' value: {self.delta_x_method}"
-                )
-
-        # Precomupte common terms
-        # Note, these are 1x4 rather than 2x2 for convenience
-        sigmas = _sigma_rot_func_multi(
-            self.Lx_compressed, self.Ly_compressed, self.theta_compressed
-        )
-        sqrt_dets = np.sqrt(_det_22_multi(sigmas))
-        gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
-        sqrt_v_term = np.sqrt(self.v) * 2
-
         # Precompute to radians for convenience
         lats = np.deg2rad(self.lat_grid_compressed)
         lons = np.deg2rad(self.lon_grid_compressed)
 
         # Initialise empty matrix
         n = len(self.Ly_compressed)
-        self.cov_ns = np.diag(self.stdev_compressed**2).astype(precision)
 
         for i, j in combinations(range(n), 2):
             # Leave as zero if too far away
@@ -432,20 +413,22 @@ class EllipseCovarianceBuilder:
             ):
                 continue
 
-            sigma_bar = 0.5 * (sigmas[i] + sigmas[j])
+            sigma_bar = 0.5 * (self.sigmas[i] + self.sigmas[j])
             sigma_bar_det = _det_22(sigma_bar)
             # Leave as zero if cannot invert the sigma_bar matrix
             if sigma_bar_det == 0:
                 continue
 
             stdev_prod = self.stdev_compressed[i] * self.stdev_compressed[j]
-            c_ij = stdev_prod / gamma_v_term
+            c_ij = stdev_prod / self.gamma_v_term
             c_ij *= np.sqrt(
-                np.divide((sqrt_dets[i] * sqrt_dets[j]), sigma_bar_det)
+                np.divide(
+                    (self.sqrt_dets[i] * self.sqrt_dets[j]), sigma_bar_det
+                )
             )
 
             # Get displacements
-            delta_y, delta_x = disp_fn(lats[i], lons[i], lats[j], lons[j])
+            delta_y, delta_x = self.disp_fn(lats[i], lons[i], lats[j], lons[j])
 
             tau = np.sqrt(
                 (
@@ -456,7 +439,7 @@ class EllipseCovarianceBuilder:
                 / sigma_bar_det
             )
 
-            inner = sqrt_v_term * tau
+            inner = self.sqrt_v_term * tau
             c_ij *= np.pow(inner, self.v)
             c_ij *= modified_bessel_2nd(self.v, inner)
             # if res > stdev_prod:
@@ -464,15 +447,11 @@ class EllipseCovarianceBuilder:
             #         "c_ij must always be smaller than sdev_i * sdev_j"
             #     )
             # Assign and mirror
-            self.cov_ns[i, j] = self.cov_ns[j, i] = precision(c_ij)
+            self.cov_ns[i, j] = self.cov_ns[j, i] = self.precision(c_ij)
 
         return None
 
-    def calculate_covariance_batched(
-        self,
-        batch_size: int,
-        precision: type,
-    ) -> None:
+    def calculate_covariance_batched(self) -> None:
         """
         Compute the covariance matrix from ellipse parameters, using a batched
         approach.
@@ -490,32 +469,17 @@ class EllipseCovarianceBuilder:
         1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
         2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
         """
-        match self.delta_x_method:
-            case "Modified_Met_Office":
-                disp_fn = _mod_mo_disp_multi
-            case "Met_Office":
-                disp_fn = _mo_disp_multi
-            case _:
-                raise ValueError(
-                    f"Unknown 'delta_x_method' value: {self.delta_x_method}"
-                )
-        # Precomupte common terms
+        if self.batch_size is None:
+            raise ValueError("batch_size must be set if using 'batched' method")
         # Note, these are 1x4 rather than 2x2 for convenience
         N = len(self.Lx_compressed)
-        sigmas = _sigma_rot_func_multi(
-            self.Lx_compressed, self.Ly_compressed, self.theta_compressed
-        ).astype(precision)
-        sqrt_dets = np.sqrt(_det_22_multi(sigmas))
-        gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
-        sqrt_v_term = np.sqrt(self.v) * 2
-
         # Precompute to radians for convenience
         lats = np.deg2rad(self.lat_grid_compressed)
         lons = np.deg2rad(self.lon_grid_compressed)
 
-        self.cov_ns = np.zeros((N, N), dtype=precision)
+        self.cov_ns = np.zeros((N, N), dtype=self.precision)
 
-        for batch in batched(combinations(range(N), 2), batch_size):
+        for batch in batched(combinations(range(N), 2), self.batch_size):
             i_s, j_s = np.asarray(batch).T
             lats_i = lats[i_s]
             lons_i = lons[i_s]
@@ -527,38 +491,11 @@ class EllipseCovarianceBuilder:
             mask = dists > self.max_dist
             i_s = i_s.compress(~mask)
             j_s = j_s.compress(~mask)
-            lats_i = lats[i_s]
-            lons_i = lons[i_s]
-            lats_j = lats[j_s]
-            lons_j = lons[j_s]
-            dy, dx = disp_fn(lats_i, lons_i, lats_j, lons_j)
 
-            loop_c_ij = (
-                self.stdev_compressed[i_s] * self.stdev_compressed[j_s]
-            ) / gamma_v_term
-
-            sigma_bars = 0.5 * (sigmas[i_s] + sigmas[j_s])
-            sigma_bar_dets = _det_22_multi(sigma_bars)
-            loop_c_ij *= np.sqrt(
-                (sqrt_dets[i_s] * sqrt_dets[j_s]) / sigma_bar_dets
-            )
-            taus = np.sqrt(
-                (
-                    dx * (dx * sigma_bars[:, 3] - dy * sigma_bars[:, 1])
-                    + dy * (-dx * sigma_bars[:, 2] + dy * sigma_bars[:, 0])
-                )
-                / sigma_bar_dets
-            )
-            del sigma_bars, sigma_bar_dets
-            inner = sqrt_v_term * taus
-            loop_c_ij *= np.power(inner, self.v)
-            loop_c_ij *= modified_bessel_2nd(self.v, inner)
-            self.cov_ns[i_s, j_s] = loop_c_ij.astype(precision)
+            loop_c_ij = self.c_ij_anisotropic_array(i_s, j_s)
+            self.cov_ns[i_s, j_s] = loop_c_ij.astype(self.precision)
 
         self.cov_ns += self.cov_ns.T
-        self.cov_ns += np.diag(
-            np.power(self.stdev_compressed, 2).astype(precision)
-        )
 
         return None
 
@@ -568,136 +505,70 @@ class EllipseCovarianceBuilder:
         self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
         self.cov_det = np.linalg.det(self.cov_ns)
 
+    def c_ij_anisotropic_array(self, i_s, j_s) -> np.ndarray:
+        """
+        Compute the covariances between pairs of ellipses, at displacements.
 
-def c_ij_anisotropic_array(
-    v: float,
-    Lxs: np.ndarray,
-    Lys: np.ndarray,
-    thetas: np.ndarray,
-    delta_x: np.ndarray,
-    delta_y: np.ndarray,
-    stdevs: np.ndarray,
-) -> np.ndarray:
-    """
-    Compute the covariances between pairs of ellipses, at displacements.
+        Each ellipse is defined by values from Lxs, Lys, and thetas, with
+        standard deviation in stdevs.
 
-    Each ellipse is defined by values from Lxs, Lys, and thetas, with standard
-    deviation in stdevs.
+        The displacements between each pair of ellipses are x_is and x_js.
 
-    The displacements between each pair of ellipses are x_is and x_js.
+        For N ellipses, the number of displacements should be 1/2 * N * (N - 1),
+        i.e. the displacement between each pair combination of ellipses. This
+        function will return the upper triangular values of the covariance
+        matrix (excluding the diagonal).
 
-    For N ellipses, the number of displacements should be 1/2 * N * (N - 1),
-    i.e. the displacement between each pair combination of ellipses. This
-    function will return the upper triangular values of the covariance
-    matrix (excluding the diagonal).
+        `itertools.combinations` is used to handle ordering, so the
+        displacements must be ordered in the same way.
 
-    `itertools.combinations` is used to handle ordering, so the displacements
-    must be ordered in the same way.
+        Reference
+        ---------
+        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
+        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
 
-    Reference
-    ---------
-    1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-    2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        Parameters
+        ----------
+        i_s : numpy.ndarray
+            The row indicies for the covariance matrix.
+        j_s
+            The column indicies for the covariance matrix.
 
-    Parameters
-    ----------
-    v : float
-        Matern shape parameter
-    Lxs : numpy.ndarray
-        A vector containing the Lx values - the ellipse semi-major axis length
-        scales. These are the values for each ellipse (not duplicated).
-    Lys : numpy.ndarray
-        A vector containing the Ly values - the ellipse semi-minor axis length
-        scales. These are the values for each ellipse (not duplicated).
-    thetas : numpy.ndarray
-        A vector containing the theta values - the ellipse angles (in radians).
-        These are the values for each ellipse (not duplicated).
-    delta_x : np.ndarray
-        A vector containing the east-west displacements. It is expected that the
-        size of this array is 0.5 * N * (N - 1) where N is the length of the Lxs
-        vector. These are the displacements between each pair of ellipses, and
-        must follow the ordering one would achieve with
-        `itertools.combinations`. Note these values should be distances, and not
-        degree displacements.
-    delta_y : np.ndarray
-        A vector containing the north-south displacements. It is expected that
-        the size of this array is 0.5 * N * (N - 1) where N is the length of the
-        Lxs vector. These are the displacements between each pair of ellipses,
-        and must follow the ordering one would achieve with
-        `itertools.combinations`. Note these values should be distances, and not
-        degree displacements.
-    stdevs : np.ndarray
-        A vector containing the standard deviation for each ellipse.
-
-    Returns
-    -------
-    c_ij : numpy.ndarray
-        A vector containing the covariance values between each pair of ellipses.
-        This will return the components of the upper triangle of the covariance
-        matrix as a vector (excluding the diagonal).
-    """
-    stdev_prod = np.asarray(
-        [stdev_i * stdev_j for stdev_i, stdev_j in combinations(stdevs, 2)]
-    )
-    c_ij = np.divide(stdev_prod, gamma(v) * (2 ** (v - 1)))
-
-    # Note 1x4 rather than 2x2 for convenience
-    sigmas = _sigma_rot_func_multi(Lxs, Lys, thetas)
-    sqrt_dets = np.sqrt(_det_22_multi(sigmas))
-
-    sqrt_dets = np.asarray([d1 * d2 for d1, d2 in combinations(sqrt_dets, 2)])
-
-    sigma_bars = (
-        pl.from_numpy(
-            # Turn the sigma_bar values into a polars frame
-            np.asarray(
-                [
-                    0.5 * (sigma_i + sigma_j)
-                    for sigma_i, sigma_j in combinations(sigmas, 2)
-                ]
-            ),
-            schema=["a", "b", "c", "d"],
+        Returns
+        -------
+        c_ij : numpy.ndarray
+            A vector containing the covariance values between each pair of
+            ellipses. This will return the components of the upper triangle of
+            the covariance matrix as a vector (excluding the diagonal).
+        """
+        dy, dx = self.disp_fn(
+            np.deg2rad(self.lat_grid_compressed[i_s]),
+            np.deg2rad(self.lon_grid_compressed[i_s]),
+            np.deg2rad(self.lat_grid_compressed[j_s]),
+            np.deg2rad(self.lon_grid_compressed[j_s]),
         )
-        .with_columns(
-            (pl.col("a") * pl.col("d") - pl.col("b") * pl.col("c")).alias(
-                "det"
-            ),
-            pl.Series("dx", delta_x),
-            pl.Series("dy", delta_y),
+        c_ij = (
+            self.stdev_compressed[i_s] * self.stdev_compressed[j_s]
+        ) / self.gamma_v_term
+
+        sigma_bars = 0.5 * (self.sigmas[i_s] + self.sigmas[j_s])
+        sigma_bar_dets = _det_22_multi(sigma_bars)
+        c_ij *= np.sqrt(
+            (self.sqrt_dets[i_s] * self.sqrt_dets[j_s]) / sigma_bar_dets
         )
-        # Compute Tau directly from displacements and matrix values
-        # [dx, dy] * inv(sigma) * [dx, dy].T
-        # inv([[a, b], [c, d]]) = 1/det [[d, -b], [-c, a]]
-        .select(
-            pl.col("det"),
+        taus = np.sqrt(
             (
-                (
-                    pl.col("dx")
-                    * (pl.col("dx") * pl.col("d") - pl.col("dy") * pl.col("b"))
-                    + pl.col("dy")
-                    * (-pl.col("dx") * pl.col("c") + pl.col("dy") * pl.col("a"))
-                )
-                / pl.col("det")
+                dx * (dx * sigma_bars[:, 3] - dy * sigma_bars[:, 1])
+                + dy * (-dx * sigma_bars[:, 2] + dy * sigma_bars[:, 0])
             )
-            .sqrt()
-            .alias("tau"),
+            / sigma_bar_dets
         )
-    )
-    sigma_bar_dets = sigma_bars.get_column("det").to_numpy()
-    taus = sigma_bars.get_column("tau").to_numpy()
-    del sigma_bars
+        del sigma_bars, sigma_bar_dets
+        inner = self.sqrt_v_term * taus
+        c_ij *= np.power(inner, self.v)
+        c_ij *= modified_bessel_2nd(self.v, inner)
 
-    c_ij = c_ij * np.sqrt(np.divide(sqrt_dets, sigma_bar_dets))
-
-    inner = 2.0 * np.sqrt(v) * taus
-    c_ij = c_ij * np.pow(inner, v)
-    c_ij = c_ij * modified_bessel_2nd(v, inner)
-    del inner
-
-    if np.any(c_ij > stdev_prod):
-        raise ValueError("c_ij must always be smaller than sdev_i * sdev_j")
-
-    return c_ij
+        return c_ij.astype(self.precision)
 
 
 def _sigma_rot_func_multi(
