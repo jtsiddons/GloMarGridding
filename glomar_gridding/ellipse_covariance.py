@@ -474,19 +474,19 @@ class EllipseCovarianceBuilder:
         # Note, these are 1x4 rather than 2x2 for convenience
         N = len(self.Lx_compressed)
         # Precompute to radians for convenience
-        lats = np.deg2rad(self.lat_grid_compressed)
-        lons = np.deg2rad(self.lon_grid_compressed)
 
         for batch in batched(combinations(range(N), 2), self.batch_size):
             i_s, j_s = np.asarray(batch).T
-            lats_i = lats[i_s]
-            lons_i = lons[i_s]
-            lats_j = lats[j_s]
-            lons_j = lons[j_s]
 
             # Mask large distances
-            dists = _haversine_multi(lats_i, lons_i, lats_j, lons_j)
+            dists = _haversine_multi(
+                np.deg2rad(self.lat_grid_compressed[i_s]),
+                np.deg2rad(self.lon_grid_compressed[i_s]),
+                np.deg2rad(self.lat_grid_compressed[j_s]),
+                np.deg2rad(self.lon_grid_compressed[j_s]),
+            )
             mask = dists > self.max_dist
+            del dists
             i_s = i_s.compress(~mask)
             j_s = j_s.compress(~mask)
 
@@ -496,12 +496,6 @@ class EllipseCovarianceBuilder:
         self.cov_ns += self.cov_ns.T
 
         return None
-
-    def positive_definite_check(self):
-        """On the fly checking positive semidefinite and eigenvalue clipping"""
-        self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
-        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
-        self.cov_det = np.linalg.det(self.cov_ns)
 
     def c_ij_anisotropic_array(self, i_s, j_s) -> np.ndarray:
         """
@@ -554,7 +548,7 @@ class EllipseCovarianceBuilder:
         c_ij *= np.sqrt(
             (self.sqrt_dets[i_s] * self.sqrt_dets[j_s]) / sigma_bar_dets
         )
-        taus = np.sqrt(
+        inner = self.sqrt_v_term * np.sqrt(
             (
                 dx * (dx * sigma_bars[:, 3] - dy * sigma_bars[:, 1])
                 + dy * (-dx * sigma_bars[:, 2] + dy * sigma_bars[:, 0])
@@ -562,11 +556,16 @@ class EllipseCovarianceBuilder:
             / sigma_bar_dets
         )
         del sigma_bars, sigma_bar_dets
-        inner = self.sqrt_v_term * taus
         c_ij *= np.power(inner, self.v)
         c_ij *= modified_bessel_2nd(self.v, inner)
 
         return c_ij.astype(self.precision)
+
+    def positive_definite_check(self):
+        """On the fly checking positive semidefinite and eigenvalue clipping"""
+        self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
+        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
+        self.cov_det = np.linalg.det(self.cov_ns)
 
 
 def _sigma_rot_func_multi(
