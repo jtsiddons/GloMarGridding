@@ -184,19 +184,19 @@ class EllipseCovarianceBuilder:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.Lx = mask_array(Lx.astype(output_float_precision))
-        self.Ly = mask_array(Ly.astype(output_float_precision))
-        self.theta = mask_array(theta.astype(output_float_precision))
-        self.stdev = mask_array(stdev.astype(output_float_precision))
+        self.precision = output_float_precision
+        self.Lx = mask_array(Lx.astype(self.precision))
+        self.Ly = mask_array(Ly.astype(self.precision))
+        self.theta = mask_array(theta.astype(self.precision))
+        self.stdev = mask_array(stdev.astype(self.precision))
         self.max_dist = max_dist
         self.delta_x_method: DeltaXMethod | None = delta_x_method
         self.check_positive_definite = check_positive_definite
-        self.lats = lats
-        self.lons = lons
+        self.lats = lats.astype(self.precision)
+        self.lons = lons.astype(self.precision)
         self.covariance_method = covariance_method
         self.delta_x_method = delta_x_method
         self.batch_size = batch_size
-        self.precision = output_float_precision
 
         # The cov and corr matrix will be sq matrix of this
         self.xy_shape = self.Lx.shape
@@ -403,9 +403,9 @@ class EllipseCovarianceBuilder:
         lons = np.deg2rad(self.lon_grid_compressed)
 
         # Initialise empty matrix
-        n = len(self.Ly_compressed)
+        N = len(self.Lx_compressed)
 
-        for i, j in combinations(range(n), 2):
+        for i, j in combinations(range(N), 2):
             # Leave as zero if too far away
             if (
                 _haversine_single(lats[i], lons[i], lats[j], lons[j])
@@ -477,8 +477,6 @@ class EllipseCovarianceBuilder:
         lats = np.deg2rad(self.lat_grid_compressed)
         lons = np.deg2rad(self.lon_grid_compressed)
 
-        self.cov_ns = np.zeros((N, N), dtype=self.precision)
-
         for batch in batched(combinations(range(N), 2), self.batch_size):
             i_s, j_s = np.asarray(batch).T
             lats_i = lats[i_s]
@@ -531,7 +529,7 @@ class EllipseCovarianceBuilder:
         ----------
         i_s : numpy.ndarray
             The row indicies for the covariance matrix.
-        j_s
+        j_s : numpy.ndarray
             The column indicies for the covariance matrix.
 
         Returns
