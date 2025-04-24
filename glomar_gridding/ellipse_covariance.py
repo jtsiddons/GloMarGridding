@@ -140,20 +140,27 @@ class EllipseCovarianceBuilder:
     max_dist : float
         If the Haversine distance between 2 points exceed max_dist,
         covariance is set to 0
-    output_floatprecision : type
-        Float point precision of the output covariance numpy defaults to float64
-        Noting that float32 halves the storage and halves the memory to use
+    precision : type
+        Floating point precision of the output covariance numpy defaults to
+        np.float32.
     check_positive_definite : bool
         For production this should be False
         but for unit testing it should be True,
         if True a quick on the fly eigenvalue clipping
         will be conducted, if constructed covariance is not
         positive (semi)definite.
-    low-memory : bool
-        Use a slower, but more memory efficient loop to construct the covariance
-        matrix. The more memory efficient approach will be used in all cases if
-        the number of unmasked grid-points exceeds 10_000 (this is the number of
-        latitudes x the number of longitudes).
+    covariance_method : CovarianceMethod
+        Set the covariance method used:
+            array (default): faster but uses significantly more memory as
+                more pre-computation is performed. Values are computed in a
+                vectorised method.
+            loop: slower iterative process, computes each value individually
+            batched: combines the above approaches.
+        If the number of grid-points exceeds 10_000 and "array" method is used,
+        the method will be overwritten to "loop".
+    batch_size : int | None
+        Size of the batch to use for the "batched" method. Must be set if the
+        covariance_method is set to "batched".
     """
 
     def __init__(
@@ -167,7 +174,7 @@ class EllipseCovarianceBuilder:
         v: float = 3.0,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
-        output_float_precision=np.float32,
+        precision=np.float32,
         check_positive_definite: bool = False,
         covariance_method: CovarianceMethod = "array",
         batch_size: int | None = None,
@@ -184,7 +191,7 @@ class EllipseCovarianceBuilder:
 
         # Defining the input data
         self.v = v  # Matern covariance shape parameter
-        self.precision = output_float_precision
+        self.precision = precision
         self.Lx = mask_array(Lx.astype(self.precision))
         self.Ly = mask_array(Ly.astype(self.precision))
         self.theta = mask_array(theta.astype(self.precision))
