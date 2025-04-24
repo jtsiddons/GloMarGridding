@@ -210,7 +210,6 @@ class EllipseCovarianceBuilder:
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
         print("Time elapsed: ", ove_end_time - ove_start_time)
-        self._get_disp_fn()
         self._calulate_covariance()
 
         # Code now reports eigvals and determinant of the constructed matrix
@@ -322,6 +321,7 @@ class EllipseCovarianceBuilder:
             self.covariance_method = "low_memory"
         # Precomupte common terms
         # Note, these are 1x4 rather than 2x2 for convenience
+        self._get_disp_fn()
         self.sigmas = _sigma_rot_func_multi(
             self.Lx_compressed, self.Ly_compressed, self.theta_compressed
         )
