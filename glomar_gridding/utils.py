@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
+from itertools import islice
 import logging
 from typing import Any, TypeVar
 import netCDF4 as nc
@@ -536,3 +537,21 @@ def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
         arr = np.ma.MaskedArray(arr)
         return arr
     raise TypeError("Input is not a numpy array.")
+
+
+def batched(iterable: Iterable, n: int, *, strict: bool = False):
+    """
+    Implementation of itertools.batched for use if python version is < 3.12.
+
+    Examples
+    --------
+    >>> list(batched("ABCDEFG", 3))
+    [("A", "B", "C"), ("D", "E", "F"), ("G", )]
+    """
+    if n < 1:
+        raise ValueError("'n' must be >= 1")
+    iterator = iter(iterable)
+    while batch := tuple(islice(iterator, n)):
+        if strict and len(batch) != n:
+            raise ValueError("batched(): incomplete batch")
+        yield batch

@@ -19,8 +19,13 @@ from statsmodels.stats import correlation_tools
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
 from glomar_gridding.distances import displacements
-from glomar_gridding.types import DeltaXMethod
+from glomar_gridding.types import CovarianceMethod, DeltaXMethod
 from glomar_gridding.utils import cov_2_cor, mask_array
+
+if sys.version_info.minor >= 12:
+    from itertools import batched
+else:
+    from glomar_gridding.utils import batched
 
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 TWO_PI = 2 * np.pi
@@ -167,7 +172,8 @@ class EllipseCovarianceBuilder:
         max_dist: float = MAX_DIST_COMPROMISE,
         output_float_precision=np.float32,
         check_positive_definite: bool = False,
-        low_memory: bool = False,
+        covariance_method: CovarianceMethod = "array",
+        batch_size: int | None = None,
     ):
         tracemalloc.start()
         ove_start_time = datetime.datetime.now()
@@ -205,16 +211,29 @@ class EllipseCovarianceBuilder:
         print("Time elapsed: ", ove_end_time - ove_start_time)
 
         cov_start_time = datetime.datetime.now()
-        if len(self.Lx_compressed) > 10_000 and not low_memory:
+        if len(self.Lx_compressed) > 10_000 and covariance_method == "array":
             warn(
                 "Number of grid-points > 10_000, setting to low-memory mode "
                 + f"(num grid-points = {len(self.Lx_compressed)}"
             )
-            low_memory = True
-        if low_memory:
-            self.calculate_covariance_loop(output_float_precision)
-        else:
-            self.calculate_covariance(output_float_precision)
+            covariance_method = "low_memory"
+        match covariance_method:
+            case "low_memory":
+                self.calculate_covariance_loop(output_float_precision)
+            case "array":
+                self.calculate_covariance(output_float_precision)
+            case "batched":
+                if batch_size is None:
+                    raise ValueError(
+                        "batch_size must be set if using 'batched' method"
+                    )
+                self.calculate_covariance_batched(
+                    batch_size, output_float_precision
+                )
+            case _:
+                raise ValueError(
+                    f"Unknown covariance_method: {covariance_method}"
+                )
 
         cov_end_time = datetime.datetime.now()
         logging.info(
@@ -298,7 +317,7 @@ class EllipseCovarianceBuilder:
         )
         return None
 
-    def calculate_covariance(self, output_floatprecision: type) -> None:
+    def calculate_covariance(self, precision: type) -> None:
         """Calculate the covariance matrix from the ellipse parameters"""
         # Calculate distances & Displacements
         dists = haversine_distances(
@@ -315,7 +334,7 @@ class EllipseCovarianceBuilder:
         )
 
         # Initialise Covariance
-        self.cov_ns = np.zeros_like(dists, dtype=output_floatprecision)
+        self.cov_ns = np.zeros_like(dists, dtype=precision)
 
         # Mask to upper triangular (exclude diagonal)
         tri_mask = np.triu(np.ones_like(dists), 1) == 0
@@ -337,7 +356,7 @@ class EllipseCovarianceBuilder:
             delta_x=disp_x,
             delta_y=disp_y,
             stdevs=self.stdev_compressed,
-        )
+        ).astype(precision)
         cij[dists > self.max_dist] = 0.0
 
         # Re-populate upper triangular
@@ -370,9 +389,9 @@ class EllipseCovarianceBuilder:
         """
         match self.delta_x_method:
             case "Modified_Met_Office":
-                disp_fn = _mod_mo_disp
+                disp_fn = _mod_mo_disp_single
             case "Met_Office":
-                disp_fn = _mo_disp
+                disp_fn = _mo_disp_single
             case _:
                 raise ValueError(
                     f"Unknown 'delta_x_method' value: {self.delta_x_method}"
@@ -397,7 +416,10 @@ class EllipseCovarianceBuilder:
 
         for i, j in combinations(range(n), 2):
             # Leave as zero if too far away
-            if _haversine(lats[i], lons[i], lats[j], lons[j]) > self.max_dist:
+            if (
+                _haversine_single(lats[i], lons[i], lats[j], lons[j])
+                > self.max_dist
+            ):
                 continue
 
             sigma_bar = 0.5 * (sigmas[i] + sigmas[j])
@@ -433,6 +455,84 @@ class EllipseCovarianceBuilder:
             #     )
             # Assign and mirror
             self.cov_ns[i, j] = self.cov_ns[j, i] = precision(c_ij)
+
+        return None
+
+    def calculate_covariance_batched(
+        self,
+        batch_size: int,
+        precision: type,
+    ) -> None:
+        """Batched version"""
+        match self.delta_x_method:
+            case "Modified_Met_Office":
+                disp_fn = _mod_mo_disp_multi
+            case "Met_Office":
+                disp_fn = _mo_disp_multi
+            case _:
+                raise ValueError(
+                    f"Unknown 'delta_x_method' value: {self.delta_x_method}"
+                )
+        # Precomupte common terms
+        # Note, these are 1x4 rather than 2x2 for convenience
+        N = len(self.Lx_compressed)
+        sigmas = _sigma_rot_func_multi(
+            self.Lx_compressed, self.Ly_compressed, self.theta_compressed
+        ).astype(precision)
+        sqrt_dets = np.sqrt(_det_22_multi(sigmas))
+        gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
+        sqrt_v_term = np.sqrt(self.v) * 2
+
+        # Precompute to radians for convenience
+        lats = np.deg2rad(self.lat_grid_compressed)
+        lons = np.deg2rad(self.lon_grid_compressed)
+
+        self.cov_ns = np.zeros((N, N), dtype=precision)
+
+        for batch in batched(combinations(range(N), 2), batch_size):
+            i_s, j_s = np.asarray(batch).T
+            lats_i = lats[i_s]
+            lons_i = lons[i_s]
+            lats_j = lats[j_s]
+            lons_j = lons[j_s]
+
+            # Mask large distances
+            dists = _haversine_multi(lats_i, lons_i, lats_j, lons_j)
+            mask = dists > self.max_dist
+            i_s = i_s.compress(~mask)
+            j_s = j_s.compress(~mask)
+            lats_i = lats[i_s]
+            lons_i = lons[i_s]
+            lats_j = lats[j_s]
+            lons_j = lons[j_s]
+            dy, dx = disp_fn(lats_i, lons_i, lats_j, lons_j)
+
+            loop_c_ij = (
+                self.stdev_compressed[i_s] * self.stdev_compressed[j_s]
+            ) / gamma_v_term
+
+            sigma_bars = 0.5 * (sigmas[i_s] + sigmas[j_s])
+            sigma_bar_dets = _det_22_multi(sigma_bars)
+            loop_c_ij *= np.sqrt(
+                (sqrt_dets[i_s] * sqrt_dets[j_s]) / sigma_bar_dets
+            )
+            taus = np.sqrt(
+                (
+                    dx * (dx * sigma_bars[:, 3] - dy * sigma_bars[:, 1])
+                    + dy * (-dx * sigma_bars[:, 2] + dy * sigma_bars[:, 0])
+                )
+                / sigma_bar_dets
+            )
+            del sigma_bars, sigma_bar_dets
+            inner = sqrt_v_term * taus
+            loop_c_ij *= np.power(inner, self.v)
+            loop_c_ij *= modified_bessel_2nd(self.v, inner)
+            self.cov_ns[i_s, j_s] = loop_c_ij.astype(precision)
+
+        self.cov_ns += self.cov_ns.T
+        self.cov_ns += np.diag(
+            np.power(self.stdev_compressed, 2).astype(precision)
+        )
 
         return None
 
@@ -609,7 +709,7 @@ def _det_22_multi(
     return mats[:, 0] * mats[:, 3] - mats[:, 1] * mats[:, 2]
 
 
-def _haversine(
+def _haversine_single(
     lat0: float,
     lon0: float,
     lat1: float,
@@ -630,7 +730,25 @@ def _haversine(
     return RADIUS_OF_EARTH_KM * c
 
 
-def _mod_mo_disp(
+def _haversine_multi(
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    lat1: np.ndarray,
+    lon1: np.ndarray,
+) -> np.ndarray:
+    dlon = lon0 - lon1
+    dlat = lat0 - lat1
+
+    a = (
+        np.sin(dlat / 2) ** 2
+        + np.cos(lat0) * np.cos(lat1) * np.sin(dlon / 2) ** 2
+    )
+    c = 2 * np.arcsin(np.sqrt(a))
+
+    return RADIUS_OF_EARTH_KM * c
+
+
+def _mod_mo_disp_single(
     lat0: float,
     lon0: float,
     lat1: float,
@@ -647,7 +765,7 @@ def _mod_mo_disp(
     return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx
 
 
-def _mo_disp(
+def _mo_disp_single(
     lat0: float,
     lon0: float,
     lat1: float,
@@ -657,5 +775,36 @@ def _mo_disp(
     dx = lon0 - lon1
     dx = dx - TWO_PI if dx > np.pi else dx
     dx = dx + TWO_PI if dx < -np.pi else dx
+
+    return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx
+
+
+def _mod_mo_disp_multi(
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    lat1: np.ndarray,
+    lon1: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    dy = lat0 - lat1
+    dx = lon0 - lon1
+    dx[dx > np.pi] -= TWO_PI
+    dx[dx < -np.pi] += TWO_PI
+
+    y_cos_mean = 0.5 * (np.cos(lat0) + np.cos(lat1))
+    dx *= y_cos_mean
+
+    return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx
+
+
+def _mo_disp_multi(
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    lat1: np.ndarray,
+    lon1: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    dy = lat0 - lat1
+    dx = lon0 - lon1
+    dx[dx > np.pi] -= TWO_PI
+    dx[dx < np.pi] += TWO_PI
 
     return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx

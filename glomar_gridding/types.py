@@ -30,3 +30,5 @@ SuperCategory = Literal[
 ]
 
 DeltaXMethod = Literal["Met_Office", "Modified_Met_Office"]
+
+CovarianceMethod = Literal["batched", "low_memory", "array"]
