@@ -240,6 +240,8 @@ class EllipseCovarianceBuilder:
         self.y_mask = np.ma.masked_where(self.data_mask, self.y_grid)
         self.lat_grid_compressed = self.y_mask.compressed()
         self.lon_grid_compressed = self.x_mask.compressed()
+        self.lat_grid_compressed_rad = np.deg2rad(self.lat_grid_compressed)
+        self.lon_grid_compressed_rad = np.deg2rad(self.lon_grid_compressed)
 
         self.xy_compressed = np.column_stack(
             [self.lon_grid_compressed, self.lat_grid_compressed]
@@ -327,10 +329,10 @@ class EllipseCovarianceBuilder:
         # Calculate distances & Displacements
         i_s, j_s = np.asarray(list(combinations(range(N), 2))).transpose()
         dists = _haversine_multi(
-            np.deg2rad(self.lat_grid_compressed[i_s]),
-            np.deg2rad(self.lon_grid_compressed[i_s]),
-            np.deg2rad(self.lat_grid_compressed[j_s]),
-            np.deg2rad(self.lon_grid_compressed[j_s]),
+            self.lat_grid_compressed_rad[i_s],
+            self.lon_grid_compressed_rad[i_s],
+            self.lat_grid_compressed_rad[j_s],
+            self.lon_grid_compressed_rad[j_s],
         )
         mask = dists > self.max_dist
         del dists
@@ -444,10 +446,10 @@ class EllipseCovarianceBuilder:
 
             # Mask large distances
             dists = _haversine_multi(
-                np.deg2rad(self.lat_grid_compressed[i_s]),
-                np.deg2rad(self.lon_grid_compressed[i_s]),
-                np.deg2rad(self.lat_grid_compressed[j_s]),
-                np.deg2rad(self.lon_grid_compressed[j_s]),
+                self.lat_grid_compressed_rad[i_s],
+                self.lon_grid_compressed_rad[i_s],
+                self.lat_grid_compressed_rad[j_s],
+                self.lon_grid_compressed_rad[j_s],
             )
             mask = dists > self.max_dist
             del dists
@@ -498,10 +500,10 @@ class EllipseCovarianceBuilder:
             the covariance matrix as a vector (excluding the diagonal).
         """
         dy, dx = self.disp_fn(
-            np.deg2rad(self.lat_grid_compressed[i_s]),
-            np.deg2rad(self.lon_grid_compressed[i_s]),
-            np.deg2rad(self.lat_grid_compressed[j_s]),
-            np.deg2rad(self.lon_grid_compressed[j_s]),
+            self.lat_grid_compressed_rad[i_s],
+            self.lon_grid_compressed_rad[i_s],
+            self.lat_grid_compressed_rad[j_s],
+            self.lon_grid_compressed_rad[j_s],
         )
         c_ij = (
             self.stdev_compressed[i_s] * self.stdev_compressed[j_s]
