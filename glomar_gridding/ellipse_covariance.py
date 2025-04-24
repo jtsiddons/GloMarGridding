@@ -209,39 +209,8 @@ class EllipseCovarianceBuilder:
             ove_end_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
         print("Time elapsed: ", ove_end_time - ove_start_time)
-
-        cov_start_time = datetime.datetime.now()
-        if len(self.Lx_compressed) > 10_000 and covariance_method == "array":
-            warn(
-                "Number of grid-points > 10_000, setting to low-memory mode "
-                + f"(num grid-points = {len(self.Lx_compressed)}"
-            )
-            covariance_method = "low_memory"
-        match covariance_method:
-            case "low_memory":
-                self.calculate_covariance_loop(output_float_precision)
-            case "array":
-                self.calculate_covariance(output_float_precision)
-            case "batched":
-                if batch_size is None:
-                    raise ValueError(
-                        "batch_size must be set if using 'batched' method"
-                    )
-                self.calculate_covariance_batched(
-                    batch_size, output_float_precision
-                )
-            case _:
-                raise ValueError(
-                    f"Unknown covariance_method: {covariance_method}"
-                )
-
-        cov_end_time = datetime.datetime.now()
-        logging.info(
-            "Cov processing ended: ", cov_end_time.strftime("%Y-%m-%d %H:%M:%S")
-        )
-        print("Time elapsed: ", cov_end_time - cov_start_time)
-        logging.info(
-            "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
+        self._calulate_covariance(
+            covariance_method, output_float_precision, batch_size
         )
 
         # Code now reports eigvals and determinant of the constructed matrix
@@ -317,7 +286,48 @@ class EllipseCovarianceBuilder:
         )
         return None
 
-    def calculate_covariance(self, precision: type) -> None:
+    def _calulate_covariance(
+        self,
+        covariance_method: CovarianceMethod,
+        output_float_precision: type,
+        batch_size: int | None,
+    ) -> None:
+        cov_start_time = datetime.datetime.now()
+        if len(self.Lx_compressed) > 10_000 and covariance_method == "array":
+            warn(
+                "Number of grid-points > 10_000, setting to low-memory mode "
+                + f"(num grid-points = {len(self.Lx_compressed)}"
+            )
+            covariance_method = "low_memory"
+        match covariance_method:
+            case "low_memory":
+                self.calculate_covariance_loop(output_float_precision)
+            case "array":
+                self.calculate_covariance_array(output_float_precision)
+            case "batched":
+                if batch_size is None:
+                    raise ValueError(
+                        "batch_size must be set if using 'batched' method"
+                    )
+                self.calculate_covariance_batched(
+                    batch_size, output_float_precision
+                )
+            case _:
+                raise ValueError(
+                    f"Unknown covariance_method: {covariance_method}"
+                )
+
+        cov_end_time = datetime.datetime.now()
+        logging.info(
+            "Cov processing ended: ", cov_end_time.strftime("%Y-%m-%d %H:%M:%S")
+        )
+        print("Time elapsed: ", cov_end_time - cov_start_time)
+        logging.info(
+            "Mem used by cov mat = ", sizeof_fmt(sys.getsizeof(self.cov_ns))
+        )
+        return None
+
+    def calculate_covariance_array(self, precision: type) -> None:
         """Calculate the covariance matrix from the ellipse parameters"""
         # Calculate distances & Displacements
         dists = haversine_distances(
