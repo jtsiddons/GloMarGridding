@@ -1,11 +1,18 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.3.0 (unreleased)
 
-Contributors to this version: Joseph Siddons (@josidd)
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
+
+### Announcements
+
+* Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
 
 ### New features and enhancements
 
+* Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
+* Add module for calculating spatial covariance matrix from ellipse parameters (!54)
+* Add module for estimating ellipse parameters from observational datasets (!54)
 * `init_logging` now has a `level` argument (!50)
 * Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
