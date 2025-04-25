@@ -198,7 +198,7 @@ class EllipseCovarianceBuilder:
         self.check_positive_definite = check_positive_definite
         self.lats = lats.astype(self.precision)
         self.lons = lons.astype(self.precision)
-        self.covariance_method = covariance_method
+        self.covariance_method: CovarianceMethod = covariance_method
         self.delta_x_method = delta_x_method
         self.batch_size = batch_size
 
@@ -290,13 +290,10 @@ class EllipseCovarianceBuilder:
         self._get_disp_fn()
         self.sigmas = _sigma_rot_func_multi(
             self.Lx_compressed, self.Ly_compressed, self.theta_compressed
-        )
+        ).astype(self.precision)
         self.sqrt_dets = np.sqrt(_det_22_multi(self.sigmas))
         self.gamma_v_term = gamma(self.v) * (2 ** (self.v - 1))
         self.sqrt_v_term = np.sqrt(self.v) * 2
-
-        N = len(self.Lx_compressed)
-        self.cov_ns = np.zeros((N, N), dtype=self.precision)
 
         match self.covariance_method:
             case "low_memory":
@@ -341,6 +338,9 @@ class EllipseCovarianceBuilder:
 
         # Calculate covariance values
         cij = self.c_ij_anisotropic_array(i_s, j_s)
+        # OPTIM: Initialise empty covariance matrix after computing values to
+        # save memory.
+        self.cov_ns = np.zeros((N, N), dtype=self.precision)
         self.cov_ns[i_s, j_s] = cij
         del cij
 
@@ -370,6 +370,7 @@ class EllipseCovarianceBuilder:
 
         # Initialise empty matrix
         N = len(self.Lx_compressed)
+        self.cov_ns = np.zeros((N, N), dtype=self.precision)
 
         for i, j in combinations(range(N), 2):
             # Leave as zero if too far away
@@ -437,9 +438,10 @@ class EllipseCovarianceBuilder:
         """
         if self.batch_size is None:
             raise ValueError("batch_size must be set if using 'batched' method")
-        # Note, these are 1x4 rather than 2x2 for convenience
+
+        # Initialise empty matrix
         N = len(self.Lx_compressed)
-        # Precompute to radians for convenience
+        self.cov_ns = np.zeros((N, N), dtype=self.precision)
 
         for batch in batched(combinations(range(N), 2), self.batch_size):
             i_s, j_s = np.asarray(batch).T
@@ -514,6 +516,7 @@ class EllipseCovarianceBuilder:
         c_ij *= np.sqrt(
             (self.sqrt_dets[i_s] * self.sqrt_dets[j_s]) / sigma_bar_dets
         )
+        # NOTE: inner = tau * sqrt(v) * 2
         inner = self.sqrt_v_term * np.sqrt(
             (
                 dx * (dx * sigma_bars[:, 3] - dy * sigma_bars[:, 1])
