@@ -14,7 +14,7 @@ from scipy.special import kv as modified_bessel_2nd
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
 from glomar_gridding.types import CovarianceMethod, DeltaXMethod
-from glomar_gridding.utils import cov_2_cor, mask_array
+from glomar_gridding.utils import cov_2_cor, mask_array, sizeof_fmt
 
 if sys.version_info.minor >= 12:
     from itertools import batched
@@ -23,18 +23,6 @@ else:
 
 MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 TWO_PI = 2 * np.pi
-
-
-def sizeof_fmt(num: float, suffix="B") -> str:
-    """
-    Convert numbers to kilo/mega... bytes,
-    for interactive printing of code progress
-    """
-    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
-        if abs(num) < 1024.0:
-            return f"{num:3.1f}{unit}{suffix}"
-        num /= 1024.0
-    return f"{num:.1f}Yi{suffix}"
 
 
 class EllipseCovarianceBuilder:
