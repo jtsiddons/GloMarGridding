@@ -13,12 +13,19 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 * Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
 * Add module for calculating spatial covariance matrix from ellipse parameters (!54)
 * Add module for estimating ellipse parameters from observational datasets (!54)
+
+## 0.2.1 (2025-04-28)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+* Add function to compute mid-point of a month (matching HadCRUT datetimes) (!48)
 * `init_logging` now has a `level` argument (!50)
 * Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
 
 ### Bug fixes
 
+* Use "days since" as units for HadCRUT reconstruction outputs (!48)
 * Correct local import of `noc_helpers` in `noc_runners` scripts (!45)
 
 ### Breaking changes
@@ -34,6 +41,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### Internal changes
 
+* Add `__version__` (!55)
 * `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 

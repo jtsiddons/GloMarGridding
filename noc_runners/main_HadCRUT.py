@@ -36,6 +36,7 @@ import polars as pl
 import xarray as xr
 
 # self-written modules (from the same directory)
+from glomar_gridding import __version__ as gg_version
 from glomar_gridding.grid import (
     grid_to_distance_matrix,
     map_to_grid,
@@ -48,10 +49,9 @@ from glomar_gridding.perturbation import scipy_mv_normal_draw
 from glomar_gridding.utils import (
     init_logging,
     get_date_index,
+    get_month_midpoint,
 )
 from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
-
-from noc_helpers import get_git_commit
 
 # Debugging
 import logging
@@ -189,14 +189,26 @@ def _initialise_xarray(
     year_range: tuple[int, int],
     member: int,
 ) -> xr.Dataset:
+    # Reference date is start of the first year in the output data
+    ref_date = datetime(year_range[0], 1, 1, 0, 0)
     # Time dimension is not unlimited
+    # Mid-point of every month (Jan 1990 -> 1990-01-16 12:00)
+    # Matches HadCRUT times
     _coords: dict = {
-        "time": pl.datetime_range(
-            datetime(year_range[0], 1, 15, 12),
-            datetime(year_range[1], 12, 15, 12),
-            interval="1mo",
-            closed="both",
-            eager=True,
+        "time": (
+            (
+                get_month_midpoint(
+                    pl.datetime_range(
+                        datetime(year_range[0], 1, 15, 12),
+                        datetime(year_range[1], 12, 15, 12),
+                        interval="1mo",
+                        closed="both",
+                        eager=True,
+                    )
+                )
+                - ref_date
+            ).dt.total_hours()
+            / 24
         ).to_numpy()
     }
     # Add the spatial coordinates of the grid
@@ -210,25 +222,10 @@ def _initialise_xarray(
         attrs={
             "produced": str(datetime.today()),
             "produced_by": os.environ["USER"],
-            "library": "GloMarGridding",
-            "url": "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding",
-            "git_commit": get_git_commit(),
+            "GloMarGridding_version": gg_version,
             "ensemble_member": str(member),
         },
     )
-
-    # Update the attributes of the coordinates
-    ds.lat.attrs["units"] = "degrees_north"
-    ds.lat.attrs["long_name"] = "latitude"
-    ds.lat.attrs["standard_name"] = "latitude"
-    ds.lat.attrs["axis"] = "Y"
-
-    ds.lon.attrs["units"] = "degrees_east"
-    ds.lon.attrs["long_name"] = "longitude"
-    ds.lon.attrs["standard_name"] = "longitude"
-    ds.lon.attrs["axis"] = "X"
-
-    ds.time.attrs["long_name"] = "time"
 
     # Define a 3D variable to hold the data
     ds[f"{variable}_anom"] = xr.DataArray(
@@ -282,6 +279,21 @@ def _initialise_xarray(
         },
     )
 
+    # Update the attributes of the coordinates
+    ds.lat.attrs["units"] = "degrees_north"
+    ds.lat.attrs["long_name"] = "latitude"
+    ds.lat.attrs["standard_name"] = "latitude"
+    ds.lat.attrs["axis"] = "Y"
+
+    ds.lon.attrs["units"] = "degrees_east"
+    ds.lon.attrs["long_name"] = "longitude"
+    ds.lon.attrs["standard_name"] = "longitude"
+    ds.lon.attrs["axis"] = "X"
+
+    ds.time.attrs["long_name"] = "time"
+    ds.time.attrs["units"] = f"days since {ref_date.strftime('%Y-%m-%d')}"
+    ds.time.attrs["calendar"] = "standard"
+
     return ds
 
 
@@ -291,7 +303,7 @@ def main():  # noqa: C901, D103
     config["summary"] = {}
     config["summary"]["start"] = str(datetime.today())
     config["summary"]["user"] = os.environ["USER"]
-    config["summary"]["revision"] = get_git_commit()
+    config["summary"]["glomar_gridding"] = gg_version,
     config["summary"]["numpy"] = np.__version__
     config["summary"]["polars"] = pl.__version__
     config["summary"]["xarray"] = xr.__version__
@@ -600,7 +612,7 @@ def main():  # noqa: C901, D103
 
             # first print the Dataset object to see what we've got
             # close the Dataset.
-        ds.to_netcdf(out_filename)
+        ds.to_netcdf(out_filename, unlimited_dims=["time"])
         logging.info("Dataset is closed!")
 
     config["summary"]["end"] = str(datetime.today())
