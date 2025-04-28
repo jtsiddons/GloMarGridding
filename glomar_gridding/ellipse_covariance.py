@@ -10,7 +10,6 @@ from warnings import warn
 import numpy as np
 from scipy.special import gamma
 from scipy.special import kv as modified_bessel_2nd
-from statsmodels.stats import correlation_tools
 
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
@@ -36,64 +35,6 @@ def sizeof_fmt(num: float, suffix="B") -> str:
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
-
-
-def check_symmetric(a, rtol=1e-05, atol=1e-08):
-    """Helper function for perturb_sym_matrix_2_positive_definite"""
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
-
-
-def perturb_sym_matrix_2_positive_definite(
-    square_sym_matrix: np.ndarray,
-) -> np.ndarray:
-    """
-    On the fly eigenvalue clipping, this is based statsmodels code
-    statsmodels.stats.correlation_tools.cov_nearest
-    statsmodels.stats.correlation_tools.corr_nearest
-
-    Use repair_damaged_covariance instead, it is more complete
-
-    Other methods exist:
-    https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
-    https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
-    https://academic.oup.com/imajna/article/22/3/329/708688
-    """
-    matrix_dim = square_sym_matrix.shape
-    if (
-        (len(matrix_dim) != 2)
-        or (matrix_dim[0] != matrix_dim[1])
-        or not check_symmetric(square_sym_matrix)
-    ):
-        raise ValueError("Matrix is not square and/or symmetric.")
-
-    eigenvalues = np.linalg.eigvalsh(square_sym_matrix)
-    min_eigen = np.min(eigenvalues)
-    max_eigen = np.max(eigenvalues)
-    n_negatives = np.sum(eigenvalues < 0.0)
-    print("Number of eigenvalues = ", len(eigenvalues))
-    print("Number of negative eigenvalues = ", n_negatives)
-    print("Largest eigenvalue  = ", max_eigen)
-    print("Smallest eigenvalue = ", min_eigen)
-    if min_eigen >= 0.0:
-        print("Matrix is already positive (semi-)definite.")
-        return square_sym_matrix
-    perturbed = correlation_tools.cov_nearest(
-        square_sym_matrix, return_all=False
-    )
-    if not isinstance(perturbed, np.ndarray):
-        raise TypeError(
-            "Output of correlation_tools.cov_nearest is not a numpy array"
-        )
-
-    eigenvalues_adj = np.linalg.eigvalsh(perturbed)
-    min_eigen_adj = np.min(eigenvalues_adj)
-    max_eigen_adj = np.max(eigenvalues_adj)
-    n_negatives_adj = np.sum(eigenvalues_adj < 0.0)
-    print("Post adjustments:")
-    print("Number of negative eigenvalues (post_adj) = ", n_negatives_adj)
-    print("Largest eigenvalue (post_adj)  = ", max_eigen_adj)
-    print("Smallest eigenvalue (post_adj) = ", min_eigen_adj)
-    return perturbed
 
 
 class EllipseCovarianceBuilder:
@@ -141,12 +82,6 @@ class EllipseCovarianceBuilder:
     precision : type
         Floating point precision of the output covariance numpy defaults to
         np.float32.
-    check_positive_definite : bool
-        For production this should be False
-        but for unit testing it should be True,
-        if True a quick on the fly eigenvalue clipping
-        will be conducted, if constructed covariance is not
-        positive (semi)definite.
     covariance_method : CovarianceMethod
         Set the covariance method used:
             array (default): faster but uses significantly more memory as
@@ -173,7 +108,6 @@ class EllipseCovarianceBuilder:
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
         precision=np.float32,
-        check_positive_definite: bool = False,
         covariance_method: CovarianceMethod = "array",
         batch_size: int | None = None,
     ) -> None:
@@ -195,7 +129,6 @@ class EllipseCovarianceBuilder:
         self.stdev = mask_array(stdev.astype(self.precision))
         self.max_dist = max_dist
         self.delta_x_method: DeltaXMethod | None = delta_x_method
-        self.check_positive_definite = check_positive_definite
         self.lats = lats.astype(self.precision)
         self.lons = lons.astype(self.precision)
         self.covariance_method: CovarianceMethod = covariance_method
@@ -215,8 +148,7 @@ class EllipseCovarianceBuilder:
         )
         print("Time elapsed: ", ove_end_time - ove_start_time)
         self._calculate_covariance()
-        self._validate_cov()
-        self._calculate_cor()
+        # self._calculate_cor()
 
     def _get_mask(self) -> None:
         self.data_has_mask = np.ma.is_masked(self.Lx)
@@ -530,36 +462,6 @@ class EllipseCovarianceBuilder:
 
         return c_ij.astype(self.precision)
 
-    def _validate_cov(self) -> None:
-        # Code now reports eigvals and determinant of the constructed matrix
-        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
-        self.cov_det = np.linalg.det(self.cov_ns)
-        if self.check_positive_definite:
-            # The purpose of this bit been replaced by
-            # repair_damaged_covariance.py
-            # in production runs, but is still useful for unit tests
-            # Perturb cov matrix to positive semi-definite if needed
-            # Tests shows small negative eigval (most neg ~ -0.3 K**2) possible
-            logging.info("positive_definite_check is enabled")
-            logging.debug("FYI, determinant = ", self.cov_det)
-            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
-            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
-            if np.min(self.cov_eig) < 0:
-                # On the fly eigenvalue clipping
-                logging.warning(
-                    "Negative eigval detected; corrections will be applied."
-                )
-                self.positive_definite_check()
-            else:
-                logging.debug("Corrections are not needed.")
-            logging.info("Positive (semi-)definite checks complete.")
-        else:
-            logging.info("positive_definite_check not enabled")
-            logging.debug("FYI, determinant = ", self.cov_det)
-            logging.debug("FYI, eigenvalues sorted (first 10, last 10):")
-            logging.debug(self.cov_eig[:10], "...", self.cov_eig[-10:])
-        return None
-
     def _calculate_cor(self) -> None:
         self.cor_ns = cov_2_cor(self.cov_ns)
 
@@ -573,13 +475,6 @@ class EllipseCovarianceBuilder:
             print("Largest error = ", largest_weird_value)
             np.fill_diagonal(self.cor_ns, 1.0)
 
-        return None
-
-    def positive_definite_check(self) -> None:
-        """On the fly checking positive semidefinite and eigenvalue clipping"""
-        self.cov_ns = perturb_sym_matrix_2_positive_definite(self.cov_ns)
-        self.cov_eig = np.sort(np.linalg.eigvalsh(self.cov_ns))
-        self.cov_det = np.linalg.det(self.cov_ns)
         return None
 
 
