@@ -131,7 +131,7 @@ class EllipseCovarianceBuilder:
         Arrays with non-stationary parameters
     lats, lons : numpy.ndarray
         Arrays containing the latitude and longitude values
-    v=3: float
+    v : float
         Matern shape parameter
     delta_x_method : str
         How are displacements computed between points
@@ -169,7 +169,7 @@ class EllipseCovarianceBuilder:
         stdev: np.ndarray,
         lats: np.ndarray,
         lons: np.ndarray,
-        v: float = 3.0,
+        v: float,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         max_dist: float = MAX_DIST_COMPROMISE,
         precision=np.float32,
