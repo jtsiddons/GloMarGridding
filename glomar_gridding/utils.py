@@ -491,6 +491,32 @@ def uncompress_masked(
     return uncompressed
 
 
+def cor_2_cov(
+    cor: np.ndarray,
+    variances: np.ndarray,
+    rounding: int | None = None,
+) -> np.ndarray:
+    """
+    Compute covariance matrix from correlation matrix and variances
+
+    Parameters
+    ----------
+    cor : numpy.ndarray
+        Correlation Matrix
+    variances : numpy.ndarray
+        Variances to scale the correlation matrix.
+    rounding : int
+        round the values of the output
+    """
+    stdevs = np.sqrt(variances)
+    normalisation = np.outer(stdevs, stdevs)
+    cov = cor * normalisation
+    cov[cor == 0] = 0
+    if rounding is not None:
+        cov = np.round(cov, rounding)
+    return cov
+
+
 def cov_2_cor(
     cov: np.ndarray,
     rounding: int | None = None,
@@ -510,6 +536,16 @@ def cov_2_cor(
     stdevs = np.sqrt(np.diag(cov))
     normalisation = np.outer(stdevs, stdevs)
     cor = cov / normalisation
+    if not np.all(np.diag(cor) == 1.0):
+        print(np.max(np.abs(np.diag(cor) - 1.0)))
+        if np.max(np.abs(np.diag(cor) - 1.0)) > 1e-6:
+            raise ValueError(
+                "Correlation Diagonal contains values not close to 1."
+            )  # This should never get flagged:
+        print(
+            "Numerical error correction applied to correlation matrix diagonal"
+        )
+        np.fill_diagonal(cor, 1.0)
     cor[cov == 0] = 0
     if rounding is not None:
         cor = np.round(cor, rounding)
