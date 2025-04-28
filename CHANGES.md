@@ -10,6 +10,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### New features and enhancements
 
+* Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
 * Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
 * Add module for calculating spatial covariance matrix from ellipse parameters (!54)
 * Add module for estimating ellipse parameters from observational datasets (!54)
