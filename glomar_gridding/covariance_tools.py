@@ -35,13 +35,13 @@ off a lot more eigenvectors.
 2) Better (original) clipping:
 Determine a noise eigenvalue threshold and
 replace all eigenvalues below using the average of them,
-perserving the original trace (aka total variance) of the
+preserving the original trace (aka total variance) of the
 covariance matrix, but this will require a full computation
 of all eigenvectors, which may be slow and cause
 memory problems
 
 3) EOF chop-off (fastest, trace/variance non-conserving):
-Set a target explained variance (say 95%) for the emperical
+Set a target explained variance (say 95%) for the empirical
 orthogonal functions, compute the eigenvalues and
 eigenvectors up to that explained variance. Reconstruct
 the covariance keeping only EOFs up to the target. This
@@ -183,9 +183,9 @@ class CovarianceFixer:
     ) -> np.ndarray:
         """DOCUMENTATION"""
         small_stuff = np.abs(matrix) < atol
-        ans = matrix.copy()
-        ans[small_stuff] = 0.0
-        return ans
+        cleaned = matrix.copy()
+        cleaned[small_stuff] = 0.0
+        return cleaned
 
     def find_index_explained_variance(self, eigvals, target=0.95):
         """DOCUMENTATION"""
@@ -281,7 +281,7 @@ class CovarianceFixer:
         print("Numbers of kept eigenvalues = ", -i2keep)
         print("Numbers of clipped eigenvalues = ", i2clip)
         #
-        # The total variance should be perserved after clipping
+        # The total variance should be preserved after clipping
         # within precision error of the eigenvalues which is
         # O(Max(Eig) * float_accuracy)
         total_var = np.sum(eigvals)
@@ -337,7 +337,7 @@ class CovarianceFixer:
         print("Numbers of kept eigenvalues = ", -i2keep)
         print("Numbers of clipped eigenvalues = ", i2clip)
         #
-        # The total variance should be perserved after clipping
+        # The total variance should be preserved after clipping
         # within precision error of the eigenvalues which is
         # O(Max(Eig) * float_accuracy)
         total_var = np.sum(eigvals)
