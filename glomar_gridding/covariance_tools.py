@@ -204,14 +204,17 @@ def clean_small(
     matrix: np.ndarray,
     atol: float = 1e-5,
 ) -> np.ndarray:
-    """DOCUMENTATION"""
+    """Set small values (abs(x) < atol) in an matrix to 0"""
     cleaned = matrix.copy()
     cleaned[np.abs(matrix) < atol] = 0.0
     return cleaned
 
 
 def _find_index_explained_variance(eigvals, target=0.95):
-    """DOCUMENTATION"""
+    """
+    Find the index of the eigenvalue for which the normalised cumulative sum
+    exceeds a target variance.
+    """
     total_variance = np.sum(eigvals)
     target_explained_variance = target * total_variance
     print((total_variance, target_explained_variance))
