@@ -452,17 +452,6 @@ class EllipseCovarianceBuilder:
 
     def _calculate_cor(self) -> None:
         self.cor_ns = cov_2_cor(self.cov_ns)
-
-        # Check for numerical errors
-        print("Checking non-1 values in diagonal of correlation")
-        diag_values = np.diag(self.cor_ns)
-        where_not_one = diag_values != 1.0
-        if np.any(where_not_one):
-            largest_weird_value = np.max(np.abs(diag_values[where_not_one]))
-            print("Ad hoc fix to numerical issues to corr matrix diag != 1.0")
-            print("Largest error = ", largest_weird_value)
-            np.fill_diagonal(self.cor_ns, 1.0)
-
         return None
 
 
