@@ -134,7 +134,6 @@ def csum_up_to_val(
     vals: np.ndarray,
     target: float,
     reverse: bool = True,
-    sort_data: bool = False,
     niter: int = 0,
     csum: float = 0.0,
 ) -> tuple[float, int]:
@@ -144,9 +143,6 @@ def csum_up_to_val(
 
     Can provide an initial `niter` and/or `csum` value(s), if working with
     multiple arrays in an iterative process.
-
-    If `sort_data` is set, the index of the sorted vals is returned, not the
-    original index. It is recommended to sort your array before using instead.
 
     If `reverse` is set, the returned index will be negative and will correspond
     to the index required for the non-reversed array. Reverse is the default.
@@ -159,9 +155,6 @@ def csum_up_to_val(
         Value for which the cumulative sum must exceed.
     reverse : bool
         Reverse the array. The index will be negative.
-    sort_data : bool
-        Sort the array, the returned index will be the index of the value in
-        the sorted array, not the original array.
     niter : int
         Initial number of iterations.
     csum : float
@@ -194,7 +187,6 @@ def csum_up_to_val(
         # Not a vector
         raise ValueError("`vals` must be a vector")
 
-    vals = np.sort(vals) if sort_data else vals
     vals = vals[::-1] if reverse else vals
 
     i = 0
