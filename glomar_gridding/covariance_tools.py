@@ -60,9 +60,12 @@ https://github.com/mikecroucher/nearest_correlation
 https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
 """
 
+from itertools import accumulate
+from typing import Literal
 import numpy as np
 import scipy as sc
 from statsmodels.stats import correlation_tools
+from warnings import warn
 
 
 def check_symmetric(
@@ -127,25 +130,82 @@ def perturb_sym_matrix_2_positive_definite(
     return perturbed
 
 
-def _csum_up_to_val(
-    samples: np.ndarray,
+def csum_up_to_val(
+    vals: np.ndarray,
     target: float,
-    reversed: bool = False,
+    reverse: bool = True,
     sort_data: bool = False,
+    niter: int = 0,
+    csum: float = 0.0,
 ) -> tuple[float, int]:
-    """Find csum and sample index that target is surpassed."""
-    if sort_data:
-        samples = np.sort(samples)
-    if reversed:
-        samples = samples[::-1]
-    niter = 0
-    csum = 0.0
-    for niter, sample in enumerate(samples):
-        csum += sample
-        print(niter, sample, csum)
+    """
+    Find csum and sample index that target is surpassed. Displays a warning if
+    the target is not exceeded or the input `vals` is empty.
+
+    Can provide an initial `niter` and/or `csum` value(s), if working with
+    multiple arrays in an iterative process.
+
+    If `sort_data` is set, the index of the sorted vals is returned, not the
+    original index. It is recommended to sort your array before using instead.
+
+    If `reverse` is set, the returned index will be negative and will correspond
+    to the index required for the non-reversed array. Reverse is the default.
+
+    Parameters
+    ----------
+    vals : numpy.ndarray
+        Vector of values to sum cumulatively.
+    target : float
+        Value for which the cumulative sum must exceed.
+    reverse : bool
+        Reverse the array. The index will be negative.
+    sort_data : bool
+        Sort the array, the returned index will be the index of the value in
+        the sorted array, not the original array.
+    niter : int
+        Initial number of iterations.
+    csum : float
+        Initial cumulative sum value.
+
+    Returns
+    -------
+    csum : float
+        The cumulative sum at the index when the target has been exceeded.
+    niter : int
+        The index of the value that results in the cumulative sum exceeding
+        the target.
+
+    Note
+    ----
+    It is actually faster to compute a full cumulative sum with `np.cumsum` and
+    then look for the value that exceeds the target. This is not performed in
+    this function.
+
+    Examples
+    --------
+    >>> vals = np.random.rand(1000)
+    >>> target = 301.1
+    >>> csum_up_to_val(vals, target)
+    """
+    if vals.size == 0:
+        warn("`vals` is empty")
+        return csum, niter
+    if len(vals) != vals.size:
+        # Not a vector
+        raise ValueError("`vals` must be a vector")
+
+    vals = np.sort(vals) if sort_data else vals
+    vals = vals[::-1] if reverse else vals
+
+    i = 0
+    # accumulate defaults to sum
+    for i, csum in enumerate(accumulate(vals, initial=csum), start=0):
         if csum > target:
-            break
-    return csum, niter
+            i = -i if reverse else i
+            return csum, niter + i
+    warn("Out of `vals`, target not exceeded.")
+    i = -i if reverse else i
+    return csum, niter + i
 
 
 def clean_small(
@@ -153,9 +213,8 @@ def clean_small(
     atol: float = 1e-5,
 ) -> np.ndarray:
     """DOCUMENTATION"""
-    small_stuff = np.abs(matrix) < atol
     cleaned = matrix.copy()
-    cleaned[small_stuff] = 0.0
+    cleaned[np.abs(matrix) < atol] = 0.0
     return cleaned
 
 
@@ -164,7 +223,9 @@ def _find_index_explained_variance(eigvals, target=0.95):
     total_variance = np.sum(eigvals)
     target_explained_variance = target * total_variance
     print((total_variance, target_explained_variance))
-    _, i2goal = _csum_up_to_val(eigvals, target_explained_variance)
+    csum, i2goal = csum_up_to_val(eigvals, target_explained_variance)
+    if csum <= target_explained_variance:
+        raise ValueError("Target Explained Variance not exceeded")
     return i2goal
 
 
@@ -209,7 +270,7 @@ def _estimate_threshold(
 
 def eigenvalue_clip(
     mat: np.ndarray,
-    method="explained_variance",
+    method: Literal["explained_variance", "Laloux_2000"] = "explained_variance",
     method_parms={"target": 0.95},
 ):
     """
@@ -236,14 +297,15 @@ def eigenvalue_clip(
     In ESA data, keeping 95% variance means keeping top ~15% of the
     eigenvalues
     """
-    print("Solving eigenvalues and vectors")
-    # print(np.trace(Corr), Corr.shape[0])
-    eigvals, eigvec = sc.linalg.eigh(mat)
-    sorted_order = np.argsort(eigvals)
-    eigvals = eigvals[sorted_order]
+    # NOTE: SciPy method solves generalised e-val problem, preferred func to
+    #       numpy
+    eigvals, eigvecs = sc.linalg.eigh(mat)
+    # Not necessary to sort output
+    # sorted_order = np.argsort(eigvals)
+    # eigvals = eigvals[sorted_order]
     print("[:5] =", eigvals[:5])
     print("[-5:] =", eigvals[-5:])
-    eigvecs = eigvec[:, sorted_order]
+    # eigvecs = eigvec[:, sorted_order]
     n_eigvals = len(eigvals)
 
     match method:
