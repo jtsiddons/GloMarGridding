@@ -33,6 +33,7 @@ import polars as pl
 import xarray as xr
 
 # self-written modules (from the same directory)
+from glomar_gridding import __version__ as gg_version
 from glomar_gridding.grid import (
     grid_to_distance_matrix,
     map_to_grid,
@@ -48,8 +49,6 @@ from glomar_gridding.utils import (
     get_month_midpoint,
 )
 from glomar_gridding.variogram import MaternVariogram, variogram_to_covariance
-
-from noc_helpers import get_git_commit
 
 # Debugging
 import logging
@@ -220,9 +219,7 @@ def _initialise_xarray(
         attrs={
             "produced": str(datetime.today()),
             "produced_by": os.environ["USER"],
-            "library": "GloMarGridding",
-            "url": "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding",
-            "git_commit": get_git_commit(),
+            "GloMarGridding_version": gg_version,
             "ensemble_member": str(member),
         },
     )
@@ -303,7 +300,7 @@ def main():  # noqa: C901, D103
     config["summary"] = {}
     config["summary"]["start"] = str(datetime.today())
     config["summary"]["user"] = os.environ["USER"]
-    config["summary"]["revision"] = get_git_commit()
+    config["summary"]["glomar_gridding"] = gg_version,
     config["summary"]["numpy"] = np.__version__
     config["summary"]["polars"] = pl.__version__
     config["summary"]["xarray"] = xr.__version__

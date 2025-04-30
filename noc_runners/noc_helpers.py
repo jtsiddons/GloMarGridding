@@ -270,29 +270,3 @@ def load_icoads(
         # print('QC DF', qc_df) #.columns)
 
     return df.join(qc_df, on="uid", how="inner").sort("datetime")
-
-
-def get_git_commit() -> str:
-    """
-    Get the most recent commit, used for debugging/traceability of noc gridding
-    runs.
-
-    Raises an error if the `.git/logs/HEAD` file cannot be found
-    """
-    git_path = os.path.join(os.path.dirname(__file__), "..", ".git")
-    # Handle worktrees
-    if os.path.isfile(git_path):
-        with open(git_path, "r") as io:
-            git_path = io.readline().split()[1]
-
-    if not os.path.isdir(git_path):
-        raise FileNotFoundError("Cannot locate '.git' directory")
-
-    git_log_path = os.path.join(git_path, "logs", "HEAD")
-    if not os.path.isfile(git_log_path):
-        raise FileNotFoundError("Cannot locate git log file")
-
-    with open(git_log_path, "r") as io:
-        last_line = io.readlines()[-1]
-    git_commit = last_line.split()[0]
-    return git_commit

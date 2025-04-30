@@ -30,6 +30,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* Add `__version__` (!55)
 * `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 
