@@ -64,7 +64,7 @@ Modified by J. Siddons.
 """
 
 from itertools import accumulate
-from typing import Literal
+from typing import Any, Literal
 import numpy as np
 import scipy as sc
 from statsmodels.stats import correlation_tools
@@ -72,27 +72,56 @@ from warnings import warn
 
 
 def eof_chop(
-    cov_arr: np.ndarray,
+    cov: np.ndarray,
     target_explained_variance: float = 0.95,
-):
+) -> tuple[np.ndarray, dict[str, Any]]:
     """
-    Set a target explained variance (say 95%) for the empirical
-    orthogonal functions, compute the eigenvalues and
-    eigenvectors up to that explained variance. Reconstruct
-    the covariance keeping only EOFs up to the target. This
-    is very close to 2, but it reduces the total variance of
-    the covariance matrix. The original method requires solving
-    for ALL eigenvectors which may not be possible for massive
-    matrices (40000x40000 square matrices). This is currently done
-    for the MAT covariance matrices which have very large dominant
-    modes.
+    Re-compute the covariance using only eigenvectors associated with the
+    largest eigenvalues such that the explained variance achieves a target
+    value.
+
+    This method is similar to a standard eigenvalue clipping method, however
+    only the eigenvectors associated with the largest eigenvalues are computed,
+    saving on memory and improves time execution. This method is best suited to
+    larger covariance matrices, for example those for a 1-degree resolution
+    grid (approx 40_000 x 40_000). This is also appropriate for covariance
+    matrices with very large dominant modes.
+
+    This method does not preserve the total variance, i.e. the trace of the
+    output covariance matrix may not match the input.
+
+    Parameters
+    ----------
+    cov : numpy.ndarray
+        Input covariance matrix to be adjusted to positive definite.
+    target_explained_variance : float
+        Select only the largest eigenvalues such that the explained variance of
+        these eigenvalues is <= this value. The eigenvalues are first sorted in
+        descending order, then cumulatively summed. Eigenvalues that correspond
+        to values in the cumulative sum above this explained variance are
+        dropped.
+
+    Returns
+    -------
+    cov_adj : numpy.ndarray
+        Adjusted covariance matrix
+    summary_dict : dict[str, Any]
+        A dictionary containing a summary of the input and results with the
+        following keys:
+            target_explained_variance%
+            num_of_retained_eofs
+            threshold
+            smallest_eigv
+            largest_eigv
+            determinant
+            total_variance
     """
-    if np.ma.isMaskedArray(cov_arr):
-        cov_arr = cov_arr.data  # type: ignore
+    if np.ma.isMaskedArray(cov):
+        cov = cov.data  # type: ignore
 
     # Compute all eigenvalues plus other useful diagonstics
     # Eigenvalues are returned in ascending order
-    all_eigval = np.linalg.eigvalsh(cov_arr)
+    all_eigval = np.linalg.eigvalsh(cov)
     N = len(all_eigval)
     min_eigval = all_eigval[0]
     max_eigval = all_eigval[-1]
@@ -146,26 +175,26 @@ def eof_chop(
     subset_by_index = [N - n_eig_2B_included, N - 1]
     # NOTE: Use SciPy here as can subset by index (numpy cannot)
     current_eigv, current_eigV = sc.linalg.eigh(
-        cov_arr, subset_by_index=subset_by_index
+        cov, subset_by_index=subset_by_index
     )
     print(current_eigv)
     print(current_eigV.shape)
 
     # This is new truncated covariance matrix...
     # it will/should have eigenvalues effectively 0
-    cov_arr_adj = current_eigV @ np.diag(current_eigv) @ current_eigV.T
+    cov_adj = current_eigV @ np.diag(current_eigv) @ current_eigV.T
 
     n_vec = 10
     print("Computing adjusted eigenvalues, smallest " + str(n_vec))
     # NOTE: Use SciPy here as can subset by index (numpy cannot)
-    new_eigv = sc.linalg.eigvalsh(cov_arr_adj, subset_by_index=[0, n_vec - 1])
+    new_eigv = sc.linalg.eigvalsh(cov_adj, subset_by_index=[0, n_vec - 1])
     new_min_eigv = np.min(new_eigv)
     new_max_eigv = np.max(new_eigv)
     print("Largest eigenvalue=", new_max_eigv)
     print("Smallest eigenvalue=", new_min_eigv)
     print("Float32 precision=largest eigv x 1E-6=", 1e-6 * new_max_eigv, "]")
 
-    new_det = np.linalg.det(cov_arr_adj)
+    new_det = np.linalg.det(cov_adj)
     print("Determinant=", new_det)
     sum_eigval2 = np.sum(current_eigv)
     print(
@@ -176,7 +205,7 @@ def eof_chop(
         "]",
     )
 
-    meta_dict = {
+    summary_dict = {
         "target_explained_variance%": target_explained_variance * 100.0,
         "num_of_retained_eofs": n_eig_2B_included,
         "threshold": eigenvals_2B_included[-1],
@@ -185,7 +214,7 @@ def eof_chop(
         "determinant": new_det,
         "total_variance": sum_eigval2,
     }
-    return (cov_arr_adj, meta_dict)
+    return cov_adj, summary_dict
 
 
 def check_symmetric(
