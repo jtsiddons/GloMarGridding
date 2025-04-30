@@ -245,7 +245,7 @@ def kriging_simple(
     obs_grid_cov: np.ndarray,
     grid_obs: np.ndarray,
     interp_cov: np.ndarray,
-    mean: float = 0.0,
+    mean: float | np.ndarray = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging assuming a constant known mean.
@@ -286,7 +286,7 @@ def kriging_simple(
     uncert[np.isnan(uncert)] = 0.0
 
     print("Simple Kriging Complete")
-    return kriged_result, uncert
+    return kriged_result + mean, uncert
 
 
 def kriging_ordinary(

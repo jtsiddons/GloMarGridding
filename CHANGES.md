@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.2.2 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### New features and enhancements
+
+* Added optional argument `mean` to `kriging.kriging_simple` (!47)
+
+## 0.2.1 (2025-04-28)
 
 Contributors to this version: Joseph Siddons (@josidd)
 
