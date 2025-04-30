@@ -312,9 +312,9 @@ def eigenvalue_clip(
             raise ValueError("Unknown clipping method")
 
     clip_i = n_eigvals + keep_i  # Note i2keep is NEGATIVE
-    print("Numbers of kept eigenvalues = ", -keep_i)
-    print("Numbers of clipped eigenvalues = ", clip_i)
-    #
+    print("Number of kept eigenvalues = ", -keep_i)
+    print("Number of clipped eigenvalues = ", clip_i)
+
     # The total variance should be preserved after clipping
     # within precision error of the eigenvalues which is
     # O(Max(Eig) * float_accuracy)
