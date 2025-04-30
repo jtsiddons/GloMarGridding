@@ -1,3 +1,0 @@
-base_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/"
-data_path: "matern_physical_distances_v_eq_1p5_filled_in/"
-outpath: "locally_build_covariances/"

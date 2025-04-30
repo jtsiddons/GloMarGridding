@@ -1,3 +1,0 @@
-nc_path: "/noc/mpoc/surface_data/ESA_CCI5deg_month_extra/ANOMALY/SpatialScales/locally_build_covariances/"
-uncorrected: "covariance_MM_v_eq_1p5_sst_without_psd_check.nc"
-output: "covariance_MM_v_eq_1p5_sst_clipped.nc"

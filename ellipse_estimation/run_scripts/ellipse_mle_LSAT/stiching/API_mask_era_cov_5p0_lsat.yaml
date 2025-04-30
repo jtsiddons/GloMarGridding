@@ -1,3 +1,0 @@
-base_path: "/noc/mpoc/surface/ERA5_SURFTEMP_500deg_monthly/ANOMALY/SpatialScales/"
-data_path: "matern_physical_distances_v_eq_1p5_filled_in/"
-outpath: "locally_build_covariances/"
