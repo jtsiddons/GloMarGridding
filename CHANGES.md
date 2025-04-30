@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.2.2 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
+
+### New features and enhancements
+
+* Add function to compute constraint_mask / alpha following Morice et al. (2021) (!58).
+
+## 0.2.1 (2025-04-28)
 
 Contributors to this version: Joseph Siddons (@josidd)
 
