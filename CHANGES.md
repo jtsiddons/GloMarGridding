@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.2 (unreleased)
+## 0.2.2 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd)
 
