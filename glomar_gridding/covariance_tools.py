@@ -66,7 +66,7 @@ Modified by J. Siddons.
 from itertools import accumulate
 from typing import Any, Literal
 import numpy as np
-import scipy as sc
+import scipy as sp
 from statsmodels.stats import correlation_tools
 from warnings import warn
 
@@ -174,7 +174,7 @@ def eof_chop(
     )
     subset_by_index = [N - n_eig_2B_included, N - 1]
     # NOTE: Use SciPy here as can subset by index (numpy cannot)
-    current_eigv, current_eigV = sc.linalg.eigh(
+    current_eigv, current_eigV = sp.linalg.eigh(
         cov, subset_by_index=subset_by_index
     )
     print(current_eigv)
@@ -187,7 +187,7 @@ def eof_chop(
     n_vec = 10
     print("Computing adjusted eigenvalues, smallest " + str(n_vec))
     # NOTE: Use SciPy here as can subset by index (numpy cannot)
-    new_eigv = sc.linalg.eigvalsh(cov_adj, subset_by_index=[0, n_vec - 1])
+    new_eigv = sp.linalg.eigvalsh(cov_adj, subset_by_index=[0, n_vec - 1])
     new_min_eigv = np.min(new_eigv)
     new_max_eigv = np.max(new_eigv)
     print("Largest eigenvalue=", new_max_eigv)
@@ -426,7 +426,7 @@ def simple_clipping(
         "Computing eigenvalues and eigenvector up to the estimated number: "
         + str(n_vec)
     )
-    current_eigv, current_eigV = sc.linalg.eigh(
+    current_eigv, current_eigV = sp.linalg.eigh(
         cov, eigvals_only=False, subset_by_index=[0, n_vec - 1]
     )
     print(current_eigv)
@@ -474,7 +474,7 @@ def simple_clipping(
         cov_adj = cov + dC
 
     print("Computing adjusted eigenvalues, smallest " + str(n_vec))
-    new_eigv = sc.linalg.eigh(
+    new_eigv = sp.linalg.eigh(
         cov_adj, eigvals_only=True, subset_by_index=[0, n_vec - 1]
     )
     new_min_eigv = np.min(new_eigv)
