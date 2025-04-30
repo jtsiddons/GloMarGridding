@@ -22,6 +22,7 @@ dependencies = [
   "pandas",
   "polars",
   "pyarrow",
+  "pyyaml>=6.0.2",
   "scikit-learn",
   "scipy",
   "statsmodels>=0.14.4",
