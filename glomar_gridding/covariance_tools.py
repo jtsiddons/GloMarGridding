@@ -58,6 +58,9 @@ https://scikit-learn.org/stable/modules/covariance.html
 b) reprojection (aka Higham's method)
 https://github.com/mikecroucher/nearest_correlation
 https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+
+Author S Chan.
+Modified by J. Siddons.
 """
 
 from itertools import accumulate
