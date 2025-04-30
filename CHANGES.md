@@ -16,6 +16,14 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 * Add module for estimating ellipse parameters from observational datasets (`ellipse_builder`) (!54)
 * Add module containing ellipse models (`ellipse`) (!54)
 
+## 0.2.2 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### New features and enhancements
+
+* Added optional argument `mean` to `kriging.kriging_simple` (!47)
+
 ## 0.2.1 (2025-04-28)
 
 Contributors to this version: Joseph Siddons (@josidd)
