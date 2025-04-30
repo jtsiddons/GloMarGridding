@@ -12,7 +12,7 @@ import xarray as xr
 import yaml
 
 
-from glomar_gridding.covariance_cube import EllipseBuilder
+from glomar_gridding.ellipse_builder import EllipseBuilder
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.io import get_recurse, load_array
 from glomar_gridding.utils import init_logging
