@@ -16,6 +16,14 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 * Add module for estimating ellipse parameters from observational datasets (`ellipse_builder`) (!54)
 * Add module containing ellipse models (`ellipse`) (!54)
 
+## 0.2.3 (2025-04-30)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
+
+### New features and enhancements
+
+* Add function to compute constraint_mask / alpha following Morice et al. (2021) (!58).
+
 ## 0.2.2 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd)
