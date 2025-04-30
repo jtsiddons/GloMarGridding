@@ -68,6 +68,123 @@ from statsmodels.stats import correlation_tools
 from warnings import warn
 
 
+def eof_chop(
+    cov_arr: np.ndarray,
+    target_explained_variance: float = 0.95,
+):
+    """
+    Set a target explained variance (say 95%) for the empirical
+    orthogonal functions, compute the eigenvalues and
+    eigenvectors up to that explained variance. Reconstruct
+    the covariance keeping only EOFs up to the target. This
+    is very close to 2, but it reduces the total variance of
+    the covariance matrix. The original method requires solving
+    for ALL eigenvectors which may not be possible for massive
+    matrices (40000x40000 square matrices). This is currently done
+    for the MAT covariance matrices which have very large dominant
+    modes.
+    """
+    if np.ma.isMaskedArray(cov_arr):
+        cov_arr = cov_arr.data  # type: ignore
+
+    # Compute all eigenvalues plus other useful diagonstics
+    # Eigenvalues are returned in ascending order
+    all_eigval = np.linalg.eigvalsh(cov_arr)
+    N = len(all_eigval)
+    min_eigval = all_eigval[0]
+    max_eigval = all_eigval[-1]
+    sum_eigval = np.sum(all_eigval)
+
+    n_negatives = int(np.argmax(all_eigval >= 0))
+    sum_of_negatives = np.sum(all_eigval[:n_negatives])
+
+    p90_index = int(np.ceil(0.90 * N))
+    p95_index = int(np.ceil(0.95 * N))
+    sum_top10_eigval = np.sum(all_eigval[p90_index:])
+    sum_top05_eigval = np.sum(all_eigval[p95_index:])
+
+    top10_explained_var = 100.0 * sum_top10_eigval / sum_eigval
+    top05_explained_var = 100.0 * sum_top05_eigval / sum_eigval
+    explained_var_from_neg = 100.0 * sum_of_negatives / sum_eigval
+    print("Pre-adjusted eigenvalue summary")
+    print("Total variance=", sum_eigval)
+    print("Largest=", max_eigval)
+    print("Smallest/most negative=", min_eigval)
+    print("Number of negative eigenvalues=", n_negatives)
+    print("Sum=", sum_eigval)
+    print("Explained variance from top 10%=", top10_explained_var, "%")
+    print("Explained variance from top  5%=", top05_explained_var, "%")
+    print(
+        "Negative contributions from the negatives=",
+        explained_var_from_neg,
+        "%",
+    )
+
+    target_total_variance = target_explained_variance * sum_eigval
+    all_eigval_R = all_eigval[::-1]
+    eigenvals_2B_included = all_eigval_R[
+        all_eigval_R.cumsum() <= target_total_variance
+    ]
+    n_eig_2B_included = len(eigenvals_2B_included)
+    print("Target explained variance=", target_explained_variance)
+    print("aka adjusted total variance=", target_total_variance)
+    print("Requiring ", n_eig_2B_included, " eigenvalues")
+    print(
+        "Smallest eigenvalue in truncation=",
+        eigenvals_2B_included[-1],
+        "(aka threshold)",
+    )
+    print("Largest eigenvalue in truncation=", eigenvals_2B_included[0])
+
+    print(
+        "Computing eigenval & eigenvec up to the estimated number: "
+        + str(n_eig_2B_included)
+    )
+    subset_by_index = [N - n_eig_2B_included, N - 1]
+    # NOTE: Use SciPy here as can subset by index (numpy cannot)
+    current_eigv, current_eigV = sc.linalg.eigh(
+        cov_arr, subset_by_index=subset_by_index
+    )
+    print(current_eigv)
+    print(current_eigV.shape)
+
+    # This is new truncated covariance matrix...
+    # it will/should have eigenvalues effectively 0
+    cov_arr_adj = current_eigV @ np.diag(current_eigv) @ current_eigV.T
+
+    n_vec = 10
+    print("Computing adjusted eigenvalues, smallest " + str(n_vec))
+    # NOTE: Use SciPy here as can subset by index (numpy cannot)
+    new_eigv = sc.linalg.eigvalsh(cov_arr_adj, subset_by_index=[0, n_vec - 1])
+    new_min_eigv = np.min(new_eigv)
+    new_max_eigv = np.max(new_eigv)
+    print("Largest eigenvalue=", new_max_eigv)
+    print("Smallest eigenvalue=", new_min_eigv)
+    print("Float32 precision=largest eigv x 1E-6=", 1e-6 * new_max_eigv, "]")
+
+    new_det = np.linalg.det(cov_arr_adj)
+    print("Determinant=", new_det)
+    sum_eigval2 = np.sum(current_eigv)
+    print(
+        "Actual adjusted total variance after truncation=",
+        sum_eigval2,
+        "[Target = ",
+        target_total_variance,
+        "]",
+    )
+
+    meta_dict = {
+        "target_explained_variance%": target_explained_variance * 100.0,
+        "num_of_retained_eofs": n_eig_2B_included,
+        "threshold": eigenvals_2B_included[-1],
+        "smallest_eigv": new_min_eigv,
+        "largest_eigv": new_max_eigv,
+        "determinant": new_det,
+        "total_variance": sum_eigval2,
+    }
+    return (cov_arr_adj, meta_dict)
+
+
 def check_symmetric(
     a: np.ndarray,
     rtol: float = 1e-5,
@@ -292,15 +409,9 @@ def eigenvalue_clip(
     In ESA data, keeping 95% variance means keeping top ~15% of the
     eigenvalues
     """
-    # NOTE: SciPy method solves generalised e-val problem, preferred func to
-    #       numpy
-    eigvals, eigvecs = sc.linalg.eigh(mat)
-    # Not necessary to sort output
-    # sorted_order = np.argsort(eigvals)
-    # eigvals = eigvals[sorted_order]
+    eigvals, eigvecs = np.linalg.eigh(mat)
     print("[:5] =", eigvals[:5])
     print("[-5:] =", eigvals[-5:])
-    # eigvecs = eigvec[:, sorted_order]
     n_eigvals = len(eigvals)
 
     match method:
@@ -322,7 +433,7 @@ def eigenvalue_clip(
     var_explained_by_i2keep = np.sum(eigvals[keep_i:])
     unexplained_var = total_var - var_explained_by_i2keep
     avg_eigenvals_4_unexplained = unexplained_var / clip_i
-    #
+
     # Find eigenvectors associated up to i2keep
     new_eigvals = eigvals.copy()
     new_eigvals[:keep_i] = avg_eigenvals_4_unexplained
