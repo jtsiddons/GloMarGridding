@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.3 (unreleased)
+## 0.2.3 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
 
