@@ -216,9 +216,63 @@ def grid_to_distance_matrix(
         A DataArray containing the distance matrix with coordinate system
         defined with grid cell index ("index_1" and "index_2"). The coordinates
         of the original grid are also kept as coordinates related to each
-        index (the coordinate names are suffixed with "_1" or "_2" respectively.
+        index (the coordinate names are suffixed with "_1" or "_2"
+        respectively).
     """
     coords = grid.coords
+    out_coords = cross_coords(coords, lat_coord, lon_coord)
+
+    dist: np.ndarray = calculate_distance_matrix(
+        pl.DataFrame({"lat": out_coords["lat_1"], "lon": out_coords["lon_1"]}),
+        dist_func=dist_func,
+        lat_col=lat_coord,
+        lon_col=lon_coord,
+    )
+
+    return xr.DataArray(
+        dist,
+        coords=xr.Coordinates(out_coords),
+        name="dist",
+    )
+
+
+def cross_coords(
+    coords: xr.Coordinates,
+    lat_coord: str,
+    lon_coord: str,
+) -> xr.Coordinates:
+    """
+    Combine a set of coordinates into a cross-product, for example to construct
+    a coordinate system for a distance matrix.
+
+    For example a coordinate system defined by:
+        lat = [0, 1],
+        lon = [4, 5],
+    would yield a new coordinate system defined by:
+        index_1 = [0, 1, 2, 3]
+        index_2 = [0, 1, 2, 3]
+        lat_1 = [0, 0, 1, 1]
+        lon_1 = [4, 5, 4, 5]
+        lat_2 = [0, 0, 1, 1]
+        lon_2 = [4, 5, 4, 5]
+
+    Parameters
+    ----------
+    coords : xarray.Coordinates
+        The set of coordinates to combine, or cross. This should be of length
+        2 and have names defined by `lat_coord` and `lon_coord` input arguments.
+        The ordering of the coordinates will define the cross ordering.
+    lat_coord : str
+        The name of the latitude coordinate.
+    lon_coord : str
+        The name of the longitude coordinate.
+
+    Returns
+    -------
+    cross_coords : xarray.Coordinates
+        The new crossed coordinates, including index, and each of the input
+        coordinates, for each dimension.
+    """
     if len(coords) != 2:
         raise ValueError(
             "Input grid must have 2 indexes - "
@@ -235,26 +289,15 @@ def grid_to_distance_matrix(
 
     coord_df = pl.from_records(
         list(coords.to_index()),
-        schema=list(coords.keys()),
+        schema=list(coords.keys()),  # type: ignore
         orient="row",
     )
 
-    dist: np.ndarray = calculate_distance_matrix(
-        coord_df,
-        dist_func=dist_func,
-        lat_col=lat_coord,
-        lon_col=lon_coord,
-    )
-
     n = coord_df.height
-    out_coords: dict[str, Any] = {"index_1": range(n), "index_2": range(n)}
+    cross_coords: dict[str, Any] = {"index_1": range(n), "index_2": range(n)}
     for i in range(1, 3):
-        out_coords.update(
+        cross_coords.update(
             {f"{c}_{i}": (f"index_{i}", coord_df[c]) for c in coord_df.columns}
         )
 
-    return xr.DataArray(
-        dist,
-        coords=xr.Coordinates(out_coords),
-        name="dist",
-    )
+    return xr.Coordinates(cross_coords)
