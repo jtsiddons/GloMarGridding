@@ -245,7 +245,7 @@ def kriging_simple(
     obs_grid_cov: np.ndarray,
     grid_obs: np.ndarray,
     interp_cov: np.ndarray,
-    mean: float = 0.0,
+    mean: float | np.ndarray = 0.0,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Simple Kriging assuming a constant known mean.
@@ -286,7 +286,7 @@ def kriging_simple(
     uncert[np.isnan(uncert)] = 0.0
 
     print("Simple Kriging Complete")
-    return kriged_result, uncert
+    return kriged_result + mean, uncert
 
 
 def kriging_ordinary(
@@ -301,9 +301,9 @@ def kriging_ordinary(
     Parameters
     ----------
     obs_obs_cov : np.ndarray[float]
-        Covariance between all measured grid points plus the
-        covariance due to measurements (i.e. measurement noise, bias noise, and
-        sampling noise). Can include error covariance terms.
+        Covariance between all measured grid points plus the covariance due to
+        measurements (i.e. measurement noise, bias noise, and sampling noise).
+        Can include error covariance terms, if these are being used.
     obs_grid_cov : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
         Does not contain error covarance.
@@ -372,3 +372,64 @@ def get_spatial_mean(
     invcov = ones.T @ np.linalg.inv(covx)
 
     return float(1 / (invcov @ ones) * (invcov @ grid_obs))
+
+
+def constraint_mask(
+    obs_obs_cov: np.ndarray,
+    obs_grid_cov: np.ndarray,
+    interp_cov: np.ndarray,
+) -> np.ndarray:
+    """
+    Compute the observational constraint mask (A14 in Morice et al. (2021) -
+    10.1029/2019JD032361) to determine if a grid point should be masked/weights
+    modified by how far it is to its near observed point
+
+    Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+
+    Equation to use is A14 is incorrect. Easily noticeable because dimensionally
+    incorrect is wrong, but the correct answer is easy to figure out.
+
+    Correct Equation (extra matrix inverse for K+R):
+    1 - diag( K(X*,X*) - k*^T @ (K+R)^{-1} @ k* )  / diag( K(X*,X*) )  < alpha
+
+    This can be re-written as:
+    diag(k*^T @ (K+R)^{-1} @ k*) / diag(K(X*, X*)) < alpha
+
+    alpha is chosen to be 0.25 in the UKMO paper
+
+    Written by S. Chan, modified by J. Siddons.
+
+    Parameters
+    ----------
+    obs_obs_cov : np.ndarray[float]
+        Covariance between all measured grid points plus the covariance due to
+        measurements (i.e. measurement noise, bias noise, and sampling noise).
+        Can include error covariance terms, if these are being used. This is
+        `K + R` in the above equation.
+    obs_grid_cov : np.ndarray[float]
+        Covariance between the all (predicted) grid points and measured points.
+        Does not contain error covarance. This is `k*` in the above equation.
+    interp_cov : np.ndarray[float]
+        Interpolation covariance of all output grid points (each point in time
+        and all points against each other). This is `K(X*, X*)` in the above
+        equation.
+
+    Returns
+    -------
+    constraint_mask : numpy.ndarray
+        Constraint mask values, the left-hand-side of equation A14 from Morice
+        et al. (2021). This is a vector of length `k_obs.size[0]`.
+
+    Reference
+    ---------
+    Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+    """
+    # ky_inv = np.linalg.inv(k_obs + err_cov)
+    # NOTE: Ax = b => x = A^{-1}b (x = solve(A, b))
+    Kinv_kstar = np.linalg.solve(obs_obs_cov, obs_grid_cov)
+    numerator = np.diag(obs_grid_cov.T @ Kinv_kstar)
+    denominator = np.diag(interp_cov)
+    constraint_mask = numerator / denominator
+    # constraint_mask has the length of number of grid points
+    # (obs-covered and interpolated.)
+    return constraint_mask
