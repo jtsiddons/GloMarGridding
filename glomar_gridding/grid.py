@@ -223,7 +223,12 @@ def grid_to_distance_matrix(
     out_coords = cross_coords(coords, lat_coord, lon_coord)
 
     dist: np.ndarray = calculate_distance_matrix(
-        pl.DataFrame({"lat": out_coords["lat_1"], "lon": out_coords["lon_1"]}),
+        pl.DataFrame(
+            {
+                "lat": out_coords["lat_1"].values,
+                "lon": out_coords["lon_1"].values,
+            }
+        ),
         dist_func=dist_func,
         lat_col=lat_coord,
         lon_col=lon_coord,
