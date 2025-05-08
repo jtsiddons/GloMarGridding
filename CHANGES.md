@@ -1,11 +1,19 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd).
+
+### New features and enhancements
+
+* Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
+
 ## 0.2.3 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
 
-### New features and enhancements
 
+### New features and enhancements
 * Add function to compute constraint_mask / alpha following Morice et al. (2021) (!58).
 
 ## 0.2.2 (2025-04-30)
