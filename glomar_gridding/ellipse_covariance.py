@@ -451,7 +451,8 @@ class EllipseCovarianceBuilder:
 
         return c_ij.astype(self.precision)
 
-    def _calculate_cor(self) -> None:
+    def calculate_cor(self) -> None:
+        """Calculate correlation matrix from the covariance matrix"""
         self.cor_ns = cov_2_cor(self.cov_ns)
         return None
 
