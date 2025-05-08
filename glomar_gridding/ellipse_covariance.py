@@ -5,6 +5,7 @@ import logging
 import sys
 
 from itertools import combinations
+from typing import Any
 from warnings import warn
 
 import numpy as np
@@ -453,6 +454,29 @@ class EllipseCovarianceBuilder:
     def _calculate_cor(self) -> None:
         self.cor_ns = cov_2_cor(self.cov_ns)
         return None
+
+    def uncompress_cov(self, fill_value: Any = np.nan) -> None:
+        """
+        Convert the covariance matrix to full grid size.
+
+        Optionally, fill the array with a `fill_value`, which defaults to
+        `np.nan`.
+
+        Parameters
+        ----------
+        fill_value : Any
+            Value to assign to masked values. Defaults to `np.nan`
+        """
+        if not np.sum(~self.data_mask) == self.cov_ns.shape[0]:
+            raise ValueError("Data mask and coordinates cannot be aligned")
+        fmask = np.logical_or.outer(
+            self.data_mask.flatten(), self.data_mask.flatten()
+        )
+        uncompressed = np.full_like(
+            fmask, fill_value=fill_value, dtype=self.precision
+        )
+        np.place(uncompressed, ~fmask, self.cov_ns)
+        self.cov_ns = uncompressed
 
 
 def _sigma_rot_func_multi(
