@@ -6,7 +6,11 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Breaking changes
 
-- All job-specific files are removed from the library (!56)
+* All job-specific files are removed from the library (!56)
+
+### New features and enhancements
+
+* Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
 
 ## 0.2.3 (2025-04-30)
 
