@@ -106,10 +106,6 @@ def test_ellipse_covariance_rescale():
     in_file = os.path.join(
         os.path.dirname(__file__), "data", "Atlantic_Ocean_07.nc"
     )
-    expected_file = os.path.join(
-        os.path.dirname(__file__), "data", "cov_no_hfix.nc"
-    )
-    expected = load_array(expected_file, "covariance").values
 
     ds = load_dataset(in_file)
     Lx = ds["lx"][50:70, 50:70]
