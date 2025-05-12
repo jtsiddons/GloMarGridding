@@ -1,6 +1,34 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.3.0 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### Breaking changes
+
+* All job-specific files are removed from the library (!56)
+
+### New features and enhancements
+
+* Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
+
+## 0.2.3 (2025-04-30)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
+
+### New features and enhancements
+
+* Add function to compute constraint_mask / alpha following Morice et al. (2021) (!58).
+
+## 0.2.2 (2025-04-30)
+
+Contributors to this version: Joseph Siddons (@josidd)
+
+### New features and enhancements
+
+* Added optional argument `mean` to `kriging.kriging_simple` (!47)
+
+## 0.2.1 (2025-04-28)
 
 Contributors to this version: Joseph Siddons (@josidd)
 
@@ -30,6 +58,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* Add `__version__` (!55)
 * `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 
