@@ -1059,6 +1059,78 @@ def unmasked_kriging(
     )
 
 
+def prep_obs_for_kriging(
+    unmask_idx: np.ndarray,
+    unique_obs_idx: np.ndarray,
+    weights: np.ndarray,
+    obs: np.ndarray,
+    remove_obs_mean: int = 0,
+    obs_bias: np.ndarray | None = None,
+    error_cov: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Prep masked observations for Kriging. Combines observations in the same
+    grid box to a single averaged observation using a weighted average.
+
+    Parameters
+    ----------
+    unmask_idx : np.ndarray[int]
+        Indices of all un-masked points for chosen date.
+    unique_obs_idx : np.ndarray[int]
+        Unique indices of all measurement points for a chosen date,
+        representative of the indices of gridboxes, which have => 1 measurement.
+    weights : np.ndarray[float]
+        Weight matrix (inverse of counts of observations).
+    obs : np.ndarray[float]
+        All point observations/measurements for the chosen date.
+    remove_obs_mean: int
+        Should the mean or median from obs be removed and added back onto obs?
+        0 = No (default action)
+        1 = the mean is removed
+        2 = the median is removed
+        3 = the spatial meam os removed
+    obs_bias : np.ndarray[float] | None
+        Bias of all measurement points for a chosen date (corresponds to x_obs).
+
+    Returns
+    -------
+    obs_idx : numpy.ndarray[int]
+        Subset of grid-box indices containing observations that are unmasked.
+    grid_obs : numpy.ndarray[float]
+        Unmasked and combined observations
+    """
+    obs_idx = get_unmasked_obs_indices(unmask_idx, unique_obs_idx)
+
+    if obs_bias is not None:
+        print("With bias")
+        grid_obs = weights @ (obs - obs_bias)
+    else:
+        grid_obs = weights @ obs
+
+    grid_obs = np.squeeze(grid_obs) if len(grid_obs) > 1 else grid_obs
+
+    match remove_obs_mean:
+        case 0:
+            grid_obs_av = None
+        case 1:
+            grid_obs_av = np.ma.average(grid_obs)
+            grid_obs = grid_obs - grid_obs_av
+        case 2:
+            grid_obs_av = np.ma.median(grid_obs)
+            grid_obs = grid_obs - grid_obs_av
+        case 3:
+            if error_cov is None:
+                raise ValueError(
+                    "'remove_obs_mean = 3 requires error covariance"
+                )
+            grid_obs_av = get_spatial_mean(grid_obs, error_cov)
+            grid_obs = grid_obs - grid_obs_av
+        case _:
+            raise ValueError("Unknown 'remove_obs_mean' value")
+
+    return obs_idx, grid_obs
+
+
 def get_unmasked_obs_indices(
     unmask_idx: np.ndarray,
     unique_obs_idx: np.ndarray,
