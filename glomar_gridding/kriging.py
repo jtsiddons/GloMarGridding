@@ -495,7 +495,6 @@ def get_unmasked_obs_indices(
     return obs_idx
 
 
-# TODO: Handle mean
 def kriging_simple(
     obs_obs_cov: np.ndarray,
     obs_grid_cov: np.ndarray,
