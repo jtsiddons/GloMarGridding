@@ -12,6 +12,7 @@ Ordinary Kriging.
 from abc import ABC, abstractmethod
 from typing import Literal
 import numpy as np
+from warnings import warn
 
 from .utils import adjust_small_negative, intersect_mtlb
 
@@ -19,9 +20,14 @@ KrigMethod = Literal["simple", "ordinary"]
 
 
 class Kriging(ABC):
-    """DOC"""
+    """
+    Class for Kriging.
+
+    Do not use this class, use SimpleKriging or OrdinaryKriging classes.
+    """
 
     def __init__(self, covariance: np.ndarray) -> None:
+        warn("Do not use this class directly")
         self.covariance = covariance
         return None
 
@@ -267,6 +273,9 @@ def kriging(  # noqa: C901
     Get array of krigged observations and anomalies for all grid points in the
     domain.
 
+    This function is deprecated in favour of SimpleKriging and OrdinaryKriging
+    classes. It will be removed in version 1.0.0.
+
     Parameters
     ----------
     obs_idx : np.ndarray[int]
@@ -305,6 +314,11 @@ def kriging(  # noqa: C901
     dz : np.ndarray[float]
         Uncertainty associated with the chosen kriging method.
     """
+    warn(
+        "kriging is deprecated and will be removed in version v1.0.0, "
+        + "use SimpleKriging or OrdinaryKriging classes",
+        DeprecationWarning,
+    )
     if obs is None or interp_cov is None:
         raise ValueError(
             "Observations and interpolation covariance must be supplied"
@@ -394,6 +408,9 @@ def unmasked_kriging(
     Get array of krigged observations and anomalies for all grid points in the
     domain.
 
+    This function is deprecated in favour of SimpleKriging and OrdinaryKriging
+    classes. It will be removed in version 1.0.0.
+
     Parameters
     ----------
     unmask_idx : np.ndarray[int]
@@ -431,6 +448,11 @@ def unmasked_kriging(
     dz : np.ndarray[float]
         Uncertainty associated with the chosen kriging method.
     """
+    warn(
+        "unmasked_kriging is deprecated and will be removed in version v1.0.0, "
+        + "use SimpleKriging or OrdinaryKriging classes",
+        DeprecationWarning,
+    )
     obs_idx = get_unmasked_obs_indices(unmask_idx, unique_obs_idx)
 
     return kriging(
@@ -484,6 +506,9 @@ def kriging_simple(
     """
     Perform Simple Kriging assuming a constant known mean.
 
+    This function is deprecated in favour of SimpleKriging class. It will be
+    removed in version 1.0.0.
+
     Parameters
     ----------
     obs_obs_cov : np.ndarray[float]
@@ -510,6 +535,11 @@ def kriging_simple(
     dz : np.ndarray[float]
         Uncertainty associated with the simple kriging.
     """
+    warn(
+        "kriging_simple is deprecated and will be removed in version v1.0.0, "
+        + "use SimpleKriging",
+        DeprecationWarning,
+    )
     kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
     kriged_result = kriging_weights @ grid_obs
 
@@ -531,6 +561,9 @@ def kriging_ordinary(
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform Ordinary Kriging with unknown but constant mean.
+
+    This function is deprecated in favour of OrdinaryKriging class. It will be
+    removed in version 1.0.0.
 
     Parameters
     ----------
@@ -556,6 +589,11 @@ def kriging_ordinary(
     dz : np.ndarray[float]
         Uncertainty associated with the ordinary kriging.
     """
+    warn(
+        "kriging_ordinary is deprecated and will be removed in version v1.0.0, "
+        + "use OrdinaryKriging",
+        DeprecationWarning,
+    )
     # Convert to ordinary kriging, add Lagrangian multiplier
     N, M = obs_grid_cov.shape
     obs_obs_cov = np.block(
