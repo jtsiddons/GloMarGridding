@@ -503,7 +503,7 @@ class OrdinaryKriging(Kriging):
     .. math::
         (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
-    Where :math:`\\mu` is a constant known mean, typically this is 0.
+    with a constant but unknown mean.
 
     In this case, the :math:`K_{obs}`, :math:`K_{cross}` and :math:`y` values
     are extended with a Lagrange multiplier term, ensuring that the Kriging
