@@ -38,7 +38,7 @@ from glomar_gridding.grid import (
     grid_to_distance_matrix,
 )
 from glomar_gridding.variogram import MaternVariogram
-from glomar_gridding.kriging import kriging_ordinary
+from glomar_gridding.kriging import kriging_ordinary, OrdinaryKriging
 
 
 def _load_results() -> np.ndarray:
@@ -74,6 +74,33 @@ def test_ordinary_kriging() -> None:  # noqa: D103
     S = covariance.values[grid_idx[:, None], grid_idx[None, :]]
     SS = covariance.values[grid_idx, :]
     k, _ = kriging_ordinary(S, SS, obs_vals, covariance.values)
+
+    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    return None
+
+
+def test_ordinary_kriging_class() -> None:  # noqa: D103
+    expected = _load_results()
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    OKrige = OrdinaryKriging(covariance=covariance.values)
+
+    k = OKrige.solve(obs_vals, grid_idx)
 
     assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None

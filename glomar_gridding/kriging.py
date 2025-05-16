@@ -9,12 +9,242 @@ Ordinary Kriging.
 # for python version >= 3.11
 ################
 
+from abc import ABC, abstractmethod
 from typing import Literal
 import numpy as np
 
 from .utils import adjust_small_negative, intersect_mtlb
 
 KrigMethod = Literal["simple", "ordinary"]
+
+
+class Kriging(ABC):
+    """DOC"""
+
+    def __init__(self, covariance: np.ndarray) -> None:
+        self.covariance = covariance
+        return None
+
+    def set_kriging_weights(self, kriging_weights: np.ndarray) -> None:
+        """Set Kriging Weights"""
+        self.kriging_weights = kriging_weights
+        return None
+
+    @abstractmethod
+    def get_kriging_weights(
+        self,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> None:
+        """DOC"""
+        raise NotImplementedError(
+            "`get_kriging_weights` not implemented for default class"
+        )
+
+    @abstractmethod
+    def kriging_weights_from_inverse(
+        self,
+        inv: np.ndarray,
+        idx,
+    ) -> None:
+        """DOC"""
+        raise NotImplementedError(
+            "`kriging_weights_from_inverse` not implemented for default class"
+        )
+
+    @abstractmethod
+    def get_uncertainty(self) -> np.ndarray:
+        """DOC"""
+        raise NotImplementedError(
+            "`get_uncertainty` not implemented for default class"
+        )
+
+    @abstractmethod
+    def solve(
+        self,
+        grid_obs: np.ndarray,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """DOC"""
+        raise NotImplementedError("`solve` not implemented for default class")
+
+    @abstractmethod
+    def constraint_mask(self, idx: np.ndarray) -> np.ndarray:
+        """DOC"""
+        raise NotImplementedError(
+            "`constraint_mask` not implemented for default class"
+        )
+
+
+class SimpleKriging(Kriging):
+    """DOC"""
+
+    method: str = "simple"
+
+    def get_kriging_weights(
+        self,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> None:
+        """DOC"""
+        obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
+        obs_grid_cov = self.covariance[idx, :]
+
+        # Add error covariance
+        if error_cov is not None:
+            if error_cov.shape[0] != len(idx):
+                error_cov = error_cov[idx[:, None], idx[None, :]]
+            obs_obs_cov += error_cov
+        self.kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+
+        return None
+
+    def solve(
+        self,
+        grid_obs: np.ndarray,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """DOC"""
+        if not hasattr(self, "kriging_weights"):
+            self.get_kriging_weights(idx, error_cov)
+
+        return self.kriging_weights @ grid_obs
+
+    def kriging_weights_from_inverse(
+        self,
+        inv: np.ndarray,
+        idx,
+    ) -> None:
+        """DOC"""
+        if len(idx) != inv.shape[0]:
+            raise ValueError("inv must be square with side length == len(idx)")
+        obs_grid_cov = self.covariance[idx, :]
+        self.kriging_weights = (inv @ obs_grid_cov).T
+
+    def get_uncertainty(self) -> np.ndarray:
+        """DOC"""
+        if not hasattr(self, "kriging_weights"):
+            raise KeyError("Please compute Kriging Weights first")
+
+        alpha = self.kriging_weights[:, -1]
+        dz_squared = np.diag(self.covariance - self.kriging_weights)
+        dz_squared -= alpha
+        dz_squared = adjust_small_negative(dz_squared)
+
+        uncert = np.sqrt(dz_squared)
+        uncert[np.isnan(uncert)] = 0.0
+        return uncert
+
+    def constraint_mask(
+        self,
+        idx: np.ndarray,
+    ) -> np.ndarray:
+        """DOC"""
+        if not hasattr(self, "kriging_weights"):
+            raise KeyError("Please compute Kriging Weights first")
+
+        numerator = np.diag(self.covariance[:, idx] @ self.kriging_weights.T)
+        denominator = np.diag(self.covariance)
+        return np.divide(numerator, denominator)
+
+
+class OrdinaryKriging(Kriging):
+    """DOC"""
+
+    method: str = "ordinary"
+
+    def get_kriging_weights(
+        self,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> None:
+        """DOC"""
+        N = len(idx)
+        M = self.covariance.shape[0]
+
+        obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
+        obs_grid_cov = self.covariance[idx, :]
+
+        # Add error covariance
+        if error_cov is not None:
+            if error_cov.shape[0] != len(idx):
+                error_cov = error_cov[idx[:, None], idx[None, :]]
+            obs_obs_cov += error_cov
+
+        # Add Lagrange multiplier
+        obs_obs_cov = np.block(
+            [[obs_obs_cov, np.ones((N, 1))], [np.ones((1, N)), 0]]
+        )
+        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+        self.kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+
+        return None
+
+    def solve(
+        self,
+        grid_obs: np.ndarray,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """DOC"""
+        if not hasattr(self, "kriging_weights"):
+            self.get_kriging_weights(idx, error_cov)
+
+        # Add Lagrange multiplier
+        grid_obs = np.append(grid_obs, 0)
+
+        return self.kriging_weights @ grid_obs
+
+    def kriging_weights_from_inverse(
+        self,
+        inv: np.ndarray,
+        idx,
+    ) -> None:
+        """DOC"""
+        if len(idx) != inv.shape[0]:
+            raise ValueError("inv must be square with side length == len(idx)")
+        obs_grid_cov = self.covariance[idx, :]
+
+        # Add Lagrange multiplier
+        M = self.covariance.shape[0]
+        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+        self.kriging_weights = (inv @ obs_grid_cov).T
+
+    def get_uncertainty(self) -> np.ndarray:
+        """DOC"""
+        if not hasattr(self, "kriging_weights"):
+            raise KeyError("Please compute Kriging Weights first")
+        dz_squared = np.diag(self.covariance - self.kriging_weights)
+        dz_squared = adjust_small_negative(dz_squared)
+        uncert = np.sqrt(dz_squared)
+        uncert[np.isnan(uncert)] = 0.0
+        return uncert
+
+    def constraint_mask(
+        self,
+        idx: np.ndarray,
+        simple_kriging_weights: np.ndarray | None = None,
+        error_cov: np.ndarray | None = None,
+    ) -> np.ndarray:
+        """DOC"""
+        if simple_kriging_weights is None:
+            obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
+            obs_grid_cov = self.covariance[idx, :]
+
+            # Add error covariance
+            if error_cov is not None:
+                if error_cov.shape[0] != len(idx):
+                    error_cov = error_cov[idx[:, None], idx[None, :]]
+                obs_obs_cov += error_cov
+            simple_kriging_weights = np.linalg.solve(
+                obs_obs_cov, obs_grid_cov
+            ).T
+
+        numerator = np.diag(self.covariance[:, idx] @ simple_kriging_weights.T)
+        denominator = np.diag(self.covariance)
+        return np.divide(numerator, denominator)
 
 
 def kriging(  # noqa: C901
