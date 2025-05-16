@@ -104,3 +104,73 @@ def test_ordinary_kriging_class() -> None:  # noqa: D103
 
     assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
+
+
+def test_ordinary_kriging_class_from_weights() -> None:  # noqa: D103
+    expected = _load_results()
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    obs_obs_cov = covariance.values[grid_idx[:, None], grid_idx[None, :]]
+    obs_grid_cov = covariance.values[grid_idx, :]
+    N, M = obs_grid_cov.shape
+    obs_obs_cov = np.block(
+        [[obs_obs_cov, np.ones((N, 1))], [np.ones((1, N)), 0]]
+    )
+    obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+    kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+
+    OKrige = OrdinaryKriging(covariance=covariance.values)
+    OKrige.set_kriging_weights(kriging_weights)
+
+    k = OKrige.solve(obs_vals, grid_idx)
+
+    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    return None
+
+
+def test_ordinary_kriging_class_from_inv() -> None:  # noqa: D103
+    expected = _load_results()
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    S = covariance.values[grid_idx[:, None], grid_idx[None, :]]
+    S_inv = np.linalg.inv(S)
+
+    OKrige = OrdinaryKriging(covariance=covariance.values)
+
+    S_ext_inv = OKrige.extended_inverse(S_inv)
+    OKrige.kriging_weights_from_inverse(S_ext_inv, grid_idx)
+
+    k = OKrige.solve(obs_vals, grid_idx)
+
+    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    return None

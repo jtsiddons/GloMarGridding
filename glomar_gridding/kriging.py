@@ -637,7 +637,7 @@ class OrdinaryKriging(Kriging):
             value should only appear once. Points that contain more than 1
             observation should be averaged
         """
-        if len(idx) != inv.shape[0]:
+        if len(idx) != inv.shape[0] - 1:
             raise ValueError("inv must be square with side length == len(idx)")
         obs_grid_cov = self.covariance[idx, :]
 
@@ -801,6 +801,52 @@ class OrdinaryKriging(Kriging):
         numerator = np.diag(self.covariance[:, idx] @ simple_kriging_weights.T)
         denominator = np.diag(self.covariance)
         return np.divide(numerator, denominator)
+
+    def extended_inverse(self, simple_inv: np.ndarray) -> np.ndarray:
+        r"""
+        Compute the inverse of a covariance matrix :math:`S = K_{obs} + E`, and
+        use that to compute the inverse of the extended version of the
+        covariance matrix with Lagrange multipliers, used by Ordinary Kriging.
+
+        This is useful when one needs to perform BOTH simple and ordinary
+        Kriging, or when one wishes to compute the constraint mask for
+        ordinary Kriging which requires the Kriging weights for the equivalent
+        simple Kriging problem.
+
+        The extended form of S is given by
+
+        |       1 |
+        |   S   1 |
+        |       1 |
+        | 1 1 1 0 |
+
+        This approach follows Guttman 1946 10.1214/aoms/1177730946
+
+        Parameters
+        ----------
+        simple_inv : numpy.matrix
+            Inverse of the covariance between observation grid-points
+
+        Returns
+        -------
+        numpy.matrix
+            Inverse of the extended covariance matrix between observation
+            grid-points including the Lagrange multiplier factors.
+        """
+        if len(simple_inv.shape) != 2:
+            raise ValueError("S must be a matrix")
+
+        d = 0
+        B = np.ones((simple_inv.shape[0], 1))
+
+        E = np.matmul(simple_inv, B)
+        f = d - np.matmul(B.T, E)
+        finv = 1 / f
+        G = finv * E.T
+        # H = finv * np.matmul(B.T, Ainv)
+        K = simple_inv + np.matmul(E, G)
+
+        return np.block([[K, -G.T], [-G, finv]])
 
 
 def kriging(  # noqa: C901
