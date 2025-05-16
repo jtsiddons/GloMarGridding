@@ -105,10 +105,14 @@ class SimpleKriging(Kriging):
         grid_obs: np.ndarray,
         idx: np.ndarray,
         error_cov: np.ndarray | None = None,
+        mean: np.ndarray | float | None = None,
     ) -> np.ndarray:
         """DOC"""
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
+
+        if mean is not None:
+            return self.kriging_weights @ grid_obs + mean
 
         return self.kriging_weights @ grid_obs
 
