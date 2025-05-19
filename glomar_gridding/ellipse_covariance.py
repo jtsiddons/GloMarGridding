@@ -456,26 +456,39 @@ class EllipseCovarianceBuilder:
         self.cor_ns = cov_2_cor(self.cov_ns)
         return None
 
-    def uncompress_cov(self, fill_value: Any = np.nan) -> None:
+    def uncompress_cov(
+        self,
+        diag_fill_value: Any = np.nan,
+        fill_value: Any = np.nan,
+    ) -> None:
         """
         Convert the covariance matrix to full grid size.
 
-        Optionally, fill the array with a `fill_value`, which defaults to
-        `np.nan`.
+        Optionally, fill the array with along the diagonal with a
+        `diag_fill_value` and off the diagonal with a `fill_value`, which both
+        default to `np.nan`.
+
+        Overwrites the `cov_ns` attribute.
 
         Parameters
         ----------
+        diag_fill_value : Any
+            Value to assign to diagonal masked values. Defaults to `np.nan`
         fill_value : Any
-            Value to assign to masked values. Defaults to `np.nan`
+            Value to assign to off-diagonal masked values. Defaults to `np.nan`
         """
         if not np.sum(~self.data_mask) == self.cov_ns.shape[0]:
             raise ValueError("Data mask and coordinates cannot be aligned")
         fmask = np.logical_or.outer(
             self.data_mask.flatten(), self.data_mask.flatten()
         )
+        # Set up uncompressed array
         uncompressed = np.full_like(
             fmask, fill_value=fill_value, dtype=self.precision
         )
+        diag_idcs = np.diag_indices_from(uncompressed)
+        uncompressed[diag_idcs] = diag_fill_value
+
         np.place(uncompressed, ~fmask, self.cov_ns)
         self.cov_ns = uncompressed
 
