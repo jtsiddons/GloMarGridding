@@ -115,7 +115,6 @@ class Kriging(ABC):
 
         Sets the `kriging_weights` attribute.
 
-
         Parameters
         ----------
         inv : numpy.ndarray
@@ -341,7 +340,6 @@ class SimpleKriging(Kriging):
         grid-points).
 
         Sets the `kriging_weights` attribute.
-
 
         Parameters
         ----------
