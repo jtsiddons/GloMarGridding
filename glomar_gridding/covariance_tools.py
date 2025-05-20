@@ -581,7 +581,8 @@ def _find_index_explained_variance(eigvals, target=0.95):
     """
     total_variance = np.sum(eigvals)
     target_explained_variance = target * total_variance
-    print((total_variance, target_explained_variance))
+    print(f"{total_variance = }")
+    print(f"{target_explained_variance = }")
     csum, i2goal = csum_up_to_val(eigvals, target_explained_variance)
     if csum <= target_explained_variance:
         raise ValueError("Target Explained Variance not exceeded")
@@ -668,8 +669,8 @@ def eigenvalue_clip(
         Adjusted covariance matrix.
     """
     eigvals, eigvecs = np.linalg.eigh(cov)
-    print("[:5] =", eigvals[:5])
-    print("[-5:] =", eigvals[-5:])
+    print(f"top 5 eigenvalues = {eigvals[:5]}")
+    print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
     n_eigvals = len(eigvals)
 
     match method:
@@ -681,8 +682,8 @@ def eigenvalue_clip(
             raise ValueError("Unknown clipping method")
 
     clip_i = n_eigvals + keep_i  # Note i2keep is NEGATIVE
-    print("Number of kept eigenvalues = ", -keep_i)
-    print("Number of clipped eigenvalues = ", clip_i)
+    print(f"Number of kept eigenvalues = {-keep_i}")
+    print(f"Number of clipped eigenvalues = {clip_i}")
 
     # The total variance should be preserved after clipping
     # within precision error of the eigenvalues which is
