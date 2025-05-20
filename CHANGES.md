@@ -27,7 +27,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
 
 ### New features and enhancements
 
-* Add function to compute constraint_mask / alpha following Morice et al. (2021) (!58).
+* Add function to compute `constraint_mask` / alpha following Morice et al. (2021) (!58).
 
 ## 0.2.2 (2025-04-30)
 
