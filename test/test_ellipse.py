@@ -135,12 +135,12 @@ def test_const_Ellipse(v, params, size):
         v=v,
         unit_sigma=True,
     )
-    cov_cube = EllipseBuilder(test_data, coords)
+    ellipse_builder = EllipseBuilder(test_data, coords)
 
     # Set-up output fields
     v = ellipse.v
     nparms = ellipse.supercategory_n_params
-    outputs: list[np.ndarray] = [np.zeros(size) for _ in range(nparms)]
+    default_values = [0 for _ in range(nparms)]
     init_values = [2000.0, 2000.0, 0]
     fit_bounds = [
         (300.0, 30000.0),
@@ -150,24 +150,24 @@ def test_const_Ellipse(v, params, size):
     fit_max_distance = 10_000.0
 
     # Estimate Ellipse Parameters
-    for mask_i, (grid_i, grid_j) in enumerate(
-        zip(cov_cube.xi_masked.compressed(), cov_cube.yi_masked.compressed())
-    ):
-        result = cov_cube.fit_ellipse_model(
-            mask_i,
-            matern_ellipse=ellipse,
-            max_distance=fit_max_distance,
-            guesses=init_values,
-            bounds=fit_bounds,
-            # n_jobs=nCPUs,
-        )
-        if result is None:
-            continue
-        for output, param in zip(outputs, result["ModelParams"]):
-            output[grid_j, grid_i] = param
+    ellipse_params = ellipse_builder.compute_params(
+        default_value=default_values,
+        matern_ellipse=ellipse,
+        bounds=fit_bounds,
+        guesses=init_values,
+        max_distance=fit_max_distance,
+    )
+
+    Lx = ellipse_params["Lx"].values
+    Ly = ellipse_params["Ly"].values
+    theta = ellipse_params["theta"].values
+    stdev = ellipse_params["standard_deviation"].values
 
     simulated_cov = EllipseCovarianceBuilder(
-        *outputs[:4],
+        Lx,
+        Ly,
+        theta,
+        stdev,
         lons=coords["longitude"].values,
         lats=coords["latitude"].values,
         v=v,

@@ -336,7 +336,7 @@ class EllipseBuilder:
 
         model_params = results.x.tolist()
 
-        self._check_params(model_params)
+        self._check_params(matern_ellipse, model_params)
 
         stdev = None
         if not matern_ellipse.unit_sigma:
@@ -374,15 +374,22 @@ class EllipseBuilder:
             "RMSE": stdev,
         }
 
-    def _check_params(self, model_params: list[Any]) -> None:
+    def _check_params(
+        self,
+        ellipse: EllipseModel,
+        model_params: list[Any],
+    ) -> None:
         """Ensure Lx > Ly, ensure theta is between -pi, pi"""
         # Updates in place
         # Handle Ly > Lx
-        if model_params[1] > model_params[0]:
+        if ellipse.anisotropic and model_params[1] > model_params[0]:
             model_params[0], model_params[1] = model_params[1], model_params[0]
             model_params[2] += np.pi / 2
 
         # Ensure theta is between -pi, pi
+        if not ellipse.rotated:
+            return None
+
         if model_params[2] > np.pi:
             model_params[2] -= np.pi
         if model_params[2] <= -np.pi:
@@ -615,7 +622,12 @@ class EllipseBuilder:
             "longitude": self.coords["longitude"].values,
         }
         coords = xr.Coordinates(coords_dict)
-        params = init_parameter_set(coords, default_value=default_value)
+        param_names = matern_ellipse.supercategory_params
+        params = init_parameter_set(
+            coords,
+            parameters=param_names,
+            default_value=default_value,
+        )
 
         for mask_i, (grid_i, grid_j) in enumerate(
             zip(self.xi_masked, self.yi_masked)
@@ -636,12 +648,9 @@ class EllipseBuilder:
             )
             if result is None:
                 continue
-            params["lx"][grid_j, grid_i] = result["ModelParams"][0]
-            params["ly"][grid_j, grid_i] = result["ModelParams"][1]
-            params["theta"][grid_j, grid_i] = result["ModelParams"][2]
-            params["stdev"][grid_j, grid_i] = result["ModelParams"][3]
-            params["success"][grid_j, grid_i] = result["ModelParams"][4]
-            params["niter"][grid_j, grid_i] = result["ModelParams"][5]
+
+            for i, param_name in enumerate(param_names.keys()):
+                params[param_name][grid_j, grid_i] = result["ModelParams"][i]
 
         return params
 
@@ -709,42 +718,25 @@ def _get_fit_score(model_params, bounds, niter) -> int:
 
 def init_parameter_set(
     coords: xr.Coordinates,
+    parameters: dict[str, str],
     default_value: Any = np.nan,
 ) -> xr.Dataset:
     """
     Initialise the ellipse parameter dataset.
 
-    Contains arrays for:
-        - lx : the length of the semi-major axis
-        - ly : the length of the semi-minor axis
-        - theta : angle of rotation of the ellipse in radians from the equator
-        - stdev : the standard deviation
-        - success : the fitting success score
-        - niter : the number of iterations
+    Contains arrays for each of the parameters of the model.
 
     Parameters
     ----------
     coords : xarray.Coordinates
         The coordinate system of the output arrays. Note that this should match
         the coordinate system of the data used to fit the ellipse parameters.
+    parameters
     default_value : Any
         Default value(s) to fill arrays where parameter estimation is not
         possible (typically due to masking). Typically, one should set a
         value that is appropriate to the type of the field. If a single
-        value is provided, this is used for all fields. If not, 6 values
-        should be provided for the following fields:
-            1. Lx - this should be a float or np.float value - a negative
-               value would be a good choice.
-            2. Ly - this should be a float or np.float value - a negative
-               value would be a good choice.
-            3. theta - this should be a float or np.float value - a large
-               value would be a good choice.
-            4. stdev - this should be a float or np.float value - a negative
-               value would be a good choice.
-            5. success - this should be a int or np.int value - a negative
-               value would be a good choice.
-            6. niter - this should be a int or np.int value - a negative
-               value would be a good choice.
+        value is provided, this is used for all fields.
 
     Returns
     -------
@@ -753,68 +745,17 @@ def init_parameter_set(
     """
     if not is_iter(default_value):
         default_value = [default_value for _ in range(6)]
-    if len(default_value) != 6:
+    if len(default_value) != len(parameters):
         raise ValueError("Cannot set 6 default values for input default values")
     params = xr.Dataset(coords=coords)
     # Define a 3D variable to hold the data
-    params["lx"] = xr.DataArray(
-        data=default_value[0],
-        coords=coords,
-        name="lx",
-        attrs={
-            "standard_name": "Semi-major axis length.",
-            "long_name": "Length of the semi-major axis of the ellipse",
-            "units": "km",  # kilometers
-        },
-    )
-    params["ly"] = xr.DataArray(
-        data=default_value[1],
-        coords=coords,
-        name="ly",
-        attrs={
-            "standard_name": "Semi-minor axis length.",
-            "long_name": "Length of the semi-minor axis of the ellipse",
-            "units": "km",  # kilometers
-        },
-    )
-    params["theta"] = xr.DataArray(
-        data=default_value[2],
-        coords=coords,
-        name="theta",
-        attrs={
-            "standard_name": "Angle",
-            "long_name": "Angle of the Ellipse from the equator",
-            "units": "radians",
-        },
-    )
-    params["stdev"] = xr.DataArray(
-        data=default_value[3],
-        coords=coords,
-        name="stdev",
-        attrs={
-            "standard_name": "Standard Deviation",
-            "long_name": "Standard Deviation",
-            "units": "1",
-        },
-    )
-    params["success"] = xr.DataArray(
-        data=default_value[4],
-        coords=coords,
-        name="success",
-        attrs={
-            "standard_name": "Fit Success Score",
-            "long_name": "Success of the fitting",
-            "units": "1",
-        },
-    )
-    params["niter"] = xr.DataArray(
-        data=default_value[5],
-        coords=coords,
-        name="niter",
-        attrs={
-            "standard_name": "Number of iterations",
-            "long_name": "Number of iterations for the parameter estimation",
-            "units": "1",
-        },
-    )
+    for i, (param_name, unit) in enumerate(parameters.items()):
+        params[param_name] = xr.DataArray(
+            data=default_value[i],
+            coords=coords,
+            name=param_name,
+            attrs={
+                "units": unit,  # kilometers
+            },
+        )
     return params
