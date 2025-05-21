@@ -335,6 +335,9 @@ class EllipseBuilder:
         )
 
         model_params = results.x.tolist()
+
+        self._check_params(model_params)
+
         stdev = None
         if not matern_ellipse.unit_sigma:
             stdev = model_params.pop()
@@ -370,6 +373,21 @@ class EllipseBuilder:
             "StandardError": SE,
             "RMSE": stdev,
         }
+
+    def _check_params(self, model_params: list[Any]) -> None:
+        """Ensure Lx > Ly, ensure theta is between -pi, pi"""
+        # Updates in place
+        # Handle Ly > Lx
+        if model_params[1] > model_params[0]:
+            model_params[0], model_params[1] = model_params[1], model_params[0]
+            model_params[2] += np.pi / 2
+
+        # Ensure theta is between -pi, pi
+        if model_params[2] > np.pi:
+            model_params[2] -= np.pi
+        if model_params[2] <= -np.pi:
+            model_params[2] += np.pi
+        return None
 
     def _get_train_data(
         self,
