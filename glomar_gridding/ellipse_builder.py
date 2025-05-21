@@ -17,7 +17,12 @@ from glomar_gridding.constants import DEFAULT_N_JOBS, RADIUS_OF_EARTH_KM
 from glomar_gridding.distances import displacements
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.types import DeltaXMethod
-from glomar_gridding.utils import cov_2_cor, mask_array, uncompress_masked
+from glomar_gridding.utils import (
+    cov_2_cor,
+    is_iter,
+    mask_array,
+    uncompress_masked,
+)
 
 
 class EllipseBuilder:
@@ -119,8 +124,8 @@ class EllipseBuilder:
         self.x_masked = np.ma.masked_where(self.mask, self.xx)
         self.y_masked = np.ma.masked_where(self.mask, self.yy)
         # Add grid indices for convenience
-        self.xi_masked = np.ma.masked_where(self.mask, self.xi)
-        self.yi_masked = np.ma.masked_where(self.mask, self.yi)
+        self.xi_masked = np.ma.masked_where(self.mask, self.xi).compressed()
+        self.yi_masked = np.ma.masked_where(self.mask, self.yi).compressed()
         self.xy_masked = np.column_stack(
             [self.x_masked.compressed(), self.y_masked.compressed()]
         )
@@ -418,6 +423,210 @@ class EllipseBuilder:
             return RADIUS_OF_EARTH_KM * X_train, y_train
         return distance[valid_dist_idx], y_train
 
+    def compute_params(
+        self,
+        default_value: Any,
+        matern_ellipse: EllipseModel,
+        max_distance: float = 20.0,
+        min_distance: float = 0.3,
+        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
+        guesses: list[float] | None = None,
+        bounds: list[tuple[float, float]] | None = None,
+        opt_method: str = "Nelder-Mead",
+        tol: float = 0.001,
+        estimate_SE: str | None = None,
+        n_jobs: int = DEFAULT_N_JOBS,
+        n_sim: int = 500,
+    ) -> xr.Dataset:
+        """
+        Fit ellipses/covariance models using adhoc local covariances to all
+        unmasked grid points
+
+        the form of the covariance model depends on the "fform" attribute of the
+        Ellipse model:
+            isotropic (radial distance only)
+            anistropic (x and y are different, but not rotated)
+            anistropic_rotated (rotated)
+
+        If the "fform" attribute ends with _pd then physical distances are used
+        instead of degrees
+
+        range is defined max_distance (either in km and degrees)
+        default is in degrees, but needs to be km if fform is from _pd series
+        <--- likely to be wrong: max_distance should only be in degrees
+
+        there is also a min_distance in which values,
+        matern function is not defined at the origin, so the 0.0 needs to
+        removed
+
+        v = matern covariance function shape parameter
+        Karspeck et al and Paciorek and Schervish use 3 and 4
+        but 0.5 and 1.5 are popular
+        0.5 gives an exponential decay
+        lim v-->inf, Gaussian shape
+
+        delta_x_method: only meaningful for _pd fits
+            "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+            (in radians)
+            "Modified_Met_Office": uses the average zonal dist at different lat
+
+        Parameters
+        ----------
+        default_value : Any
+            Default value(s) to fill arrays where parameter estimation is not
+            possible (typically due to masking). Typically, one should set a
+            value that is appropriate to the type of the field. If a single
+            value is provided, this is used for all fields. If not, 6 values
+            should be provided for the following fields:
+                1. Lx - this should be a float or np.float value - a negative
+                   value would be a good choice.
+                2. Ly - this should be a float or np.float value - a negative
+                   value would be a good choice.
+                3. theta - this should be a float or np.float value - a large
+                   value would be a good choice.
+                4. stdev - this should be a float or np.float value - a negative
+                   value would be a good choice.
+                5. success - this should be a int or np.int value - a negative
+                   value would be a good choice.
+                6. niter - this should be a int or np.int value - a negative
+                   value would be a good choice.
+
+
+        matern_ellipse : EllipseModel
+            EllipseModel to use for parameter estimation
+
+        max_distance : float
+            Maximum separation in distance unit that data will be fed
+            into parameter fitting
+            Units depend on fform (it is usually either degrees or km)
+
+        min_distance: float
+            Minimum separation in distance unit that data
+            will be fed into parameter fitting
+            Units depend on fform (it is usually either degrees or km)
+            Note: Due to the way we compute the Matern function,
+            it is undefined at dist == 0 even if the limit -> zero is obvious.
+
+        delta_x_method="Modified_Met_Office": str
+            How to compute distances between grid points
+            For istropic variogram/covariances, this is a trivial problem;
+            you can just take the haversine or
+            Euclidean ("tunnel") distance as they are non-directional.
+
+            But it is non trivial for anistropic cases,
+            you have to define a set of orthogonal space. In HadSST4,
+            Earth is assumed to be cylindrical "tin can" Earth,
+            so you can just define the orthogonal space by
+            lines of constant lat and lon (delta_x_method="Met_Office").
+
+            The modified "Modified_Met_Office" is a variation to that,
+            but allow the tin can get squished at the poles.
+            (Sinusoidal projection). This does results in a problem:
+            the zonal displacement now depends in which latitude
+            you compute on (at the beginning latitude or at the end latitude).
+            Here we take the average of the two.
+
+        guesses=None: tuple of floats; None uses default guess values
+            Initial guess values that get feeds in the optimizer for MLE.
+            In scipy, you are required to do so (but R often doesn't).
+            You should anyway; sometimes they do funny things
+            if you don't (per recommendation of David Stephenson)
+
+        bounds=None: tuple of floats; None uses default bounds values
+            This is essentially a Bayesian "uniformative prior"
+            that forces convergence if the optimizer hits the bound.
+            For lower resolution fitting, this is rarely a problem.
+            For higher resolution fits, this often interacts with
+            the limit of the data you can put into the fit the optimizer
+            may fail to converge if the input data is very smooth (aka ENSO
+            region, where anomalies are smooth over very large (~10000km)
+            scales).
+
+        opt_method='Nelder-Mead': str
+            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
+            See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
+            for valid options
+
+        tol=0.001: float
+            Set convergence tolerance for scipy optimize.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
+
+            Note on new tol kwarg:
+            For N-M, this sets the value to both xatol and fatol
+            Default is 1E-4 (?)
+            Since it affects accuracy of all values including rotation
+            rotation angle 0.001 rad ~ 0.05 deg
+
+        estimate_SE=None : str | None
+            The code can estimate the standard error if the Matern parameters.
+            This is not usually used or discussed for the purpose of kriging.
+            Certain opt_method (gradient descent) can do this automatically
+            using Fisher Info for certain covariance function,
+            but is not possible for some nasty functions (aka Bessel
+            func) gets involved nor it is possible for some optimisers
+            (such as Nelder-Mead).
+            The code does it using bootstrapping.
+
+        n_jobs=DEFAULT_N_JOBS: int
+            If parallel processing, number of threads to use.
+
+        n_sim : int
+            Number of simulations to bootstrap for SE estimation.
+
+        Returns
+        -------
+        params : xarray.Dataset
+            Containing the following arrays:
+                - lx : the length of the semi-major axis
+                - ly : the length of the semi-minor axis
+                - theta : angle of rotation of the ellipse in radians from the
+                  equator
+                - stdev : the standard deviation
+                - success : the fitting success score. This takes values:
+                    0: success
+                    2: success but with one parameter reaching upper boundaries
+                    3: success with multiple parameters reaching the boundaries
+                       (aka both Lx and Ly), can be both at lower or upper
+                       boundaries
+                    9: fail, probably due to running out of maxiter (see
+                       scipy.optimize.minimize kwargs "options)"
+                - niter : the number of iterations
+        """
+        coords_dict = {
+            "latitude": self.coords["latitude"].values,
+            "longitude": self.coords["longitude"].values,
+        }
+        coords = xr.Coordinates(coords_dict)
+        params = init_parameter_set(coords, default_value=default_value)
+
+        for mask_i, (grid_i, grid_j) in enumerate(
+            zip(self.xi_masked, self.yi_masked)
+        ):
+            result = self.fit_ellipse_model(
+                mask_i,
+                matern_ellipse=matern_ellipse,
+                max_distance=max_distance,
+                min_distance=min_distance,
+                delta_x_method=delta_x_method,
+                guesses=guesses,
+                bounds=bounds,
+                opt_method=opt_method,
+                tol=tol,
+                estimate_SE=estimate_SE,
+                n_jobs=n_jobs,
+                n_sim=n_sim,
+            )
+            if result is None:
+                continue
+            params["lx"][grid_j, grid_i] = result["ModelParams"][0]
+            params["ly"][grid_j, grid_i] = result["ModelParams"][1]
+            params["theta"][grid_j, grid_i] = result["ModelParams"][2]
+            params["stdev"][grid_j, grid_i] = result["ModelParams"][3]
+            params["success"][grid_j, grid_i] = result["ModelParams"][4]
+            params["niter"][grid_j, grid_i] = result["ModelParams"][5]
+
+        return params
+
     def find_nearest_xy_index_in_cov_matrix(
         self,
         lonlat: list[float],
@@ -478,3 +687,116 @@ def _get_fit_score(model_params, bounds, niter) -> int:
         if right_check:
             fit_success = 2 if fit_success == 0 else 3
     return fit_success
+
+
+def init_parameter_set(
+    coords: xr.Coordinates,
+    default_value: Any = np.nan,
+) -> xr.Dataset:
+    """
+    Initialise the ellipse parameter dataset.
+
+    Contains arrays for:
+        - lx : the length of the semi-major axis
+        - ly : the length of the semi-minor axis
+        - theta : angle of rotation of the ellipse in radians from the equator
+        - stdev : the standard deviation
+        - success : the fitting success score
+        - niter : the number of iterations
+
+    Parameters
+    ----------
+    coords : xarray.Coordinates
+        The coordinate system of the output arrays. Note that this should match
+        the coordinate system of the data used to fit the ellipse parameters.
+    default_value : Any
+        Default value(s) to fill arrays where parameter estimation is not
+        possible (typically due to masking). Typically, one should set a
+        value that is appropriate to the type of the field. If a single
+        value is provided, this is used for all fields. If not, 6 values
+        should be provided for the following fields:
+            1. Lx - this should be a float or np.float value - a negative
+               value would be a good choice.
+            2. Ly - this should be a float or np.float value - a negative
+               value would be a good choice.
+            3. theta - this should be a float or np.float value - a large
+               value would be a good choice.
+            4. stdev - this should be a float or np.float value - a negative
+               value would be a good choice.
+            5. success - this should be a int or np.int value - a negative
+               value would be a good choice.
+            6. niter - this should be a int or np.int value - a negative
+               value would be a good choice.
+
+    Returns
+    -------
+    params : xarray.Dataset
+        With arrays described above.
+    """
+    if not is_iter(default_value):
+        default_value = [default_value for _ in range(6)]
+    if len(default_value) != 6:
+        raise ValueError("Cannot set 6 default values for input default values")
+    params = xr.Dataset(coords=coords)
+    # Define a 3D variable to hold the data
+    params["lx"] = xr.DataArray(
+        data=default_value[0],
+        coords=coords,
+        name="lx",
+        attrs={
+            "standard_name": "Semi-major axis length.",
+            "long_name": "Length of the semi-major axis of the ellipse",
+            "units": "km",  # kilometers
+        },
+    )
+    params["ly"] = xr.DataArray(
+        data=default_value[1],
+        coords=coords,
+        name="ly",
+        attrs={
+            "standard_name": "Semi-minor axis length.",
+            "long_name": "Length of the semi-minor axis of the ellipse",
+            "units": "km",  # kilometers
+        },
+    )
+    params["theta"] = xr.DataArray(
+        data=default_value[2],
+        coords=coords,
+        name="theta",
+        attrs={
+            "standard_name": "Angle",
+            "long_name": "Angle of the Ellipse from the equator",
+            "units": "radians",
+        },
+    )
+    params["stdev"] = xr.DataArray(
+        data=default_value[3],
+        coords=coords,
+        name="stdev",
+        attrs={
+            "standard_name": "Standard Deviation",
+            "long_name": "Standard Deviation",
+            "units": "1",
+        },
+    )
+    params["success"] = xr.DataArray(
+        data=default_value[4],
+        coords=coords,
+        name="success",
+        attrs={
+            "standard_name": "Fit Success Score",
+            "long_name": "Success of the fitting",
+            "units": "1",
+        },
+    )
+    params["niter"] = xr.DataArray(
+        data=default_value[5],
+        coords=coords,
+        name="niter",
+        attrs={
+            "standard_name": "Number of iterations",
+            "long_name": "Number of iterations for the parameter estimation",
+            "units": "1",
+        },
+    )
+    return params
