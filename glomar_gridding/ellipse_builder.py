@@ -755,7 +755,7 @@ def init_parameter_set(
             coords=coords,
             name=param_name,
             attrs={
-                "units": unit,  # kilometers
+                "units": unit,
             },
         )
     return params
