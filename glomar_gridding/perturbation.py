@@ -14,6 +14,8 @@ from glomar_gridding.kriging import (
 class StochasticKriging(Kriging):
     """DOCS"""
 
+    method = "stochastic"
+
     def set_simple_kriging_weights(
         self,
         simple_kriging_weights: np.ndarray,
