@@ -2,7 +2,8 @@
 
 ## 0.3.0 (unreleased)
 
-Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Richard Cornes
+(@ricorne).
 
 ### Announcements
 
