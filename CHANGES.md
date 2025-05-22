@@ -29,6 +29,10 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 * Add module containing ellipse models (`ellipse`) (!54)
 * Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
 
+### Internal changes
+
+* Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
+
 ## 0.2.3 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
