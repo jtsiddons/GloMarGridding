@@ -253,7 +253,7 @@ class MaternVariogram(Variogram):
     Sklearn:
 
     1) This is called "sklearn" because if d/range = 1.0 and :math:`\nu=0.5`, it
-      gives 1/e correlation...
+       gives 1/e correlation...
     2) This is NOT the same formulation as in GSTAT nor in papers about
        non-stationary anistropic covariance models (aka Karspeck paper).
     3) It is perhaps the most intitutive (because of (1)) and is used in sklearn
