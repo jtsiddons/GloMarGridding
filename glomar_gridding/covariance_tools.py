@@ -397,7 +397,7 @@ def simple_clipping(
         #     max=3.4028235e38,
         #     dtype=float32,
         # )
-        # Typical SSTA covariance matricies has max eigv ~ 1000 degC**2
+        # Typical SSTA covariance matrices has max eigv ~ 1000 degC**2
         # This gives a lower bound threshold on the order of 1E-6 x 1E3 ~ 1E-3
         #
         # Give some margin of safety to above approximation: we will do 5x of

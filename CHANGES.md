@@ -91,7 +91,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), A
 
 ### New features and enhancements
 
-* Added `pertubation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
+* Added `perturbation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
 * Added `io` module for loading netCDF files, making use of format strings (!30)
 * Computation of distance matrix from grid (!30)
 * Added `noc_runners/noc_helpers` to contain shared job-specific functions (!30)
@@ -172,4 +172,4 @@ Contributors to this version: Agnieszka Faulkner (@agfaul)
 
 ### New features and enhancements
 
-* Rewrote original Matlab code into python scripts for kriging 
+* Rewrote original Matlab code into python scripts for kriging

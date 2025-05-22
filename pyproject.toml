@@ -14,9 +14,7 @@ packages = ["glomar_gridding"]
 name = "GloMarGridding"
 version = "0.3.0"
 dependencies = [
-  "Cartopy",
   "geopandas",
-  "matplotlib",
   "netCDF4",
   "numpy",
   "pandas",
@@ -63,9 +61,8 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-scripts = ["numba>=0.60.0", "pycoads", "numpy<2.1.0"]
 extra = ["ipykernel"]
-all = ["ipykernel", "pycoads", "numba>=0.60.0", "numpy<2.1.0"]
+all = ["ipykernel"]
 
 [tool.ruff]
 line-length = 80
@@ -105,9 +102,6 @@ indent-style = "space"            # Like Black, indent with spaces, rather than 
 skip-magic-trailing-comma = false # Like Black, respect magic trailing commas.
 line-ending = "auto"              # Like Black, automatically detect the appropriate line ending.
 
-[tool.uv.sources]
-pycoads = { git = "ssh://git@git.noc.ac.uk/josidd/pycoads.git" }
-
 [tool.pytest]
 python_files = "test_*.py"
 testpaths = ["./test"]
@@ -128,4 +122,7 @@ netCDF4 = "nc"
 Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
 
 [dependency-groups]
-dev = ["bpython>=0.24", "ipykernel>=6.29.5", "pytest>=8.3.4"]
+dev = [
+ "ipykernel>=6.29.5",
+ "pytest>=8.3.4",
+]
