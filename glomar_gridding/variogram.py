@@ -20,7 +20,20 @@ class Variogram(ABC):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the Variogram model to a distance matrix"""
+        """
+        Fit the Variogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         raise NotImplementedError("Not implemented for base Variogram class")
 
 
@@ -41,7 +54,20 @@ class LinearVariogram(Variogram):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the LinearVariogram model to a distance matrix"""
+        """
+        Fit the LinearVariogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         out = self.slope * distance_matrix + self.nugget
         if isinstance(out, xr.DataArray):
             out.name = "variogram"
@@ -67,7 +93,20 @@ class PowerVariogram(Variogram):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the PowerVariogram model to a distance matrix"""
+        """
+        Fit the PowerVariogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         return (
             self.scale * np.power(distance_matrix, self.exponent) + self.nugget
         )
@@ -104,7 +143,20 @@ class GaussianVariogram(Variogram):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the GaussianVariogram model to a distance matrix"""
+        """
+        Fit the GaussianVariogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         if self.range is None:
             raise ValueError(
                 "range parameter must not be None, "
@@ -159,7 +211,20 @@ class ExponentialVariogram(Variogram):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the ExponentialVariogram model to a distance matrix"""
+        """
+        Fit the ExponentialVariogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         if self.range is None:
             raise ValueError(
                 "range parameter must not be None, "
@@ -179,15 +244,16 @@ MaternModel = Literal["sklearn", "gstat", "karspeck"]
 
 @dataclass()
 class MaternVariogram(Variogram):
-    """
+    r"""
     Matern Models
 
-    Same args as the Variogram classes with additional nu, method parameters.
+    Same args as the Variogram classes with additional nu (:math:`\nu`), method
+    parameters.
 
     Sklearn:
 
-    1) This is called "sklearn" because if d/range = 1.0 and nu=0.5, it gives
-       1/e correlation...
+    1) This is called "sklearn" because if d/range = 1.0 and :math:`\nu=0.5`, it
+      gives 1/e correlation...
     2) This is NOT the same formulation as in GSTAT nor in papers about
        non-stationary anistropic covariance models (aka Karspeck paper).
     3) It is perhaps the most intitutive (because of (1)) and is used in sklearn
@@ -202,14 +268,14 @@ class MaternVariogram(Variogram):
     gstat.
     Note: there are no square root 2 or nu in middle and right
 
-    Yields the same answer to sklearn MaternVariogram if nu==0.5
+    Yields the same answer to sklearn MaternVariogram if :math:`\nu=0.5`
     but are otherwise different.
 
     Karspeck:
 
     Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
     Note: Note the 2 is outside the square root for middle and right
-    e-folding distance is now at d/SQRT(2) for nu=0.5
+    e-folding distance is now at d/SQRT(2) for :math:`\nu=0.5`
 
     References
     ----------
@@ -233,7 +299,8 @@ class MaternVariogram(Variogram):
         The range parameter. One of range and effective_range must be set. If
         range is not set, it will be computed from effective_range.
     nu : float | np.ndarray
-        Smoothing parameter, shapes to a smooth or rough variogram function
+        :math:`\nu`, smoothing parameter, shapes to a smooth or rough variogram
+        function
     method : MaternModel
         One of "sklearn", "gstat", or "karspeck":
 
@@ -309,9 +376,23 @@ class MaternVariogram(Variogram):
                 raise ValueError("Unexpected 'method' value")
 
     def fit(
-        self, distance_matrix: np.ndarray | xr.DataArray
+        self,
+        distance_matrix: np.ndarray | xr.DataArray,
     ) -> np.ndarray | xr.DataArray:
-        """Fit the MaternVariogram model to a distance matrix"""
+        """
+        Fit the MaternVariogram model to a distance matrix.
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+        """
         if self.range is None:
             raise ValueError(
                 "range parameter must not be None, "
