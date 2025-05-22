@@ -124,4 +124,7 @@ netCDF4 = "nc"
 Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
 
 [dependency-groups]
-dev = ["bpython>=0.24", "ipykernel>=6.29.5", "pytest>=8.3.4"]
+dev = [
+ "ipykernel>=6.29.5",
+ "pytest>=8.3.4",
+]
