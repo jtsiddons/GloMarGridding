@@ -231,7 +231,7 @@ class StochasticKriging(Kriging):
 
         # Simulate observations
         error_cov = error_cov[idx[:, None], idx[None, :]]
-        simulated_obs = simulated_state + scipy_mv_normal_draw(
+        simulated_obs = simulated_state[idx] + scipy_mv_normal_draw(
             loc=np.zeros(error_cov.shape[0]),
             cov=error_cov,
             ndraws=1,
