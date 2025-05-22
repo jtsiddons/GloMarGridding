@@ -651,7 +651,7 @@ class OrdinaryKriging(Kriging):
         error_cov: np.ndarray | None = None,
     ) -> np.ndarray:
         r"""
-        Solves the simple Kriging problem. Computes the Kriging weights if the
+        Solves the ordinary Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
         .. math::
@@ -831,20 +831,24 @@ class OrdinaryKriging(Kriging):
             Inverse of the extended covariance matrix between observation
             grid-points including the Lagrange multiplier factors.
         """
-        if len(simple_inv.shape) != 2:
-            raise ValueError("S must be a matrix")
+        return _extended_inverse(simple_inv)
 
-        d = 0
-        B = np.ones((simple_inv.shape[0], 1))
 
-        E = np.matmul(simple_inv, B)
-        f = d - np.matmul(B.T, E)
-        finv = 1 / f
-        G = finv * E.T
-        # H = finv * np.matmul(B.T, Ainv)
-        K = simple_inv + np.matmul(E, G)
+def _extended_inverse(simple_inv: np.ndarray) -> np.ndarray:
+    if len(simple_inv.shape) != 2:
+        raise ValueError("S must be a matrix")
 
-        return np.block([[K, -G.T], [-G, finv]])
+    d = 0
+    B = np.ones((simple_inv.shape[0], 1))
+
+    E = np.matmul(simple_inv, B)
+    f = d - np.matmul(B.T, E)
+    finv = 1 / f
+    G = finv * E.T
+    # H = finv * np.matmul(B.T, Ainv)
+    K = simple_inv + np.matmul(E, G)
+
+    return np.block([[K, -G.T], [-G, finv]])
 
 
 def kriging(  # noqa: C901
