@@ -11,6 +11,7 @@ Development Lead
 Contributoring Developers
 -------------------------
 
+* Archie Cable <acable@noc.ac.uk> `@acable <git.noc.ac.uk/acable>`_
 * Steven Chan <stchan@noc.ac.uk> `@stchan <git.noc.ac.uk/stchan>`_
 * Richard C. Cornes <rcornes@noc.ac.uk> `@ricorne <git.noc.ac.uk/ricorne>`_
 * Elizabeth C. Kent <eck@noc.ac.uk> `@eck <git.noc.ac.uk/eck>`_
