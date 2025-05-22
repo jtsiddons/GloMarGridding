@@ -58,7 +58,7 @@ class StochasticKriging(Kriging):
 
         return None
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, idx: np.ndarray) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
@@ -71,10 +71,17 @@ class StochasticKriging(Kriging):
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
 
-        dz_squared = np.diag(self.covariance - self.kriging_weights)
-        dz_squared = adjust_small_negative(dz_squared)
-        uncert = np.sqrt(dz_squared)
+        M = self.covariance.shape[0]
+        obs_grid_cov = self.covariance[idx, :]
+        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+
+        alpha = self.kriging_weights[:, -1]
+        kriging_weights = self.kriging_weights @ obs_grid_cov
+        uncert_squared = np.diag(self.covariance - kriging_weights) - alpha
+        uncert_squared = adjust_small_negative(uncert_squared)
+        uncert = np.sqrt(uncert_squared)
         uncert[np.isnan(uncert)] = 0.0
+
         return uncert
 
     def constraint_mask(
