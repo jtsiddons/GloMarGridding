@@ -23,7 +23,7 @@ def chisq(
     should be within 1-2x of the standard error of the actual parameter
     What is the likelihood of the estimator relative to the actual?
 
-    For variable parms... we will just compare the regional average
+    For variable params... we will just compare the regional average
 
     W = -n*np.log(np.linalg.det(inside_the_brackets))-n*p+n*np.trace(inside_the_brackets)
     W ~ ChiSquare(p*(p+1)/2)
@@ -139,8 +139,8 @@ def test_const_Ellipse(v, params, size):
 
     # Set-up output fields
     v = ellipse.v
-    nparms = ellipse.supercategory_n_params
-    default_values = [0 for _ in range(nparms)]
+    nparams = ellipse.supercategory_n_params
+    default_values = [0 for _ in range(nparams)]
     init_values = [2000.0, 2000.0, 0]
     fit_bounds = [
         (300.0, 30000.0),
