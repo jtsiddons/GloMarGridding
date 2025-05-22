@@ -46,7 +46,8 @@ class StochasticKriging(Kriging):
         idx: np.ndarray,
     ) -> None:
         """DOCS"""
-        if len(idx) != inv.shape[0] - 1:
+        if len(idx) != inv.shape[0]:
+            # NOTE: input is the simple Kriging inverse
             raise ValueError("inv must be square with side length == len(idx)")
         obs_grid_cov = self.covariance[idx, :]
         M = self.covariance.shape[0]
