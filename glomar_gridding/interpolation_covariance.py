@@ -1,10 +1,4 @@
-"""
-Interpolation Covariance
-------------------------
-
-Functions for computing (components of) the interpolation covariance matrix
-used for the interpolation step.
-"""
+"""I/O functionality for loading a covariance matrix from disk."""
 
 import numpy as np
 

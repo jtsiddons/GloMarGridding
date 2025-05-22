@@ -1,7 +1,4 @@
 """
-Covariance Tools
-----------------
-
 Repair "damaged"/"improper" covariance matrices:
 
     1. Un-invertible covariance matrices with 0 eigenvalues

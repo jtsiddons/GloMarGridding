@@ -1,9 +1,4 @@
-"""
-Ellipse Covariance
-------------------
-
-Class to estimate covariance matrix from ellipse parameters and positions.
-"""
+"""Class to estimate covariance matrix from ellipse parameters and positions."""
 
 import datetime
 import logging

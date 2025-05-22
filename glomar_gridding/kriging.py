@@ -1,8 +1,5 @@
 """
-Kriging
--------
-
-Functions for performing Kriging.
+Functions and Classes for performing Kriging.
 
 Interpolation using a Gaussian Process. Available methods are Simple and
 Ordinary Kriging.
@@ -66,7 +63,7 @@ class Kriging(ABC):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -108,7 +105,7 @@ class Kriging(ABC):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -149,7 +146,7 @@ class Kriging(ABC):
         is:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+            (K_{obs} + E)^{-1} \times K_{cross} \times y
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -214,14 +211,14 @@ class Kriging(ABC):
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
 
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         This can be re-written as:
 
         .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
+            diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         alpha is chosen to be 0.25 in the UKMO paper
 
@@ -262,9 +259,9 @@ class SimpleKriging(Kriging):
     The equation for simple Kriging is:
 
     .. math::
-        (K_{obs} + E)^{-1} \\times K_{cross} \\times y + \\mu
+        (K_{obs} + E)^{-1} \times K_{cross} \times y + \mu
 
-    Where :math:`\\mu` is a constant known mean, typically this is 0.
+    Where :math:`\mu` is a constant known mean, typically this is 0.
 
     Parameters
     ----------
@@ -289,7 +286,7 @@ class SimpleKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -338,7 +335,7 @@ class SimpleKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -380,7 +377,7 @@ class SimpleKriging(Kriging):
         is:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+            (K_{obs} + E)^{-1} \times K_{cross} \times y
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -459,14 +456,14 @@ class SimpleKriging(Kriging):
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
 
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         This can be re-written as:
 
         .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
+            diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         alpha is chosen to be 0.25 in the UKMO paper
 
@@ -510,7 +507,7 @@ class OrdinaryKriging(Kriging):
     The equation for ordinary Kriging is:
 
     .. math::
-        (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+        (K_{obs} + E)^{-1} \times K_{cross} \times y
 
     with a constant but unknown mean.
 
@@ -547,7 +544,7 @@ class OrdinaryKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -614,7 +611,7 @@ class OrdinaryKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (K_{obs} + E)^{-1} \times K_{cross}
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -667,7 +664,7 @@ class OrdinaryKriging(Kriging):
         is:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+            (K_{obs} + E)^{-1} \times K_{cross} \times y
 
         Where :math:`K_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
@@ -754,14 +751,14 @@ class OrdinaryKriging(Kriging):
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
 
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         This can be re-written as:
 
         .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
+            diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
+            / diag(K) < alpha
 
         alpha is chosen to be 0.25 in the UKMO paper
 
@@ -825,12 +822,15 @@ class OrdinaryKriging(Kriging):
         ordinary Kriging which requires the Kriging weights for the equivalent
         simple Kriging problem.
 
-        The extended form of S is given by
+        The extended form of S is given by:
 
-        |       1 |
-        |   S   1 |
-        |       1 |
-        | 1 1 1 0 |
+        .. math::
+            \begin{pmatrix}
+            &   & & 1 \\
+            & S & & \vdots \\
+            &   & & 1 \\
+            1 & \dots & 1 & 0 \\
+            \end{pmatrix}
 
         This approach follows Guttman 1946 10.1214/aoms/1177730946
 
@@ -1326,7 +1326,7 @@ def constraint_mask(
     obs_grid_cov: np.ndarray,
     interp_cov: np.ndarray,
 ) -> np.ndarray:
-    """
+    r"""
     Compute the observational constraint mask (A14 in Morice et al. (2021) -
     10.1029/2019JD032361) to determine if a grid point should be masked/weights
     modified by how far it is to its near observed point
@@ -1337,10 +1337,15 @@ def constraint_mask(
     incorrect is wrong, but the correct answer is easy to figure out.
 
     Correct Equation (extra matrix inverse for K+R):
-    1 - diag( K(X*,X*) - k*^T @ (K+R)^{-1} @ k* )  / diag( K(X*,X*) )  < alpha
+
+    .. math::
+        1 - diag(K(X*,X*) - k*^T \times (K+R)^{-1} \times k*)  / diag(K(X*,X*))
+        < alpha
 
     This can be re-written as:
-    diag(k*^T @ (K+R)^{-1} @ k*) / diag(K(X*, X*)) < alpha
+
+    .. math::
+        diag(k*^T \times (K+R)^{-1} \times k*) / diag(K(X*, X*)) < alpha
 
     alpha is chosen to be 0.25 in the UKMO paper
 

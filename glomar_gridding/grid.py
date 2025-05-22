@@ -1,9 +1,4 @@
-"""
-Grid
-----
-
-Functions for creating grids and mapping observations to a grid
-"""
+"""Functions for creating grids and mapping observations to a grid"""
 
 from collections.abc import Callable, Iterable
 from typing import Any

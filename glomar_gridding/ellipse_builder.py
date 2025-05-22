@@ -1,7 +1,4 @@
 """
-Ellipse Parameter Estimation
-----------------------------
-
 Class to calculate the covariance (and correlation) of gridded observed data
 over time. These values are used to estimate the ellipse parameters with an
 instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
@@ -463,7 +460,7 @@ class EllipseBuilder:
         guesses: list[float] | None = None,
         bounds: list[tuple[float, float]] | None = None,
         opt_method: str = "Nelder-Mead",
-        tol: float = 0.001,
+        tol: float = 1e-4,
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
@@ -509,22 +506,9 @@ class EllipseBuilder:
             Default value(s) to fill arrays where parameter estimation is not
             possible (typically due to masking). Typically, one should set a
             value that is appropriate to the type of the field. If a single
-            value is provided, this is used for all fields. If not, 6 values
-            should be provided for the following fields:
-
-                1. Lx - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                2. Ly - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                3. theta - this should be a float or np.float value - a large
-                   value would be a good choice.
-                4. stdev - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                5. success - this should be a int or np.int value - a negative
-                   value would be a good choice.
-                6. niter - this should be a int or np.int value - a negative
-                   value would be a good choice.
-
+            value is provided, this is used for all fields. If not, the length
+            of the list of default values must equal the number of parameters
+            of the `EllipseModel`
 
         matern_ellipse : EllipseModel
             EllipseModel to use for parameter estimation
@@ -587,7 +571,7 @@ class EllipseBuilder:
 
             Note on new tol kwarg:
             For N-M, this sets the value to both xatol and fatol
-            Default is 1E-4 (?)
+            Default is 1E-4
             Since it affects accuracy of all values including rotation
             rotation angle 0.001 rad ~ 0.05 deg
 

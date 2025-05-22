@@ -1,9 +1,4 @@
-"""
-Climatology
------------
-
-Functions for mapping climatologies and computing anomalies
-"""
+"""Functions for mapping climatologies and computing anomalies"""
 
 import polars as pl
 import xarray as xr

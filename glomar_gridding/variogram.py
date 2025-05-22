@@ -1,7 +1,4 @@
 """
-Variograms
-----------
-
 Varigram classes for construction of spatial covariance structure from distance
 matrices.
 """
