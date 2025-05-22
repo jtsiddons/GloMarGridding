@@ -1,4 +1,7 @@
-"""Functions for helping with perturbations/random drawing"""
+"""
+Kriging class for performing a two-stage Kriging process using a perturbation
+approach. Plus function for drawing from a covariance matrix.
+"""
 
 import numpy as np
 from scipy import stats
@@ -12,7 +15,43 @@ from glomar_gridding.kriging import (
 
 
 class StochasticKriging(Kriging):
-    """DOCS"""
+    r"""
+    Class for the combined two-stage Kriging approach following Morice et al.
+    2021. The first stage is to produce a gridded field from the observations
+    using Ordinary Kriging. The second stage is to apply a perturbation.
+
+    The perturbation is constructed by first generating a simulated state from
+    the covariance matrix. A set of simulated observations is drawn from the
+    error covariance matrix. A simulated gridded field is then computed using
+    Simple Kriging with the simulated observations as input. Finally, the
+    perturbation is then the difference between the simulated gridded field and
+    the simulated state. This perturbation is added to the gridded field from
+    the first stage.
+
+    The equation for ordinary Kriging is:
+    .. math::
+        (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+
+    with a constant but unknown mean.
+
+    In this case, the :math:`K_{obs}`, :math:`K_{cross}` and :math:`y` values
+    are extended with a Lagrange multiplier term for the first stage, ensuring
+    that the Kriging weights are constrained to sum to 1.
+
+    Additionally, the matrix :math:`K_{obs}` is extended by one row and one
+    column, each containing the value 1, except at the diagonal point, which is
+    0 for the first Ordinary Kriging stage. The :math:`K_{cross}` matrix is
+    extended by an extra row containing values of 1. Finally, the grid
+    observations :math:`y` is extended by a single value of 0 at the end of the
+    vector.
+
+    Parameters
+    ----------
+    covariance : numpy.ndarray
+        The spatial covariance matrix. This can be a pre-computed matrix loaded
+        into the environment, or computed from a Variogram class or using
+        Ellipse methods.
+    """
 
     method = "stochastic"
 
@@ -20,13 +59,66 @@ class StochasticKriging(Kriging):
         self,
         simple_kriging_weights: np.ndarray,
     ) -> None:
-        """DOCS"""
+        """
+        Set Simple Kriging Weights. For use in the second Simple Kriging stage
+        for computing the simulated gridded field.
+
+        Sets the `simple_kriging_weights` attribute.
+
+        Parameters
+        ----------
+        simple_kriging_weights : numpy.ndarray
+            The pre-computed simple_kriging_weights to use.
+        """
         self.simple_kriging_weights = simple_kriging_weights
 
     def get_kriging_weights(
-        self, idx: np.ndarray, error_cov: np.ndarray | None = None
+        self,
+        idx: np.ndarray,
+        error_cov: np.ndarray | None = None,
     ) -> None:
-        """DOCS"""
+        r"""
+        Compute the Kriging weights from the flattened grid indices where
+        there is an observation. Optionally add an error covariance to the
+        covariance between observation grid points.
+
+        The Kriging weights are calculated as:
+
+        .. math::
+            (K_{obs} + E)^{-1} \\times K_{cross}
+
+        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        with observations, :math:`E` is the error covariance between grid-points
+        with observations, and :math:`K_{cross}` is the covariance between
+        grid-points with observations and all grid-points (including observation
+        grid-points).
+
+        In this case, the :math:`K_{obs}`, :math:`K_{cross}` and are extended
+        with a Lagrange multiplier term, ensuring that the Kriging weights are
+        constrained to sum to 1, for the first stage of the StochasticKriging
+        process.
+
+        The matrix :math:`K_{obs}` is extended by one row and one column, each
+        containing the value 1, except at the diagonal point, which is 0. The
+        :math:`K_{cross}` matrix is extended by an extra row containing values
+        of 1.
+
+        Sets the `kriging_weights` and `simple_kriging_weights` attributes.
+
+        Parameters
+        ----------
+        idx : numpy.ndarray[int] | list[int]
+            The 1d indices of observation grid points. These values should be
+            between 0 and (N * M) - 1 where N, M are the number of longitudes
+            and latitudes respectively. Note that these values should also be
+            computed using "C" ordering in numpy reshaping. They can be
+            computed from a grid using glomar_gridding.grid.map_to_grid. Each
+            value should only appear once. Points that contain more than 1
+            observation should be averaged
+        error_cov : numpy.ndarray | None
+            Optionally add error covariance values to the covariance between
+            observation grid points.
+        """
         obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
 
         # Add error covariance
@@ -45,7 +137,46 @@ class StochasticKriging(Kriging):
         inv: np.ndarray,
         idx: np.ndarray,
     ) -> None:
-        """DOCS"""
+        r"""
+        Compute the Kriging weights from the flattened grid indices where
+        there is an observation, using a pre-computed inverse of the covariance
+        between grid-points with observations.
+
+        The Kriging weights are calculated as:
+
+        .. math::
+            (K_{obs} + E)^{-1} \\times K_{cross}
+
+        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        with observations, :math:`E` is the error covariance between grid-points
+        with observations, and :math:`K_{cross}` is the covariance between
+        grid-points with observations and all grid-points (including observation
+        grid-points).
+
+        This method is appropriate if one wants to compute the constraint mask
+        which requires simple Kriging weights, which can be computed from the
+        unextended covariance inverse. The extended inverse can then be
+        calculated from that inverse.
+
+        The inverse matrix is used to compute the inverse of the extended
+        covariance matrix used for the first Ordinary Kriging stage.
+
+        Sets the `kriging_weights` and `simple_kriging_weights` attributes.
+
+        Parameters
+        ----------
+        inv : numpy.ndarray
+            The pre-computed inverse of the covariance between grid-points with
+            observations. :math:`(K_{obs} + E)^{-1}`
+        idx : numpy.ndarray[int] | list[int]
+            The 1d indices of observation grid points. These values should be
+            between 0 and (N * M) - 1 where N, M are the number of longitudes
+            and latitudes respectively. Note that these values should also be
+            computed using "C" ordering in numpy reshaping. They can be
+            computed from a grid using glomar_gridding.grid.map_to_grid. Each
+            value should only appear once. Points that contain more than 1
+            observation should be averaged
+        """
         if len(idx) != inv.shape[0]:
             # NOTE: input is the simple Kriging inverse
             raise ValueError("inv must be square with side length == len(idx)")
@@ -116,8 +247,8 @@ class StochasticKriging(Kriging):
 
         Written by S. Chan, modified by J. Siddons.
 
-        This requires the Kriging weights from simple Kriging. If these are not
-        set then please set them or compute them.
+        This requires the Kriging weights from simple Kriging, set as the
+        `simple_kriging_weights` attribute.
 
         Parameters
         ----------
@@ -189,6 +320,12 @@ class StochasticKriging(Kriging):
         :math:`K_{cross}` matrix is extended by an extra row containing values
         of 1. For the Ordinary Kriging component.
 
+        This additionally sets the following attributes:
+
+            - `gridded_field` - The unperturbed gridded field
+            - `simulated_grid` - The simulated gridded field
+            - `epsilon` - The perturbation
+
         Parameters
         ----------
         grid_obs : numpy.ndarray
@@ -210,8 +347,8 @@ class StochasticKriging(Kriging):
         Returns
         -------
         numpy.ndarray
-            The solution to the ordinary Kriging problem (as a Vector, this may
-            need to be re-shaped appropriately as a post-processing step).
+            The solution to the stochastic Kriging problem (as a Vector, this
+            may need to be re-shaped appropriately as a post-processing step).
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
