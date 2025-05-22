@@ -30,6 +30,10 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 * Add module containing ellipse models (`ellipse`) (!54)
 * Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
 
+### Internal changes
+
+* Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
+
 ## 0.2.3 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
@@ -90,7 +94,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), A
 
 ### New features and enhancements
 
-* Added `pertubation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
+* Added `perturbation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
 * Added `io` module for loading netCDF files, making use of format strings (!30)
 * Computation of distance matrix from grid (!30)
 * Added `noc_runners/noc_helpers` to contain shared job-specific functions (!30)
@@ -171,4 +175,4 @@ Contributors to this version: Agnieszka Faulkner (@agfaul)
 
 ### New features and enhancements
 
-* Rewrote original Matlab code into python scripts for kriging 
+* Rewrote original Matlab code into python scripts for kriging
