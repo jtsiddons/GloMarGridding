@@ -26,10 +26,12 @@ __all__ = [
     "LinearVariogram",
     "MaternVariogram",
     "PowerVariogram",
-    "map_to_grid",
     "correlated_components",
     "dist_weight",
     "get_weights",
     "kriging",
+    "map_to_grid",
     "uncorrelated_components",
 ]
+
+__version__ = "0.3.0"

@@ -1,4 +1,4 @@
-"""Utility functions for GlomarGridding"""
+"""Utility functions for GloMarGridding"""
 
 from calendar import isleap
 from collections import OrderedDict
@@ -6,14 +6,21 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
 import inspect
+from itertools import islice
 import logging
-from typing import TypeVar
+from typing import Any, TypeVar
 import netCDF4 as nc
 import numpy as np
 import polars as pl
 import xarray as xr
 from warnings import warn
 from polars._typing import ClosedInterval
+
+
+from glomar_gridding.constants import (
+    KM_TO_NM,
+    NM_PER_LAT,
+)
 
 _XR_Data = TypeVar("_XR_Data", xr.DataArray, xr.Dataset)
 
@@ -342,7 +349,10 @@ def _get_logging_level(level: str) -> int:
     return level_i
 
 
-def init_logging(file: str | None, level: str = "DEBUG") -> None:
+def init_logging(
+    file: str | None = None,
+    level: str = "DEBUG",
+) -> None:
     """
     Initialise the logger
 
@@ -398,6 +408,191 @@ def get_date_index(year: int, month: int, start_year: int) -> int:
     return 12 * (year - start_year) + (month - 1)
 
 
+def deg_to_nm(deg: float) -> float:
+    """
+    deg: float (degrees)
+    Convert degree latitude change to nautical miles
+    """
+    return NM_PER_LAT * deg
+
+
+def deg_to_km(deg: float) -> float:
+    """
+    deg: float (degrees)
+    Convert degree latitude change to km
+    """
+    return KM_TO_NM * deg_to_nm(deg)
+
+
+def km_to_deg(km: float) -> float:
+    """
+    km: float (km)
+    Convert meridonal km change to degree latitude
+    """
+    return (km / KM_TO_NM) / NM_PER_LAT
+
+
+def is_iter(val: Any) -> bool:
+    """Determine if a value is an iterable"""
+    try:
+        iter(val)
+        return True
+    except TypeError:
+        return False
+
+
+def uncompress_masked(
+    compressed_array: np.ndarray,
+    mask: np.ndarray,
+    fill_value: Any = 0.0,
+    apply_mask: bool = False,
+    dtype: type | None = None,
+) -> np.ndarray | np.ma.MaskedArray:
+    """
+    Un-compress a compressed array using a mask.
+
+    Parameters
+    ----------
+    compressed_array : numpy.ndarray
+        The compressed array, originally compressed by the mask
+    mask : numpy.ndarray
+        The mask - a boolean numpy array
+    fill_value : Any
+        The value to fill masked points. If `apply_mask` is set, then this will
+        be removed in the output.
+    apply_mask : bool
+        Apply the mask to the result, returning a MaskedArray rather than a
+        ndarray.
+    dtype : type | None
+        Optionally set a dtype for the returned array, if not set then the
+        dtype of the compressed_array is used.
+
+    Returns
+    -------
+    uncompressed : numpy.ndarray | numpy.ma.MaskedArray
+        The uncompressed array, masked points are filled with the fill_value if
+        apply_mask is False. If apply_mask is True, then the result is an
+        instance of numpy.ma.MaskedArray with the mask applied to the
+        uncompressed result.
+    """
+    not_mask = np.logical_not(mask)
+    if np.sum(not_mask) != len(compressed_array):
+        raise ValueError("Length of compressed_array does not align with mask")
+
+    dtype = dtype or compressed_array.dtype
+
+    uncompressed = np.empty_like(mask, dtype=dtype)
+    np.place(uncompressed, not_mask, compressed_array)
+
+    if apply_mask:
+        return np.ma.masked_where(mask, uncompressed)
+
+    np.place(uncompressed, mask, fill_value)
+    return uncompressed
+
+
+def cor_2_cov(
+    cor: np.ndarray,
+    variances: np.ndarray,
+    rounding: int | None = None,
+) -> np.ndarray:
+    """
+    Compute covariance matrix from correlation matrix and variances
+
+    Parameters
+    ----------
+    cor : numpy.ndarray
+        Correlation Matrix
+    variances : numpy.ndarray
+        Variances to scale the correlation matrix.
+    rounding : int
+        round the values of the output
+    """
+    stdevs = np.sqrt(variances)
+    normalisation = np.outer(stdevs, stdevs)
+    cov = cor * normalisation
+    cov[cor == 0] = 0
+    if rounding is not None:
+        cov = np.round(cov, rounding)
+    return cov
+
+
+def cov_2_cor(
+    cov: np.ndarray,
+    rounding: int | None = None,
+) -> np.ndarray:
+    """
+    Normalises the covariance matrices within the class instance
+    and return correlation matrices
+    https://gist.github.com/wiso/ce2a9919ded228838703c1c7c7dad13b
+
+    Parameters
+    ----------
+    cov : numpy.ndarray
+        Covariance matrix
+    rounding : int
+        round the values of the output
+    """
+    stdevs = np.sqrt(np.diag(cov))
+    normalisation = np.outer(stdevs, stdevs)
+    cor = cov / normalisation
+    if not np.all(np.diag(cor) == 1.0):
+        print(np.max(np.abs(np.diag(cor) - 1.0)))
+        if np.max(np.abs(np.diag(cor) - 1.0)) > 1e-6:
+            raise ValueError(
+                "Correlation Diagonal contains values not close to 1."
+            )  # This should never get flagged:
+        print(
+            "Numerical error correction applied to correlation matrix diagonal"
+        )
+        np.fill_diagonal(cor, 1.0)
+    cor[cov == 0] = 0
+    if rounding is not None:
+        cor = np.round(cor, rounding)
+    return cor
+
+
+def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
+    """
+    Forces numpy array to be an instance of np.ma.MaskedArray
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Can be masked or not masked
+
+    Returns
+    -------
+    arr : np.ndarray
+        array is now an instance of np.ma.MaskedArray
+    """
+    if isinstance(arr, np.ma.MaskedArray):
+        return arr
+    if isinstance(arr, np.ndarray):
+        logging.info("Ad hoc conversion to np.ma.MaskedArray")
+        arr = np.ma.MaskedArray(arr)
+        return arr
+    raise TypeError("Input is not a numpy array.")
+
+
+def batched(iterable: Iterable, n: int, *, strict: bool = False):
+    """
+    Implementation of itertools.batched for use if python version is < 3.12.
+
+    Examples
+    --------
+    >>> list(batched("ABCDEFG", 3))
+    [("A", "B", "C"), ("D", "E", "F"), ("G", )]
+    """
+    if n < 1:
+        raise ValueError("'n' must be >= 1")
+    iterator = iter(iterable)
+    while batch := tuple(islice(iterator, n)):
+        if strict and len(batch) != n:
+            raise ValueError("batched(): incomplete batch")
+        yield batch
+
+
 def get_month_midpoint(dates: pl.Series) -> pl.Series:
     """
     Get the month midpoint for a series of datetimes.
@@ -419,3 +614,15 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
     )
 
     return dates
+
+
+def sizeof_fmt(num: float, suffix="B") -> str:
+    """
+    Convert numbers to kilo/mega... bytes,
+    for interactive printing of code progress
+    """
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"

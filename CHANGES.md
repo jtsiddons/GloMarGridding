@@ -1,10 +1,57 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.3.0 (unreleased)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
+
+### Announcements
+
+* Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
+
+### Deprecations
+
+* `kriging.kriging_simple` and `kriging.kriging_ordinary` are set to be deprecated in favour of
+  `kriging.SimpleKriging` and `kriging.OrdinaryKriging` classes respectively. They will be removed
+  in a future version (!62)
+
+### Breaking changes
+
+* All job-specific files are removed from the library (!56)
+
+### New features and enhancements
+
+* Introduced new classes for Kriging - `kriging.SimpleKriging` and `kriging.OrdinaryKriging`,
+  allowing for easy computation of uncertainty, and alpha values (!62)
+* Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
+* Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
+* Add module for calculating spatial covariance matrix from ellipse parameters (`ellipse_covariance`) (!54)
+* Add module for estimating ellipse parameters from observational datasets (`ellipse_builder`) (!54)
+* Add module containing ellipse models (`ellipse`) (!54)
+* Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
+
+### Internal changes
+
+* Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
+
+## 0.2.3 (2025-04-30)
+
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan).
+
+### New features and enhancements
+
+* Add function to compute `constraint_mask` / alpha following Morice et al. (2021) (!58).
+
+## 0.2.2 (2025-04-30)
 
 Contributors to this version: Joseph Siddons (@josidd)
 
 ### New features and enhancements
+
+* Added optional argument `mean` to `kriging.kriging_simple` (!47)
+
+## 0.2.1 (2025-04-28)
+
+Contributors to this version: Joseph Siddons (@josidd)
 
 * Add function to compute mid-point of a month (matching HadCRUT datetimes) (!48)
 * `init_logging` now has a `level` argument (!50)
@@ -29,6 +76,7 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ### Internal changes
 
+* Add `__version__` (!55)
 * `variogram.Variogram` is now an instance of `abc.ABC` abstract class, `.fit` is an abstract method (!51)
 * Added changelog (!39)
 

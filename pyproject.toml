@@ -12,7 +12,7 @@ packages = ["glomar_gridding"]
 
 [project]
 name = "GloMarGridding"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
   "Cartopy",
   "geopandas",
@@ -22,8 +22,10 @@ dependencies = [
   "pandas",
   "polars",
   "pyarrow",
+  "pyyaml>=6.0.2",
   "scikit-learn",
   "scipy",
+  "statsmodels>=0.14.4",
   "tqdm",
   "xarray",
 ]
