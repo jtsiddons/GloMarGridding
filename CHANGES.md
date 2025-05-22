@@ -8,12 +8,20 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 * Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
 
+### Deprecations
+
+* `kriging.kriging_simple` and `kriging.kriging_ordinary` are set to be deprecated in favour of
+  `kriging.SimpleKriging` and `kriging.OrdinaryKriging` classes respectively. They will be removed
+  in a future version (!62)
+
 ### Breaking changes
 
 * All job-specific files are removed from the library (!56)
 
 ### New features and enhancements
 
+* Introduced new classes for Kriging - `kriging.SimpleKriging` and `kriging.OrdinaryKriging`,
+  allowing for easy computation of uncertainty, and alpha values (!62)
 * Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
 * Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
 * Add module for calculating spatial covariance matrix from ellipse parameters (`ellipse_covariance`) (!54)
