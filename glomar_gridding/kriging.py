@@ -212,15 +212,15 @@ class Kriging(ABC):
 
         .. math::
             1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
         This can be re-written as:
 
         .. math::
             diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        \alpha is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -457,15 +457,15 @@ class SimpleKriging(Kriging):
 
         .. math::
             1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
         This can be re-written as:
 
         .. math::
             diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        \alpha is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -752,15 +752,15 @@ class OrdinaryKriging(Kriging):
 
         .. math::
             1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
         This can be re-written as:
 
         .. math::
             diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < alpha
+            / diag(C) < \alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        \alpha is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -1340,14 +1340,14 @@ def constraint_mask(
 
     .. math::
         1 - diag(C(X*,X*) - k*^T \times (C+R)^{-1} \times k*)  / diag(C(X*,X*))
-        < alpha
+        < \alpha
 
     This can be re-written as:
 
     .. math::
-        diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < alpha
+        diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < \alpha
 
-    alpha is chosen to be 0.25 in the UKMO paper
+    \alpha is chosen to be 0.25 in the UKMO paper
 
     Written by S. Chan, modified by J. Siddons.
 
