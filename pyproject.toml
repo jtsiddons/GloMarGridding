@@ -14,9 +14,7 @@ packages = ["glomar_gridding"]
 name = "GloMarGridding"
 version = "0.3.0"
 dependencies = [
-  "Cartopy",
   "geopandas",
-  "matplotlib",
   "netCDF4",
   "numpy",
   "pandas",

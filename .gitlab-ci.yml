@@ -27,6 +27,9 @@ pytest:
       paths:
         - $UV_CACHE_DIR
   script:
+    - apt update
+    - apt install -y git g++
+    - echo "installed deps from apt"
     - uv --version
     - uv sync --all-extras
     - uv pip list
