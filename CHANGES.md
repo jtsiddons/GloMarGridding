@@ -33,6 +33,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 ### Internal changes
 
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
+* Added a GitLab runner pipeline (!64)
 
 ## 0.2.3 (2025-04-30)
 
