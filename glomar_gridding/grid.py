@@ -12,7 +12,7 @@ import polars as pl
 import xarray as xr
 
 from .utils import filter_bounds, find_nearest, select_bounds
-from .distances import calculate_distance_matrix, haversine_distance
+from .distances import calculate_distance_matrix, haversine_distance_from_frame
 
 
 def map_to_grid(
@@ -193,7 +193,7 @@ def assign_to_grid(
 
 def grid_to_distance_matrix(
     grid: xr.DataArray,
-    dist_func: Callable = haversine_distance,
+    dist_func: Callable = haversine_distance_from_frame,
     lat_coord: str = "lat",
     lon_coord: str = "lon",
 ) -> xr.DataArray:
@@ -230,8 +230,8 @@ def grid_to_distance_matrix(
     dist: np.ndarray = calculate_distance_matrix(
         pl.DataFrame(
             {
-                "lat": out_coords["lat_1"].values,
-                "lon": out_coords["lon_1"].values,
+                lat_coord: out_coords[f"{lat_coord}_1"].values,
+                lon_coord: out_coords[f"{lon_coord}_1"].values,
             }
         ),
         dist_func=dist_func,

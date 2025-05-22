@@ -13,17 +13,38 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 """
 
 from collections.abc import Callable
+from typing import get_args
 
 import numpy as np
-import polars as pl
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
+import polars as pl
 
-from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
-from scipy.spatial.transform import Rotation
 from shapely.geometry import Point
+from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 
-from .utils import check_cols
+from glomar_gridding.types import DeltaXMethod
+from glomar_gridding.utils import check_cols
+
+
+def rot_mat(angle: float) -> np.ndarray:
+    """
+    Compute a 2d rotation matrix from an angle.
+
+    The input angle must be in radians
+    """
+    c_ang = np.cos(angle)
+    s_ang = np.sin(angle)
+    return np.array([[c_ang, -s_ang], [s_ang, c_ang]])
+
+
+def inv_2d(mat: np.ndarray) -> np.ndarray:
+    """Compute the inverse of a 2 x 2 matrix"""
+    det_denom = mat[0, 0] * mat[1, 1] - mat[0, 1] * mat[1, 0]
+    if det_denom == 0:
+        raise ValueError("Denominator is 0")
+    inv = np.array([[mat[1, 1], -mat[0, 1]], [-mat[1, 0], mat[0, 0]]])
+    return inv / det_denom
 
 
 # NOTE: This is a Variogram result
@@ -69,7 +90,7 @@ def radial_dist(
     lon2: float,
 ) -> float:
     """
-     Computes a distance matrix of the coordinates using a spherical metric.
+    Computes a distance matrix of the coordinates using a spherical metric.
 
     Parameters
     ----------
@@ -153,7 +174,7 @@ def euclidean_distance(
     return euclidean_distances(df) * radius
 
 
-def haversine_distance(
+def haversine_distance_from_frame(
     df: pl.DataFrame,
     radius: float = 6371,
 ) -> np.ndarray:
@@ -185,7 +206,7 @@ def haversine_distance(
 
 def calculate_distance_matrix(
     df: pl.DataFrame,
-    dist_func: Callable = haversine_distance,
+    dist_func: Callable = haversine_distance_from_frame,
     lat_col: str = "lat",
     lon_col: str = "lon",
 ) -> np.ndarray:
@@ -286,22 +307,37 @@ def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     return yx[:, None, :] - yx
 
 
-def _Ls2sigma(Lx: float, Ly: float, theta: float) -> np.ndarray:  # noqa: N802
+def sigma_rot_func(
+    Lx: float,
+    Ly: float,
+    theta: float | None,
+) -> np.ndarray:
     """
+    Equation 15 in Karspeck el al 2011 and Equation 6
+    in Paciorek and Schervish 2006,
+    assuming Sigma(Lx, Ly, theta) locally/moving-window invariant or
+    we have already taken the mean (Sigma overbar, PP06 3.1.1)
+
     Lx, Ly - anistropic variogram length scales
     theta - angle relative to lines of constant latitude
     theta should be radians, and the fitting code outputs radians by default
+
+    Returns
+    -------
+    sigma : np.ndarray
+        2 x 2 matrix
     """
-    R = Rotation.from_rotvec([0, 0, theta])
-    R = R.as_matrix()[:2, :2]
     L = np.diag([Lx**2.0, Ly**2.0])
+    if theta is None:
+        return L
+    R = rot_mat(theta)
     sigma = R @ L @ R.T
     return sigma
 
 
-def _compute_tau(
-    dE: np.ndarray,
-    dN: np.ndarray,
+def tau_dist(
+    dE: float,
+    dN: float,
     sigma: np.ndarray,
 ) -> np.ndarray:
     """
@@ -312,7 +348,7 @@ def _compute_tau(
     10.1002/qj.900
     """
     dx_vec = np.array([dE, dN])
-    return np.sqrt(dx_vec.T @ np.linalg.inv(sigma) @ dx_vec)
+    return np.sqrt(dx_vec.T @ inv_2d(sigma) @ dx_vec)
 
 
 def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
@@ -321,13 +357,13 @@ def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     DN = dyx[:, :, 0]
 
     def compute_tau2(dE, dN):
-        return _compute_tau(dE, dN, sigma)
+        return tau_dist(dE, dN, sigma)
 
     compute_tau_vectorised = np.vectorize(compute_tau2)
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist(df: pl.DataFrame) -> np.ndarray:
+def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
     """
     Compute the tau/Mahalanobis matrix for all records within a gridbox
 
@@ -373,10 +409,51 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
 
     # Get sigma
     Lx, Ly, theta = df.select(["grid_lx", "grid_ly", "grid_theta"]).row(0)
-    sigma = _Ls2sigma(Lx, Ly, theta)
+    sigma = sigma_rot_func(Lx, Ly, theta)
 
     tau = _compute_tau_wrapper(paired_dist, sigma)
     return np.exp(-tau)
+
+
+def mahal_dist_func(
+    delta_x: np.ndarray,
+    delta_y: np.ndarray,
+    Lx: float,
+    Ly: float,
+    theta: float | None = None,
+) -> np.ndarray:
+    """
+    Calculate tau from displacements, Lx, Ly, and theta (if it is known). For
+    an array of displacements, for a set of scalar ellipse parameters, Lx, Ly,
+    and theta.
+
+    Parameters
+    ----------
+    delta_x, delta_y : numpy.ndarray
+        displacement to remote point as in: (delta_x) i + (delta_y) j in old
+        school vector notation
+    Lx, Ly : float
+        Lx, Ly scale (km or degrees)
+    theta : float | None
+        rotation angle in radians
+
+    Returns
+    -------
+    tau : float
+        Mahalanobis distance
+    """
+    # sigma is 2x2 matrix
+    if theta is not None:
+        sigma = sigma_rot_func(Lx, Ly, theta)
+    else:
+        sigma = np.diag(np.array([Lx**2.0, Ly**2.0]))
+
+    sigma_inv = inv_2d(sigma)
+    # Direct computation of result
+    return np.sqrt(
+        delta_x * (delta_x * sigma_inv[0, 0] + delta_y * sigma_inv[0, 1])
+        + delta_y * (delta_x * sigma_inv[1, 0] + delta_y * sigma_inv[1, 1])
+    )
 
 
 # def _tau_unit_test():
@@ -410,3 +487,78 @@ def tau_dist(df: pl.DataFrame) -> np.ndarray:
 #     print("tau:")
 #     print(tau_mat)
 #     return {"tau": tau_mat, "sigma": sigma, "grid": df}
+
+
+def displacements(
+    lats: np.ndarray,
+    lons: np.ndarray,
+    lats2: np.ndarray | None = None,
+    lons2: np.ndarray | None = None,
+    delta_x_method: DeltaXMethod | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Calculate east-west and north-south displacement matrices for all pairs
+    of input positions.
+
+    The results are not scaled by any radius, this should be performed outside
+    of this function.
+
+    Parameters
+    ----------
+    lats : numpy.ndarray
+        The latitudes of the positions, should be provided in degrees.
+    lons : numpy.ndarray
+        The longitudes of the positions, should be provided in degrees.
+    lats2 : numpy.ndarray
+        The latitudes of the optional second positions, should be provided in
+        degrees.
+    lons2 : numpy.ndarray
+        The longitudes of the optional second positions, should be provided in
+        degrees.
+    delta_x_method : str | None
+        One of "Met_Office" or "Modified_Met_Office". If set to None, the
+        displacements will be returned in degrees, rather than actual distance
+        values. Set to "Met_Office" to use a cylindrical approximation, set
+        to "Modified_Met_Office" to use an approximation that uses the average
+        of the latitudes to set the horizontal displacement scale.
+
+    Returns
+    -------
+    disp_y : numpy.ndarray
+        The north-south displacements.
+    disp_x : numpy.ndarray
+        The east-west displacements.
+    """
+    if delta_x_method is not None and delta_x_method not in get_args(
+        DeltaXMethod
+    ):
+        raise ValueError(
+            f"Unknown 'delta_x_method' value, got '{delta_x_method}'"
+        )
+    _l2none = lats2 is None
+    lats2 = lats2 if lats2 is not None else lats
+    lons2 = lons2 if lons2 is not None else lons
+
+    disp_y = np.subtract.outer(lats, lats2)
+    disp_x = np.subtract.outer(lons, lons2)
+    disp_x[disp_x > 180.0] -= 360.0
+    disp_x[disp_x < -180.0] += 360.0
+
+    if delta_x_method is None:
+        return disp_y, disp_x
+
+    disp_y = np.deg2rad(disp_y)
+    disp_x = np.deg2rad(disp_x)
+
+    if delta_x_method == "Modified_Met_Office":
+        lats = np.radians(lats)
+        cos_lats = np.cos(lats)
+        if _l2none:
+            y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats)
+        else:
+            cos_lats2 = np.cos(np.radians(lats2))
+            y_cos_mean = 0.5 * np.add.outer(cos_lats, cos_lats2)
+
+        disp_x = disp_x * y_cos_mean
+
+    return disp_y, disp_x
