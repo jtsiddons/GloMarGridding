@@ -20,6 +20,9 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### New features and enhancements
 
+* `ellipse`, `ellipse_builder`, and `ellipse_covariance` are renamed to `ellipse.model`,
+  `ellipse.estimate`, and `ellipse.covariance` respectively. Ellipse classes `EllipseModel`,
+  `EllipseBuilder`, and `EllipseCovarianceBuilder` are available at the `ellipse` level (!66)
 * Introduced new classes for Kriging - `kriging.SimpleKriging` and `kriging.OrdinaryKriging`,
   allowing for easy computation of uncertainty, and alpha values (!62)
 * Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
