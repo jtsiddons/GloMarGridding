@@ -26,6 +26,18 @@ Users Guide
 .. automodule:: glomar_gridding.error_covariance
    :members:
 
+.. automodule:: glomar_gridding.ellipse
+   :members:
+
+.. automodule:: glomar_gridding.ellipse_builder
+   :members:
+
+.. automodule:: glomar_gridding.ellipse_covariance
+   :members:
+
+.. automodule:: glomar_gridding.covariance_tools
+   :members:
+
 .. automodule:: glomar_gridding.perturbation
    :members:
 

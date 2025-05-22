@@ -1,4 +1,7 @@
 """
+Ellipse Parameter Estimation
+----------------------------
+
 Class to calculate the covariance (and correlation) of gridded observed data
 over time. These values are used to estimate the ellipse parameters with an
 instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
@@ -191,6 +194,7 @@ class EllipseBuilder:
 
         the form of the covariance model depends on the "fform" attribute of the
         Ellipse model:
+
             isotropic (radial distance only)
             anistropic (x and y are different, but not rotated)
             anistropic_rotated (rotated)
@@ -212,10 +216,11 @@ class EllipseBuilder:
         0.5 gives an exponential decay
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits
-            "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-            (in radians)
-            "Modified_Met_Office": uses the average zonal dist at different lat
+        delta_x_method: only meaningful for _pd fits:
+            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+              (in radians)
+            - "Modified_Met_Office": uses the average zonal dist at different
+              lat
 
         Parameters
         ----------
@@ -467,11 +472,12 @@ class EllipseBuilder:
         Fit ellipses/covariance models using adhoc local covariances to all
         unmasked grid points
 
-        the form of the covariance model depends on the "fform" attribute of the
+        The form of the covariance model depends on the "fform" attribute of the
         Ellipse model:
-            isotropic (radial distance only)
-            anistropic (x and y are different, but not rotated)
-            anistropic_rotated (rotated)
+
+            - isotropic (radial distance only)
+            - anistropic (x and y are different, but not rotated)
+            - anistropic_rotated (rotated)
 
         If the "fform" attribute ends with _pd then physical distances are used
         instead of degrees
@@ -490,10 +496,12 @@ class EllipseBuilder:
         0.5 gives an exponential decay
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits
-            "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-            (in radians)
-            "Modified_Met_Office": uses the average zonal dist at different lat
+        delta_x_method: only meaningful for _pd fits:
+
+            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+              (in radians)
+            - "Modified_Met_Office": uses the average zonal dist at different
+              lat
 
         Parameters
         ----------
@@ -503,6 +511,7 @@ class EllipseBuilder:
             value that is appropriate to the type of the field. If a single
             value is provided, this is used for all fields. If not, 6 values
             should be provided for the following fields:
+
                 1. Lx - this should be a float or np.float value - a negative
                    value would be a good choice.
                 2. Ly - this should be a float or np.float value - a negative
@@ -601,21 +610,17 @@ class EllipseBuilder:
         Returns
         -------
         params : xarray.Dataset
-            Containing the following arrays:
-                - lx : the length of the semi-major axis
-                - ly : the length of the semi-minor axis
-                - theta : angle of rotation of the ellipse in radians from the
-                  equator
-                - stdev : the standard deviation
-                - success : the fitting success score. This takes values:
-                    0: success
-                    2: success but with one parameter reaching upper boundaries
-                    3: success with multiple parameters reaching the boundaries
-                       (aka both Lx and Ly), can be both at lower or upper
-                       boundaries
-                    9: fail, probably due to running out of maxiter (see
-                       scipy.optimize.minimize kwargs "options)"
-                - niter : the number of iterations
+            Containing arrays for each parameter in the ellipse model class.
+            Note that one array is likely to be "qc_code", which takes values:
+
+                - 0: success
+                - 2: success but with one parameter reaching upper
+                  boundaries
+                - 3: success with multiple parameters reaching the
+                  boundaries (aka both Lx and Ly), can be both at lower or
+                  upper boundaries
+                - 9: fail, probably due to running out of maxiter (see
+                  scipy.optimize.minimize kwargs "options)"
         """
         coords_dict = {
             "latitude": self.coords["latitude"].values,

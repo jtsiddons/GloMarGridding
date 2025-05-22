@@ -199,11 +199,6 @@ class MaternVariogram(Variogram):
        HadCRUT5 uses 1.5.
     5) The "2" is inside the square root for middle and right.
 
-    Reference; see chapter 4.2 of:
-    Rasmussen, C. E., & Williams, C. K. I. (2005).
-    Gaussian Processes for Machine Learning. The MIT Press.
-    https://doi.org/10.7551/mitpress/3206.001.0001
-
     GeoStatic:
 
     Similar to Sklearn MaternVariogram model but uses the range scaling in
@@ -218,6 +213,12 @@ class MaternVariogram(Variogram):
     Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
     Note: Note the 2 is outside the square root for middle and right
     e-folding distance is now at d/SQRT(2) for nu=0.5
+
+    References
+    ----------
+    see chapter 4.2 of Rasmussen, C. E., & Williams, C. K. I. (2005).
+    Gaussian Processes for Machine Learning. The MIT Press.
+    https://doi.org/10.7551/mitpress/3206.001.0001
 
     Parameters
     ----------
@@ -237,10 +238,11 @@ class MaternVariogram(Variogram):
     nu : float | np.ndarray
         Smoothing parameter, shapes to a smooth or rough variogram function
     method : MaternModel
-        One of "sklearn", "gstat", or "karspeck"
-        sklearn: https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html#sklearn.gaussian_process.kernels.Matern
-        gstat: https://scikit-gstat.readthedocs.io/en/latest/reference/models.html#matern-model
-        karspeck: https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900
+        One of "sklearn", "gstat", or "karspeck":
+
+            - sklearn: https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.kernels.Matern.html#sklearn.gaussian_process.kernels.Matern
+            - gstat: https://scikit-gstat.readthedocs.io/en/latest/reference/models.html#matern-model
+            - karspeck: https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900
     """
 
     psill: float | np.ndarray

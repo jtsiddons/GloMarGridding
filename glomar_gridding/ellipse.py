@@ -1,4 +1,9 @@
-"""Classes and functions for ellipse models"""
+"""
+Ellipse Models
+--------------
+
+Classes and functions for ellipse models.
+"""
 
 import logging
 import math as maths

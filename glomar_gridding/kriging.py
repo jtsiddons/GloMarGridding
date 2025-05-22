@@ -147,6 +147,7 @@ class Kriging(ABC):
         Solves the Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
+
         .. math::
             (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
@@ -211,11 +212,13 @@ class Kriging(ABC):
         figure out.
 
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+
         .. math::
             1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
             < alpha
 
         This can be re-written as:
+
         .. math::
             diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
             < alpha
@@ -243,8 +246,8 @@ class Kriging(ABC):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
+        References
+        ----------
         Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         raise NotImplementedError(
@@ -257,6 +260,7 @@ class SimpleKriging(Kriging):
     Class for SimpleKriging.
 
     The equation for simple Kriging is:
+
     .. math::
         (K_{obs} + E)^{-1} \\times K_{cross} \\times y + \\mu
 
@@ -374,6 +378,7 @@ class SimpleKriging(Kriging):
         Solves the simple Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
+
         .. math::
             (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
@@ -452,11 +457,13 @@ class SimpleKriging(Kriging):
         figure out.
 
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+
         .. math::
             1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
             < alpha
 
         This can be re-written as:
+
         .. math::
             diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
             < alpha
@@ -484,8 +491,8 @@ class SimpleKriging(Kriging):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
+        References
+        ----------
         Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "kriging_weights"):
@@ -501,6 +508,7 @@ class OrdinaryKriging(Kriging):
     Class for OrdinaryKriging.
 
     The equation for ordinary Kriging is:
+
     .. math::
         (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
@@ -657,6 +665,7 @@ class OrdinaryKriging(Kriging):
         Solves the simple Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
+
         .. math::
             (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
@@ -743,11 +752,13 @@ class OrdinaryKriging(Kriging):
         figure out.
 
         Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+
         .. math::
             1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
             < alpha
 
         This can be re-written as:
+
         .. math::
             diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
             < alpha
@@ -782,8 +793,8 @@ class OrdinaryKriging(Kriging):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
+        References
+        ----------
         Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if simple_kriging_weights is None:
@@ -1299,8 +1310,8 @@ def get_spatial_mean(
     spatial_mean : float
         The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
 
-    Reference
-    ---------
+    References
+    ----------
     https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
     """
     n = len(grid_obs)
@@ -1356,8 +1367,8 @@ def constraint_mask(
         Constraint mask values, the left-hand-side of equation A14 from Morice
         et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-    Reference
-    ---------
+    References
+    ----------
     Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
     """
     # ky_inv = np.linalg.inv(k_obs + err_cov)
