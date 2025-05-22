@@ -4,60 +4,63 @@ Repair "damaged"/"improper" covariance matrices:
 2) Covariance matrices with eigenvalues less than zero
 
 Known causes of damage:
-1) Multicollinearity,
-but nearly all very large cov matrices will have
-rounding errors to have this occur
+1) Multicollinearity:
+    but nearly all very large cov matrices will have rounding errors to have
+    this occur
 2) Number of spatial points >> length of time series
-(for ESA monthly pentads: this ratio is about 150
+    (for ESA monthly pentads: this ratio is about 150)
 3) Covariance is estimated using partial data
 
-In our cases -- 2 and 3...?
+In most cases, the most likely causes are 2 and 3.
+
+There are a number of methods included in this module. In general, the approach
+is to adjust the eigenvalues to ensure small or negative eigenvalues are
+increased to some minimum threshold. The covariance matrix is then re-calculated
+using these modified eigenvalues and the original eigenvectors.
+
+In general, the recommended approach is Original Clipping, see
+`glomar_gridding.covariance_tools.eigenvalue_clip`.
 
 Fixes:
 1) Simple clipping - `glomar_gridding.covariance_tools.simple_clipping`:
-Cut off the negative, zero, and small positive eigenvalues;
-this is method used in statsmodels.stats.correlation_tools
-but the version here has better thresholds based on
-the accuracy of the eigenvalues, plus a iterivative
-version which is slower but more stable with big matrices. The
-iterivative version is recommended for SST/MAT covariances.
+    Cut off the negative, zero, and small positive eigenvalues; this is method
+    used in statsmodels.stats.correlation_tools but the version here has better
+    thresholds based on the accuracy of the eigenvalues, plus a iterative
+    version which is slower but more stable with big matrices. The iterative
+    version is recommended for SST/MAT covariances.
 
-This is used for SST covariance matrices which have less dominant modes
-than MAT; it also preserves more noise.
+    This is used for SST covariance matrices which have less dominant modes
+    than MAT; it also preserves more noise.
 
-Trace (aka total variance) of the covariance matrix is not conserved,
-but it is less disruptive than EOF chop off (method 3).
+    Trace (aka total variance) of the covariance matrix is not conserved, but it
+    is less disruptive than EOF chop off (method 3).
 
-It is more difficult to use for covariance matrices with one large dominant mode
-because that raises the bar of accuracy of the eigenvalues, so you have to clip
-off a lot more eigenvectors.
+    It is more difficult to use for covariance matrices with one large dominant
+    mode because that raises the bar of accuracy of the eigenvalues, which
+    requires clipping off a lot more eigenvectors.
 
 2) Original clipping - `glomar_gridding.covariance_tools.eigenvalue_clip`:
-Determine a noise eigenvalue threshold and
-replace all eigenvalues below using the average of them,
-preserving the original trace (aka total variance) of the
-covariance matrix, but this will require a full computation
-of all eigenvectors, which may be slow and cause
-memory problems
+    Determine a noise eigenvalue threshold and replace all eigenvalues below
+    using the average of them, preserving the original trace (aka total
+    variance) of the covariance matrix, but this will require a full computation
+    of all eigenvectors, which may be slow and cause memory problems
 
 3) EOF chop-off - `glomar_gridding.covariance_tools.eof_chop`:
-Set a target explained variance (say 95%) for the empirical
-orthogonal functions, compute the eigenvalues and
-eigenvectors up to that explained variance. Reconstruct
-the covariance keeping only EOFs up to the target. This
-is very close to 2, but it reduces the total variance of
-the covariance matrix. The original method requires solving
-for ALL eigenvectors which may not be possible for massive
-matrices (40000x40000 square matrices). This is currently done
-for the MAT covariance matrices which have very large dominant
-modes.
+    Set a target explained variance (say 95%) for the empirical orthogonal
+    functions, compute the eigenvalues and eigenvectors up to that explained
+    variance. Reconstruct the covariance keeping only EOFs up to the target.
+    This is very close to 2, but it reduces the total variance of the covariance
+    matrix. The original method requires solving for ALL eigenvectors which may
+    not be possible for massive matrices (40000x40000 square matrices). This is
+    currently done for the MAT covariance matrices which have very large
+    dominant modes.
 
 4) Other methods not implemented here
-a) shrinkage methods
-https://scikit-learn.org/stable/modules/covariance.html
-b) reprojection (aka Higham's method)
-https://github.com/mikecroucher/nearest_correlation
-https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+    a) shrinkage methods
+        https://scikit-learn.org/stable/modules/covariance.html
+    b) reprojection (aka Higham's method)
+        https://github.com/mikecroucher/nearest_correlation
+        https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
 
 Author S Chan.
 Modified by J. Siddons.
