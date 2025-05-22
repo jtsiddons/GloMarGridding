@@ -145,6 +145,10 @@ Joseph T. Siddons \textless{}\sphinxhref{mailto:josidd@noc.ac.uk}{josidd@noc.ac.
 \label{\detokenize{authors:contributoring-developers}}\begin{itemize}
 \item {}
 \sphinxAtStartPar
+Archie Cable \textless{}\sphinxhref{mailto:acable@noc.ac.uk}{acable@noc.ac.uk}\textgreater{} \sphinxhref{git.noc.ac.uk/acable}{@acable}
+
+\item {}
+\sphinxAtStartPar
 Steven Chan \textless{}\sphinxhref{mailto:stchan@noc.ac.uk}{stchan@noc.ac.uk}\textgreater{} \sphinxhref{git.noc.ac.uk/stchan}{@stchan}
 
 \item {}
@@ -510,9 +514,18 @@ Exponential Model
 \sphinxAtStartPar
 Fit the ExponentialVariogram model to a distance matrix
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -567,9 +580,18 @@ Gaussian Model
 \sphinxAtStartPar
 Fit the GaussianVariogram model to a distance matrix
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -616,9 +638,18 @@ Linear model
 \sphinxAtStartPar
 Fit the LinearVariogram model to a distance matrix
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -641,7 +672,8 @@ Fit the LinearVariogram model to a distance matrix
 Matern Models
 
 \sphinxAtStartPar
-Same args as the Variogram classes with additional nu, method parameters.
+Same args as the Variogram classes with additional nu (\(\nu\)), method
+parameters.
 
 \sphinxAtStartPar
 Sklearn:
@@ -649,8 +681,8 @@ Sklearn:
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{)}%
 \item {}
 \sphinxAtStartPar
-This is called “sklearn” because if d/range = 1.0 and nu=0.5, it gives
-1/e correlation…
+This is called “sklearn” because if d/range = 1.0 and \(\nu=0.5\), it
+gives 1/e correlation…
 
 \item {}
 \sphinxAtStartPar
@@ -682,7 +714,7 @@ gstat.
 Note: there are no square root 2 or nu in middle and right
 
 \sphinxAtStartPar
-Yields the same answer to sklearn MaternVariogram if nu==0.5
+Yields the same answer to sklearn MaternVariogram if \(\nu=0.5\)
 but are otherwise different.
 
 \sphinxAtStartPar
@@ -691,7 +723,7 @@ Karspeck:
 \sphinxAtStartPar
 Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
 Note: Note the 2 is outside the square root for middle and right
-e\sphinxhyphen{}folding distance is now at d/SQRT(2) for nu=0.5
+e\sphinxhyphen{}folding distance is now at d/SQRT(2) for \(\nu=0.5\)
 \subsubsection*{References}
 
 \sphinxAtStartPar
@@ -723,7 +755,8 @@ range is not set, it will be computed from effective\_range.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nu}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Smoothing parameter, shapes to a smooth or rough variogram function
+\sphinxstyleliteralstrong{\sphinxupquote{nu}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} \(\nu\), smoothing parameter, shapes to a smooth or rough variogram
+function
 
 \item {}
 \sphinxAtStartPar
@@ -760,11 +793,20 @@ karspeck: \sphinxurl{https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Fit the MaternVariogram model to a distance matrix
+Fit the MaternVariogram model to a distance matrix.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -815,9 +857,18 @@ Power model
 \sphinxAtStartPar
 Fit the PowerVariogram model to a distance matrix
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -849,9 +900,18 @@ Generic Variogram Class \sphinxhyphen{} defines the abstract class
 \sphinxAtStartPar
 Fit the Variogram model to a distance matrix
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
@@ -2615,16 +2675,16 @@ dimensionally incorrect is wrong, but the correct answer is easy to
 figure out.
 
 \sphinxAtStartPar
-Correct Equation (extra matrix inverse for \(K_{obs} + E\)):
+Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 alpha is chosen to be 0.25 in the UKMO paper
@@ -2680,12 +2740,12 @@ covariance between observation grid points.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
@@ -2762,12 +2822,12 @@ between grid\sphinxhyphen{}points with observations.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
@@ -2778,7 +2838,7 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
-observations. \((K_{obs} + E)^{-1}\)
+observations. \((C_{obs} + E)^{-1}\)
 
 \item {}
 \sphinxAtStartPar
@@ -2843,12 +2903,12 @@ Solves the Kriging problem. Computes the Kriging weights if the
 \sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
 is:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross} \times y\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, \(K_{cross}\) is the covariance between
+with observations, \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points), and \(y\) are the observation values.
 \begin{quote}\begin{description}
@@ -2908,20 +2968,20 @@ Class for OrdinaryKriging.
 \sphinxAtStartPar
 The equation for ordinary Kriging is:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross} \times y\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
 \end{equation*}
 \sphinxAtStartPar
 with a constant but unknown mean.
 
 \sphinxAtStartPar
-In this case, the \(K_{obs}\), \(K_{cross}\) and \(y\) values
+In this case, the \(C_{obs}\), \(C_{cross}\) and \(y\) values
 are extended with a Lagrange multiplier term, ensuring that the Kriging
 weights are constrained to sum to 1.
 
 \sphinxAtStartPar
-The matrix \(K_{obs}\) is extended by one row and one column, each
+The matrix \(C_{obs}\) is extended by one row and one column, each
 containing the value 1, except at the diagonal point, which is 0. The
-\(K_{cross}\) matrix is extended by an extra row containing values of 1.
+\(C_{cross}\) matrix is extended by an extra row containing values of 1.
 Finally, the grid observations \(y\) is extended by a single value of 0
 at the end of the vector.
 \begin{quote}\begin{description}
@@ -2956,16 +3016,16 @@ dimensionally incorrect is wrong, but the correct answer is easy to
 figure out.
 
 \sphinxAtStartPar
-Correct Equation (extra matrix inverse for \(K_{obs} + E\)):
+Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 alpha is chosen to be 0.25 in the UKMO paper
@@ -3028,7 +3088,7 @@ Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pd
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Compute the inverse of a covariance matrix \(S = K_{obs} + E\), and
+Compute the inverse of a covariance matrix \(S = C_{obs} + E\), and
 use that to compute the inverse of the extended version of the
 covariance matrix with Lagrange multipliers, used by Ordinary Kriging.
 
@@ -3086,24 +3146,24 @@ covariance between observation grid points.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
 \sphinxAtStartPar
-In this case, the \(K_{obs}\), \(K_{cross}\) and are extended
+In this case, the \(C_{obs}\), \(C_{cross}\) and are extended
 with a Lagrange multiplier term, ensuring that the Kriging weights are
 constrained to sum to 1.
 
 \sphinxAtStartPar
-The matrix \(K_{obs}\) is extended by one row and one column, each
+The matrix \(C_{obs}\) is extended by one row and one column, each
 containing the value 1, except at the diagonal point, which is 0. The
-\(K_{cross}\) matrix is extended by an extra row containing values
+\(C_{cross}\) matrix is extended by an extra row containing values
 of 1.
 
 \sphinxAtStartPar
@@ -3179,12 +3239,12 @@ between grid\sphinxhyphen{}points with observations.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
@@ -3205,7 +3265,7 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
-observations. \((K_{obs} + E)^{-1}\)
+observations. \((C_{obs} + E)^{-1}\)
 
 \item {}
 \sphinxAtStartPar
@@ -3242,24 +3302,24 @@ Solves the simple Kriging problem. Computes the Kriging weights if the
 \sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
 is:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross} \times y\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, \(K_{cross}\) is the covariance between
+with observations, \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points), and \(y\) are the observation values.
 
 \sphinxAtStartPar
-In this case, the \(K_{obs}\), \(K_{cross}\) and are extended
+In this case, the \(C_{obs}\), \(C_{cross}\) and are extended
 with a Lagrange multiplier term, ensuring that the Kriging weights are
 constrained to sum to 1.
 
 \sphinxAtStartPar
-The matrix \(K_{obs}\) is extended by one row and one column, each
+The matrix \(C_{obs}\) is extended by one row and one column, each
 containing the value 1, except at the diagonal point, which is 0. The
-\(K_{cross}\) matrix is extended by an extra row containing values
+\(C_{cross}\) matrix is extended by an extra row containing values
 of 1.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
@@ -3318,7 +3378,7 @@ Class for SimpleKriging.
 \sphinxAtStartPar
 The equation for simple Kriging is:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross} \times y + \mu\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y + \mu\end{split}
 \end{equation*}
 \sphinxAtStartPar
 Where \(\mu\) is a constant known mean, typically this is 0.
@@ -3354,16 +3414,16 @@ dimensionally incorrect is wrong, but the correct answer is easy to
 figure out.
 
 \sphinxAtStartPar
-Correct Equation (extra matrix inverse for \(K_{obs} + E\)):
+Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}1 - diag(K - K_{cross}^T \times (K + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(K_{cross}^T \times (K_{obs} + E)^{-1} \times K_{cross})
-/ diag(K) < alpha\end{split}
+\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+/ diag(C) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 alpha is chosen to be 0.25 in the UKMO paper
@@ -3419,12 +3479,12 @@ covariance between observation grid points.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
@@ -3501,12 +3561,12 @@ between grid\sphinxhyphen{}points with observations.
 \sphinxAtStartPar
 The Kriging weights are calculated as:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross}\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(K_{cross}\) is the covariance between
+with observations, and \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points).
 
@@ -3517,7 +3577,7 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
-observations. \((K_{obs} + E)^{-1}\)
+observations. \((C_{obs} + E)^{-1}\)
 
 \item {}
 \sphinxAtStartPar
@@ -3554,12 +3614,12 @@ Solves the simple Kriging problem. Computes the Kriging weights if the
 \sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
 is:
 \begin{equation*}
-\begin{split}(K_{obs} + E)^{-1} \times K_{cross} \times y\end{split}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
 \end{equation*}
 \sphinxAtStartPar
-Where \(K_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
 with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, \(K_{cross}\) is the covariance between
+with observations, \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points), and \(y\) are the observation values.
 \begin{quote}\begin{description}
@@ -3630,15 +3690,15 @@ Equation to use is A14 is incorrect. Easily noticeable because dimensionally
 incorrect is wrong, but the correct answer is easy to figure out.
 
 \sphinxAtStartPar
-Correct Equation (extra matrix inverse for K+R):
+Correct Equation (extra matrix inverse for C+R):
 \begin{equation*}
-\begin{split}1 - diag(K(X*,X*) - k*^T \times (K+R)^{-1} \times k*)  / diag(K(X*,X*))
-< alpha\end{split}
+\begin{split}1 - diag(C(X*,X*) - k*^T \times (C+R)^{-1} \times k*)  / diag(C(X*,X*))
+< \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(k*^T \times (K+R)^{-1} \times k*) / diag(K(X*, X*)) < alpha\end{split}
+\begin{split}diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 alpha is chosen to be 0.25 in the UKMO paper
@@ -3652,7 +3712,7 @@ Written by S. Chan, modified by J. Siddons.
 \sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the covariance due to
 measurements (i.e. measurement noise, bias noise, and sampling noise).
 Can include error covariance terms, if these are being used. This is
-\sphinxtitleref{K + R} in the above equation.
+\sphinxtitleref{C + R} in the above equation.
 
 \item {}
 \sphinxAtStartPar
@@ -3662,7 +3722,7 @@ Does not contain error covarance. This is \sphinxtitleref{k*} in the above equat
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Interpolation covariance of all output grid points (each point in time
-and all points against each other). This is \sphinxtitleref{K(X*, X*)} in the above
+and all points against each other). This is \sphinxtitleref{C(X*, X*)} in the above
 equation.
 
 \end{itemize}
