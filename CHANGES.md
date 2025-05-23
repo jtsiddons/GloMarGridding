@@ -22,6 +22,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Added an example notebook (!46)
 * Added documentation pdf (!46)
 * `ellipse`, `ellipse_builder`, and `ellipse_covariance` are renamed to `ellipse.model`,
   `ellipse.estimate`, and `ellipse.covariance` respectively. Ellipse classes `EllipseModel`,
