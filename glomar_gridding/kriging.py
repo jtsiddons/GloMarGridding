@@ -181,7 +181,7 @@ class Kriging(ABC):
         raise NotImplementedError("`solve` not implemented for default class")
 
     @abstractmethod
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, idx: np.ndarray) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
@@ -416,7 +416,7 @@ class SimpleKriging(Kriging):
 
         return self.kriging_weights @ grid_obs + mean
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, idx: np.ndarray) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
@@ -429,11 +429,11 @@ class SimpleKriging(Kriging):
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
 
-        alpha = self.kriging_weights[:, -1]
-        dz_squared = np.diag(self.covariance - self.kriging_weights)
-        dz_squared -= alpha
-        dz_squared = adjust_small_negative(dz_squared)
+        obs_grid_cov = self.covariance[idx, :]
 
+        kriging_weights = self.kriging_weights @ obs_grid_cov
+        dz_squared = np.diag(self.covariance - kriging_weights)
+        dz_squared = adjust_small_negative(dz_squared)
         uncert = np.sqrt(dz_squared)
         uncert[np.isnan(uncert)] = 0.0
         return uncert
@@ -659,7 +659,7 @@ class OrdinaryKriging(Kriging):
         error_cov: np.ndarray | None = None,
     ) -> np.ndarray:
         r"""
-        Solves the simple Kriging problem. Computes the Kriging weights if the
+        Solves the ordinary Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
 
@@ -713,7 +713,7 @@ class OrdinaryKriging(Kriging):
 
         return self.kriging_weights @ grid_obs
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, idx: np.ndarray) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
@@ -725,10 +725,18 @@ class OrdinaryKriging(Kriging):
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
-        dz_squared = np.diag(self.covariance - self.kriging_weights)
-        dz_squared = adjust_small_negative(dz_squared)
-        uncert = np.sqrt(dz_squared)
+
+        M = self.covariance.shape[0]
+        obs_grid_cov = self.covariance[idx, :]
+        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+
+        alpha = self.kriging_weights[:, -1]
+        kriging_weights = self.kriging_weights @ obs_grid_cov
+        uncert_squared = np.diag(self.covariance - kriging_weights) - alpha
+        uncert_squared = adjust_small_negative(uncert_squared)
+        uncert = np.sqrt(uncert_squared)
         uncert[np.isnan(uncert)] = 0.0
+
         return uncert
 
     def constraint_mask(
@@ -845,20 +853,24 @@ class OrdinaryKriging(Kriging):
             Inverse of the extended covariance matrix between observation
             grid-points including the Lagrange multiplier factors.
         """
-        if len(simple_inv.shape) != 2:
-            raise ValueError("S must be a matrix")
+        return _extended_inverse(simple_inv)
 
-        d = 0
-        B = np.ones((simple_inv.shape[0], 1))
 
-        E = np.matmul(simple_inv, B)
-        f = d - np.matmul(B.T, E)
-        finv = 1 / f
-        G = finv * E.T
-        # H = finv * np.matmul(B.T, Ainv)
-        K = simple_inv + np.matmul(E, G)
+def _extended_inverse(simple_inv: np.ndarray) -> np.ndarray:
+    if len(simple_inv.shape) != 2:
+        raise ValueError("S must be a matrix")
 
-        return np.block([[K, -G.T], [-G, finv]])
+    d = 0
+    B = np.ones((simple_inv.shape[0], 1))
+
+    E = np.matmul(simple_inv, B)
+    f = d - np.matmul(B.T, E)
+    finv = 1 / f
+    G = finv * E.T
+    # H = finv * np.matmul(B.T, Ainv)
+    K = simple_inv + np.matmul(E, G)
+
+    return np.block([[K, -G.T], [-G, finv]])
 
 
 def kriging(  # noqa: C901

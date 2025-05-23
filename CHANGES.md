@@ -17,11 +17,18 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Breaking changes
 
+* `perturbation` module is renamed to `stochastic` (!65)
 * All job-specific files are removed from the library (!56)
 
 ### New features and enhancements
 
 * Added documentation pdf (!46)
+* `ellipse`, `ellipse_builder`, and `ellipse_covariance` are renamed to `ellipse.model`,
+  `ellipse.estimate`, and `ellipse.covariance` respectively. Ellipse classes `EllipseModel`,
+  `EllipseBuilder`, and `EllipseCovarianceBuilder` are available at the `ellipse` level (!66)
+* Added a new class for performing a two-stage Kriging following [Morice et al.
+  (2021)](https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361) -
+  `stochastic.StochasticKriging` (!65)
 * Introduced new classes for Kriging - `kriging.SimpleKriging` and `kriging.OrdinaryKriging`,
   allowing for easy computation of uncertainty, and alpha values (!62)
 * Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
