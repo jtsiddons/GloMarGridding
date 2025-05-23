@@ -25,6 +25,12 @@ Covariance Tools and Eigenvalue Clipping
 .. automodule:: glomar_gridding.covariance_tools
    :members:
 
+IO
+==
+
+.. automodule:: glomar_gridding.io
+   :members:
+
 Utilities
 =========
 

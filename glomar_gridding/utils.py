@@ -1,4 +1,4 @@
-"""Utility functions for GloMarGridding"""
+r"""Utility functions for `glomar_gridding`"""
 
 from calendar import isleap
 from collections import OrderedDict
@@ -618,8 +618,8 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
 
 def sizeof_fmt(num: float, suffix="B") -> str:
     """
-    Convert numbers to kilo/mega... bytes,
-    for interactive printing of code progress
+    Convert numbers to kilo/mega... bytes, for interactive printing of code
+    progress.
     """
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
         if abs(num) < 1024.0:

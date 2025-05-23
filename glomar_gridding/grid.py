@@ -157,9 +157,9 @@ def assign_to_grid(
 
     Parameters
     ----------
-    values : pl.Series
+    values : polars.Series
         The values to map onto the output grid.
-    grid_idx : pl.Series
+    grid_idx : polars.Series
         The 1d index of the grid (assuming "C" style ravelling) for each value.
     grid : xarray.DataArray
         The grid used to define the output grid.

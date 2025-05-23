@@ -211,16 +211,19 @@ class Kriging(ABC):
         Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
 
         .. math::
-            1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
 
         .. math::
-            diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
 
-        \alpha is chosen to be 0.25 in the UKMO paper
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -456,16 +459,19 @@ class SimpleKriging(Kriging):
         Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
 
         .. math::
-            1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
 
         .. math::
-            diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
 
-        \alpha is chosen to be 0.25 in the UKMO paper
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -759,16 +765,19 @@ class OrdinaryKriging(Kriging):
         Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
 
         .. math::
-            1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
 
         .. math::
-            diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-            / diag(C) < \alpha
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
 
-        \alpha is chosen to be 0.25 in the UKMO paper
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -1109,10 +1118,13 @@ def prep_obs_for_kriging(
         All point observations/measurements for the chosen date.
     remove_obs_mean: int
         Should the mean or median from obs be removed and added back onto obs?
-        0 = No (default action)
-        1 = the mean is removed
-        2 = the median is removed
-        3 = the spatial meam os removed
+
+            - 0 = No (default action)
+            - 1 = the mean is removed
+            - 2 = the median is removed
+            - 3 = the spatial meam os removed
+
+        Note that the mean will need to be reapplied to the Kriging result.
     obs_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
 
@@ -1359,7 +1371,7 @@ def constraint_mask(
     .. math::
         diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < \alpha
 
-    \alpha is chosen to be 0.25 in the UKMO paper
+    :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
     Written by S. Chan, modified by J. Siddons.
 

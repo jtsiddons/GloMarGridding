@@ -4,17 +4,17 @@ Ellipses: Non-Stationary Interpolation Covariance
 Ellipse Models
 ==============
 
-.. automodule:: glomar_gridding.ellipse
+.. autoclass:: glomar_gridding.ellipse::EllipseModel
    :members:
 
 Ellipse Parameter Estimation
 ============================
 
-.. automodule:: glomar_gridding.ellipse_builder
+.. autoclass:: glomar_gridding.ellipse::EllipseBuilder
    :members:
 
 Ellipse-based Covariance Estimation
 ===================================
 
-.. automodule:: glomar_gridding.ellipse_covariance
+.. autoclass:: glomar_gridding.ellipse::EllipseCovarianceBuilder
    :members:

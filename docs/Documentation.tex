@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{May 22, 2025}
+\date{May 23, 2025}
 \release{0.3.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -166,124 +166,52 @@ Elizabeth C. Kent \textless{}\sphinxhref{mailto:eck@noc.ac.uk}{eck@noc.ac.uk}\te
 
 \chapter{Stationary Interpolation Covariance}
 \label{\detokenize{covariance:stationary-interpolation-covariance}}\label{\detokenize{covariance::doc}}
+\sphinxAtStartPar
+Outside of the observation values and positions, the spatial covariance structure is the most
+important component for Kriging. The Kriging classes in this library all require this matrix as the
+input to the class. This covariance matrix can be provided as a pre\sphinxhyphen{}computed matrix, loaded into the
+environment with {\hyperref[\detokenize{covariance:glomar_gridding.interpolation_covariance.load_covariance}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.interpolation\_covariance.load\_covariance()}}}}}. Alternatively
+the covariance structure can be estimated using functions and classes contained within
+\sphinxtitleref{glomar\_gridding}.
+
+\sphinxAtStartPar
+A commonly used approach is to compute a stationary covariance structure, using a \sphinxstyleemphasis{Variogram} with
+fixed scales. The use of \sphinxstyleemphasis{stationary} here suggests that the range of covariance is constant across
+all positions \sphinxhyphen{} each position has the same influence over a fixed distance.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{glomar\PYGZus{}gridding}\PYG{n+nn}{.}\PYG{n+nn}{grid}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{grid\PYGZus{}from\PYGZus{}resolution}\PYG{p}{,} \PYG{n}{grid\PYGZus{}to\PYGZus{}distance\PYGZus{}matrix}
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{glomar\PYGZus{}gridding}\PYG{n+nn}{.}\PYG{n+nn}{variogram}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{GaussianVariogram}\PYG{p}{,} \PYG{n}{variogram\PYGZus{}to\PYGZus{}covariance}
+
+
+\PYG{c+c1}{\PYGZsh{} Initialise a grid}
+\PYG{n}{grid} \PYG{o}{=} \PYG{n}{grid\PYGZus{}from\PYGZus{}resolution}\PYG{p}{(}
+    \PYG{n}{resolution}\PYG{o}{=}\PYG{l+m+mi}{5}\PYG{p}{,}
+    \PYG{n}{bounds}\PYG{o}{=}\PYG{p}{[}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{87.5}\PYG{p}{,} \PYG{l+m+mi}{90}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{177.5}\PYG{p}{,} \PYG{l+m+mi}{180}\PYG{p}{)}\PYG{p}{]}\PYG{p}{,}
+    \PYG{n}{coord\PYGZus{}names}\PYG{o}{=}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{latitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{longitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{,}
+\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Compute a distance matrix}
+\PYG{n}{dist} \PYG{o}{=} \PYG{n}{grid\PYGZus{}to\PYGZus{}distance\PYGZus{}matrix}\PYG{p}{(}
+    \PYG{n}{grid}\PYG{o}{=}\PYG{n}{grid}\PYG{p}{,}
+    \PYG{n}{lat\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{latitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+    \PYG{n}{lon\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{longitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Define and compute a Variogram}
+\PYG{n}{variogram} \PYG{o}{=} \PYG{n}{GaussianVariogram}\PYG{p}{(}
+    \PYG{n}{nugget}\PYG{o}{=}\PYG{l+m+mf}{0.0}\PYG{p}{,}
+    \PYG{n}{psill}\PYG{o}{=}\PYG{l+m+mf}{1.2}\PYG{p}{,}
+    \PYG{n+nb}{range}\PYG{o}{=}\PYG{l+m+mi}{1300}\PYG{p}{,}
+\PYG{p}{)}\PYG{o}{.}\PYG{n}{fit}\PYG{p}{(}\PYG{n}{dist}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Convert to covariance}
+\PYG{n}{covariance} \PYG{o}{=} \PYG{n}{variogram\PYGZus{}to\PYGZus{}covariance}\PYG{p}{(}\PYG{n}{variogram}\PYG{p}{,} \PYG{n}{sill}\PYG{o}{=}\PYG{l+m+mf}{1.2}\PYG{p}{)}
+\end{sphinxVerbatim}
+
 
 \section{Grid}
-\label{\detokenize{covariance:module-glomar_gridding.grid}}\label{\detokenize{covariance:grid}}\index{module@\spxentry{module}!glomar\_gridding.grid@\spxentry{glomar\_gridding.grid}}\index{glomar\_gridding.grid@\spxentry{glomar\_gridding.grid}!module@\spxentry{module}}
-\sphinxAtStartPar
-Functions for creating grids and mapping observations to a grid
-\index{assign\_to\_grid() (in module glomar\_gridding.grid)@\spxentry{assign\_to\_grid()}\spxextra{in module glomar\_gridding.grid}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.grid.assign_to_grid}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{assign\_to\_grid}}}
-{\sphinxparam{\DUrole{n}{values}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mask\_grid}\DUrole{o}{=}\DUrole{default_value}{False}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mask\_value}\DUrole{o}{=}\DUrole{default_value}{nan}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Assign a vector of values to a grid, using a list of grid index values. The
-default value for grid values is 0.0.
-
-\sphinxAtStartPar
-Optionally, if the grid is a mask, apply the mask to the output grid.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{pl.Series}}) \textendash{} The values to map onto the output grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{pl.Series}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each value.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The grid used to define the output grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask\_grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Optionally use values in the grid to mask the output grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The value in the grid to use for masking the output grid.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{out\_grid} \textendash{} A new grid containing the values mapped onto the grid.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{cross\_coords() (in module glomar\_gridding.grid)@\spxentry{cross\_coords()}\spxextra{in module glomar\_gridding.grid}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.grid.cross_coords}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{cross\_coords}}}
-{\sphinxparam{\DUrole{n}{coords}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_coord}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_coord}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Combine a set of coordinates into a cross\sphinxhyphen{}product, for example to construct
-a coordinate system for a distance matrix.
-\begin{description}
-\sphinxlineitem{For example a coordinate system defined by:}
-\sphinxAtStartPar
-lat = {[}0, 1{]},
-lon = {[}4, 5{]},
-
-\sphinxlineitem{would yield a new coordinate system defined by:}
-\sphinxAtStartPar
-index\_1 = {[}0, 1, 2, 3{]}
-index\_2 = {[}0, 1, 2, 3{]}
-lat\_1 = {[}0, 0, 1, 1{]}
-lon\_1 = {[}4, 5, 4, 5{]}
-lat\_2 = {[}0, 0, 1, 1{]}
-lon\_2 = {[}4, 5, 4, 5{]}
-
-\end{description}
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Coordinates}}) \textendash{} The set of coordinates to combine, or cross. This should be of length
-2 and have names defined by \sphinxtitleref{lat\_coord} and \sphinxtitleref{lon\_coord} input arguments.
-The ordering of the coordinates will define the cross ordering.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lat\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the latitude coordinate.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lon\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the longitude coordinate.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{cross\_coords} \textendash{} The new crossed coordinates, including index, and each of the input
-coordinates, for each dimension.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-xarray.Coordinates
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{grid\_from\_resolution() (in module glomar\_gridding.grid)@\spxentry{grid\_from\_resolution()}\spxextra{in module glomar\_gridding.grid}}
+\label{\detokenize{covariance:grid}}\index{grid\_from\_resolution() (in module glomar\_gridding.grid)@\spxentry{grid\_from\_resolution()}\spxextra{in module glomar\_gridding.grid}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{covariance:glomar_gridding.grid.grid_from_resolution}}
@@ -383,91 +311,129 @@ xarray.DataArray
 
 \end{fulllineitems}
 
-\index{map\_to\_grid() (in module glomar\_gridding.grid)@\spxentry{map\_to\_grid()}\spxextra{in module glomar\_gridding.grid}}
+
+
+\section{Variograms}
+\label{\detokenize{covariance:variograms}}\index{LinearVariogram (class in glomar\_gridding.variogram)@\spxentry{LinearVariogram}\spxextra{class in glomar\_gridding.variogram}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.grid.map_to_grid}}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{map\_to\_grid}}}
-{\sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}latitude\textquotesingle{}, \textquotesingle{}longitude\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sort}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{add\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}grid\_\textquotesingle{}}}}
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{LinearVariogram}}}
+{\sphinxparam{\DUrole{n}{slope}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Align an observation dataframe to a grid defined by an xarray DataArray.
-
-\sphinxAtStartPar
-Maps observations to the nearest grid\sphinxhyphen{}point, and sorts the data by the
-1d index of the DataArray in a row\sphinxhyphen{}major format.
-
-\sphinxAtStartPar
-The grid defined by the latitude and longitude coordinates of the input
-DataArray is then used as the output grid of the Gridding process.
+Linear model
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observational DataFrame containing positional data with latitude,
-longitude values within the \sphinxtitleref{obs\_latname} and \sphinxtitleref{obs\_lonname} columns
-respectively. Observations are mapped to the nearest grid\sphinxhyphen{}point in the
-grid.
+\sphinxstyleliteralstrong{\sphinxupquote{slope}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Contains the grid coordinates to map observations to.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the column containing positional values in the input
-observational DataFrame.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the coordinates in the input grid DataArray used to define the
-grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Sort the observational DataFrame by the grid index
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial bounds.
-This list must have the same size and ordering as \sphinxtitleref{obs\_coords} and
-\sphinxtitleref{grid\_coords} arguments.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add the grid positional information to the observational DataFrame.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Prefix to use for the new grid columns in the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
 
 \end{itemize}
 
+\end{description}\end{quote}
+\index{fit() (glomar\_gridding.variogram.LinearVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.LinearVariogram method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram.fit}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{fit}}}
+{\sphinxparam{\DUrole{n}{distance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Fit the LinearVariogram model to a distance matrix
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{obs} \textendash{} Containing additional \sphinxtitleref{grid\_*}, and \sphinxtitleref{grid\_idx} values
-indicating the positions and grid index of the observation
-respectively. The DataFrame is also sorted (ascendingly) by the
-\sphinxtitleref{grid\_idx} columns for consistency with the gridding functions.
+A matrix containing the variogram values at each distance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-pandas.DataFrame
+numpy.ndarray | xarray.DataArray
 
 \end{description}\end{quote}
 
 \end{fulllineitems}
 
 
+\end{fulllineitems}
 
-\section{Variograms}
-\label{\detokenize{covariance:module-glomar_gridding.variogram}}\label{\detokenize{covariance:variograms}}\index{module@\spxentry{module}!glomar\_gridding.variogram@\spxentry{glomar\_gridding.variogram}}\index{glomar\_gridding.variogram@\spxentry{glomar\_gridding.variogram}!module@\spxentry{module}}
+\index{PowerVariogram (class in glomar\_gridding.variogram)@\spxentry{PowerVariogram}\spxextra{class in glomar\_gridding.variogram}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{PowerVariogram}}}
+{\sphinxparam{\DUrole{n}{scale}}\sphinxparamcomma \sphinxparam{\DUrole{n}{exponent}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
+{}
+\pysigstopsignatures
 \sphinxAtStartPar
-Varigram classes for construction of spatial covariance structure from distance
-matrices.
+Power model
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{scale}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{exponent}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{fit() (glomar\_gridding.variogram.PowerVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.PowerVariogram method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram.fit}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{fit}}}
+{\sphinxparam{\DUrole{n}{distance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Fit the PowerVariogram model to a distance matrix
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+points in the grid.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A matrix containing the variogram values at each distance.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray | xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
 \index{ExponentialVariogram (class in glomar\_gridding.variogram)@\spxentry{ExponentialVariogram}\spxextra{class in glomar\_gridding.variogram}}
 
 \begin{fulllineitems}
@@ -579,64 +545,6 @@ Gaussian Model
 \pysigstopsignatures
 \sphinxAtStartPar
 Fit the GaussianVariogram model to a distance matrix
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
-points in the grid.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-A matrix containing the variogram values at each distance.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{LinearVariogram (class in glomar\_gridding.variogram)@\spxentry{LinearVariogram}\spxextra{class in glomar\_gridding.variogram}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{LinearVariogram}}}
-{\sphinxparam{\DUrole{n}{slope}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Linear model
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{slope}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\end{itemize}
-
-\end{description}\end{quote}
-\index{fit() (glomar\_gridding.variogram.LinearVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.LinearVariogram method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram.fit}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{distance\_matrix}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Fit the LinearVariogram model to a distance matrix
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
@@ -815,111 +723,6 @@ numpy.ndarray | xarray.DataArray
 
 \end{fulllineitems}
 
-\index{PowerVariogram (class in glomar\_gridding.variogram)@\spxentry{PowerVariogram}\spxextra{class in glomar\_gridding.variogram}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{PowerVariogram}}}
-{\sphinxparam{\DUrole{n}{scale}}\sphinxparamcomma \sphinxparam{\DUrole{n}{exponent}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Power model
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{scale}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{exponent}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\end{itemize}
-
-\end{description}\end{quote}
-\index{fit() (glomar\_gridding.variogram.PowerVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.PowerVariogram method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram.fit}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{distance\_matrix}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Fit the PowerVariogram model to a distance matrix
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
-points in the grid.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-A matrix containing the variogram values at each distance.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{Variogram (class in glomar\_gridding.variogram)@\spxentry{Variogram}\spxextra{class in glomar\_gridding.variogram}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.Variogram}}
-\pysigstartsignatures
-\pysigline
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{Variogram}}}
-\pysigstopsignatures
-\sphinxAtStartPar
-Generic Variogram Class \sphinxhyphen{} defines the abstract class
-\index{fit() (glomar\_gridding.variogram.Variogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.Variogram method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.Variogram.fit}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{distance\_matrix}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Fit the Variogram model to a distance matrix
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
-points in the grid.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-A matrix containing the variogram values at each distance.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
 \index{variogram\_to\_covariance() (in module glomar\_gridding.variogram)@\spxentry{variogram\_to\_covariance()}\spxextra{in module glomar\_gridding.variogram}}
 
 \begin{fulllineitems}
@@ -1020,10 +823,7 @@ numpy.ndarray
 \label{\detokenize{ellipse:ellipses-non-stationary-interpolation-covariance}}\label{\detokenize{ellipse::doc}}
 
 \section{Ellipse Models}
-\label{\detokenize{ellipse:module-glomar_gridding.ellipse}}\label{\detokenize{ellipse:ellipse-models}}\index{module@\spxentry{module}!glomar\_gridding.ellipse@\spxentry{glomar\_gridding.ellipse}}\index{glomar\_gridding.ellipse@\spxentry{glomar\_gridding.ellipse}!module@\spxentry{module}}
-\sphinxAtStartPar
-Classes and functions for ellipse models.
-\index{EllipseModel (class in glomar\_gridding.ellipse)@\spxentry{EllipseModel}\spxextra{class in glomar\_gridding.ellipse}}
+\label{\detokenize{ellipse:ellipse-models}}\index{EllipseModel (class in glomar\_gridding.ellipse)@\spxentry{EllipseModel}\spxextra{class in glomar\_gridding.ellipse}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseModel}}
@@ -1286,141 +1086,16 @@ Creates a function that can be fed into scipy.optimizer.minimize
 
 \end{fulllineitems}
 
-\index{cov\_ij\_anisotropic() (in module glomar\_gridding.ellipse)@\spxentry{cov\_ij\_anisotropic()}\spxextra{in module glomar\_gridding.ellipse}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.cov_ij_anisotropic}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{cov\_ij\_anisotropic}}}
-{\sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev\_j}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Covariance structure between base point i and j
-Assuming local stationarity or slowly varying
-so that some terms in PS06 drops off (like Sigma\_i \textasciitilde{} Sigma\_j instead of
-treating them as different) (aka second\_term below)
-this makes formulation a lot more simple
-We let stdev\_j opens to changes,
-but in pracitice, we normalise everything to correlation so
-stdev == stdev\_j == 1
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{v}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Matern shape parameter
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Standard deviation at the centre of the ellipse
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{delta\_x}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Displacements to remote point as in: (delta\_x) i + (delta\_y) j in old
-school vector notation
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{delta\_y}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Displacements to remote point as in: (delta\_x) i + (delta\_y) j in old
-school vector notation
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Lx}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Lx, Ly scale (km or degrees)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Ly}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Lx, Ly scale (km or degrees)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev\_j}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Standard deviation, remote point. If set to None, then ‘stdev’ is used.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{theta}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Rotation angle of the ellipse in radians.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{cov\_ij} \textendash{} Covariance/correlation between local and remote point given displacement
-and Matern covariance parameters
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-float
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{cov\_ij\_isotropic() (in module glomar\_gridding.ellipse)@\spxentry{cov\_ij\_isotropic()}\spxextra{in module glomar\_gridding.ellipse}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.cov_ij_isotropic}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{cov\_ij\_isotropic}}}
-{\sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{R}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev\_j}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Isotropic version of cov\_ij\_anisotropic. This makes the assumption that
-Lx = Ly = R, i.e. that the model is a circle.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{v}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Matern shape parameter
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Standard deviation, local point
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{delta}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Displacements to remote point
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{R}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Range parameter (km or degrees)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev\_j}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Standard deviation, remote point
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{cov\_ij} \textendash{} Covariance/correlation between local and remote point given displacement
-and Matern covariance parameters
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-float
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
 
 
 \section{Ellipse Parameter Estimation}
-\label{\detokenize{ellipse:module-glomar_gridding.ellipse_builder}}\label{\detokenize{ellipse:ellipse-parameter-estimation}}\index{module@\spxentry{module}!glomar\_gridding.ellipse\_builder@\spxentry{glomar\_gridding.ellipse\_builder}}\index{glomar\_gridding.ellipse\_builder@\spxentry{glomar\_gridding.ellipse\_builder}!module@\spxentry{module}}
-\sphinxAtStartPar
-Class to calculate the covariance (and correlation) of gridded observed data
-over time. These values are used to estimate the ellipse parameters with an
-instance of \sphinxtitleref{glomar\_gridding.ellipse.EllipseModel} as a reference.
-\index{EllipseBuilder (class in glomar\_gridding.ellipse\_builder)@\spxentry{EllipseBuilder}\spxextra{class in glomar\_gridding.ellipse\_builder}}
+\label{\detokenize{ellipse:ellipse-parameter-estimation}}\index{EllipseBuilder (class in glomar\_gridding.ellipse)@\spxentry{EllipseBuilder}\spxextra{class in glomar\_gridding.ellipse}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.EllipseBuilder}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse\_builder.}}\sphinxbfcode{\sphinxupquote{EllipseBuilder}}}
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{EllipseBuilder}}}
 {\sphinxparam{\DUrole{n}{data\_array}}\sphinxparamcomma \sphinxparam{\DUrole{n}{coords}}}
 {}
 \pysigstopsignatures
@@ -1447,10 +1122,10 @@ that these are {[}“time”, “latitude”, “longitude”{]}
 \end{itemize}
 
 \end{description}\end{quote}
-\index{calc\_cov() (glomar\_gridding.ellipse\_builder.EllipseBuilder method)@\spxentry{calc\_cov()}\spxextra{glomar\_gridding.ellipse\_builder.EllipseBuilder method}}
+\index{calc\_cov() (glomar\_gridding.ellipse.EllipseBuilder method)@\spxentry{calc\_cov()}\spxextra{glomar\_gridding.ellipse.EllipseBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.EllipseBuilder.calc_cov}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder.calc_cov}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{calc\_cov}}}
@@ -1472,10 +1147,10 @@ Calculate covariance and correlation matrices.
 
 \end{fulllineitems}
 
-\index{compute\_params() (glomar\_gridding.ellipse\_builder.EllipseBuilder method)@\spxentry{compute\_params()}\spxextra{glomar\_gridding.ellipse\_builder.EllipseBuilder method}}
+\index{compute\_params() (glomar\_gridding.ellipse.EllipseBuilder method)@\spxentry{compute\_params()}\spxextra{glomar\_gridding.ellipse.EllipseBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.EllipseBuilder.compute_params}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder.compute_params}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{compute\_params}}}
@@ -1691,10 +1366,10 @@ xarray.Dataset
 
 \end{fulllineitems}
 
-\index{find\_nearest\_xy\_index\_in\_cov\_matrix() (glomar\_gridding.ellipse\_builder.EllipseBuilder method)@\spxentry{find\_nearest\_xy\_index\_in\_cov\_matrix()}\spxextra{glomar\_gridding.ellipse\_builder.EllipseBuilder method}}
+\index{find\_nearest\_xy\_index\_in\_cov\_matrix() (glomar\_gridding.ellipse.EllipseBuilder method)@\spxentry{find\_nearest\_xy\_index\_in\_cov\_matrix()}\spxextra{glomar\_gridding.ellipse.EllipseBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.EllipseBuilder.find_nearest_xy_index_in_cov_matrix}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder.find_nearest_xy_index_in_cov_matrix}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{find\_nearest\_xy\_index\_in\_cov\_matrix}}}
@@ -1713,10 +1388,10 @@ that corresponds to a specific lat lon
 
 \end{fulllineitems}
 
-\index{fit\_ellipse\_model() (glomar\_gridding.ellipse\_builder.EllipseBuilder method)@\spxentry{fit\_ellipse\_model()}\spxextra{glomar\_gridding.ellipse\_builder.EllipseBuilder method}}
+\index{fit\_ellipse\_model() (glomar\_gridding.ellipse.EllipseBuilder method)@\spxentry{fit\_ellipse\_model()}\spxextra{glomar\_gridding.ellipse.EllipseBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.EllipseBuilder.fit_ellipse_model}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder.fit_ellipse_model}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{fit\_ellipse\_model}}}
@@ -1893,66 +1568,16 @@ dict
 
 \end{fulllineitems}
 
-\index{init\_parameter\_set() (in module glomar\_gridding.ellipse\_builder)@\spxentry{init\_parameter\_set()}\spxextra{in module glomar\_gridding.ellipse\_builder}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_builder.init_parameter_set}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse\_builder.}}\sphinxbfcode{\sphinxupquote{init\_parameter\_set}}}
-{\sphinxparam{\DUrole{n}{coords}}\sphinxparamcomma \sphinxparam{\DUrole{n}{parameters}}\sphinxparamcomma \sphinxparam{\DUrole{n}{default\_value}\DUrole{o}{=}\DUrole{default_value}{nan}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Initialise the ellipse parameter dataset.
-
-\sphinxAtStartPar
-Contains arrays for each of the parameters of the model.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Coordinates}}) \textendash{} The coordinate system of the output arrays. Note that this should match
-the coordinate system of the data used to fit the ellipse parameters.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{parameters}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{dict}}{[}\sphinxcode{\sphinxupquote{str}}, \sphinxcode{\sphinxupquote{str}}{]}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{default\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} Default value(s) to fill arrays where parameter estimation is not
-possible (typically due to masking). Typically, one should set a
-value that is appropriate to the type of the field. If a single
-value is provided, this is used for all fields.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{params} \textendash{} With arrays described above.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-xarray.Dataset
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
 
 
 \section{Ellipse\sphinxhyphen{}based Covariance Estimation}
-\label{\detokenize{ellipse:module-glomar_gridding.ellipse_covariance}}\label{\detokenize{ellipse:ellipse-based-covariance-estimation}}\index{module@\spxentry{module}!glomar\_gridding.ellipse\_covariance@\spxentry{glomar\_gridding.ellipse\_covariance}}\index{glomar\_gridding.ellipse\_covariance@\spxentry{glomar\_gridding.ellipse\_covariance}!module@\spxentry{module}}
-\sphinxAtStartPar
-Class to estimate covariance matrix from ellipse parameters and positions.
-\index{EllipseCovarianceBuilder (class in glomar\_gridding.ellipse\_covariance)@\spxentry{EllipseCovarianceBuilder}\spxextra{class in glomar\_gridding.ellipse\_covariance}}
+\label{\detokenize{ellipse:ellipse-based-covariance-estimation}}\index{EllipseCovarianceBuilder (class in glomar\_gridding.ellipse)@\spxentry{EllipseCovarianceBuilder}\spxextra{class in glomar\_gridding.ellipse}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse\_covariance.}}\sphinxbfcode{\sphinxupquote{EllipseCovarianceBuilder}}}
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{EllipseCovarianceBuilder}}}
 {\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method=\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist=6000.0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision=\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method=\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size=None}}}
 {}
 \pysigstopsignatures
@@ -2076,10 +1701,10 @@ covariance\_method is set to “batched”.
 \end{itemize}
 
 \end{description}\end{quote}
-\index{c\_ij\_anisotropic\_array() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{c\_ij\_anisotropic\_array()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{c\_ij\_anisotropic\_array() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{c\_ij\_anisotropic\_array()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.c_ij_anisotropic_array}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.c_ij_anisotropic_array}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{c\_ij\_anisotropic\_array}}}
@@ -2143,10 +1768,10 @@ Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
 
 \end{fulllineitems}
 
-\index{calculate\_cor() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{calculate\_cor()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{calculate\_cor() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{calculate\_cor()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.calculate_cor}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.calculate_cor}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{calculate\_cor}}}
@@ -2164,10 +1789,10 @@ Calculate correlation matrix from the covariance matrix
 
 \end{fulllineitems}
 
-\index{calculate\_covariance\_array() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_array()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{calculate\_covariance\_array() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_array()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.calculate_covariance_array}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.calculate_covariance_array}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{calculate\_covariance\_array}}}
@@ -2185,10 +1810,10 @@ Calculate the covariance matrix from the ellipse parameters
 
 \end{fulllineitems}
 
-\index{calculate\_covariance\_batched() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_batched()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{calculate\_covariance\_batched() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_batched()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.calculate_covariance_batched}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.calculate_covariance_batched}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{calculate\_covariance\_batched}}}
@@ -2229,10 +1854,10 @@ Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
 
 \end{fulllineitems}
 
-\index{calculate\_covariance\_loop() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_loop()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{calculate\_covariance\_loop() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{calculate\_covariance\_loop()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.calculate_covariance_loop}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.calculate_covariance_loop}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{calculate\_covariance\_loop}}}
@@ -2269,10 +1894,10 @@ Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
 
 \end{fulllineitems}
 
-\index{uncompress\_cov() (glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method)@\spxentry{uncompress\_cov()}\spxextra{glomar\_gridding.ellipse\_covariance.EllipseCovarianceBuilder method}}
+\index{uncompress\_cov() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{uncompress\_cov()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse_covariance.EllipseCovarianceBuilder.uncompress_cov}}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.uncompress_cov}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{uncompress\_cov}}}
@@ -2317,10 +1942,7 @@ Overwrites the \sphinxtitleref{cov\_ns} attribute.
 
 
 \chapter{Error Covariance}
-\label{\detokenize{error_covariance:error-covariance}}\label{\detokenize{error_covariance::doc}}
-
-\section{Module Contents}
-\label{\detokenize{error_covariance:module-glomar_gridding.error_covariance}}\label{\detokenize{error_covariance:module-contents}}\index{module@\spxentry{module}!glomar\_gridding.error\_covariance@\spxentry{glomar\_gridding.error\_covariance}}\index{glomar\_gridding.error\_covariance@\spxentry{glomar\_gridding.error\_covariance}!module@\spxentry{module}}
+\label{\detokenize{error_covariance:module-glomar_gridding.error_covariance}}\label{\detokenize{error_covariance:error-covariance}}\label{\detokenize{error_covariance::doc}}\index{module@\spxentry{module}!glomar\_gridding.error\_covariance@\spxentry{glomar\_gridding.error\_covariance}}\index{glomar\_gridding.error\_covariance@\spxentry{glomar\_gridding.error\_covariance}!module@\spxentry{module}}
 \sphinxAtStartPar
 Functions for computing correlated and uncorrelated components of the error
 covariance. These values are determined from standard deviation (sigma) values
@@ -2627,37 +2249,247 @@ the diagonal of the returned covariance matrix.
 
 \chapter{Kriging}
 \label{\detokenize{kriging:kriging}}\label{\detokenize{kriging::doc}}
-
-\section{Module Contents}
-\label{\detokenize{kriging:module-glomar_gridding.kriging}}\label{\detokenize{kriging:module-contents}}\index{module@\spxentry{module}!glomar\_gridding.kriging@\spxentry{glomar\_gridding.kriging}}\index{glomar\_gridding.kriging@\spxentry{glomar\_gridding.kriging}!module@\spxentry{module}}
 \sphinxAtStartPar
-Functions and Classes for performing Kriging.
+The \sphinxtitleref{glomar\_gridding.kriging} module contains classes and functions for interpolation via Kriging.
+Two methods of Kriging are supported by \sphinxtitleref{glomar\_gridding}:
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+Simple Kriging
+
+\item {}
+\sphinxAtStartPar
+Ordinary Kriging
+
+\end{itemize}
 
 \sphinxAtStartPar
-Interpolation using a Gaussian Process. Available methods are Simple and
-Ordinary Kriging.
-\index{Kriging (class in glomar\_gridding.kriging)@\spxentry{Kriging}\spxextra{class in glomar\_gridding.kriging}}
+For each Kriging method there is a class and a function. The recommended approach is to use the
+classes, the functions will be deprecated in a future version of \sphinxtitleref{glomar\_gridding}. The classes
+require the full grid spatial covariance structure as an input. Each class contains a \sphinxtitleref{solve} method
+that requires the observation values and the 1\sphinxhyphen{}dimensional grid index of each observation,
+optionally an error covariance matrix can be provided. The grid index values are used to index into
+the covariance matrix to obtain the inputs for the Kriging equations.
+
+
+\section{Preparation}
+\label{\detokenize{kriging:preparation}}
+\sphinxAtStartPar
+\sphinxtitleref{glomar\_gridding} provides functionality for preparing your data for the interpolation. The \sphinxtitleref{grid}
+module has functionality for defining the output grid
+({\hyperref[\detokenize{covariance:glomar_gridding.grid.grid_from_resolution}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.grid\_from\_resolution()}}}}}) which allows the user to create a coordinate
+system for the output, that can easily be mapped to a covariance matrix. The grid object is an
+\sphinxtitleref{xarray.DataArray} object, with a coordinate system. Once the grid is defined, the observations can
+be mapped to the grid. This creates a 1\sphinxhyphen{}dimensional index value that should match to the covariance
+matrices used in the interpolation.
+\index{map\_to\_grid() (in module glomar\_gridding.grid)@\spxentry{map\_to\_grid()}\spxextra{in module glomar\_gridding.grid}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.grid.map_to_grid}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{Kriging}}}
+{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{map\_to\_grid}}}
+{\sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}latitude\textquotesingle{}, \textquotesingle{}longitude\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sort}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{add\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}grid\_\textquotesingle{}}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Align an observation dataframe to a grid defined by an xarray DataArray.
+
+\sphinxAtStartPar
+Maps observations to the nearest grid\sphinxhyphen{}point, and sorts the data by the
+1d index of the DataArray in a row\sphinxhyphen{}major format.
+
+\sphinxAtStartPar
+The grid defined by the latitude and longitude coordinates of the input
+DataArray is then used as the output grid of the Gridding process.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observational DataFrame containing positional data with latitude,
+longitude values within the \sphinxtitleref{obs\_latname} and \sphinxtitleref{obs\_lonname} columns
+respectively. Observations are mapped to the nearest grid\sphinxhyphen{}point in the
+grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Contains the grid coordinates to map observations to.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the column containing positional values in the input
+observational DataFrame.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the coordinates in the input grid DataArray used to define the
+grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Sort the observational DataFrame by the grid index
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial bounds.
+This list must have the same size and ordering as \sphinxtitleref{obs\_coords} and
+\sphinxtitleref{grid\_coords} arguments.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add the grid positional information to the observational DataFrame.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Prefix to use for the new grid columns in the observational DataFrame.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{obs} \textendash{} Containing additional \sphinxtitleref{grid\_*}, and \sphinxtitleref{grid\_idx} values
+indicating the positions and grid index of the observation
+respectively. The DataFrame is also sorted (ascendingly) by the
+\sphinxtitleref{grid\_idx} columns for consistency with the gridding functions.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+pandas.DataFrame
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\sphinxAtStartPar
+For Kriging, the interpolation requires at most a single observation value in each grid box. If the
+data contains multiple values in a single grid cell then these need to be combined.
+\index{prep\_obs\_for\_kriging() (in module glomar\_gridding.kriging)@\spxentry{prep\_obs\_for\_kriging()}\spxextra{in module glomar\_gridding.kriging}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.prep_obs_for_kriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{prep\_obs\_for\_kriging}}}
+{\sphinxparam{\DUrole{n}{unmask\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{unique\_obs\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{weights}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{remove\_obs\_mean}\DUrole{o}{=}\DUrole{default_value}{0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_bias}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Prep masked observations for Kriging. Combines observations in the same
+grid box to a single averaged observation using a weighted average.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Indices of all un\sphinxhyphen{}masked points for chosen date.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Unique indices of all measurement points for a chosen date,
+representative of the indices of gridboxes, which have =\textgreater{} 1 measurement.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Weight matrix (inverse of counts of observations).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} All point observations/measurements for the chosen date.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{}
+\sphinxAtStartPar
+Should the mean or median from obs be removed and added back onto obs?
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+0 = No (default action)
+
+\item {}
+\sphinxAtStartPar
+1 = the mean is removed
+
+\item {}
+\sphinxAtStartPar
+2 = the median is removed
+
+\item {}
+\sphinxAtStartPar
+3 = the spatial meam os removed
+
+\end{itemize}
+
+\sphinxAtStartPar
+Note that the mean will need to be reapplied to the Kriging result.
+
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{obs\_idx} (\sphinxstyleemphasis{numpy.ndarray{[}int{]}}) \textendash{} Subset of grid\sphinxhyphen{}box indices containing observations that are unmasked.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{grid\_obs} (\sphinxstyleemphasis{numpy.ndarray{[}float{]}}) \textendash{} Unmasked and combined observations
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
+\section{Simple Kriging}
+\label{\detokenize{kriging:simple-kriging}}\index{SimpleKriging (class in glomar\_gridding.kriging)@\spxentry{SimpleKriging}\spxextra{class in glomar\_gridding.kriging}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{SimpleKriging}}}
 {\sphinxparam{\DUrole{n}{covariance}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Class for Kriging.
+Class for SimpleKriging.
 
 \sphinxAtStartPar
-Do not use this class, use SimpleKriging or OrdinaryKriging classes.
-\index{constraint\_mask() (glomar\_gridding.kriging.Kriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.kriging.Kriging method}}
+The equation for simple Kriging is:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y + \mu\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where \(\mu\) is a constant known mean, typically this is 0.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
+into the environment, or computed from a Variogram class or using
+Ellipse methods.
+
+\end{description}\end{quote}
+\index{constraint\_mask() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.constraint_mask}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.constraint_mask}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
+{\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
 {\sphinxparam{\DUrole{n}{idx}}}
 {}
 \pysigstopsignatures
@@ -2677,17 +2509,20 @@ figure out.
 \sphinxAtStartPar
 Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
+\begin{split}\frac{
+    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+             \times C_{cross})
+}{diag(C)} < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
+\begin{split}\frac{
+    diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+}{diag(C)} < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
-alpha is chosen to be 0.25 in the UKMO paper
+\(\alpha\) is chosen to be 0.25 in the UKMO paper
 
 \sphinxAtStartPar
 Written by S. Chan, modified by J. Siddons.
@@ -2722,13 +2557,13 @@ Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pd
 
 \end{fulllineitems}
 
-\index{get\_kriging\_weights() (glomar\_gridding.kriging.Kriging method)@\spxentry{get\_kriging\_weights()}\spxextra{glomar\_gridding.kriging.Kriging method}}
+\index{get\_kriging\_weights() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{get\_kriging\_weights()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.get_kriging_weights}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.get_kriging_weights}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
+{\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
 {\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
@@ -2778,14 +2613,14 @@ observation grid points.
 
 \end{fulllineitems}
 
-\index{get\_uncertainty() (glomar\_gridding.kriging.Kriging method)@\spxentry{get\_uncertainty()}\spxextra{glomar\_gridding.kriging.Kriging method}}
+\index{get\_uncertainty() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{get\_uncertainty()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.get_uncertainty}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.get_uncertainty}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
+{\sphinxparam{\DUrole{n}{idx}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2804,13 +2639,13 @@ numpy.ndarray
 
 \end{fulllineitems}
 
-\index{kriging\_weights\_from\_inverse() (glomar\_gridding.kriging.Kriging method)@\spxentry{kriging\_weights\_from\_inverse()}\spxextra{glomar\_gridding.kriging.Kriging method}}
+\index{kriging\_weights\_from\_inverse() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{kriging\_weights\_from\_inverse()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.kriging_weights_from_inverse}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.kriging_weights_from_inverse}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
+{\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
 {\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
 {}
 \pysigstopsignatures
@@ -2860,46 +2695,18 @@ observation should be averaged
 
 \end{fulllineitems}
 
-\index{set\_kriging\_weights() (glomar\_gridding.kriging.Kriging method)@\spxentry{set\_kriging\_weights()}\spxextra{glomar\_gridding.kriging.Kriging method}}
+\index{solve() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{solve()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.set_kriging_weights}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.solve}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{set\_kriging\_weights}}}
-{\sphinxparam{\DUrole{n}{kriging\_weights}}}
+{\sphinxbfcode{\sphinxupquote{solve}}}
+{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Set Kriging Weights.
-
-\sphinxAtStartPar
-Sets the \sphinxtitleref{kriging\_weights} attribute.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed kriging\_weights to use.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{solve() (glomar\_gridding.kriging.Kriging method)@\spxentry{solve()}\spxextra{glomar\_gridding.kriging.Kriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.Kriging.solve}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{abstractmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{solve}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Solves the Kriging problem. Computes the Kriging weights if the
+Solves the simple Kriging problem. Computes the Kriging weights if the
 \sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
 is:
 \begin{equation*}
@@ -2934,12 +2741,16 @@ observation should be averaged. Used to compute the Kriging weights.
 \sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
 observation grid points. Used to compute Kriging weights.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Constant, known, mean value of the system. Defaults to 0.0.
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-The solution to the Kriging problem (as a Vector, this may need to
-be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}processing step).
+The solution to the simple Kriging problem (as a Vector, this may
+need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}processing step).
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -2952,7 +2763,78 @@ numpy.ndarray
 
 \end{fulllineitems}
 
-\index{OrdinaryKriging (class in glomar\_gridding.kriging)@\spxentry{OrdinaryKriging}\spxextra{class in glomar\_gridding.kriging}}
+\index{kriging\_simple() (in module glomar\_gridding.kriging)@\spxentry{kriging\_simple()}\spxextra{in module glomar\_gridding.kriging}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.kriging_simple}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{kriging\_simple}}}
+{\sphinxparam{\DUrole{n}{obs\_obs\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_grid\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{interp\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Perform Simple Kriging assuming a constant known mean.
+
+\sphinxAtStartPar
+This function is deprecated in favour of SimpleKriging class. It will be
+removed in version 1.0.0.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the
+covariance due to measurements (i.e. measurement noise, bias noise, and
+sampling noise). Can include error covariance terms.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
+Does not contain error covarance.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
+gridboxes).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} interpolation covariance of all output grid points (each point in time
+and all points against each other).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} The constant mean of the output field.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{z\_obs} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Full set of values for the whole domain derived from the observation
+points using simple kriging.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{dz} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Uncertainty associated with the simple kriging.
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
+\section{Ordinary Kriging}
+\label{\detokenize{kriging:ordinary-kriging}}\index{OrdinaryKriging (class in glomar\_gridding.kriging)@\spxentry{OrdinaryKriging}\spxextra{class in glomar\_gridding.kriging}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}}
@@ -3018,17 +2900,20 @@ figure out.
 \sphinxAtStartPar
 Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
+\begin{split}\frac{
+    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+             \times C_{cross})
+}{diag(C)} < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
 This can be re\sphinxhyphen{}written as:
 \begin{equation*}
-\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
+\begin{split}\frac{
+    diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+}{diag(C)} < \alpha\end{split}
 \end{equation*}
 \sphinxAtStartPar
-alpha is chosen to be 0.25 in the UKMO paper
+\(\alpha\) is chosen to be 0.25 in the UKMO paper
 
 \sphinxAtStartPar
 Written by S. Chan, modified by J. Siddons.
@@ -3202,7 +3087,7 @@ observation grid points.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{idx}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3298,7 +3183,7 @@ observation should be averaged
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Solves the simple Kriging problem. Computes the Kriging weights if the
+Solves the ordinary Kriging problem. Computes the Kriging weights if the
 \sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
 is:
 \begin{equation*}
@@ -3359,555 +3244,6 @@ numpy.ndarray
 
 \end{fulllineitems}
 
-
-\end{fulllineitems}
-
-\index{SimpleKriging (class in glomar\_gridding.kriging)@\spxentry{SimpleKriging}\spxextra{class in glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{SimpleKriging}}}
-{\sphinxparam{\DUrole{n}{covariance}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Class for SimpleKriging.
-
-\sphinxAtStartPar
-The equation for simple Kriging is:
-\begin{equation*}
-\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y + \mu\end{split}
-\end{equation*}
-\sphinxAtStartPar
-Where \(\mu\) is a constant known mean, typically this is 0.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
-into the environment, or computed from a Variogram class or using
-Ellipse methods.
-
-\end{description}\end{quote}
-\index{constraint\_mask() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.constraint_mask}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
-{\sphinxparam{\DUrole{n}{idx}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
-10.1029/2019JD032361) to determine if a grid point should be
-masked/weights modified by how far it is to its near observed point
-
-\sphinxAtStartPar
-Note: typo in Section A4 in Morice et al 2021 (confired by authors).
-
-\sphinxAtStartPar
-Equation to use is A14 is incorrect. Easily noticeable because
-dimensionally incorrect is wrong, but the correct answer is easy to
-figure out.
-
-\sphinxAtStartPar
-Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
-\begin{equation*}
-\begin{split}1 - diag(C - C_{cross}^T \times (C + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
-\end{equation*}
-\sphinxAtStartPar
-This can be re\sphinxhyphen{}written as:
-\begin{equation*}
-\begin{split}diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
-/ diag(C) < \alpha\end{split}
-\end{equation*}
-\sphinxAtStartPar
-alpha is chosen to be 0.25 in the UKMO paper
-
-\sphinxAtStartPar
-Written by S. Chan, modified by J. Siddons.
-
-\sphinxAtStartPar
-This requires that the \sphinxtitleref{kriging\_weights} attribute is set.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{constraint\_mask} \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from
-Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0{]}}.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray
-
-\end{description}\end{quote}
-\subsubsection*{References}
-
-\sphinxAtStartPar
-Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
-
-\end{fulllineitems}
-
-\index{get\_kriging\_weights() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{get\_kriging\_weights()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.get_kriging_weights}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
-{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the Kriging weights from the flattened grid indices where
-there is an observation. Optionally add an error covariance to the
-covariance between observation grid points.
-
-\sphinxAtStartPar
-The Kriging weights are calculated as:
-\begin{equation*}
-\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
-\end{equation*}
-\sphinxAtStartPar
-Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
-with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(C_{cross}\) is the covariance between
-grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
-grid\sphinxhyphen{}points).
-
-\sphinxAtStartPar
-Sets the \sphinxtitleref{kriging\_weights} attribute.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points.
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{get\_uncertainty() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{get\_uncertainty()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.get_uncertainty}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the kriging uncertainty. This requires the attribute
-\sphinxtitleref{kriging\_weights} to be computed.
-\begin{quote}\begin{description}
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{kriging\_weights\_from\_inverse() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{kriging\_weights\_from\_inverse()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.kriging_weights_from_inverse}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
-{\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the Kriging weights from the flattened grid indices where
-there is an observation, using a pre\sphinxhyphen{}computed inverse of the covariance
-between grid\sphinxhyphen{}points with observations.
-
-\sphinxAtStartPar
-The Kriging weights are calculated as:
-\begin{equation*}
-\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
-\end{equation*}
-\sphinxAtStartPar
-Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
-with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, and \(C_{cross}\) is the covariance between
-grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
-grid\sphinxhyphen{}points).
-
-\sphinxAtStartPar
-Sets the \sphinxtitleref{kriging\_weights} attribute.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
-observations. \((C_{obs} + E)^{-1}\)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{solve() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{solve()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.SimpleKriging.solve}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{solve}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Solves the simple Kriging problem. Computes the Kriging weights if the
-\sphinxtitleref{kriging\_weights} attribute is not already set. The solution to Kriging
-is:
-\begin{equation*}
-\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
-\end{equation*}
-\sphinxAtStartPar
-Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
-with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
-with observations, \(C_{cross}\) is the covariance between
-grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
-grid\sphinxhyphen{}points), and \(y\) are the observation values.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
-grid box then these values need to be averaged into one value per
-grid box.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points. Used to compute Kriging weights.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Constant, known, mean value of the system. Defaults to 0.0.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-The solution to the simple Kriging problem (as a Vector, this may
-need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}processing step).
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{constraint\_mask() (in module glomar\_gridding.kriging)@\spxentry{constraint\_mask()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.constraint_mask}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
-{\sphinxparam{\DUrole{n}{obs\_obs\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_grid\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{interp\_cov}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
-10.1029/2019JD032361) to determine if a grid point should be masked/weights
-modified by how far it is to its near observed point
-
-\sphinxAtStartPar
-Note: typo in Section A4 in Morice et al 2021 (confired by authors).
-
-\sphinxAtStartPar
-Equation to use is A14 is incorrect. Easily noticeable because dimensionally
-incorrect is wrong, but the correct answer is easy to figure out.
-
-\sphinxAtStartPar
-Correct Equation (extra matrix inverse for C+R):
-\begin{equation*}
-\begin{split}1 - diag(C(X*,X*) - k*^T \times (C+R)^{-1} \times k*)  / diag(C(X*,X*))
-< \alpha\end{split}
-\end{equation*}
-\sphinxAtStartPar
-This can be re\sphinxhyphen{}written as:
-\begin{equation*}
-\begin{split}diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < \alpha\end{split}
-\end{equation*}
-\sphinxAtStartPar
-alpha is chosen to be 0.25 in the UKMO paper
-
-\sphinxAtStartPar
-Written by S. Chan, modified by J. Siddons.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the covariance due to
-measurements (i.e. measurement noise, bias noise, and sampling noise).
-Can include error covariance terms, if these are being used. This is
-\sphinxtitleref{C + R} in the above equation.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
-Does not contain error covarance. This is \sphinxtitleref{k*} in the above equation.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Interpolation covariance of all output grid points (each point in time
-and all points against each other). This is \sphinxtitleref{C(X*, X*)} in the above
-equation.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{constraint\_mask} \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from Morice
-et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0{]}}.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray
-
-\end{description}\end{quote}
-\subsubsection*{References}
-
-\sphinxAtStartPar
-Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
-
-\end{fulllineitems}
-
-\index{get\_spatial\_mean() (in module glomar\_gridding.kriging)@\spxentry{get\_spatial\_mean()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.get_spatial_mean}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{get\_spatial\_mean}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covx}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Compute the spatial mean accounting for auto\sphinxhyphen{}correlation.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Vector containing observations
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Observation covariance matrix
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{spatial\_mean} \textendash{} The spatial mean defined as (1\textasciicircum{}T x C\textasciicircum{}\{\sphinxhyphen{}1\} x 1)\textasciicircum{}\{\sphinxhyphen{}1\} * (1\textasciicircum{}T x C\textasciicircum{}\{\sphinxhyphen{}1\} x z)
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-float
-
-\end{description}\end{quote}
-\subsubsection*{References}
-
-\sphinxAtStartPar
-\sphinxurl{https://www.css.cornell.edu/faculty/dgr2/\_static/files/distance\_ed\_geostats/ov5.pdf}
-
-\end{fulllineitems}
-
-\index{get\_unmasked\_obs\_indices() (in module glomar\_gridding.kriging)@\spxentry{get\_unmasked\_obs\_indices()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.get_unmasked_obs_indices}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{get\_unmasked\_obs\_indices}}}
-{\sphinxparam{\DUrole{n}{unmask\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{unique\_obs\_idx}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Get grid indices with observations from un\sphinxhyphen{}masked grid\sphinxhyphen{}box indices and
-unique grid\sphinxhyphen{}box indices with observations.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} List of all unmasked grid\sphinxhyphen{}box indices.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Indices of grid\sphinxhyphen{}boxes with observations.
-
-\end{itemize}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\sphinxstylestrong{obs\_idx} \textendash{} Subset of grid\sphinxhyphen{}box indices containing observations that are unmasked.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-np.ndarray{[}int{]}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{kriging() (in module glomar\_gridding.kriging)@\spxentry{kriging()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.kriging}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{kriging}}}
-{\sphinxparam{\DUrole{n}{obs\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{weights}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{interp\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{remove\_obs\_mean}\DUrole{o}{=}\DUrole{default_value}{0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_bias}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}simple\textquotesingle{}}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Perform Kriging using a chosen method.
-
-\sphinxAtStartPar
-Get array of krigged observations and anomalies for all grid points in the
-domain.
-
-\sphinxAtStartPar
-This function is deprecated in favour of SimpleKriging and OrdinaryKriging
-classes. It will be removed in version 1.0.0.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Grid indices with observations. It is expected that this should be an
-ordering that lines up with the 1st dimension of weights. If
-\sphinxtitleref{observations.dist\_weights} or \sphinxtitleref{observations.get\_weights} was used to
-get the weights then this is the ordering of
-\sphinxtitleref{sorted(df{[}“gridbox”{]}.unique())}, which is a sorting on lat and lon
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Weight matrix (inverse of counts of observations).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} All point observations/measurements for the chosen date.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} interpolation covariance of all output grid points (each point in time
-and all points against each other).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Measurement/Error covariance matrix.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Should the mean or median from grib\_obs be removed and added back onto
-grib\_obs?
-0 = No (default action)
-1 = the mean is removed
-2 = the median is removed
-3 = the spatial meam os removed
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{KrigMethod}}) \textendash{} The kriging method to use to fill in the output grid. One of “simple”
-or “ordinary”.
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{z\_obs} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Full set of values for the whole domain derived from the observation
-points using the chosen kriging method.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{dz} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Uncertainty associated with the chosen kriging method.
-
-\end{itemize}
-
-
-\end{description}\end{quote}
 
 \end{fulllineitems}
 
@@ -3975,246 +3311,457 @@ points using ordinary kriging.
 
 \end{fulllineitems}
 
-\index{kriging\_simple() (in module glomar\_gridding.kriging)@\spxentry{kriging\_simple()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.kriging_simple}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{kriging\_simple}}}
-{\sphinxparam{\DUrole{n}{obs\_obs\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_grid\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{interp\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Perform Simple Kriging assuming a constant known mean.
-
-\sphinxAtStartPar
-This function is deprecated in favour of SimpleKriging class. It will be
-removed in version 1.0.0.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the
-covariance due to measurements (i.e. measurement noise, bias noise, and
-sampling noise). Can include error covariance terms.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
-Does not contain error covarance.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
-gridboxes).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} interpolation covariance of all output grid points (each point in time
-and all points against each other).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} The constant mean of the output field.
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{z\_obs} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Full set of values for the whole domain derived from the observation
-points using simple kriging.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{dz} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Uncertainty associated with the simple kriging.
-
-\end{itemize}
-
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{prep\_obs\_for\_kriging() (in module glomar\_gridding.kriging)@\spxentry{prep\_obs\_for\_kriging()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.prep_obs_for_kriging}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{prep\_obs\_for\_kriging}}}
-{\sphinxparam{\DUrole{n}{unmask\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{unique\_obs\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{weights}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{remove\_obs\_mean}\DUrole{o}{=}\DUrole{default_value}{0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_bias}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Prep masked observations for Kriging. Combines observations in the same
-grid box to a single averaged observation using a weighted average.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Indices of all un\sphinxhyphen{}masked points for chosen date.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Unique indices of all measurement points for a chosen date,
-representative of the indices of gridboxes, which have =\textgreater{} 1 measurement.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Weight matrix (inverse of counts of observations).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} All point observations/measurements for the chosen date.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Should the mean or median from obs be removed and added back onto obs?
-0 = No (default action)
-1 = the mean is removed
-2 = the median is removed
-3 = the spatial meam os removed
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{obs\_idx} (\sphinxstyleemphasis{numpy.ndarray{[}int{]}}) \textendash{} Subset of grid\sphinxhyphen{}box indices containing observations that are unmasked.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{grid\_obs} (\sphinxstyleemphasis{numpy.ndarray{[}float{]}}) \textendash{} Unmasked and combined observations
-
-\end{itemize}
-
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{unmasked\_kriging() (in module glomar\_gridding.kriging)@\spxentry{unmasked\_kriging()}\spxextra{in module glomar\_gridding.kriging}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.kriging.unmasked_kriging}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{unmasked\_kriging}}}
-{\sphinxparam{\DUrole{n}{unmask\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{unique\_obs\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{weights}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{interp\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{remove\_obs\_mean}\DUrole{o}{=}\DUrole{default_value}{0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_bias}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}simple\textquotesingle{}}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Perform Kriging on a masked grid using a chosen method.
-
-\sphinxAtStartPar
-Get array of krigged observations and anomalies for all grid points in the
-domain.
-
-\sphinxAtStartPar
-This function is deprecated in favour of SimpleKriging and OrdinaryKriging
-classes. It will be removed in version 1.0.0.
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Indices of all un\sphinxhyphen{}masked points for chosen date.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Unique indices of all measurement points for a chosen date,
-representative of the indices of gridboxes, which have =\textgreater{} 1 measurement.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Weight matrix (inverse of counts of observations).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} All point observations/measurements for the chosen date.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Interpolation covariance of all output grid points (each point in time
-and all points
-against each other).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Measurement/Error covariance matrix.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Should the mean or median from obs be removed and added back onto obs?
-0 = No (default action)
-1 = the mean is removed
-2 = the median is removed
-3 = the spatial meam os removed
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{KrigMethod}}) \textendash{} The kriging method to use to fill in the output grid. One of “simple”
-or “ordinary”.
-
-\end{itemize}
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{z\_obs} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Full set of values for the whole domain derived from the observation
-points using the chosen kriging method.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstylestrong{dz} (\sphinxstyleemphasis{np.ndarray{[}float{]}}) \textendash{} Uncertainty associated with the chosen kriging method.
-
-\end{itemize}
-
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
 
 
 \section{Perturbed Gridded Fields}
-\label{\detokenize{kriging:module-glomar_gridding.perturbation}}\label{\detokenize{kriging:perturbed-gridded-fields}}\index{module@\spxentry{module}!glomar\_gridding.perturbation@\spxentry{glomar\_gridding.perturbation}}\index{glomar\_gridding.perturbation@\spxentry{glomar\_gridding.perturbation}!module@\spxentry{module}}
-\sphinxAtStartPar
-Functions for helping with perturbations/random drawing
-\index{scipy\_mv\_normal\_draw() (in module glomar\_gridding.perturbation)@\spxentry{scipy\_mv\_normal\_draw()}\spxextra{in module glomar\_gridding.perturbation}}
+\label{\detokenize{kriging:perturbed-gridded-fields}}\index{StochasticKriging (class in glomar\_gridding.stochastic)@\spxentry{StochasticKriging}\spxextra{class in glomar\_gridding.stochastic}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.perturbation.scipy_mv_normal_draw}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.perturbation.}}\sphinxbfcode{\sphinxupquote{scipy\_mv\_normal\_draw}}}
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.}}\sphinxbfcode{\sphinxupquote{StochasticKriging}}}
+{\sphinxparam{\DUrole{n}{covariance}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Class for the combined two\sphinxhyphen{}stage Kriging approach following Morice et al.
+2021. The first stage is to produce a gridded field from the observations
+using Ordinary Kriging. The second stage is to apply a perturbation.
+
+\sphinxAtStartPar
+The perturbation is constructed by first generating a simulated state from
+the covariance matrix. A set of simulated observations is drawn from the
+error covariance matrix. A simulated gridded field is then computed using
+Simple Kriging with the simulated observations as input. Finally, the
+perturbation is then the difference between the simulated gridded field and
+the simulated state. This perturbation is added to the gridded field from
+the first stage.
+
+\sphinxAtStartPar
+The equation for ordinary Kriging is:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
+\end{equation*}
+\sphinxAtStartPar
+with a constant but unknown mean.
+
+\sphinxAtStartPar
+In this case, the \(C_{obs}\), \(C_{cross}\) and \(y\) values
+are extended with a Lagrange multiplier term for the first stage, ensuring
+that the Kriging weights are constrained to sum to 1.
+
+\sphinxAtStartPar
+Additionally, the matrix \(C_{obs}\) is extended by one row and one
+column, each containing the value 1, except at the diagonal point, which is
+0 for the first Ordinary Kriging stage. The \(C_{cross}\) matrix is
+extended by an extra row containing values of 1. Finally, the grid
+observations \(y\) is extended by a single value of 0 at the end of the
+vector.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
+into the environment, or computed from a Variogram class or using
+Ellipse methods.
+
+\end{description}\end{quote}
+\index{constraint\_mask() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.constraint_mask}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
+{\sphinxparam{\DUrole{n}{idx}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
+10.1029/2019JD032361) to determine if a grid point should be
+masked/weights modified by how far it is to its near observed point
+
+\sphinxAtStartPar
+Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+
+\sphinxAtStartPar
+Equation to use is A14 is incorrect. Easily noticeable because
+dimensionally incorrect is wrong, but the correct answer is easy to
+figure out.
+
+\sphinxAtStartPar
+Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
+\begin{equation*}
+\begin{split}\frac{
+    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+             \times C_{cross})
+}{diag(C)} < \alpha\end{split}
+\end{equation*}
+\sphinxAtStartPar
+This can be re\sphinxhyphen{}written as:
+\begin{equation*}
+\begin{split}\frac{diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})}
+{diag(C)} < \alpha\end{split}
+\end{equation*}
+\sphinxAtStartPar
+\(\alpha\) is chosen to be 0.25 in the UKMO paper
+
+\sphinxAtStartPar
+Written by S. Chan, modified by J. Siddons.
+
+\sphinxAtStartPar
+This requires the Kriging weights from simple Kriging, set as the
+\sphinxtitleref{simple\_kriging\_weights} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged. Used to compute the Kriging weights.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{constraint\_mask} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from
+Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0{]}}.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleemphasis{Reference}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleemphasis{———}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{Morice et al. (2021)} (\sphinxstyleemphasis{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361})
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_kriging\_weights() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{get\_kriging\_weights()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.get_kriging_weights}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
+{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the Kriging weights from the flattened grid indices where
+there is an observation. Optionally add an error covariance to the
+covariance between observation grid points.
+
+\sphinxAtStartPar
+The Kriging weights are calculated as:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
+with observations, and \(C_{cross}\) is the covariance between
+grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
+grid\sphinxhyphen{}points).
+
+\sphinxAtStartPar
+In this case, the \(C_{obs}\), \(C_{cross}\) and are extended
+with a Lagrange multiplier term, ensuring that the Kriging weights are
+constrained to sum to 1, for the first stage of the StochasticKriging
+process.
+
+\sphinxAtStartPar
+The matrix \(C_{obs}\) is extended by one row and one column, each
+containing the value 1, except at the diagonal point, which is 0. The
+\(C_{cross}\) matrix is extended by an extra row containing values
+of 1.
+
+\sphinxAtStartPar
+Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_weights} attributes.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+observation grid points.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_uncertainty() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{get\_uncertainty()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.get_uncertainty}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
+{\sphinxparam{\DUrole{n}{idx}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the kriging uncertainty. This requires the attribute
+\sphinxtitleref{kriging\_weights} to be computed.
+\begin{quote}\begin{description}
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kriging\_weights\_from\_inverse() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{kriging\_weights\_from\_inverse()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.kriging_weights_from_inverse}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
+{\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the Kriging weights from the flattened grid indices where
+there is an observation, using a pre\sphinxhyphen{}computed inverse of the covariance
+between grid\sphinxhyphen{}points with observations.
+
+\sphinxAtStartPar
+The Kriging weights are calculated as:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
+with observations, and \(C_{cross}\) is the covariance between
+grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
+grid\sphinxhyphen{}points).
+
+\sphinxAtStartPar
+This method is appropriate if one wants to compute the constraint mask
+which requires simple Kriging weights, which can be computed from the
+unextended covariance inverse. The extended inverse can then be
+calculated from that inverse.
+
+\sphinxAtStartPar
+The inverse matrix is used to compute the inverse of the extended
+covariance matrix used for the first Ordinary Kriging stage.
+
+\sphinxAtStartPar
+Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_weights} attributes.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
+observations. \((C_{obs} + E)^{-1}\)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{set\_simple\_kriging\_weights() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{set\_simple\_kriging\_weights()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.set_simple_kriging_weights}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{set\_simple\_kriging\_weights}}}
+{\sphinxparam{\DUrole{n}{simple\_kriging\_weights}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Set Simple Kriging Weights. For use in the second Simple Kriging stage
+for computing the simulated gridded field.
+
+\sphinxAtStartPar
+Sets the \sphinxtitleref{simple\_kriging\_weights} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed simple\_kriging\_weights to use.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{solve() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{solve()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging.solve}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{solve}}}
+{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{simulated\_state}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Solves the combined Stochastic Kriging problem. Computes the Kriging
+weights if the \sphinxtitleref{kriging\_weights} attribute is not already set.
+
+\sphinxAtStartPar
+Stochastic Kriging is a combined Ordinary and Simple Kriging approach.
+First a gridded field is generated for the observations using Ordinary
+Kriging. Secondly, a simulated gridded field is generated using Simple
+Kriging from a simulated state and simulated observations. The simulated
+state can be pre\sphinxhyphen{}computed or computed by this method. The simulated
+observations are drawn from the error covariance and located at the
+simulated state. The difference between the simulated gridded field and
+the simulated state is added to the gridded field.
+
+\sphinxAtStartPar
+The solution to Kriging is:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where \(C_{obs}\) is the spatial covariance between grid\sphinxhyphen{}points
+with observations, \(E\) is the error covariance between grid\sphinxhyphen{}points
+with observations, \(C_{cross}\) is the covariance between
+grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
+grid\sphinxhyphen{}points), and \(y\) are the observation values.
+
+\sphinxAtStartPar
+In this case, the \(C_{obs}\), \(C_{cross}\) and are extended
+with a Lagrange multiplier term, ensuring that the Kriging weights are
+constrained to sum to 1. For the Ordinary Kriging component.
+
+\sphinxAtStartPar
+The matrix \(C_{obs}\) is extended by one row and one column, each
+containing the value 1, except at the diagonal point, which is 0. The
+\(C_{cross}\) matrix is extended by an extra row containing values
+of 1. For the Ordinary Kriging component.
+
+\sphinxAtStartPar
+This additionally sets the following attributes:
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxtitleref{gridded\_field} \sphinxhyphen{} The unperturbed gridded field
+
+\item {}
+\sphinxAtStartPar
+\sphinxtitleref{simulated\_grid} \sphinxhyphen{} The simulated gridded field
+
+\item {}
+\sphinxAtStartPar
+\sphinxtitleref{epsilon} \sphinxhyphen{} The perturbation
+
+\end{itemize}
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
+grid box then these values need to be averaged into one value per
+grid box.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged. Used to compute the Kriging weights.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+observation grid points. Used to compute Kriging weights.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{simulated\_state}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Flattened simulated state, used as the location basis for the
+simulated observation draw. If this is not provided it will be
+calculated. Often it is better to pre\sphinxhyphen{}compute a series of states in
+advance, since this can be a time consuming step (drawing a single
+state takes approximately the same time as drawing 200).
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+The solution to the stochastic Kriging problem (as a Vector, this
+may need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}processing step).
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{scipy\_mv\_normal\_draw() (in module glomar\_gridding.stochastic)@\spxentry{scipy\_mv\_normal\_draw()}\spxextra{in module glomar\_gridding.stochastic}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.scipy_mv_normal_draw}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.}}\sphinxbfcode{\sphinxupquote{scipy\_mv\_normal\_draw}}}
 {\sphinxparam{\DUrole{n}{loc}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ndraws}\DUrole{o}{=}\DUrole{default_value}{1}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_rtol}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_fudge}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}08}}}
 {}
 \pysigstopsignatures
@@ -4279,6 +3826,68 @@ np.ndarray
 \end{fulllineitems}
 
 
+
+\section{Outputs}
+\label{\detokenize{kriging:outputs}}
+\sphinxAtStartPar
+The outputs to the solvers, \sphinxcode{\sphinxupquote{glomar\_gridding.SimpleKriging.solve()}} for example will be
+vectors, they should be re\sphinxhyphen{}shaped to the grid.
+
+\sphinxAtStartPar
+Outputs can also be re\sphinxhyphen{}mapped to the grid
+\index{assign\_to\_grid() (in module glomar\_gridding.grid)@\spxentry{assign\_to\_grid()}\spxextra{in module glomar\_gridding.grid}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.grid.assign_to_grid}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{assign\_to\_grid}}}
+{\sphinxparam{\DUrole{n}{values}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mask\_grid}\DUrole{o}{=}\DUrole{default_value}{False}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mask\_value}\DUrole{o}{=}\DUrole{default_value}{nan}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Assign a vector of values to a grid, using a list of grid index values. The
+default value for grid values is 0.0.
+
+\sphinxAtStartPar
+Optionally, if the grid is a mask, apply the mask to the output grid.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.Series}}) \textendash{} The values to map onto the output grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.Series}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each value.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The grid used to define the output grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mask\_grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Optionally use values in the grid to mask the output grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mask\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The value in the grid to use for masking the output grid.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{out\_grid} \textendash{} A new grid containing the values mapped onto the grid.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
 \sphinxstepscope
 
 
@@ -4301,7 +3910,7 @@ Functions for mapping climatologies and computing anomalies
 \pysigstopsignatures
 \sphinxAtStartPar
 Merge a climatology from an xarray.DataArray into a polars.DataFrame using
-the day of year value and position.
+the \sphinxstylestrong{day of year} value and position.
 
 \sphinxAtStartPar
 This function accounts for leap years by taking the average of the
@@ -5315,7 +4924,16 @@ numpy.matrix
 \section{Covariance Tools and Eigenvalue Clipping}
 \label{\detokenize{misc:module-glomar_gridding.covariance_tools}}\label{\detokenize{misc:covariance-tools-and-eigenvalue-clipping}}\index{module@\spxentry{module}!glomar\_gridding.covariance\_tools@\spxentry{glomar\_gridding.covariance\_tools}}\index{glomar\_gridding.covariance\_tools@\spxentry{glomar\_gridding.covariance\_tools}!module@\spxentry{module}}
 \sphinxAtStartPar
-Repair “damaged”/”improper” covariance matrices:
+When estimating covariance matrices, using ellipse\sphinxhyphen{}based methods for example,
+the results may not be positive\sphinxhyphen{}definite. This can be problematic, for instance
+the Kriging equations may not be solvable as the inverse matrix cannot be
+computed, or simulated states cannot be constructed using
+{\hyperref[\detokenize{kriging:glomar_gridding.stochastic.scipy_mv_normal_draw}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.scipy\_mv\_normal\_draw()}}}}}. To account for this,
+\sphinxtitleref{glomar\_gridding} includes a few tools for \sphinxstyleemphasis{fixing} these covariance matrices.
+In general, these methods attempt to coerce the input matrix to be
+positive\sphinxhyphen{}definite by updating the eigenvalues and re\sphinxhyphen{}computing the matrix from
+these updated eigenvalues and the original eigenvectors. The indicators of an
+invalid covariance matrix include
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
@@ -5329,7 +4947,7 @@ Covariance matrices with eigenvalues less than zero
 \end{enumerate}
 
 \sphinxAtStartPar
-Known causes of damage:
+This can typically be a consequence of
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
@@ -5360,14 +4978,17 @@ using these modified eigenvalues and the original eigenvectors.
 
 \sphinxAtStartPar
 In general, the recommended approach is Original Clipping, see
-\sphinxtitleref{glomar\_gridding.covariance\_tools.eigenvalue\_clip}.
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.eigenvalue_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.eigenvalue\_clip()}}}}}.
 
 \sphinxAtStartPar
 Fixes:
-\begin{enumerate}
-\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
-\item {} \begin{description}
-\sphinxlineitem{Simple clipping \sphinxhyphen{} \sphinxtitleref{glomar\_gridding.covariance\_tools.simple\_clipping}:}
+\begin{quote}
+
+\sphinxAtStartPar
+1. Simple clipping \sphinxhyphen{}
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.simple_clipping}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.simple\_clipping()}}}}}:
+\begin{quote}
+
 \sphinxAtStartPar
 Cut off the negative, zero, and small positive eigenvalues; this is
 method used in statsmodels.stats.correlation\_tools but the version here
@@ -5387,22 +5008,26 @@ but it is less disruptive than EOF chop off (method 3).
 It is more difficult to use for covariance matrices with one large
 dominant mode because that raises the bar of accuracy of the
 eigenvalues, which requires clipping off a lot more eigenvectors.
+\end{quote}
 
-\end{description}
+\sphinxAtStartPar
+2. Original clipping \sphinxhyphen{}
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.eigenvalue_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.eigenvalue\_clip()}}}}}:
+\begin{quote}
 
-\item {} \begin{description}
-\sphinxlineitem{Original clipping \sphinxhyphen{} \sphinxtitleref{glomar\_gridding.covariance\_tools.eigenvalue\_clip}:}
 \sphinxAtStartPar
 Determine a noise eigenvalue threshold and replace all eigenvalues below
 using the average of them, preserving the original trace (aka total
 variance) of the covariance matrix, but this will require a full
 computation of all eigenvectors, which may be slow and cause memory
 problems
+\end{quote}
 
-\end{description}
+\sphinxAtStartPar
+3. EOF chop\sphinxhyphen{}off \sphinxhyphen{}
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.eof_chop}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.eof\_chop()}}}}}:
+\begin{quote}
 
-\item {} \begin{description}
-\sphinxlineitem{EOF chop\sphinxhyphen{}off \sphinxhyphen{} \sphinxtitleref{glomar\_gridding.covariance\_tools.eof\_chop}:}
 \sphinxAtStartPar
 Set a target explained variance (say 95\%) for the empirical orthogonal
 functions, compute the eigenvalues and eigenvectors up to that explained
@@ -5412,11 +5037,14 @@ covariance matrix. The original method requires solving for ALL
 eigenvectors which may not be possible for massive matrices
 (40000x40000 square matrices). This is currently done for the MAT
 covariance matrices which have very large dominant modes.
-
-\end{description}
-
-\item {} \begin{description}
-\sphinxlineitem{Other methods not implemented here}\begin{enumerate}
+\end{quote}
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\setcounter{enumi}{3}
+\item {}
+\sphinxAtStartPar
+Other methods not implemented here
+\begin{enumerate}
 \sphinxsetlistlabels{\alph}{enumii}{enumiii}{}{.}%
 \item {} \begin{description}
 \sphinxlineitem{shrinkage methods}
@@ -5429,18 +5057,21 @@ covariance matrices which have very large dominant modes.
 \sphinxlineitem{reprojection (aka Higham’s method)}
 \sphinxAtStartPar
 \sphinxurl{https://github.com/mikecroucher/nearest\_correlation}
+
+\sphinxAtStartPar
 \sphinxurl{https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/}
 
 \end{description}
 
 \end{enumerate}
 
-\end{description}
-
 \end{enumerate}
+\end{quote}
 
 \sphinxAtStartPar
 Author S Chan.
+
+\sphinxAtStartPar
 Modified by J. Siddons.
 \index{check\_symmetric() (in module glomar\_gridding.covariance\_tools)@\spxentry{check\_symmetric()}\spxextra{in module glomar\_gridding.covariance\_tools}}
 
@@ -5900,10 +5531,192 @@ Other methods:
 
 
 
+\section{IO}
+\label{\detokenize{misc:module-glomar_gridding.io}}\label{\detokenize{misc:io}}\index{module@\spxentry{module}!glomar\_gridding.io@\spxentry{glomar\_gridding.io}}\index{glomar\_gridding.io@\spxentry{glomar\_gridding.io}!module@\spxentry{module}}
+\sphinxAtStartPar
+\sphinxtitleref{glomar\_gridding} includes functionality for loading datasets or arrays from
+\sphinxtitleref{netCDF} files using python format strings. This can be useful for loading
+pre\sphinxhyphen{}computed inputs for the Kriging process, for example covariance matrices or
+observations. The allowance for passing a string containing format components
+(e.g. python t\sphinxhyphen{}string) allows for dynamic configuration if processing a series
+of monthly inputs for example.
+
+\sphinxAtStartPar
+Also included is a function for recursively getting sub\sphinxhyphen{}keys from a python
+\sphinxtitleref{dict} style object. This can be useful for working with \sphinxtitleref{yaml} formatting
+configuration files for instance.
+\index{get\_recurse() (in module glomar\_gridding.io)@\spxentry{get\_recurse()}\spxextra{in module glomar\_gridding.io}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.io.get_recurse}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.io.}}\sphinxbfcode{\sphinxupquote{get\_recurse}}}
+{\sphinxparam{\DUrole{n}{config}}\sphinxparamcomma \sphinxparam{\DUrole{o}{*}\DUrole{n}{keys}}\sphinxparamcomma \sphinxparam{\DUrole{n}{default}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Recursively get sub keys from a python dict object.
+
+\sphinxAtStartPar
+If a dictionary object contains keys whose values are themselves
+dictionaries, get a value from a sub dictionary by specifying the key\sphinxhyphen{}path
+to get to the desired value.
+
+\sphinxAtStartPar
+Equivalent to:
+
+\sphinxAtStartPar
+\textgreater{} config{[}keys{[}0{]}{]}{[}keys{[}1{]}{]}…{[}keys{[}n{]}{]}
+
+\sphinxAtStartPar
+Or:
+
+\sphinxAtStartPar
+\textgreater{} config.get(keys{[}0{]}).get(keys{[}1{]})…get(keys{[}n{]})
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{config}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}) \textendash{} The layered dictionary containing sub dictionaries.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{*keys}} \textendash{} The sequence of keys to recurse through to get the final value. If any
+key in the sequence is not found, or is not a dictionary (and is not
+the final key), then the default value is returned.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{default}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The default value, returned if the sequence of keys cannot be completed
+or the final key is not present.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleemphasis{The value associated with the final key, or the default value if the final}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleemphasis{key cannot be reached.}
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{load\_array() (in module glomar\_gridding.io)@\spxentry{load\_array()}\spxextra{in module glomar\_gridding.io}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.io.load_array}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.io.}}\sphinxbfcode{\sphinxupquote{load\_array}}}
+{\sphinxparam{\DUrole{n}{path}}\sphinxparamcomma \sphinxparam{\DUrole{n}{var}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}covariance\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{o}{**}\DUrole{n}{kwargs}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Load an xarray.DataArray from a netCDF file. Can input a filename or a
+string to format with keyword arguments.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{path}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{}
+\sphinxAtStartPar
+Full filename (including path), or filename with replacements using
+str.format with named replacements. For example:
+\begin{quote}
+
+\sphinxAtStartPar
+/path/to/global\_covariance\_\{month:02d\}.nc
+\end{quote}
+
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{var}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the variable to select from the input file
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{**kwargs}} \textendash{} Keywords arguments matching the replacements in the input path.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{arr} \textendash{} An array containing the values of the variable specified by var
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{load\_dataset() (in module glomar\_gridding.io)@\spxentry{load\_dataset()}\spxextra{in module glomar\_gridding.io}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.io.load_dataset}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.io.}}\sphinxbfcode{\sphinxupquote{load\_dataset}}}
+{\sphinxparam{\DUrole{n}{path}}\sphinxparamcomma \sphinxparam{\DUrole{o}{**}\DUrole{n}{kwargs}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Load an xarray.Dataset from a netCDF file. Can input a filename or a
+string to format with keyword arguments.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{path}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{}
+\sphinxAtStartPar
+Full filename (including path), or filename with replacements using
+str.format with named replacements. For example:
+\begin{quote}
+
+\sphinxAtStartPar
+/path/to/global\_covariance\_\{month:02d\}.nc
+\end{quote}
+
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{**kwargs}} \textendash{} Keywords arguments matching the replacements in the input path.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{arr} \textendash{} The netcdf dataset as an xarray.Dataset.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.Dataset
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
 \section{Utilities}
 \label{\detokenize{misc:module-glomar_gridding.utils}}\label{\detokenize{misc:utilities}}\index{module@\spxentry{module}!glomar\_gridding.utils@\spxentry{glomar\_gridding.utils}}\index{glomar\_gridding.utils@\spxentry{glomar\_gridding.utils}!module@\spxentry{module}}
 \sphinxAtStartPar
-Utility functions for GloMarGridding
+Utility functions for \sphinxtitleref{glomar\_gridding}
 \index{ColumnNotFoundError@\spxentry{ColumnNotFoundError}}
 
 \begin{fulllineitems}
@@ -6611,8 +6424,8 @@ xarray.DataArray | xarray.Dataset
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Convert numbers to kilo/mega… bytes,
-for interactive printing of code progress
+Convert numbers to kilo/mega… bytes, for interactive printing of code
+progress.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -6685,17 +6498,11 @@ numpy.ndarray | numpy.ma.MaskedArray
 \item\relax\sphinxstyleindexentry{glomar\_gridding.climatology}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.climatology}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.covariance\_tools}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.covariance_tools}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.distances}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.distances}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.ellipse}\sphinxstyleindexpageref{ellipse:\detokenize{module-glomar_gridding.ellipse}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.ellipse\_builder}\sphinxstyleindexpageref{ellipse:\detokenize{module-glomar_gridding.ellipse_builder}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.ellipse\_covariance}\sphinxstyleindexpageref{ellipse:\detokenize{module-glomar_gridding.ellipse_covariance}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.error\_covariance}\sphinxstyleindexpageref{error_covariance:\detokenize{module-glomar_gridding.error_covariance}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.grid}\sphinxstyleindexpageref{covariance:\detokenize{module-glomar_gridding.grid}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.interpolation\_covariance}\sphinxstyleindexpageref{covariance:\detokenize{module-glomar_gridding.interpolation_covariance}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.kriging}\sphinxstyleindexpageref{kriging:\detokenize{module-glomar_gridding.kriging}}
+\item\relax\sphinxstyleindexentry{glomar\_gridding.io}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.io}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.mask}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.mask}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.perturbation}\sphinxstyleindexpageref{kriging:\detokenize{module-glomar_gridding.perturbation}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.utils}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.utils}}
-\item\relax\sphinxstyleindexentry{glomar\_gridding.variogram}\sphinxstyleindexpageref{covariance:\detokenize{module-glomar_gridding.variogram}}
 \end{sphinxtheindex}
 
 \renewcommand{\indexname}{Index}

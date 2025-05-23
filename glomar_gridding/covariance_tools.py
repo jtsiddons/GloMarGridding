@@ -1,10 +1,19 @@
-"""
-Repair "damaged"/"improper" covariance matrices:
+r"""
+When estimating covariance matrices, using ellipse-based methods for example,
+the results may not be positive-definite. This can be problematic, for instance
+the Kriging equations may not be solvable as the inverse matrix cannot be
+computed, or simulated states cannot be constructed using
+:py:func:`glomar_gridding.stochastic.scipy_mv_normal_draw`. To account for this,
+`glomar_gridding` includes a few tools for *fixing* these covariance matrices.
+In general, these methods attempt to coerce the input matrix to be
+positive-definite by updating the eigenvalues and re-computing the matrix from
+these updated eigenvalues and the original eigenvectors. The indicators of an
+invalid covariance matrix include
 
     1. Un-invertible covariance matrices with 0 eigenvalues
     2. Covariance matrices with eigenvalues less than zero
 
-Known causes of damage:
+This can typically be a consequence of
 
     1. Multicollinearity:
        but nearly all very large cov matrices will have rounding errors to have
@@ -21,11 +30,13 @@ increased to some minimum threshold. The covariance matrix is then re-calculated
 using these modified eigenvalues and the original eigenvectors.
 
 In general, the recommended approach is Original Clipping, see
-`glomar_gridding.covariance_tools.eigenvalue_clip`.
+:py:func:`glomar_gridding.covariance_tools.eigenvalue_clip`.
 
 Fixes:
 
-    1. Simple clipping - `glomar_gridding.covariance_tools.simple_clipping`:
+    1. Simple clipping -
+    :py:func:`glomar_gridding.covariance_tools.simple_clipping`:
+
         Cut off the negative, zero, and small positive eigenvalues; this is
         method used in statsmodels.stats.correlation_tools but the version here
         has better thresholds based on the accuracy of the eigenvalues, plus a
@@ -42,14 +53,18 @@ Fixes:
         dominant mode because that raises the bar of accuracy of the
         eigenvalues, which requires clipping off a lot more eigenvectors.
 
-    2. Original clipping - `glomar_gridding.covariance_tools.eigenvalue_clip`:
+    2. Original clipping -
+    :py:func:`glomar_gridding.covariance_tools.eigenvalue_clip`:
+
         Determine a noise eigenvalue threshold and replace all eigenvalues below
         using the average of them, preserving the original trace (aka total
         variance) of the covariance matrix, but this will require a full
         computation of all eigenvectors, which may be slow and cause memory
         problems
 
-    3. EOF chop-off - `glomar_gridding.covariance_tools.eof_chop`:
+    3. EOF chop-off -
+    :py:func:`glomar_gridding.covariance_tools.eof_chop`:
+
         Set a target explained variance (say 95%) for the empirical orthogonal
         functions, compute the eigenvalues and eigenvectors up to that explained
         variance. Reconstruct the covariance keeping only EOFs up to the target.
@@ -60,13 +75,16 @@ Fixes:
         covariance matrices which have very large dominant modes.
 
     4. Other methods not implemented here
+
         a. shrinkage methods
             https://scikit-learn.org/stable/modules/covariance.html
         b. reprojection (aka Higham's method)
             https://github.com/mikecroucher/nearest_correlation
+
             https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
 
 Author S Chan.
+
 Modified by J. Siddons.
 """
 
