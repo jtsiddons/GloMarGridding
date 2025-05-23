@@ -206,7 +206,7 @@ class Kriging(ABC):
         determine if a grid point should be masked/weights modified by how far
         it is to its near observed point
 
-        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -454,7 +454,7 @@ class SimpleKriging(Kriging):
         determine if a grid point should be masked/weights modified by how far
         it is to its near observed point
 
-        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -760,7 +760,7 @@ class OrdinaryKriging(Kriging):
         determine if a grid point should be masked/weights modified by how far
         it is to its near observed point
 
-        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -1329,7 +1329,7 @@ def constraint_mask(
     determine if a grid point should be masked/weights modified by how far it is
     to its near observed point.
 
-    Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+    Note: typo in Section A4 in Morice et al 2021 (confirmed by authors).
 
     Equation to use is A14 is incorrect. Easily noticeable because dimensionally
     incorrect is wrong, but the correct answer is easy to figure out.
