@@ -90,6 +90,28 @@
 
 \chapter{Introduction}
 \label{\detokenize{introduction:introduction}}\label{\detokenize{introduction::doc}}
+\sphinxAtStartPar
+Global surface temperature datasets \sphinxhyphen{} such as those used in the Intergovernmental Panel on Climate
+Change (IPCC) Assessment Report \sphinxcite{index:ipcc} rely on a range of techniques to generate smoothed, infilled
+gridded fields from available observations \sphinxcite{index:lenssen}, \sphinxcite{index:kadow}, \sphinxcite{index:rohdeberkeley}, \sphinxcite{index:morice-2021},
+\sphinxcite{index:huang} . The construction of these datasets involves numerous processing decisions, and variations
+in how each dataset represents the temperature field contribute to what is known as structural
+uncertainty \sphinxcite{index:thorne}. This structural uncertainty has two primary sources: (1) differences in the
+processing of the input temperature measurements, and (2) differences in the spatial interpolation
+methods applied. Because these steps are often tightly integrated, it is difficult to determine
+their individual contributions.
+
+\sphinxAtStartPar
+\sphinxtitleref{glomar\_gridding} is a software package developed to support the evaluation of structural
+uncertainty by offering flexible tools for spatial interpolation. The package enables users to
+spatially interpolate grid\sphinxhyphen{}box average observations and their associated uncertainty estimates using
+Gaussian Process Regression Modelling (GPRM, often called \sphinxtitleref{Kriging}) \sphinxcite{index:rasmussen}, \sphinxcite{index:cressie} . This
+technique builds on established methods for generating surface temperature fields \sphinxcite{index:karspeck},
+\sphinxcite{index:morice-2012}. By decoupling interpolation from earlier processing stages \sphinxhyphen{} such as homogenization,
+quality control, and aggregation to grid\sphinxhyphen{}cell averages \sphinxhyphen{} \sphinxtitleref{glomar\_gridding} allows users to create
+spatially complete fields while independently assessing the effects of upstream data processing
+choices.
+
 \sphinxstepscope
 
 
@@ -876,14 +898,15 @@ Its actual value is not important
 to the best (MLE) estimate of the Matern parameters.
 If one assumes the parameters are normally distributed,
 the mean (best estimate) is independent of its variance.
-In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1).
+In fact in Karspeck et al 2012 \sphinxcite{index:karspeck}, it is simply set to 1
+Eq B1).
 This value can however be computed. It serves a similar purpose as
 the original standard deviation:
 in this case, how the actual observed semivariance disperses
 around the fitted variogram.
 
 \sphinxAtStartPar
-The choice to default to 1 follows Karspeck et al. 2012
+The choice to default to 1 follows Karspeck et al. 2012 \sphinxcite{index:karspeck}
 
 
 \end{itemize}
@@ -900,8 +923,9 @@ The choice to default to 1 follows Karspeck et al. 2012
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Default solver in Nelder\sphinxhyphen{}Mead as used in the Karspeck paper
-\sphinxurl{https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html}
+Default solver in Nelder\sphinxhyphen{}Mead as used in Karspeck et al. 2012
+\sphinxcite{index:karspeck}
+i.e. \sphinxurl{https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html}
 default max\sphinxhyphen{}iter is 200 x (number\_of\_variables)
 for 3 variables (Lx, Ly, theta) \textendash{}\textgreater{} 200x3 = 600
 note: unlike variogram fitting, no nugget, no sill, and no residue
@@ -1195,9 +1219,9 @@ removed
 
 \sphinxAtStartPar
 v = matern covariance function shape parameter
-Karspeck et al and Paciorek and Schervish use 3 and 4
-but 0.5 and 1.5 are popular
-0.5 gives an exponential decay
+Karspeck et al. \sphinxcite{index:karspeck} and Paciorek \& Schervish
+\sphinxcite{index:paciorekschervish}
+but 0.5 and 1.5 are popular 0.5 gives an exponential decay
 lim v\textendash{}\textgreater{}inf, Gaussian shape
 
 \sphinxAtStartPar
@@ -1288,7 +1312,7 @@ scales).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{opt\_method=\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize method. Nelder\sphinxhyphen{}Mead is the one used by Karspeck.
+\sphinxstyleliteralstrong{\sphinxupquote{opt\_method=\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize method. Nelder\sphinxhyphen{}Mead is the one used by \sphinxcite{index:karspeck}.
 See \sphinxurl{https://docs.scipy.org/doc/scipy/tutorial/optimize.html}
 for valid options
 
@@ -1428,9 +1452,9 @@ removed
 
 \sphinxAtStartPar
 v = matern covariance function shape parameter
-Karspeck et al and Paciorek and Schervish use 3 and 4
-but 0.5 and 1.5 are popular
-0.5 gives an exponential decay
+Karspeck et al. \sphinxcite{index:karspeck} and Paciorek \& Schervish
+\sphinxcite{index:paciorekschervish}
+use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
 lim v\textendash{}\textgreater{}inf, Gaussian shape
 \begin{description}
 \sphinxlineitem{delta\_x\_method: only meaningful for \_pd fits:}\begin{itemize}
@@ -1512,7 +1536,7 @@ scales).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{opt\_method=\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize method. Nelder\sphinxhyphen{}Mead is the one used by Karspeck.
+\sphinxstyleliteralstrong{\sphinxupquote{opt\_method=\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize method. Nelder\sphinxhyphen{}Mead is the one used by \sphinxcite{index:karspeck}.
 See \sphinxurl{https://docs.scipy.org/doc/scipy/tutorial/optimize.html}
 for valid options
 
@@ -1758,11 +1782,11 @@ numpy.ndarray
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
 \sphinxAtStartPar
-Paciorek and Schevrish 2006 Equation 8 \sphinxurl{https://doi.org/10.1002/env.785}
+Paciorek and Schevrish 2006 {[}PaciorekSchervish{]} Equation 8
 
 \item {}
 \sphinxAtStartPar
-Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
+Karspeck et al. 2012 {[}Karspeck{]} Equation 17
 
 \end{enumerate}
 
@@ -1825,7 +1849,8 @@ Compute the covariance matrix from ellipse parameters, using a batched
 approach.
 This approach is more memory safe and appropriate for low\sphinxhyphen{}memory
 operations, but is slower than self.calculate\_covariance
-which uses a lot of pre\sphinxhyphen{}computation and a vectorised approach.
+which pre\sphinxhyphen{}computes values at all upper triangle points. This approach
+performs pre\sphinxhyphen{}computation at all points within the current batch.
 
 \sphinxAtStartPar
 Each ellipse is defined by values from Lxs, Lys, and thetas, with
@@ -1841,14 +1866,14 @@ Requires a batch\_size parameter.
 \end{description}\end{quote}
 \subsubsection*{References}
 \begin{enumerate}
-\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{)}%
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
 \sphinxAtStartPar
-Paciorek and Schevrish 2006 Equation 8 \sphinxurl{https://doi.org/10.1002/env.785}
+Paciorek and Schevrish 2006 {[}PaciorekSchervish{]} Equation 8
 
 \item {}
 \sphinxAtStartPar
-Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
+Karspeck et al. 2012 {[}Karspeck{]} Equation 17
 
 \end{enumerate}
 
@@ -1884,11 +1909,11 @@ standard deviation in stdevs.
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
 \sphinxAtStartPar
-Paciorek and Schevrish 2006 Equation 8 \sphinxurl{https://doi.org/10.1002/env.785}
+Paciorek and Schevrish 2006 {[}PaciorekSchervish{]} Equation 8
 
 \item {}
 \sphinxAtStartPar
-Karspeck et al 2012 Equation 17 \sphinxurl{https://doi.org/10.1002/qj.900}
+Karspeck et al. 2012 {[}Karspeck{]} Equation 17
 
 \end{enumerate}
 
@@ -2494,12 +2519,12 @@ Ellipse methods.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
-10.1029/2019JD032361) to determine if a grid point should be
-masked/weights modified by how far it is to its near observed point
+Compute the observational constraint mask (A14 in \sphinxcite{index:morice-2021}) to
+determine if a grid point should be masked/weights modified by how far
+it is to its near observed point
 
 \sphinxAtStartPar
-Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+Note: typo in Section A4 in \sphinxcite{index:morice-2021} (confired by authors).
 
 \sphinxAtStartPar
 Equation to use is A14 is incorrect. Easily noticeable because
@@ -2553,7 +2578,7 @@ numpy.ndarray
 \subsubsection*{References}
 
 \sphinxAtStartPar
-Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
+\sphinxcite{index:morice-2021}: \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
 
 \end{fulllineitems}
 
@@ -2885,12 +2910,12 @@ Ellipse methods.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
-10.1029/2019JD032361) to determine if a grid point should be
-masked/weights modified by how far it is to its near observed point
+Compute the observational constraint mask (A14 in \sphinxcite{index:morice-2021}) to
+determine if a grid point should be masked/weights modified by how far
+it is to its near observed point
 
 \sphinxAtStartPar
-Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+Note: typo in Section A4 in \sphinxcite{index:morice-2021} (confired by authors).
 
 \sphinxAtStartPar
 Equation to use is A14 is incorrect. Easily noticeable because
@@ -2958,7 +2983,7 @@ numpy.ndarray
 \subsubsection*{References}
 
 \sphinxAtStartPar
-Morice et al. (2021) : \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
+\sphinxcite{index:morice-2021}: \sphinxurl{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361}
 
 \end{fulllineitems}
 
@@ -3314,7 +3339,10 @@ points using ordinary kriging.
 
 
 \section{Perturbed Gridded Fields}
-\label{\detokenize{kriging:perturbed-gridded-fields}}\index{StochasticKriging (class in glomar\_gridding.stochastic)@\spxentry{StochasticKriging}\spxextra{class in glomar\_gridding.stochastic}}
+\label{\detokenize{kriging:perturbed-gridded-fields}}
+\sphinxAtStartPar
+An additional two\sphinxhyphen{}stage combined Kriging class is provided in the \sphinxtitleref{stochastic} module.
+\index{StochasticKriging (class in glomar\_gridding.stochastic)@\spxentry{StochasticKriging}\spxextra{class in glomar\_gridding.stochastic}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.StochasticKriging}}
@@ -3325,9 +3353,9 @@ points using ordinary kriging.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Class for the combined two\sphinxhyphen{}stage Kriging approach following Morice et al.
-2021. The first stage is to produce a gridded field from the observations
-using Ordinary Kriging. The second stage is to apply a perturbation.
+Class for the combined two\sphinxhyphen{}stage Kriging approach following \sphinxcite{index:morice-2021}
+The first stage is to produce a gridded field from the observations using
+Ordinary Kriging. The second stage is to apply a perturbation.
 
 \sphinxAtStartPar
 The perturbation is constructed by first generating a simulated state from
@@ -3377,12 +3405,12 @@ Ellipse methods.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Compute the observational constraint mask (A14 in Morice et al. (2021) \sphinxhyphen{}
-10.1029/2019JD032361) to determine if a grid point should be
-masked/weights modified by how far it is to its near observed point
+Compute the observational constraint mask (A14 in \sphinxcite{index:morice-2021}) to
+determine if a grid point should be masked/weights modified by how far
+it is to its near observed point
 
 \sphinxAtStartPar
-Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+Note: typo in Section A4 in \sphinxcite{index:morice-2021} (confired by authors).
 
 \sphinxAtStartPar
 Equation to use is A14 is incorrect. Easily noticeable because
@@ -3433,7 +3461,7 @@ observation should be averaged. Used to compute the Kriging weights.
 \item {}
 \sphinxAtStartPar
 \sphinxstylestrong{constraint\_mask} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from
-Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0{]}}.
+\sphinxcite{index:morice-2021}. This is a vector of length \sphinxtitleref{k\_obs.size{[}0{]}}.
 
 \item {}
 \sphinxAtStartPar
@@ -3445,7 +3473,7 @@ Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0
 
 \item {}
 \sphinxAtStartPar
-\sphinxstylestrong{Morice et al. (2021)} (\sphinxstyleemphasis{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361})
+\sphinxstylestrong{{[}Morice\_2021{]}\_} (\sphinxstyleemphasis{https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361})
 
 \end{itemize}
 
@@ -5054,7 +5082,7 @@ Other methods not implemented here
 \end{description}
 
 \item {} \begin{description}
-\sphinxlineitem{reprojection (aka Higham’s method)}
+\sphinxlineitem{reprojection (aka Higham’s method) \sphinxcite{index:higham}}
 \sphinxAtStartPar
 \sphinxurl{https://github.com/mikecroucher/nearest\_correlation}
 
@@ -5210,12 +5238,6 @@ this function.
 \sphinxAtStartPar
 Denoise symmetric damaged covariance/correlation matrix cov by clipping
 eigenvalues
-\begin{description}
-\sphinxlineitem{This is the original method:}
-\sphinxAtStartPar
-\sphinxurl{https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255}
-
-\end{description}
 
 \sphinxAtStartPar
 Explained variance or aspect ratio based threshold
@@ -5247,7 +5269,10 @@ eigenvalues
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{"explained\_variance"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"Laloux\_2000"}}) \textendash{} Method used to identify the index of the eigenvalues to clip.
+\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{"explained\_variance"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"Laloux\_2000"}}) \textendash{} Method used to identify the index of the eigenvalues to clip. If set to
+“explained\_variance” then the sorted eigenvalues below the target
+variance are \sphinxstyleemphasis{clipped}. If “Laloux\_2000” is set, then the method of
+\sphinxcite{index:laloux} is used.
 
 \end{itemize}
 
@@ -5374,7 +5399,8 @@ eigenvalue clipping with statsmodels.stats.correlation\_tools.cov\_nearest
 function.
 
 \sphinxAtStartPar
-Deprecated in favour of glomar\_gridding.covariance\_tools.simple\_clipping.
+Deprecated in favour of
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.simple_clipping}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.simple\_clipping()}}}}}.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
@@ -6219,6 +6245,46 @@ date, and the end date will be 2 days after.
 
 \end{fulllineitems}
 
+\index{get\_spatial\_mean() (in module glomar\_gridding.utils)@\spxentry{get\_spatial\_mean()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.utils.get_spatial_mean}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{get\_spatial\_mean}}}
+{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covx}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the spatial mean accounting for auto\sphinxhyphen{}correlation. See \sphinxcite{index:cornell}
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Vector containing observations
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Observation covariance matrix
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{spatial\_mean} \textendash{} The spatial mean defined as (1\textasciicircum{}T x C\textasciicircum{}\{\sphinxhyphen{}1\} x 1)\textasciicircum{}\{\sphinxhyphen{}1\} * (1\textasciicircum{}T x C\textasciicircum{}\{\sphinxhyphen{}1\} x z)
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+float
+
+\end{description}\end{quote}
+\subsubsection*{References}
+
+\sphinxAtStartPar
+\sphinxcite{index:cornell} \sphinxurl{https://www.css.cornell.edu/faculty/dgr2/\_static/files/distance\_ed\_geostats/ov5.pdf}
+
+\end{fulllineitems}
+
 \index{init\_logging() (in module glomar\_gridding.utils)@\spxentry{init\_logging()}\spxextra{in module glomar\_gridding.utils}}
 
 \begin{fulllineitems}
@@ -6489,6 +6555,54 @@ numpy.ndarray | numpy.ma.MaskedArray
 
 \end{fulllineitems}
 
+
+\begin{sphinxthebibliography}{Paciorek}
+\bibitem[Cornell]{index:cornell}
+\sphinxAtStartPar
+\sphinxurl{https://www.css.cornell.edu/faculty/dgr2/\_static/files/distance\_ed\_geostats/ov5.pdf}
+\bibitem[Cressie]{index:cressie}
+\sphinxAtStartPar
+Cressie, N. A. C.: Statistics for Spatial Data, Wiley Series in Probability and Statistics, Wiley, 1 edn., ISBN 978\sphinxhyphen{}0\sphinxhyphen{}471\sphinxhyphen{}00255\sphinxhyphen{}0 978\sphinxhyphen{}1\sphinxhyphen{}119\sphinxhyphen{}11515\sphinxhyphen{}1, \sphinxurl{https://doi.org/10.1002/9781119115151}, 1993.
+\bibitem[Higham]{index:higham}
+\sphinxAtStartPar
+Higham, N. J., Strabi´c, N., and Šego, V.: Restoring Definiteness via Shrinking, with an Application to Correlation Matrices with a Fixed255 Block, SIAM Review, 58, 245\textendash{}263, \sphinxurl{https://www.jstor.org/stable/24778894}, 2016.
+\bibitem[Huang]{index:huang}
+\sphinxAtStartPar
+Huang, B., Yin, X., Menne, M. J., Vose, R., and Zhang, H.\sphinxhyphen{}M.: Improvements to the Land Surface Air Temperature Reconstruction in NOAAGlobalTemp: An Artificial Neural Network Approach, Artificial Intelligence for the Earth Systems, 1, e220 032, \sphinxurl{https://doi.org/10.1175/AIES-D-22-0032.1}, 2022.
+\bibitem[IPCC]{index:ipcc}
+\sphinxAtStartPar
+Intergovernmental Panel On Climate Change: Climate Change 2021 \textendash{} The Physical Science Basis: Working Group I Contribution to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change, Cambridge University Press, 1 edn., ISBN 978\sphinxhyphen{}1\sphinxhyphen{}00\sphinxhyphen{}915789\sphinxhyphen{}6, \sphinxurl{https://doi.org/10.1017/9781009157896}, 2021.
+\bibitem[Kadow]{index:kadow}
+\sphinxAtStartPar
+Kadow, C., Hall, D. M., and Ulbrich, U.: Artificial intelligence reconstructs missing climate information, Nature Geoscience, 13, 408\textendash{}413, \sphinxurl{https://doi.org/10.1038/s41561-020-0582-5}, 2020
+\bibitem[Karspeck]{index:karspeck}
+\sphinxAtStartPar
+Karspeck, A. R., Kaplan, A., and Sain, S. R.: Bayesian modelling and ensemble reconstruction of mid\sphinxhyphen{}scale spatial variability in North Atlantic sea\sphinxhyphen{}surface temperatures for 1850\sphinxhyphen{}2008, Quarterly Journal of the Royal Meteorological Society, 138, 234\textendash{}248, \sphinxurl{https://doi.org/10.1002/qj.900}, 2012.
+\bibitem[Laloux]{index:laloux}
+\sphinxAtStartPar
+Laloux, L., Cizeau, P., Potters, M. and Bouchaud, J.P.: Random matrix theory and financial correlations. International Journal of Theoretical and Applied Finance, 3(03), 391\sphinxhyphen{}397. \sphinxurl{https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255}, 2000
+\bibitem[Lenssen]{index:lenssen}
+\sphinxAtStartPar
+Lenssen, N. J. L., Schmidt, G. A., Hansen, J. E., Menne, M. J., Persin, A., Ruedy, R., and Zyss, D.: Improvements in the GISTEMP Uncertainty Model, Journal of Geophysical Research: Atmospheres, 124, 6307\textendash{}6326, \sphinxurl{https://doi.org/10.1029/2018JD029522}, 2019.
+\bibitem[Morice\_2012]{index:morice-2012}
+\sphinxAtStartPar
+Morice, C. P., Kennedy, J. J., Rayner, N. A., and Jones, P. D.: Quantifying uncertainties in global and regional temperature change using an ensemble of observational estimates: The HadCRUT4 data set: THE HADCRUT4 DATASET, Journal of Geophysical Research: Atmospheres, 117, n/a\textendash{}n/a, \sphinxurl{https://doi.org/10.1029/2011JD017187}, 2012
+\bibitem[Morice\_2021]{index:morice-2021}
+\sphinxAtStartPar
+Morice, C. P., Kennedy, J. J., Rayner, N. A., Winn, J. P., Hogan, E., Killick, R. E., Dunn, R. J. H., Osborn, T. J., Jones, P. D., and Simpson, 285 I. R.: An Updated Assessment of Near\sphinxhyphen{}Surface Temperature Change From 1850: The HadCRUT5 Data Set, Journal of Geophysical Research: Atmospheres, 126, e2019JD032 361, \sphinxurl{https://doi.org/10.1029/2019JD032361}, 2021.
+\bibitem[PaciorekSchervish]{index:paciorekschervish}
+\sphinxAtStartPar
+Paciorek, C. J. and Schervish, M. J.: Spatial modelling using a new class of nonstationary covariance functions, Environmetrics, 17, 483\textendash{}506, \sphinxurl{https://doi.org/10.1002/env.785}, 2006
+\bibitem[Rasmussen]{index:rasmussen}
+\sphinxAtStartPar
+Rasmussen, C. E. and Williams, C. K. I.: Gaussian Processes for Machine Learning, The MIT Press, ISBN 978\sphinxhyphen{}0\sphinxhyphen{}262\sphinxhyphen{}25683\sphinxhyphen{}4, \sphinxurl{https://doi.org/10.7551/mitpress/3206.001.0001}, 2005.
+\bibitem[RohdeBerkeley]{index:rohdeberkeley}
+\sphinxAtStartPar
+Rohde, R. A. and Hausfather, Z.: The Berkeley Earth Land/Ocean Temperature Record, Earth System Science Data, 12, 3469\textendash{}3479, \sphinxurl{https://doi.org/10.5194/essd-12-3469-2020}, 2020
+\bibitem[Thorne]{index:thorne}
+\sphinxAtStartPar
+Thorne 2005
+\end{sphinxthebibliography}
 
 
 \renewcommand{\indexname}{Python Module Index}

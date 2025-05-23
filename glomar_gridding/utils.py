@@ -626,3 +626,33 @@ def sizeof_fmt(num: float, suffix="B") -> str:
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
+
+
+def get_spatial_mean(
+    grid_obs: np.ndarray,
+    covx: np.ndarray,
+) -> float:
+    """
+    Compute the spatial mean accounting for auto-correlation. See [Cornell]_
+
+    Parameters
+    ----------
+    grid_obs : np.ndarray
+        Vector containing observations
+    covx : np.ndarray
+        Observation covariance matrix
+
+    Returns
+    -------
+    spatial_mean : float
+        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
+
+    References
+    ----------
+    [Cornell]_ https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
+    """
+    n = len(grid_obs)
+    ones = np.ones(n)
+    invcov = ones.T @ np.linalg.inv(covx)
+
+    return float(1 / (invcov @ ones) * (invcov @ grid_obs))

@@ -16,9 +16,9 @@ from glomar_gridding.kriging import (
 
 class StochasticKriging(Kriging):
     r"""
-    Class for the combined two-stage Kriging approach following Morice et al.
-    2021. The first stage is to produce a gridded field from the observations
-    using Ordinary Kriging. The second stage is to apply a perturbation.
+    Class for the combined two-stage Kriging approach following [Morice_2021]_
+    The first stage is to produce a gridded field from the observations using
+    Ordinary Kriging. The second stage is to apply a perturbation.
 
     The perturbation is constructed by first generating a simulated state from
     the covariance matrix. A set of simulated observations is drawn from the
@@ -224,11 +224,11 @@ class StochasticKriging(Kriging):
         idx: np.ndarray,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -270,11 +270,11 @@ class StochasticKriging(Kriging):
         -------
         constraint_mask : numpy.ndarray
             Constraint mask values, the left-hand-side of equation A14 from
-            Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
+            [Morice_2021]_. This is a vector of length `k_obs.size[0]`.
 
         Reference
         ---------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "simple_kriging_weights"):
             raise KeyError("Please set kriging weights")

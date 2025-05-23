@@ -172,13 +172,14 @@ class EllipseModel:
         to the best (MLE) estimate of the Matern parameters.
         If one assumes the parameters are normally distributed,
         the mean (best estimate) is independent of its variance.
-        In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1).
+        In fact in Karspeck et al 2012 [Karspeck]_, it is simply set to 1
+        Eq B1).
         This value can however be computed. It serves a similar purpose as
         the original standard deviation:
         in this case, how the actual observed semivariance disperses
         around the fitted variogram.
 
-        The choice to default to 1 follows Karspeck et al. 2012
+        The choice to default to 1 follows Karspeck et al. 2012 [Karspeck]_
     """
 
     def __init__(
@@ -401,8 +402,9 @@ class EllipseModel:
         random_seed: int = 1234,
     ) -> tuple[OptimizeResult, float | None, list[tuple[float, float]]]:
         """
-        Default solver in Nelder-Mead as used in the Karspeck paper
-        https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
+        Default solver in Nelder-Mead as used in Karspeck et al. 2012
+        [Karspeck]_
+        i.e. https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
         default max-iter is 200 x (number_of_variables)
         for 3 variables (Lx, Ly, theta) --> 200x3 = 600
         note: unlike variogram fitting, no nugget, no sill, and no residue

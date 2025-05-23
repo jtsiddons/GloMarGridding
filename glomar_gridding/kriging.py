@@ -14,7 +14,11 @@ from typing import Literal
 import numpy as np
 from warnings import warn
 
-from .utils import adjust_small_negative, intersect_mtlb
+from glomar_gridding.utils import (
+    adjust_small_negative,
+    intersect_mtlb,
+    get_spatial_mean,
+)
 
 KrigMethod = Literal["simple", "ordinary"]
 
@@ -198,11 +202,11 @@ class Kriging(ABC):
     @abstractmethod
     def constraint_mask(self, idx: np.ndarray) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -248,7 +252,7 @@ class Kriging(ABC):
 
         References
         ----------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         raise NotImplementedError(
             "`constraint_mask` not implemented for default class"
@@ -446,11 +450,11 @@ class SimpleKriging(Kriging):
         idx: np.ndarray,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -496,7 +500,7 @@ class SimpleKriging(Kriging):
 
         References
         ----------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -752,11 +756,11 @@ class OrdinaryKriging(Kriging):
         error_cov: np.ndarray | None = None,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -809,7 +813,7 @@ class OrdinaryKriging(Kriging):
 
         References
         ----------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if simple_kriging_weights is None:
             obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
@@ -1315,45 +1319,15 @@ def kriging_ordinary(
     return kriged_result, uncert
 
 
-def get_spatial_mean(
-    grid_obs: np.ndarray,
-    covx: np.ndarray,
-) -> float:
-    """
-    Compute the spatial mean accounting for auto-correlation.
-
-    Parameters
-    ----------
-    grid_obs : np.ndarray
-        Vector containing observations
-    covx : np.ndarray
-        Observation covariance matrix
-
-    Returns
-    -------
-    spatial_mean : float
-        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
-
-    References
-    ----------
-    https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
-    """
-    n = len(grid_obs)
-    ones = np.ones(n)
-    invcov = ones.T @ np.linalg.inv(covx)
-
-    return float(1 / (invcov @ ones) * (invcov @ grid_obs))
-
-
 def constraint_mask(
     obs_obs_cov: np.ndarray,
     obs_grid_cov: np.ndarray,
     interp_cov: np.ndarray,
 ) -> np.ndarray:
     r"""
-    Compute the observational constraint mask (A14 in Morice et al. (2021) -
-    10.1029/2019JD032361) to determine if a grid point should be masked/weights
-    modified by how far it is to its near observed point
+    Compute the observational constraint mask (A14 in [Morice_2021]_) to
+    determine if a grid point should be masked/weights modified by how far it is
+    to its near observed point.
 
     Note: typo in Section A4 in Morice et al 2021 (confired by authors).
 
@@ -1398,7 +1372,7 @@ def constraint_mask(
 
     References
     ----------
-    Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+    Morice et al. (2021) [Morice_2021]_
     """
     # ky_inv = np.linalg.inv(k_obs + err_cov)
     # NOTE: Ax = b => x = A^{-1}b (x = solve(A, b))

@@ -78,7 +78,7 @@ Fixes:
 
         a. shrinkage methods
             https://scikit-learn.org/stable/modules/covariance.html
-        b. reprojection (aka Higham's method)
+        b. reprojection (aka Higham's method) [Higham]_
             https://github.com/mikecroucher/nearest_correlation
 
             https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
@@ -261,7 +261,8 @@ def perturb_cov_to_positive_definite(
     eigenvalue clipping with statsmodels.stats.correlation_tools.cov_nearest
     function.
 
-    Deprecated in favour of glomar_gridding.covariance_tools.simple_clipping.
+    Deprecated in favour of
+    :py:func:`glomar_gridding.covariance_tools.simple_clipping`.
 
     Parameters
     ----------
@@ -664,9 +665,6 @@ def eigenvalue_clip(
     Denoise symmetric damaged covariance/correlation matrix cov by clipping
     eigenvalues
 
-    This is the original method:
-        https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255
-
     Explained variance or aspect ratio based threshold
     Aspect ratios is based on dimensionless parameters
     (number of independent variable and observation size)
@@ -692,7 +690,10 @@ def eigenvalue_clip(
     cov : numpy.ndarray
         Input covariance matrix to be adjusted to positive definite.
     method : "explained_variance" | "Laloux_2000"
-        Method used to identify the index of the eigenvalues to clip.
+        Method used to identify the index of the eigenvalues to clip. If set to
+        "explained_variance" then the sorted eigenvalues below the target
+        variance are *clipped*. If "Laloux_2000" is set, then the method of
+        [Laloux]_ is used.
 
     Returns
     -------

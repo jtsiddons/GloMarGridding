@@ -285,8 +285,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1. Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2. Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
+        2. Karspeck et al. 2012 [Karspeck] Equation 17
         """
         # Precompute to radians for convenience
         lats = np.deg2rad(self.lat_grid_compressed)
@@ -348,7 +348,8 @@ class EllipseCovarianceBuilder:
         approach.
         This approach is more memory safe and appropriate for low-memory
         operations, but is slower than self.calculate_covariance
-        which uses a lot of pre-computation and a vectorised approach.
+        which pre-computes values at all upper triangle points. This approach
+        performs pre-computation at all points within the current batch.
 
         Each ellipse is defined by values from Lxs, Lys, and thetas, with
         standard deviation in stdevs.
@@ -357,8 +358,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
+        2. Karspeck et al. 2012 [Karspeck] Equation 17
         """
         if self.batch_size is None:
             raise ValueError("batch_size must be set if using 'batched' method")
@@ -422,8 +423,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1. Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2. Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
+        2. Karspeck et al. 2012 [Karspeck] Equation 17
         """
         dy, dx = self.disp_fn(
             self.lat_grid_compressed_rad[i_s],

@@ -208,9 +208,9 @@ class EllipseBuilder:
         removed
 
         v = matern covariance function shape parameter
-        Karspeck et al and Paciorek and Schervish use 3 and 4
-        but 0.5 and 1.5 are popular
-        0.5 gives an exponential decay
+        Karspeck et al. [Karspeck]_ and Paciorek & Schervish
+        [PaciorekSchervish]_
+        use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
         lim v-->inf, Gaussian shape
 
         delta_x_method: only meaningful for _pd fits:
@@ -272,7 +272,7 @@ class EllipseBuilder:
             scales).
 
         opt_method='Nelder-Mead': str
-            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
+            scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
             See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
             for valid options
 
@@ -488,9 +488,9 @@ class EllipseBuilder:
         removed
 
         v = matern covariance function shape parameter
-        Karspeck et al and Paciorek and Schervish use 3 and 4
-        but 0.5 and 1.5 are popular
-        0.5 gives an exponential decay
+        Karspeck et al. [Karspeck]_ and Paciorek & Schervish
+        [PaciorekSchervish]_
+        but 0.5 and 1.5 are popular 0.5 gives an exponential decay
         lim v-->inf, Gaussian shape
 
         delta_x_method: only meaningful for _pd fits:
@@ -561,7 +561,7 @@ class EllipseBuilder:
             scales).
 
         opt_method='Nelder-Mead': str
-            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
+            scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
             See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
             for valid options
 
