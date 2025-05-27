@@ -71,7 +71,7 @@ def test_weights() -> None:
 
     weights = get_weights(df)
 
-    assert weights.shape == (5, n)
+    assert weights.shape == (n_u_grid_pts, n)
     assert np.allclose(np.sum(weights, axis=1), 1.0)
     assert (np.sum(weights != 0, axis=1) == lens.to_numpy()).all()
 
