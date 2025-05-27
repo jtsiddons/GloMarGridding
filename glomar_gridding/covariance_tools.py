@@ -53,6 +53,8 @@ Fixes:
         dominant mode because that raises the bar of accuracy of the
         eigenvalues, which requires clipping off a lot more eigenvectors.
 
+        Note, this will adjust all negative eigenvalues to be positive.
+
     2. Original clipping -
     :py:func:`glomar_gridding.covariance_tools.eigenvalue_clip`:
 
@@ -61,6 +63,8 @@ Fixes:
         variance) of the covariance matrix, but this will require a full
         computation of all eigenvectors, which may be slow and cause memory
         problems
+
+        Note, this will adjust all negative eigenvalues to be positive.
 
     3. EOF chop-off -
     :py:func:`glomar_gridding.covariance_tools.eof_chop`:
@@ -73,6 +77,8 @@ Fixes:
         eigenvectors which may not be possible for massive matrices
         (40000x40000 square matrices). This is currently done for the MAT
         covariance matrices which have very large dominant modes.
+
+        Note, this may not adjust negative eigenvalues to be positive.
 
     4. Other methods not implemented here
 
