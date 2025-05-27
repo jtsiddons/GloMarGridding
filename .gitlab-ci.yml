@@ -33,7 +33,11 @@ pytest:
     - uv --version
     - uv sync --all-extras
     - uv pip list
-    - uv run pytest test
+    - uv run pytest test --cov=glomar_gridding --cov-report=xml --junitxml=coverage.xml
+  artifacts:
+    reports:
+      coverage_report:
+        path: $CI_PROJECT_DIR/coverage.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == "master"
