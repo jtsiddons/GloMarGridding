@@ -1,6 +1,9 @@
 import numpy as np
 
-from glomar_gridding.covariance_tools import eigenvalue_clip
+from glomar_gridding.covariance_tools import (
+    eigenvalue_clip,
+    simple_clipping,
+)
 
 
 def test_eigenvalue_clip() -> None:
@@ -70,6 +73,32 @@ def test_eigenvalue_clip_negative_evals() -> None:
 
     # TEST: trace is not changed
     assert np.allclose(np.trace(S_fixed), np.trace(S_new))
+    # TEST: all eigenvalues are positive
+    assert np.all(evals_fixed > 0)
+    return None
+
+
+def test_simple_clip():
+    # np.random.seed(90210)
+    n = 10
+    n_neg = 3
+
+    # Create an initial covariance matrix
+    A = np.random.rand(n, n)
+    S = np.dot(A, A.T)
+
+    evals, evecs = np.linalg.eigh(S)
+    # Adjust the eigenvalues to ensure negative values
+    evals[:n_neg] -= np.sum(evals[:n_neg])
+
+    assert np.sum(evals < 0) == n_neg
+
+    S_new = evecs @ np.diag(evals) @ evecs.T
+
+    # "Fix" the new Covariance
+    S_fixed, _ = simple_clipping(S_new)
+    evals_fixed = np.linalg.eigvalsh(S_fixed)
+
     # TEST: all eigenvalues are positive
     assert np.all(evals_fixed > 0)
     return None
