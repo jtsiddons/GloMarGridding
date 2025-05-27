@@ -66,7 +66,7 @@ def test_ordinary_kriging() -> None:  # noqa: D103
 
     variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
 
-    covariance: xr.DataArray = variogram.fit(dist)
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
 
     grid_idx = obs.get_column("grid_idx").to_numpy()
     obs_vals = obs.get_column("val").to_numpy()
@@ -93,7 +93,7 @@ def test_ordinary_kriging_class() -> None:  # noqa: D103
 
     variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
 
-    covariance: xr.DataArray = variogram.fit(dist)
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
 
     grid_idx = obs.get_column("grid_idx").to_numpy()
     obs_vals = obs.get_column("val").to_numpy()
@@ -120,7 +120,7 @@ def test_ordinary_kriging_class_from_weights() -> None:  # noqa: D103
 
     variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
 
-    covariance: xr.DataArray = variogram.fit(dist)
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
 
     grid_idx = obs.get_column("grid_idx").to_numpy()
     obs_vals = obs.get_column("val").to_numpy()
@@ -157,7 +157,7 @@ def test_ordinary_kriging_class_from_inv() -> None:  # noqa: D103
 
     variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
 
-    covariance: xr.DataArray = variogram.fit(dist)
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
 
     grid_idx = obs.get_column("grid_idx").to_numpy()
     obs_vals = obs.get_column("val").to_numpy()
