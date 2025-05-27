@@ -16,6 +16,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### Breaking changes
 
+* `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
 * `perturbation` module is renamed to `stochastic` (!65)
 * All job-specific files are removed from the library (!56)
 
@@ -38,6 +39,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### Internal changes
 
+* Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
 
 ## 0.2.3 (2025-04-30)
