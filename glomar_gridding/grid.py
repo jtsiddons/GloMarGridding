@@ -146,14 +146,10 @@ def assign_to_grid(
     values: np.ndarray,
     grid_idx: np.ndarray,
     grid: xr.DataArray,
-    mask_grid: bool = False,
-    mask_value: Any = np.nan,
+    fill_value: Any = np.nan,
 ) -> xr.DataArray:
     """
-    Assign a vector of values to a grid, using a list of grid index values. The
-    default value for grid values is 0.0.
-
-    Optionally, if the grid is a mask, apply the mask to the output grid.
+    Assign a vector of values to a grid, using a list of grid index values.
 
     Parameters
     ----------
@@ -163,10 +159,8 @@ def assign_to_grid(
         The 1d index of the grid (assuming "C" style ravelling) for each value.
     grid : xarray.DataArray
         The grid used to define the output grid.
-    mask_grid : bool
-        Optionally use values in the grid to mask the output grid.
-    mask_value : Any
-        The value in the grid to use for masking the output grid.
+    fill_value : Any
+        The value to fill unassigned grid boxes.
 
     Returns
     -------
@@ -174,14 +168,11 @@ def assign_to_grid(
         A new grid containing the values mapped onto the grid.
     """
     out_grid = xr.DataArray(
-        data=np.zeros(grid.shape, dtype="float"),
+        data=np.full(grid.shape, fill_value=fill_value, dtype=values.dtype),
         coords=grid.coords,
     )
     coords_to_assign = np.unravel_index(grid_idx, out_grid.shape, "C")
     out_grid.values[coords_to_assign] = values
-
-    if mask_grid:
-        out_grid.values = np.where(grid == mask_value, np.nan, out_grid.values)
 
     return out_grid
 
