@@ -33,7 +33,8 @@ pytest:
     - uv --version
     - uv sync --all-extras
     - uv pip list
-    - uv run pytest test --cov=glomar_gridding --cov-report=xml --junitxml=test_results.xml
+    - uv run pytest test --cov=glomar_gridding --junitxml=test_results.xml
+  coverage: '/TOTAL.*? (100(?:\.0+)?\%\|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
       junit: test_results.xml
