@@ -182,6 +182,7 @@ def grid_to_distance_matrix(
     dist_func: Callable = haversine_distance_from_frame,
     lat_coord: str = "lat",
     lon_coord: str = "lon",
+    **dist_kwargs,
 ) -> xr.DataArray:
     """
     Calculate a distance matrix between all positions in a grid. Orientation of
@@ -200,6 +201,8 @@ def grid_to_distance_matrix(
         Name of the latitude coordinate in the input grid.
     lon_coord : str
         Name of the longitude coordinate in the input grid.
+    **dist_kwargs
+        Keyword arguments to pass to the distance function.
 
     Returns
     -------
@@ -223,6 +226,7 @@ def grid_to_distance_matrix(
         dist_func=dist_func,
         lat_col=lat_coord,
         lon_col=lon_coord,
+        **dist_kwargs,
     )
 
     return xr.DataArray(
