@@ -498,6 +498,7 @@ def _sigma_rot_func_multi(
     Ly: np.ndarray,
     theta: np.ndarray,
 ) -> np.ndarray:
+    """Flattened Sigma matrices for a list of Lx, Ly, theta triplets."""
     ct = np.cos(theta)
     st = np.sin(theta)
     c2 = np.power(ct, 2)
@@ -517,14 +518,16 @@ def _sigma_rot_func_multi(
 
 
 def _det_22_single(
-    mats: np.ndarray,
+    mat: np.ndarray,
 ) -> np.ndarray:
-    return mats[0] * mats[3] - mats[1] * mats[2]
+    """Determinant of a 2 x 2 matrix"""
+    return mat[0] * mat[3] - mat[1] * mat[2]
 
 
 def _det_22_multi(
     mats: np.ndarray,
 ) -> np.ndarray:
+    """Determinants of an array of flattened 2 x 2 matrices"""
     return mats[:, 0] * mats[:, 3] - mats[:, 1] * mats[:, 2]
 
 
@@ -534,6 +537,7 @@ def _haversine_single(
     lat1: float,
     lon1: float,
 ) -> float:
+    """Haversine distance between a pair of points"""
     dlon = lon0 - lon1
     dlat = lat0 - lat1
 
@@ -555,6 +559,7 @@ def _haversine_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> np.ndarray:
+    """Haversine distance for a list of pairs of points"""
     dlon = lon0 - lon1
     dlat = lat0 - lat1
 
@@ -573,6 +578,7 @@ def _mod_mo_disp_single(
     lat1: float,
     lon1: float,
 ) -> tuple[float, float]:
+    """Modified Met Office displacements between two points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx = dx - TWO_PI if dx > np.pi else dx
@@ -590,6 +596,7 @@ def _mo_disp_single(
     lat1: float,
     lon1: float,
 ) -> tuple[float, float]:
+    """Met Office displacements between two points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx = dx - TWO_PI if dx > np.pi else dx
@@ -604,6 +611,7 @@ def _mod_mo_disp_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Modified Met Office displacements between a list of pairs of points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx[dx > np.pi] -= TWO_PI
@@ -621,6 +629,7 @@ def _mo_disp_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Met Office displacements between a list of pairs of points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx[dx > np.pi] -= TWO_PI
