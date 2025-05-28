@@ -47,6 +47,7 @@ from glomar_gridding.kriging import (
     kriging_simple,
     _extended_inverse,
 )
+from glomar_gridding.stochastic import StochasticKriging
 
 
 def _load_results() -> np.ndarray:
@@ -295,3 +296,47 @@ def test_inverse_trick(name, n):
     S_ext = np.block([[S, np.ones((n, 1))], [np.ones((1, n)), 0]])
 
     assert np.allclose(Sinv_ext, np.linalg.inv(S_ext))
+
+
+def test_stochastic_kriging_class_methods() -> None:  # noqa: D103
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
+
+    err_cov = np.full(covariance.shape, np.nan)
+    err_cov_vals = np.random.rand(3, 3)
+    err_cov_vals = np.dot(err_cov_vals, err_cov_vals.T)
+    idx = list(product(grid_idx, grid_idx))
+    for i, val in zip(idx, err_cov_vals.flatten()):
+        err_cov[*i] = val
+
+    StochKrige = StochasticKriging(covariance=covariance.values)
+    k = StochKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
+    u = StochKrige.get_uncertainty(grid_idx)
+    a = StochKrige.constraint_mask(grid_idx)
+
+    assert k.shape == a.shape == u.shape
+
+    S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov_vals
+    SS = covariance.values[grid_idx, :]
+    k2, u2 = kriging_ordinary(S, SS, obs_vals, covariance.values)
+
+    assert hasattr(StochKrige, "gridded_field")
+    assert np.allclose(k2, StochKrige.gridded_field)
+    assert np.allclose(u2, u)
+
+    return None
