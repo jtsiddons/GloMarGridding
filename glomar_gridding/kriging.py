@@ -1283,7 +1283,7 @@ def kriging_ordinary(
     uncert_squared = np.diag(interp_cov - kriging_weights) - alpha
     uncert_squared = adjust_small_negative(uncert_squared)
     uncert = np.sqrt(uncert_squared)
-    # dz[np.isnan(dz)] = 0.0
+    uncert[np.isnan(uncert)] = 0.0
 
     print("Ordinary Kriging Complete")
     return kriged_result, uncert

@@ -29,6 +29,7 @@ import os
 import numpy as np
 import polars as pl
 import xarray as xr
+from itertools import product
 
 from sklearn.metrics.pairwise import euclidean_distances
 
@@ -38,7 +39,13 @@ from glomar_gridding.grid import (
     grid_to_distance_matrix,
 )
 from glomar_gridding.variogram import MaternVariogram
-from glomar_gridding.kriging import kriging_ordinary, OrdinaryKriging
+from glomar_gridding.kriging import (
+    SimpleKriging,
+    constraint_mask,
+    kriging_ordinary,
+    OrdinaryKriging,
+    kriging_simple,
+)
 
 
 def _load_results() -> np.ndarray:
@@ -52,8 +59,10 @@ def _load_results() -> np.ndarray:
     return np.reshape(converted, (20, 20), "F")
 
 
+EXPECTED = _load_results()
+
+
 def test_ordinary_kriging() -> None:  # noqa: D103
-    expected = _load_results()
     grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
     obs = pl.DataFrame(
         {
@@ -75,12 +84,11 @@ def test_ordinary_kriging() -> None:  # noqa: D103
     SS = covariance.values[grid_idx, :]
     k, _ = kriging_ordinary(S, SS, obs_vals, covariance.values)
 
-    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
 
 
 def test_ordinary_kriging_class() -> None:  # noqa: D103
-    expected = _load_results()
     grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
     obs = pl.DataFrame(
         {
@@ -102,12 +110,11 @@ def test_ordinary_kriging_class() -> None:  # noqa: D103
 
     k = OKrige.solve(obs_vals, grid_idx)
 
-    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
 
 
 def test_ordinary_kriging_class_from_weights() -> None:  # noqa: D103
-    expected = _load_results()
     grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
     obs = pl.DataFrame(
         {
@@ -139,12 +146,11 @@ def test_ordinary_kriging_class_from_weights() -> None:  # noqa: D103
 
     k = OKrige.solve(obs_vals, grid_idx)
 
-    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
 
 
 def test_ordinary_kriging_class_from_inv() -> None:  # noqa: D103
-    expected = _load_results()
     grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
     obs = pl.DataFrame(
         {
@@ -172,5 +178,97 @@ def test_ordinary_kriging_class_from_inv() -> None:  # noqa: D103
 
     k = OKrige.solve(obs_vals, grid_idx)
 
-    assert np.allclose(expected, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    return None
+
+
+def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
+
+    err_cov = np.full(covariance.shape, np.nan)
+    err_cov_vals = np.random.rand(3, 3)
+    err_cov_vals = np.dot(err_cov_vals, err_cov_vals.T)
+    idx = list(product(grid_idx, grid_idx))
+    for i, val in zip(idx, err_cov_vals.flatten()):
+        err_cov[*i] = val
+
+    OKrige = OrdinaryKriging(covariance=covariance.values)
+    k = OKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
+    u = OKrige.get_uncertainty(grid_idx)
+    a = OKrige.constraint_mask(grid_idx)
+
+    assert k.shape == a.shape == u.shape
+
+    S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov_vals
+    SS = covariance.values[grid_idx, :]
+    k2, u2 = kriging_ordinary(S, SS, obs_vals, covariance.values)
+
+    assert np.allclose(k2, k)
+
+    assert np.allclose(u2, u)
+
+    return None
+
+
+def test_simple_kriging_class_methods() -> None:  # noqa: D103
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
+
+    err_cov = np.full(covariance.shape, np.nan)
+    err_cov_vals = np.random.rand(3, 3)
+    err_cov_vals = np.dot(err_cov_vals, err_cov_vals.T)
+    idx = list(product(grid_idx, grid_idx))
+    for i, val in zip(idx, err_cov_vals.flatten()):
+        err_cov[*i] = val
+
+    SKrige = SimpleKriging(covariance=covariance.values)
+    k = SKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
+    u = SKrige.get_uncertainty(grid_idx)
+    a = SKrige.constraint_mask(grid_idx)
+
+    assert k.shape == a.shape == u.shape
+
+    S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov_vals
+    SS = covariance.values[grid_idx, :]
+    k2, u2 = kriging_simple(S, SS, obs_vals, covariance.values)
+
+    a2 = constraint_mask(S, SS, covariance.values)
+
+    assert np.allclose(k2, k)
+
+    assert np.allclose(u2, u)
+
+    assert np.allclose(a2, a)
+
     return None
