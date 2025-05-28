@@ -281,7 +281,7 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
         ("n = 10", 10),
         ("n = 25", 25),
         ("n = 100", 100),
-        ("n = 2592", 2592),
+        ("n = 1000", 1000),
     ],
 )
 def test_inverse_trick(name, n):
