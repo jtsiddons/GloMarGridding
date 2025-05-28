@@ -285,6 +285,7 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
     ],
 )
 def test_inverse_trick(name, n):
+    np.random.seed(31900)
     A = np.random.rand(n, n)
     S = np.dot(A, A.T)
 
