@@ -1,10 +1,12 @@
 """Tests of the distances module"""
 
-import pytest  # noqa: F401
+import pytest
 from math import sqrt
+import numpy as np
 import polars as pl
 from glomar_gridding.distances import (
     euclidean_distance,
+    calculate_distance_matrix,
     haversine_distance_from_frame,
 )
 
@@ -35,3 +37,7 @@ def test_haversine():
 
     assert dist[0, 0] == dist[1, 1] == 0.0
     assert dist[0, 1] == pytest.approx(expected, abs=1)  # Allow 1km out
+
+    dist2 = calculate_distance_matrix(df, radius=R)
+
+    assert np.allclose(dist, dist2)
