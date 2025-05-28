@@ -45,6 +45,7 @@ from glomar_gridding.kriging import (
     kriging_ordinary,
     OrdinaryKriging,
     kriging_simple,
+    _extended_inverse,
 )
 
 
@@ -272,3 +273,24 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
     assert np.allclose(a2, a)
 
     return None
+
+
+@pytest.mark.parametrize(
+    "name, n",
+    [
+        ("n = 10", 10),
+        ("n = 25", 25),
+        ("n = 100", 100),
+        ("n = 2592", 2592),
+    ],
+)
+def test_inverse_trick(name, n):
+    A = np.random.rand(n, n)
+    S = np.dot(A, A.T)
+
+    Sinv = np.linalg.inv(S)
+    Sinv_ext = _extended_inverse(Sinv)
+
+    S_ext = np.block([[S, np.ones((n, 1))], [np.ones((1, n)), 0]])
+
+    assert np.allclose(Sinv_ext, np.linalg.inv(S_ext))

@@ -9,6 +9,7 @@ from glomar_gridding.error_covariance import (
     uncorrelated_components,
 )
 from glomar_gridding.distances import haversine_gaussian
+from glomar_gridding.kriging import prep_obs_for_kriging
 
 
 def test_uncorr() -> None:
@@ -55,9 +56,10 @@ def test_corr() -> None:
 
 
 def test_weights() -> None:
-    n = 1000
+    n = 20
     n_u_grid_pts = 5
     u_grid_pts = pl.int_range(0, n_u_grid_pts, eager=True)
+    obs = pl.Series("obs", np.random.rand(n))
     grid_pts = u_grid_pts.sample(n - n_u_grid_pts, with_replacement=True).alias(
         "grid_idx"
     )
@@ -65,6 +67,7 @@ def test_weights() -> None:
     grid_pts = grid_pts.extend(pl.Series([0, 1, 2, 3, 4]))
 
     df = grid_pts.to_frame()
+    df = df.with_columns(obs)
     lens = (
         df.group_by("grid_idx").len().sort("grid_idx").select("len").to_series()
     )
@@ -74,6 +77,21 @@ def test_weights() -> None:
     assert weights.shape == (n_u_grid_pts, n)
     assert np.allclose(np.sum(weights, axis=1), 1.0)
     assert (np.sum(weights != 0, axis=1) == lens.to_numpy()).all()
+
+    _, grid_obs = prep_obs_for_kriging(
+        grid_pts.to_numpy(), u_grid_pts.to_numpy(), weights, obs.to_numpy()
+    )
+
+    assert len(grid_obs) == n_u_grid_pts
+
+    summ = (
+        df.group_by("grid_idx")
+        .mean()
+        .sort("grid_idx")
+        .get_column("obs")
+        .to_numpy()
+    )
+    assert np.allclose(grid_obs, summ)
 
 
 def test_distweight() -> None:
