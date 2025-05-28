@@ -520,7 +520,7 @@ def _sigma_rot_func_multi(
 def _det_22_single(
     mat: np.ndarray,
 ) -> np.ndarray:
-    """Determinant of a 2 x 2 matrix"""
+    """Determinant of a flattened 2 x 2 matrix"""
     return mat[0] * mat[3] - mat[1] * mat[2]
 
 
