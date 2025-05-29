@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{May 23, 2025}
+\date{May 29, 2025}
 \release{0.3.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -336,127 +336,7 @@ xarray.DataArray
 
 
 \section{Variograms}
-\label{\detokenize{covariance:variograms}}\index{LinearVariogram (class in glomar\_gridding.variogram)@\spxentry{LinearVariogram}\spxextra{class in glomar\_gridding.variogram}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{LinearVariogram}}}
-{\sphinxparam{\DUrole{n}{slope}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Linear model
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{slope}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\end{itemize}
-
-\end{description}\end{quote}
-\index{fit() (glomar\_gridding.variogram.LinearVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.LinearVariogram method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.LinearVariogram.fit}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{distance\_matrix}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Fit the LinearVariogram model to a distance matrix
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
-points in the grid.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-A matrix containing the variogram values at each distance.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{PowerVariogram (class in glomar\_gridding.variogram)@\spxentry{PowerVariogram}\spxextra{class in glomar\_gridding.variogram}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{PowerVariogram}}}
-{\sphinxparam{\DUrole{n}{scale}}\sphinxparamcomma \sphinxparam{\DUrole{n}{exponent}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Power model
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{scale}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{exponent}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
-
-\end{itemize}
-
-\end{description}\end{quote}
-\index{fit() (glomar\_gridding.variogram.PowerVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.PowerVariogram method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.PowerVariogram.fit}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{distance\_matrix}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Fit the PowerVariogram model to a distance matrix
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
-points in the grid.
-
-\sphinxlineitem{Returns}
-\sphinxAtStartPar
-A matrix containing the variogram values at each distance.
-
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-
-\end{fulllineitems}
-
-\index{ExponentialVariogram (class in glomar\_gridding.variogram)@\spxentry{ExponentialVariogram}\spxextra{class in glomar\_gridding.variogram}}
+\label{\detokenize{covariance:variograms}}\index{ExponentialVariogram (class in glomar\_gridding.variogram)@\spxentry{ExponentialVariogram}\spxextra{class in glomar\_gridding.variogram}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.ExponentialVariogram}}
@@ -514,6 +394,63 @@ A matrix containing the variogram values at each distance.
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 numpy.ndarray | xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{SphericalVariogram (class in glomar\_gridding.variogram)@\spxentry{SphericalVariogram}\spxextra{class in glomar\_gridding.variogram}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.SphericalVariogram}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.}}\sphinxbfcode{\sphinxupquote{SphericalVariogram}}}
+{\sphinxparam{\DUrole{n}{psill}}\sphinxparamcomma \sphinxparam{\DUrole{n}{nugget}}\sphinxparamcomma \sphinxparam{\DUrole{n}{effective\_range}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{range}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spherical Model
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} The variance of the variogram.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}})
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}})
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}})
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{fit() (glomar\_gridding.variogram.SphericalVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.SphericalVariogram method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{covariance:glomar_gridding.variogram.SphericalVariogram.fit}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{fit}}}
+{\sphinxparam{\DUrole{n}{distance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Fit the SphericalVariogram model to a distance matrix
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 
@@ -5036,6 +4973,9 @@ but it is less disruptive than EOF chop off (method 3).
 It is more difficult to use for covariance matrices with one large
 dominant mode because that raises the bar of accuracy of the
 eigenvalues, which requires clipping off a lot more eigenvectors.
+
+\sphinxAtStartPar
+Note, this will adjust all negative eigenvalues to be positive.
 \end{quote}
 
 \sphinxAtStartPar
@@ -5049,6 +4989,9 @@ using the average of them, preserving the original trace (aka total
 variance) of the covariance matrix, but this will require a full
 computation of all eigenvectors, which may be slow and cause memory
 problems
+
+\sphinxAtStartPar
+Note, this will adjust all negative eigenvalues to be positive.
 \end{quote}
 
 \sphinxAtStartPar
@@ -5065,6 +5008,9 @@ covariance matrix. The original method requires solving for ALL
 eigenvectors which may not be possible for massive matrices
 (40000x40000 square matrices). This is currently done for the MAT
 covariance matrices which have very large dominant modes.
+
+\sphinxAtStartPar
+Note, this may not adjust negative eigenvalues to be positive.
 \end{quote}
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
@@ -6601,7 +6547,7 @@ Rasmussen, C. E. and Williams, C. K. I.: Gaussian Processes for Machine Learning
 Rohde, R. A. and Hausfather, Z.: The Berkeley Earth Land/Ocean Temperature Record, Earth System Science Data, 12, 3469\textendash{}3479, \sphinxurl{https://doi.org/10.5194/essd-12-3469-2020}, 2020
 \bibitem[Thorne]{index:thorne}
 \sphinxAtStartPar
-Thorne 2005
+Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper\sphinxhyphen{}air temperature records, Bull. Am. Meteorol. Soc., 86, 1437\textendash{}1442, \sphinxurl{https://doi.org/10.1175/BAMS-86-10-1437}, 2005
 \end{sphinxthebibliography}
 
 

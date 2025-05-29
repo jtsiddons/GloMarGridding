@@ -53,13 +53,10 @@ Grid
 Variograms
 ==========
 
-.. autoclass:: glomar_gridding.variogram.LinearVariogram
-   :members:
-
-.. autoclass:: glomar_gridding.variogram.PowerVariogram
-   :members:
-
 .. autoclass:: glomar_gridding.variogram.ExponentialVariogram
+   :members:
+
+.. autoclass:: glomar_gridding.variogram.SphericalVariogram
    :members:
 
 .. autoclass:: glomar_gridding.variogram.GaussianVariogram
