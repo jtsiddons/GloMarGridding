@@ -6,6 +6,7 @@ import polars as pl
 import xarray as xr
 from itertools import product
 
+from glomar_gridding.io import load_array
 from glomar_gridding.grid import grid_from_resolution, cross_coords
 from glomar_gridding.climatology import (
     join_climatology_by_doy,
@@ -15,6 +16,8 @@ from glomar_gridding.mask import (
     mask_observations,
     mask_dataset,
     mask_array,
+    mask_from_obs_array,
+    mask_from_obs_frame,
 )
 
 
@@ -174,3 +177,67 @@ def test_clim():
     assert df.height == n_obs
     assert "sst_climatology" in df.columns
     assert "sst_anomaly" in df.columns
+
+
+def test_mask_from():
+    arr = load_array(
+        os.path.join(os.path.dirname(__file__), "data", "HadSST2_Jan_Clim.nc"),
+        "sst",
+    )
+    res = mask_from_obs_array(arr, 0)
+    assert res.shape == (360, 180)
+
+    test = arr[0, :, :].values
+    test = np.ma.masked_where(~res, test)
+
+    assert np.isnan(test.compressed()).all()
+
+    obs = pl.from_pandas(arr.to_dataframe().reset_index()).rename(
+        {"time": "datetime"}
+    )
+    obs2 = obs.drop_nulls("sst").sample(fraction=0.85)
+    grid = grid_from_resolution(
+        1, [(-89.5, 90), (-179.5, 180)], ["latitude", "longitude"]
+    )
+
+    mask1 = mask_from_obs_frame(
+        obs, ["latitude", "longitude"], "sst", "datetime"
+    )
+    assert mask1.height == 360 * 180
+    assert mask1.get_column("mask").any()
+    assert not mask1.get_column("mask").all()
+    assert mask1.get_column("mask").sum() == np.sum(np.isnan(test.compressed()))
+
+    mask1 = mask1.filter(pl.col("mask")).join(
+        obs,
+        left_on=["latitude", "longitude"],
+        right_on=["latitude", "longitude"],
+        how="left",
+    )
+
+    assert mask1.get_column("sst").is_null().all()
+
+    mask2 = mask_from_obs_frame(
+        obs2,
+        ["latitude", "longitude"],
+        "sst",
+        "datetime",
+        grid,
+        ["latitude", "longitude"],
+    )
+
+    assert mask2.height == 360 * 180
+    assert mask2.get_column("mask").any()
+    assert not mask2.get_column("mask").all()
+    assert mask2.get_column("mask").sum() == np.sum(np.isnan(test.compressed()))
+
+    mask2 = mask2.filter(pl.col("mask")).join(
+        obs,
+        left_on=["latitude", "longitude"],
+        right_on=["latitude", "longitude"],
+        how="left",
+    )
+
+    assert mask2.get_column("sst").is_null().all()
+
+    return None

@@ -297,7 +297,7 @@ def mask_from_obs_array(
 
     Returns
     -------
-    mask : numpy.ndarray
+    mask : numpy.ndarray | xarray.DataArray
         A boolean array with dimension reduced along the datetime dimension.
         A True value indicates that all values along the datetime dimension
         for this index are numpy.nan and are masked.
