@@ -19,10 +19,6 @@ DIST = grid_to_distance_matrix(
     GRID, lat_coord="latitude", lon_coord="longitude"
 ).values
 
-EFF_RANGE = 1200
-PSILL = 1.2
-NUGGET = 0
-
 
 @pytest.mark.parametrize(
     "variogram_model, parameters, variance",
