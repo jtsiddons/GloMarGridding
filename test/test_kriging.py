@@ -339,4 +339,11 @@ def test_stochastic_kriging_class_methods() -> None:  # noqa: D103
     assert np.allclose(k2, StochKrige.gridded_field)
     assert np.allclose(u2, u)
 
+    sk_weights = StochKrige.simple_kriging_weights
+    delattr(StochKrige, "simple_kriging_weights")
+    StochKrige.set_simple_kriging_weights(sk_weights)
+    a2 = StochKrige.constraint_mask(grid_idx)
+
+    assert np.allclose(a, a2)
+
     return None

@@ -1,13 +1,18 @@
 """Tests of the distances module"""
 
+from itertools import product
 import pytest
 from math import sqrt
 import numpy as np
 import polars as pl
+from scipy.spatial.distance import mahalanobis
 from glomar_gridding.distances import (
     euclidean_distance,
     calculate_distance_matrix,
     haversine_distance_from_frame,
+    mahal_dist_func,
+    sigma_rot_func,
+    tau_dist_from_frame,
 )
 
 
@@ -41,3 +46,78 @@ def test_haversine():
     dist2 = calculate_distance_matrix(df, radius=R)
 
     assert np.allclose(dist, dist2)
+
+
+def test_mahalanobis():
+    lats = 90 - 180 * np.random.rand(10)
+    lons = 180 - 360 * np.random.rand(10)
+
+    lat = 90 - 180 * np.random.rand()
+    lon = 180 - 360 * np.random.rand()
+
+    # NOTE: Cannot use displacements (as scipy function doesn't handle shifting
+    #       around -pi, pi)
+    lat = np.deg2rad(lat)
+    lon = np.deg2rad(lon)
+    lats = np.deg2rad(lats)
+    lons = np.deg2rad(lons)
+
+    Lx = 1200
+    Ly = 860
+    theta = 5 * np.pi / 12
+
+    sigma = sigma_rot_func(Lx, Ly, theta)
+    assert sigma.size == 4
+    si = np.linalg.inv(sigma)
+
+    dy = lats - lat
+    dx = lons - lon
+
+    dists = mahal_dist_func(dx, dy, Lx, Ly, theta)
+    for y, x, d in zip(lats, lons, dists):
+        expected = mahalanobis(np.array([x, y]), np.array([lon, lat]), si)
+
+        assert np.allclose(expected, d)
+
+    N = 100
+    lon_shifts = pl.Series("lon_shift", 0.5 - np.random.rand(N))
+    lat_shifts = pl.Series("lat_shift", 0.5 - np.random.rand(N))
+    olons = pl.int_range(-10, 11, step=5, eager=True)
+    olats = pl.int_range(-10, 11, step=5, eager=True)
+
+    lons = olons.sample(N, with_replacement=True).alias("grid_lon")
+    lats = olats.sample(N, with_replacement=True).alias("grid_lat")
+
+    n = olats.len()
+    Lx_ = 2100 * np.random.rand(n**2)
+    Ly_ = 1800 * np.random.rand(n**2)
+    Lx = Lx_
+    Ly = Ly_
+    Lx[Ly_ > Lx_] = Ly_[Ly_ > Lx_]
+    Ly[Ly_ > Lx_] = Lx_[Ly_ > Lx_]
+    theta = np.pi - 2 * np.pi * np.random.rand(n**2)
+
+    lat_grid, lon_grid = np.asarray(list(product(olats, olons))).T
+
+    df2 = pl.DataFrame(
+        {
+            "grid_lat": lat_grid,
+            "grid_lon": lon_grid,
+            "grid_lx": Lx,
+            "grid_ly": Ly,
+            "grid_theta": theta,
+        }
+    )
+
+    df = pl.DataFrame([lons, lats, lon_shifts, lat_shifts])
+    df = df.with_columns(
+        [
+            (pl.col("grid_lon") + pl.col("lon_shift")).alias("lon"),
+            (pl.col("grid_lat") + pl.col("lat_shift")).alias("lat"),
+        ]
+    )
+    df = df.join(df2, on=["grid_lat", "grid_lon"], how="left")
+
+    tau = tau_dist_from_frame(df)
+
+    assert tau.shape == (N, N)

@@ -1,16 +1,22 @@
 import pytest  # noqa: F401
 import numpy as np
 import polars as pl
-from datetime import date
+from datetime import date, datetime
 
 from glomar_gridding.io import get_recurse
 from glomar_gridding.grid import grid_from_resolution
 from glomar_gridding.utils import (
+    ColumnNotFoundError,
+    check_cols,
+    cor_2_cov,
+    cov_2_cor,
+    get_month_midpoint,
     select_bounds,
     filter_bounds,
     get_pentad_range,
     days_since_by_month,
     batched,
+    uncompress_masked,
 )
 
 
@@ -116,3 +122,54 @@ def test_days(name, year, day):
     calc_diff = days_since_by_month(year, day)
 
     assert all(d == c for d, c in zip(diffs, calc_diff))
+
+
+def test_uncompress():
+    arr = np.random.rand(100, 100)
+    arr = np.ma.masked_greater(arr, 0.45)
+    mask = arr.mask
+
+    arr_comp = arr.compressed()
+
+    arr_recons = uncompress_masked(arr_comp, mask, fill_value=2.0)
+    assert arr_recons.shape == arr.shape
+
+    arr_masked = uncompress_masked(arr_comp, mask, apply_mask=True)
+
+    assert isinstance(arr_masked, np.ma.masked_array)
+
+
+def test_cov_cor():
+    A = np.random.rand(10, 10)
+    S = np.dot(A, A.T)
+
+    data = np.random.multivariate_normal(np.zeros(10), S, size=150)
+
+    cov = np.cov(data.T)
+    vars = np.diag(cov)
+    cor = np.corrcoef(data.T)
+    assert cov.shape == (10, 10)
+    assert cor.shape == (10, 10)
+
+    assert np.allclose(cov, cor_2_cov(cor, vars))
+    assert np.allclose(cor, cov_2_cor(cov))
+
+
+def test_month_midpoint():
+    dates = pl.datetime_range(
+        datetime(2009, 1, 1, 0),
+        datetime(2010, 1, 1, 0),
+        interval="1mo",
+        closed="left",
+        eager=True,
+    )
+
+    midpoints = get_month_midpoint(dates)
+    assert datetime(2009, 1, 16, 12, 0) == midpoints[0]
+
+
+def test_cols():
+    df = pl.DataFrame(schema={"A": pl.String})
+
+    with pytest.raises(ColumnNotFoundError):
+        check_cols(df, ["B"])

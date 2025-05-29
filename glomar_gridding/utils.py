@@ -590,8 +590,8 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
         raise TypeError("Input is not a datetime series")
 
     month_len = (
-        dates.dt.month_end().dt.date()
-        - dates.dt.month_start().dt.date().dt.offset_by("1d")
+        dates.dt.month_end().dt.date().dt.offset_by("1d")
+        - dates.dt.month_start().dt.date()
     )
     dates = dates.dt.month_start() + (month_len.cast(pl.Int64) / 2).cast(
         pl.Duration("ms")
