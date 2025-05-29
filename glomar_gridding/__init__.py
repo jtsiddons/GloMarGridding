@@ -15,17 +15,15 @@ from .kriging import kriging
 from .variogram import (
     ExponentialVariogram,
     GaussianVariogram,
-    LinearVariogram,
     MaternVariogram,
-    PowerVariogram,
+    SphericalVariogram,
 )
 
 __all__ = [
     "ExponentialVariogram",
     "GaussianVariogram",
-    "LinearVariogram",
     "MaternVariogram",
-    "PowerVariogram",
+    "SphericalVariogram",
     "correlated_components",
     "dist_weight",
     "get_weights",
