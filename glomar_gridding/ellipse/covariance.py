@@ -633,6 +633,6 @@ def _mo_disp_multi(
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx[dx > np.pi] -= TWO_PI
-    dx[dx < np.pi] += TWO_PI
+    dx[dx < -np.pi] += TWO_PI
 
     return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx
