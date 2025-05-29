@@ -76,7 +76,7 @@ def haversine_gaussian(
     check_cols(df, ["lat", "lon"])
     pos = np.radians(df.select(["lat", "lon"]).to_numpy())
     C = haversine_distances(pos) * R
-    C = np.exp(-(np.pow(C, 2)) / np.pow(r, 2))
+    C = np.exp(-(np.power(C, 2)) / np.pow(r, 2))
     return s / 2 * C
 
 

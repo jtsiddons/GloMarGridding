@@ -331,7 +331,7 @@ class EllipseCovarianceBuilder:
             )
 
             inner = self.sqrt_v_term * tau
-            c_ij *= np.pow(inner, self.v)
+            c_ij *= np.power(inner, self.v)
             c_ij *= modified_bessel_2nd(self.v, inner)
             # if res > stdev_prod:
             #     raise ValueError(
@@ -507,8 +507,8 @@ def _sigma_rot_func_multi(
     c2 = np.power(ct, 2)
     s2 = np.power(st, 2)
     cs = np.multiply(ct, st)
-    Lx2 = np.pow(Lx, 2)
-    Ly2 = np.pow(Ly, 2)
+    Lx2 = np.power(Lx, 2)
+    Ly2 = np.power(Ly, 2)
     del ct, st
     return np.column_stack(
         [

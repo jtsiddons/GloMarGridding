@@ -621,7 +621,7 @@ def cov_ij_anisotropic(
     # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
     # second_term = 1.0
     inner = 2.0 * tau * np.sqrt(v)
-    third_term = np.pow(inner, v)
+    third_term = np.power(inner, v)
     forth_term = modified_bessel_2nd(v, inner)
     return first_term * third_term * forth_term
 
