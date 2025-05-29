@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
 
-
 from glomar_gridding.grid import grid_from_resolution, grid_to_distance_matrix
 from glomar_gridding.variogram import (
     MaternVariogram,
     GaussianVariogram,
     ExponentialVariogram,
+    SphericalVariogram,
     variogram_to_covariance,
 )
 
@@ -18,6 +18,10 @@ GRID = grid_from_resolution(
 DIST = grid_to_distance_matrix(
     GRID, lat_coord="latitude", lon_coord="longitude"
 ).values
+
+EFF_RANGE = 1200
+PSILL = 1.2
+NUGGET = 0
 
 
 @pytest.mark.parametrize(
@@ -35,6 +39,11 @@ DIST = grid_to_distance_matrix(
         ),
         (
             ExponentialVariogram,
+            {"psill": 1.2, "nugget": 0, "range": 1200},
+            1.2,
+        ),
+        (
+            SphericalVariogram,
             {"psill": 1.2, "nugget": 0, "range": 1200},
             1.2,
         ),
@@ -114,3 +123,4 @@ def test_variogram(variogram_model, parameters, variance):
 
     evals = np.linalg.eigvalsh(covariance)
     assert (evals > 0).all()
+    return None
