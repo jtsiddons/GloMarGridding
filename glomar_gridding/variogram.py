@@ -25,55 +25,6 @@ class Variogram(ABC):
 
 
 @dataclass()
-class LinearVariogram(Variogram):
-    """
-    Linear model
-
-    Parameters
-    ----------
-    slope : float | np.ndarray
-    nugget : float | np.ndarray
-    """
-
-    slope: float | np.ndarray
-    nugget: float | np.ndarray
-
-    def fit(
-        self, distance_matrix: np.ndarray | xr.DataArray
-    ) -> np.ndarray | xr.DataArray:
-        """Fit the LinearVariogram model to a distance matrix"""
-        out = self.slope * distance_matrix + self.nugget
-        if isinstance(out, xr.DataArray):
-            out.name = "variogram"
-        return out
-
-
-@dataclass()
-class PowerVariogram(Variogram):
-    """
-    Power model
-
-    Parameters
-    ----------
-    scale : float | np.ndarray
-    exponent : float | np.ndarray
-    nugget : float | np.ndarray
-    """
-
-    scale: float | np.ndarray
-    exponent: float | np.ndarray
-    nugget: float | np.ndarray
-
-    def fit(
-        self, distance_matrix: np.ndarray | xr.DataArray
-    ) -> np.ndarray | xr.DataArray:
-        """Fit the PowerVariogram model to a distance matrix"""
-        return (
-            self.scale * np.power(distance_matrix, self.exponent) + self.nugget
-        )
-
-
-@dataclass()
 class GaussianVariogram(Variogram):
     """
     Gaussian Model
