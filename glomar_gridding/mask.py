@@ -276,9 +276,9 @@ def mask_from_obs_frame(
 
 
 def mask_from_obs_array(
-    obs: np.ndarray,
+    obs: np.ndarray | xr.DataArray,
     datetime_idx: int,
-) -> np.ndarray:
+) -> np.ndarray | xr.DataArray:
     """
     Infer a mask from an input array. Mask values are those where all values
     are NaN along the time dimension.
