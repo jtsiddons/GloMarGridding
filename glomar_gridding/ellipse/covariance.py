@@ -285,10 +285,6 @@ class EllipseCovarianceBuilder:
         1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
         2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
         """
-        # Precompute to radians for convenience
-        lats = np.deg2rad(self.lat_grid_compressed)
-        lons = np.deg2rad(self.lon_grid_compressed)
-
         # Initialise empty matrix
         N = len(self.Lx_compressed)
         self.cov_ns = np.zeros((N, N), dtype=self.precision)
@@ -296,7 +292,12 @@ class EllipseCovarianceBuilder:
         for i, j in combinations(range(N), 2):
             # Leave as zero if too far away
             if (
-                _haversine_single(lats[i], lons[i], lats[j], lons[j])
+                _haversine_single(
+                    self.lat_grid_compressed_rad[i],
+                    self.lon_grid_compressed_rad[i],
+                    self.lat_grid_compressed_rad[j],
+                    self.lon_grid_compressed_rad[j],
+                )
                 > self.max_dist
             ):
                 continue
@@ -316,7 +317,12 @@ class EllipseCovarianceBuilder:
             )
 
             # Get displacements
-            delta_y, delta_x = self.disp_fn(lats[i], lons[i], lats[j], lons[j])
+            delta_y, delta_x = self.disp_fn(
+                self.lat_grid_compressed_rad[i],
+                self.lon_grid_compressed_rad[i],
+                self.lat_grid_compressed_rad[j],
+                self.lon_grid_compressed_rad[j],
+            )
 
             tau = np.sqrt(
                 (
