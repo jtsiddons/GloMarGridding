@@ -195,15 +195,24 @@ def mask_from_obs_frame(
     coords: str | list[str],
     value_col: str,
     datetime_col: str | None = None,
+    grid: xr.DataArray | None = None,
+    grid_coords: str | list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Compute a mask from observations.
+    Compute a mask from observations and an optional output grid..
 
     Positions defined by the "coords" values that do not have any observations,
     at any datetime value in the "datetime_col", for the "value_col" field are
     masked.
 
     An example use-case would be to identify land positions from sst records.
+
+    If a grid is supplied, the observations are mapped to the grid and any
+    positions from the grid that do not contain observations.
+
+    If no grid is supplied, then it is assumed that the observation frame
+    represents the full grid, and any positions without observations are
+    included with null values in the value_col.
 
     Parameters
     ----------
@@ -219,6 +228,12 @@ def mask_from_obs_frame(
     datetime_col : str | None
         Name of the datetime column. Any positions that contain no records at
         any datetime value are masked.
+    grid : xarray.DataArray | None
+        Optional grid, used to map observations so that empty positions can be
+        identified. If not supplied, it is assumed that the observations frame
+        contains the full grid, and includes nulls in empty positions.
+    grid_coords : str | list[str] | None
+        Optional grid coordinate names. Must be set if grid is set.
 
     Returns
     -------
@@ -227,6 +242,23 @@ def mask_from_obs_frame(
     """
     if isinstance(coords, str):
         coords = [coords]
+    if isinstance(grid_coords, str):
+        grid_coords = [grid_coords]
+
+    if grid is not None:
+        if grid_coords is None:
+            raise ValueError("grid_coords must be set if grid is set.")
+        # Map and Join the Grid such that we have nulls where we don't have
+        # observations
+        obs = map_to_grid(obs, grid, obs_coords=coords, grid_coords=grid_coords)
+        grid_box_coords = [f"grid_{c}" for c in coords]
+        grid_df = pl.from_pandas(
+            grid.to_dataframe(name="grid").reset_index()
+        ).select(grid_coords)
+
+        obs = grid_df.join(
+            obs, left_on=grid_coords, right_on=grid_box_coords, how="left"
+        )
 
     datetime_col = datetime_col or "datetime"
     if datetime_col not in obs.columns:
