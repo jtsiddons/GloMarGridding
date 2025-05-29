@@ -17,11 +17,13 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 ### Breaking changes
 
 * `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
+* Removed `variogram.LinearVariagram` and `variogram.PowerVariogram` (!69)
 * `perturbation` module is renamed to `stochastic` (!65)
 * All job-specific files are removed from the library (!56)
 
 ### New features and enhancements
 
+* Added `variogram.SphericalVariogram` (!69)
 * `ellipse`, `ellipse_builder`, and `ellipse_covariance` are renamed to `ellipse.model`,
   `ellipse.estimate`, and `ellipse.covariance` respectively. Ellipse classes `EllipseModel`,
   `EllipseBuilder`, and `EllipseCovarianceBuilder` are available at the `ellipse` level (!66)
