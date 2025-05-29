@@ -69,7 +69,6 @@ class SphericalVariogram(Variogram):
                 3 * distance_matrix / self.range
                 - np.power(distance_matrix / self.range, 3)
             )
-            / self.range
             + self.nugget
         )
         out[distance_matrix >= self.range] = self.nugget + self.psill
