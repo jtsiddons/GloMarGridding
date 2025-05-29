@@ -25,6 +25,58 @@ class Variogram(ABC):
 
 
 @dataclass()
+class SphericalVariogram(Variogram):
+    """
+    Spherical Model
+
+    Parameters
+    ----------
+    psill : float | np.ndarray
+        The variance of the variogram.
+    nugget : float | np.ndarray
+    effective_range : float | np.ndarray | None
+    range : float | np.ndarray | None
+    """
+
+    psill: float | np.ndarray
+    nugget: float | np.ndarray
+    effective_range: float | np.ndarray | None = None
+    range: float | np.ndarray | None = None
+
+    def __post_init__(self):
+        if self.range is None and self.effective_range is None:
+            raise ValueError(
+                "One of range and effective_range must be specified"
+            )
+        # NOTE: range == effective_range for spherical variogram model
+        if self.range is None and self.effective_range is not None:
+            self.range = self.effective_range
+        return None
+
+    def fit(
+        self, distance_matrix: np.ndarray | xr.DataArray
+    ) -> np.ndarray | xr.DataArray:
+        """Fit the SphericalVariogram model to a distance matrix"""
+        if self.range is None:
+            raise ValueError(
+                "range parameter must not be None, "
+                + "it wasn't set by the __post_init__ method."
+            )
+        out = (
+            0.5
+            * self.psill
+            * (
+                3 * distance_matrix / self.range
+                - np.power(distance_matrix / self.range, 3)
+            )
+            / self.range
+            + self.nugget
+        )
+        out[distance_matrix >= self.range] = self.nugget + self.psill
+        return out
+
+
+@dataclass()
 class GaussianVariogram(Variogram):
     """
     Gaussian Model
