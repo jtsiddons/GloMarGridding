@@ -17,6 +17,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Breaking changes
 
+* `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
 * Removed `variogram.LinearVariagram` and `variogram.PowerVariogram` (!69)
 * `perturbation` module is renamed to `stochastic` (!65)
 * All job-specific files are removed from the library (!56)
@@ -43,6 +44,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Internal changes
 
+* Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
 * Added a GitLab runner pipeline (!64)
 

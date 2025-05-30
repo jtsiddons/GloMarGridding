@@ -64,6 +64,8 @@ class SphericalVariogram(Variogram):
         # NOTE: range == effective_range for spherical variogram model
         if self.range is None and self.effective_range is not None:
             self.range = self.effective_range
+        if self.range is not None and self.effective_range is None:
+            self.effective_range = self.range
         return None
 
     def fit(
@@ -82,7 +84,6 @@ class SphericalVariogram(Variogram):
                 3 * distance_matrix / self.range
                 - np.power(distance_matrix / self.range, 3)
             )
-            / self.range
             + self.nugget
         )
         out[distance_matrix >= self.range] = self.nugget + self.psill
@@ -114,7 +115,9 @@ class GaussianVariogram(Variogram):
                 "One of range and effective_range must be specified"
             )
         if self.range is None and self.effective_range is not None:
-            self.range = self.effective_range / 3
+            self.range = self.effective_range / 2
+        if self.range is not None and self.effective_range is None:
+            self.effective_range = self.range * 2
         return None
 
     def fit(
@@ -183,6 +186,8 @@ class ExponentialVariogram(Variogram):
             )
         if self.range is None and self.effective_range is not None:
             self.range = self.effective_range / 3
+        if self.range is not None and self.effective_range is None:
+            self.effective_range = self.range * 3
         return None
 
     def fit(

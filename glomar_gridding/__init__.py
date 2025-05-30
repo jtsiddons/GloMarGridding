@@ -11,7 +11,6 @@ from .error_covariance import (
     uncorrelated_components,
     correlated_components,
 )
-from .kriging import kriging
 from .variogram import (
     ExponentialVariogram,
     GaussianVariogram,
@@ -27,7 +26,6 @@ __all__ = [
     "correlated_components",
     "dist_weight",
     "get_weights",
-    "kriging",
     "map_to_grid",
     "uncorrelated_components",
 ]

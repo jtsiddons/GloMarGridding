@@ -288,10 +288,6 @@ class EllipseCovarianceBuilder:
         1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
         2. Karspeck et al. 2012 [Karspeck] Equation 17
         """
-        # Precompute to radians for convenience
-        lats = np.deg2rad(self.lat_grid_compressed)
-        lons = np.deg2rad(self.lon_grid_compressed)
-
         # Initialise empty matrix
         N = len(self.Lx_compressed)
         self.cov_ns = np.zeros((N, N), dtype=self.precision)
@@ -299,7 +295,12 @@ class EllipseCovarianceBuilder:
         for i, j in combinations(range(N), 2):
             # Leave as zero if too far away
             if (
-                _haversine_single(lats[i], lons[i], lats[j], lons[j])
+                _haversine_single(
+                    self.lat_grid_compressed_rad[i],
+                    self.lon_grid_compressed_rad[i],
+                    self.lat_grid_compressed_rad[j],
+                    self.lon_grid_compressed_rad[j],
+                )
                 > self.max_dist
             ):
                 continue
@@ -319,7 +320,12 @@ class EllipseCovarianceBuilder:
             )
 
             # Get displacements
-            delta_y, delta_x = self.disp_fn(lats[i], lons[i], lats[j], lons[j])
+            delta_y, delta_x = self.disp_fn(
+                self.lat_grid_compressed_rad[i],
+                self.lon_grid_compressed_rad[i],
+                self.lat_grid_compressed_rad[j],
+                self.lon_grid_compressed_rad[j],
+            )
 
             tau = np.sqrt(
                 (
@@ -502,6 +508,7 @@ def _sigma_rot_func_multi(
     Ly: np.ndarray,
     theta: np.ndarray,
 ) -> np.ndarray:
+    """Flattened Sigma matrices for a list of Lx, Ly, theta triplets."""
     ct = np.cos(theta)
     st = np.sin(theta)
     c2 = np.power(ct, 2)
@@ -521,14 +528,16 @@ def _sigma_rot_func_multi(
 
 
 def _det_22_single(
-    mats: np.ndarray,
+    mat: np.ndarray,
 ) -> np.ndarray:
-    return mats[0] * mats[3] - mats[1] * mats[2]
+    """Determinant of a flattened 2 x 2 matrix"""
+    return mat[0] * mat[3] - mat[1] * mat[2]
 
 
 def _det_22_multi(
     mats: np.ndarray,
 ) -> np.ndarray:
+    """Determinants of an array of flattened 2 x 2 matrices"""
     return mats[:, 0] * mats[:, 3] - mats[:, 1] * mats[:, 2]
 
 
@@ -538,6 +547,7 @@ def _haversine_single(
     lat1: float,
     lon1: float,
 ) -> float:
+    """Haversine distance between a pair of points"""
     dlon = lon0 - lon1
     dlat = lat0 - lat1
 
@@ -559,6 +569,7 @@ def _haversine_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> np.ndarray:
+    """Haversine distance for a list of pairs of points"""
     dlon = lon0 - lon1
     dlat = lat0 - lat1
 
@@ -577,6 +588,7 @@ def _mod_mo_disp_single(
     lat1: float,
     lon1: float,
 ) -> tuple[float, float]:
+    """Modified Met Office displacements between two points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx = dx - TWO_PI if dx > np.pi else dx
@@ -594,6 +606,7 @@ def _mo_disp_single(
     lat1: float,
     lon1: float,
 ) -> tuple[float, float]:
+    """Met Office displacements between two points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx = dx - TWO_PI if dx > np.pi else dx
@@ -608,6 +621,7 @@ def _mod_mo_disp_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Modified Met Office displacements between a list of pairs of points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx[dx > np.pi] -= TWO_PI
@@ -625,9 +639,10 @@ def _mo_disp_multi(
     lat1: np.ndarray,
     lon1: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
+    """Met Office displacements between a list of pairs of points"""
     dy = lat0 - lat1
     dx = lon0 - lon1
     dx[dx > np.pi] -= TWO_PI
-    dx[dx < np.pi] += TWO_PI
+    dx[dx < -np.pi] += TWO_PI
 
     return RADIUS_OF_EARTH_KM * dy, RADIUS_OF_EARTH_KM * dx

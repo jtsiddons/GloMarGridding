@@ -8,7 +8,7 @@ from glomar_gridding.io import load_dataset
 
 def join_climatology_by_doy(
     obs_df: pl.DataFrame,
-    climatology_365: xr.DataArray,
+    climatology_365: xr.Dataset,
     lat_col: str = "lat",
     lon_col: str = "lon",
     date_col: str = "date",
@@ -77,7 +77,10 @@ def join_climatology_by_doy(
         climatology = climatology.with_columns(
             (pl.col(clim_var) - 273.15).name.keep()
         )
-    climatology = climatology.select([clim_lat, clim_lon, clim_doy, clim_var])
+    print(climatology)
+    climatology = climatology.select(
+        [clim_lat, clim_lon, clim_doy, pl.col(clim_var).alias(clim_var_name)]
+    )
 
     obs_lat = obs_df.get_column(lat_col)
     _, lat_vals = find_nearest(climatology_365.coords[clim_lat], obs_lat)
@@ -97,6 +100,10 @@ def join_climatology_by_doy(
     non_leap_df = (
         obs_df.filter(~mask)
         .with_columns(
+            pl.col(date_col).dt.month().alias("mo"),
+            pl.col(date_col).dt.day().alias("dy"),
+        )
+        .with_columns(
             pl.datetime(pl.lit(2009), pl.col("mo"), pl.col("dy"))
             .dt.ordinal_day()
             .alias("doy")
@@ -108,14 +115,14 @@ def join_climatology_by_doy(
             how="left",
             coalesce=True,
         )
-        .drop(["clim_lat", "clim_lon", "doy"])
+        .drop(["clim_lat", "clim_lon", "doy", "mo", "dy"])
     )
 
     # Take average of 28th Feb and 1st March for 29th Feb
     leap_clim = (
         climatology.filter(pl.col(clim_doy).is_between(59, 60, closed="both"))
         .group_by([clim_lat, clim_lon])
-        .agg(pl.col(clim_var).mean())
+        .agg(pl.col(clim_var_name).mean())
     )
 
     leap_df = (
@@ -137,7 +144,7 @@ def join_climatology_by_doy(
         (pl.col(var_col) - pl.col(clim_var_name)).alias(anom_var_name)
     )
 
-    return obs_df.drop_nulls()
+    return obs_df
 
 
 def read_climatology(
