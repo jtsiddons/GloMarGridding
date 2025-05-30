@@ -44,3 +44,8 @@ Or as a dependency:
 ```bash
 pip install git+git@git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git
 ```
+
+## Acknowledgements
+
+Supported by the Natural Environmental Research Council through National Capability funding
+(AtlantiS: NE/Y005589/1)

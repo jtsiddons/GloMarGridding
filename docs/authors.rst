@@ -21,3 +21,5 @@ Acknowledgements
 ----------------
 
 * Thanks to Simon Williams for providing the original Matlab code that GloMarGridding is based upon.
+* Supported by the Natural Environmental Research Council through National Capability funding
+  (AtlantiS: NE/Y005589/1)
