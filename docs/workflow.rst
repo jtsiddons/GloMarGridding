@@ -32,8 +32,8 @@ consistent coordinates.
        coord_names=["latitude", "longitude"],
    )
 
-Load And Align Observations
-===========================
+Align Observations
+==================
 
 The input observations may not be located at grid-box locations, i.e. they may be located somewhere
 between grid-box centres. :py:func:`glomar_gridding.grid.map_to_grid` can be used to map each point
