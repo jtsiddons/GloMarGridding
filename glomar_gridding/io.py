@@ -94,11 +94,15 @@ def get_recurse(config: dict, *keys, default: Any = None) -> Any:
 
     Equivalent to:
 
-    > config[keys[0]][keys[1]]...[keys[n]]
+    .. code-block:: python
+
+        config[keys[0]][keys[1]]...[keys[n]]
 
     Or:
 
-    > config.get(keys[0]).get(keys[1])...get(keys[n])
+    .. code-block:: python
+
+        config.get(keys[0]).get(keys[1])...get(keys[n])
 
     Parameters
     ----------

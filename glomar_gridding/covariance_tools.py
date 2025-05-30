@@ -139,14 +139,15 @@ def perturb_cov_to_positive_definite(
 
     See Also
     --------
-    Use simple_clipping instead.
+    glomar_gridding.covariance_tool.simple_clipping
 
     Notes
     -----
     Other methods:
-        https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
-        https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
-        https://academic.oup.com/imajna/article/22/3/329/708688
+
+        - https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
+        - https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+        - https://academic.oup.com/imajna/article/22/3/329/708688
     """
     warn(
         "This function is deprecated in favour of "

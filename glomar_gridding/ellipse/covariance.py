@@ -285,8 +285,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
-        2. Karspeck et al. 2012 [Karspeck] Equation 17
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         # Initialise empty matrix
         N = len(self.Lx_compressed)
@@ -364,8 +364,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
-        2. Karspeck et al. 2012 [Karspeck] Equation 17
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         if self.batch_size is None:
             raise ValueError("batch_size must be set if using 'batched' method")
@@ -429,8 +429,8 @@ class EllipseCovarianceBuilder:
 
         References
         ----------
-        1. Paciorek and Schevrish 2006 [PaciorekSchervish] Equation 8
-        2. Karspeck et al. 2012 [Karspeck] Equation 17
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         dy, dx = self.disp_fn(
             self.lat_grid_compressed_rad[i_s],

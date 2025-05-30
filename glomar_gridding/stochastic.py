@@ -228,7 +228,7 @@ class StochasticKriging(Kriging):
         determine if a grid point should be masked/weights modified by how far
         it is to its near observed point
 
-        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
@@ -272,8 +272,8 @@ class StochasticKriging(Kriging):
             Constraint mask values, the left-hand-side of equation A14 from
             [Morice_2021]_. This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
+        References
+        ----------
         [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "simple_kriging_weights"):
@@ -360,6 +360,11 @@ class StochasticKriging(Kriging):
         numpy.ndarray
             The solution to the stochastic Kriging problem (as a Vector, this
             may need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> SK = StochasticKriging(interp_covariance)
+        >>> SK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
@@ -438,6 +443,17 @@ def scipy_mv_normal_draw(  # noqa: C901
         positive-definite then a new covariance will be determined by adjusting
         the eigen decomposition such that the modified covariance should be
         positive-definite.
+
+    Examples
+    --------
+    >>> A = np.random.rand(5, 5)
+    >>> cov = np.dot(A, A.T)
+    >>> scipy_mv_normal_draw(np.zeros(5), cov, ndraws=5)
+    array([[-0.35972806, -0.51289612,  0.85307028, -0.11580307,  0.6677707 ],
+           [-1.38214628, -1.29331638, -0.4879436 , -1.42310831, -0.19369562],
+           [-1.04502143, -1.97686163, -2.058605  , -1.97202206, -2.90116796],
+           [-1.97981119, -2.72330373,  0.0088662 , -2.53521893, -0.03670664],
+           [ 0.49948228,  0.54695988,  0.33864294,  0.53730282,  0.14743019]])
     """
 
     def any_complex(arr: np.ndarray) -> bool:

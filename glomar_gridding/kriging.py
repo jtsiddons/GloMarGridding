@@ -417,6 +417,11 @@ class SimpleKriging(Kriging):
         numpy.ndarray
             The solution to the simple Kriging problem (as a Vector, this may
             need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> SK = SimpleKriging(interp_covariance)
+        >>> SK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
@@ -714,6 +719,11 @@ class OrdinaryKriging(Kriging):
         numpy.ndarray
             The solution to the ordinary Kriging problem (as a Vector, this may
             need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> OK = OrdinaryKriging(interp_covariance)
+        >>> OK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)

@@ -304,7 +304,7 @@ def mask_from_obs_array(
     """
     A = np.isnan(obs)
     mask = A.all(axis=datetime_idx)
-    return mask
+    return mask  # type: ignore (array / numpy bool)
 
 
 def get_mask_idx(
@@ -330,8 +330,24 @@ def get_mask_idx(
     Returns
     -------
     An array of integers indicating the indices which are masked.
+
+    Examples
+    --------
+    >>> data = np.random.rand(4, 4)
+    >>> data[data > 0.65] = np.nan
+    >>> mask = xr.DataArray(data)
+    >>> get_mask_idx(mask)
+    array([[1],
+           [3],
+           [4],
+           [5],
+           [8]])
     """
-    if masked:
-        return np.argwhere((mask.values).flatten(order="C") == mask_val)
+    if mask_val is np.nan:
+        condition = np.isnan(mask.values)
     else:
-        return np.argwhere((mask.values).flatten(order="C") != mask_val)
+        condition = mask.values == mask_val
+    if masked:
+        return np.argwhere((condition).flatten(order="C"))
+    else:
+        return np.argwhere((~condition).flatten(order="C"))

@@ -45,10 +45,17 @@ class SphericalVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
-        The variance of the variogram.
+        Sill of the variogram where it will flatten out. Values in the variogram
+        will not exceed psill + nugget. This value is the variance.
     nugget : float | np.ndarray
+        The value of the independent variable at distance 0
     effective_range : float | np.ndarray | None
-    range : float | np.ndarray | None
+        Effective Range, this is the distance where 95% of the sill are
+        exceeded. This is not the range parameter, which is equal to the
+        effective range in the SphericalVariogram case.
+    range : float | ndarray | None
+        The range parameter. One of range and effective_range must be set. If
+        range is not set, it will be computed from effective_range.
     """
 
     psill: float | np.ndarray
@@ -71,7 +78,24 @@ class SphericalVariogram(Variogram):
     def fit(
         self, distance_matrix: np.ndarray | xr.DataArray
     ) -> np.ndarray | xr.DataArray:
-        """Fit the SphericalVariogram model to a distance matrix"""
+        """
+        Fit the SphericalVariogram model to a distance matrix
+
+        Parameters
+        ----------
+        distance_matrix : numpy.ndarray | xarray.DataArray
+            The distance matrix indicating the distance between each pair of
+            points in the grid.
+
+        Returns
+        -------
+        numpy.ndarray | xarray.DataArray
+            A matrix containing the variogram values at each distance.
+
+        Examples
+        --------
+        >>> SphericalVariogram(range=1200, psill=1.2, nugget=0.0).fit(dist)
+        """
         if self.range is None:
             raise ValueError(
                 "range parameter must not be None, "
@@ -98,10 +122,16 @@ class GaussianVariogram(Variogram):
     Parameters
     ----------
     psill : float | np.ndarray
-        The variance of the variogram.
+        Sill of the variogram where it will flatten out. Values in the variogram
+        will not exceed psill + nugget. This value is the variance.
     nugget : float | np.ndarray
+        The value of the independent variable at distance 0
     effective_range : float | np.ndarray | None
-    range : float | np.ndarray | None
+        Effective Range, this is the distance where 95% of the sill are
+        exceeded. This is not the range parameter, which is defined as r/2.
+    range : float | ndarray | None
+        The range parameter. One of range and effective_range must be set. If
+        range is not set, it will be computed from effective_range.
     """
 
     psill: float | np.ndarray
@@ -136,6 +166,10 @@ class GaussianVariogram(Variogram):
         -------
         numpy.ndarray | xarray.DataArray
             A matrix containing the variogram values at each distance.
+
+        Examples
+        --------
+        >>> GaussianVariogram(range=1200, psill=1.2, nugget=0.0).fit(dist)
         """
         if self.range is None:
             raise ValueError(
@@ -167,11 +201,17 @@ class ExponentialVariogram(Variogram):
 
     Parameters
     ----------
-    psill : float | numpy.ndarray
-        The variance of the variogram.
-    nugget : float | numpy.ndarray
-    effective_range : float | numpy.ndarray | None
-    range : float | numpy.ndarray | None
+    psill : float | np.ndarray
+        Sill of the variogram where it will flatten out. Values in the variogram
+        will not exceed psill + nugget. This value is the variance.
+    nugget : float | np.ndarray
+        The value of the independent variable at distance 0
+    effective_range : float | np.ndarray | None
+        Effective Range, this is the distance where 95% of the sill are
+        exceeded. This is not the range parameter, which is defined as r/3.
+    range : float | ndarray | None
+        The range parameter. One of range and effective_range must be set. If
+        range is not set, it will be computed from effective_range.
     """
 
     psill: float | np.ndarray
@@ -206,6 +246,10 @@ class ExponentialVariogram(Variogram):
         -------
         numpy.ndarray | xarray.DataArray
             A matrix containing the variogram values at each distance.
+
+        Examples
+        --------
+        >>> ExponentialVariogram(range=1200, psill=1.2, nugget=0.0).fit(dist)
         """
         if self.range is None:
             raise ValueError(
@@ -374,6 +418,12 @@ class MaternVariogram(Variogram):
         -------
         numpy.ndarray | xarray.DataArray
             A matrix containing the variogram values at each distance.
+
+        Examples
+        --------
+        >>> MaternVariogram(
+                range=1200, psill=1.2, nugget=0.0, nu=1.5, method="karspeck"
+            ).fit(dist)
         """
         if self.range is None:
             raise ValueError(
