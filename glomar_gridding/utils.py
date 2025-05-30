@@ -1,7 +1,6 @@
 """Utility functions for GloMarGridding"""
 
 from calendar import isleap
-from collections import OrderedDict
 from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
@@ -79,20 +78,6 @@ def add_empty_layers(
         for timestamp in timestamps:
             variable[timestamp, :, :] = empty
     return None
-
-
-class ConfigParserMultiValues(OrderedDict):
-    """Internal Helper Class"""
-
-    def __setitem__(self, key, value):
-        if key in self and isinstance(value, list):
-            self[key].extend(value)
-        else:
-            super().__setitem__(key, value)
-
-    @staticmethod
-    def getlist(value):  # noqa: D102
-        return value.splitlines()
 
 
 def _daterange_by_day(year: int, day: int) -> pl.Series:
@@ -291,7 +276,6 @@ def filter_bounds(
     return df.filter(condition)
 
 
-# TODO: get pentad convention
 def get_pentad_range(centre_date: date) -> tuple[date, date]:
     """
     Get the start and date of a pentad centred at a centre date. If the
@@ -606,8 +590,8 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
         raise TypeError("Input is not a datetime series")
 
     month_len = (
-        dates.dt.month_end().dt.date()
-        - dates.dt.month_start().dt.date().dt.offset_by("1d")
+        dates.dt.month_end().dt.date().dt.offset_by("1d")
+        - dates.dt.month_start().dt.date()
     )
     dates = dates.dt.month_start() + (month_len.cast(pl.Int64) / 2).cast(
         pl.Duration("ms")

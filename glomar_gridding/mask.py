@@ -14,7 +14,6 @@ def mask_observations(
     obs: pl.DataFrame,
     mask: xr.DataArray,
     varnames: str | list[str],
-    mask_varname: str = "mask",
     masked_value: Any = np.nan,
     mask_value: Any = True,
     obs_coords: list[str] = ["lat", "lon"],
@@ -35,8 +34,6 @@ def mask_observations(
         Array containing values used to mask the observational DataFrame.
     varnames : str | list[str]
         Columns in the observational DataFrame to apply the mask to.
-    mask_varname : str
-        Name of the mask variable in the mask DataArray.
     masked_value : Any
         Value indicating masked values in the DataArray.
     mask_value : Any
@@ -85,11 +82,13 @@ def mask_observations(
         sort=False,
         add_grid_pts=align_to_mask,
     )
+
     obs = obs.with_columns(
         pl.Series(
-            "mask", [mask[mask_varname].values[i] for i in obs[grid_idx_name]]
+            "mask", [mask.values.flatten()[i] for i in obs[grid_idx_name]]
         )
     )
+
     mask_map: dict = {mask_value: masked_value}
     obs = obs.with_columns(
         [
@@ -107,7 +106,6 @@ def mask_observations(
 def mask_array(
     grid: xr.DataArray,
     mask: xr.DataArray,
-    varname: str,
     masked_value: Any = np.nan,
     mask_value: Any = True,
 ) -> xr.DataArray:
@@ -124,9 +122,6 @@ def mask_array(
         DataArray.
     mask : xarray.DataArray
         Array containing values used to mask the observational DataFrame.
-    varname : str
-        Name of the variable in the observational DataArray to apply the mask
-        to.
     masked_value : Any
         Value indicating masked values in the DataArray.
     mask_value : Any
@@ -137,11 +132,13 @@ def mask_array(
     grid : xarray.DataArray
         Input xarray.DataArray with the variable masked by the mask DataArray.
     """
+    if not isinstance(grid, xr.DataArray):
+        raise TypeError("Input 'grid' must be a xarray.DataArray")
     # Check that the grid and mask are aligned
     xr.align(grid, mask, join="exact")
 
     masked_idx = np.unravel_index(get_mask_idx(mask, mask_value), mask.shape)
-    grid[varname][masked_idx] = masked_value
+    grid.values[masked_idx] = masked_value
 
     return grid
 
@@ -179,13 +176,16 @@ def mask_dataset(
     grid : xarray.Dataset
         Input xarray.Dataset with the variables masked by the mask DataArray.
     """
+    if not isinstance(dataset, xr.Dataset):
+        raise TypeError("Input 'dataset' must be a xarray.Dataset")
     # Check that the grid and mask are aligned
     xr.align(dataset, mask, join="exact")
 
     varnames = [varnames] if isinstance(varnames, str) else varnames
     masked_idx = np.unravel_index(get_mask_idx(mask, mask_value), mask.shape)
+    print(f"{masked_idx = }")
     for var in varnames:
-        dataset[var][masked_idx] = masked_value
+        dataset[var].values[masked_idx] = masked_value
 
     return dataset
 
@@ -193,17 +193,26 @@ def mask_dataset(
 def mask_from_obs_frame(
     obs: pl.DataFrame,
     coords: str | list[str],
-    datetime_col: str,
     value_col: str,
+    datetime_col: str | None = None,
+    grid: xr.DataArray | None = None,
+    grid_coords: str | list[str] | None = None,
 ) -> pl.DataFrame:
     """
-    Compute a mask from observations.
+    Compute a mask from observations and an optional output grid..
 
     Positions defined by the "coords" values that do not have any observations,
     at any datetime value in the "datetime_col", for the "value_col" field are
     masked.
 
     An example use-case would be to identify land positions from sst records.
+
+    If a grid is supplied, the observations are mapped to the grid and any
+    positions from the grid that do not contain observations.
+
+    If no grid is supplied, then it is assumed that the observation frame
+    represents the full grid, and any positions without observations are
+    included with null values in the value_col.
 
     Parameters
     ----------
@@ -213,12 +222,18 @@ def mask_from_obs_frame(
     coords : str | list[str]
         A list of columns containing the coordinates used to define the mask.
         For example ["lat", "lon"].
-    datetime_col : str
-        Name of the datetime column. Any positions that contain no records at
-        any datetime value are masked.
     value_col : str
         Name of the column containing values from which the mask will be
         defined.
+    datetime_col : str | None
+        Name of the datetime column. Any positions that contain no records at
+        any datetime value are masked.
+    grid : xarray.DataArray | None
+        Optional grid, used to map observations so that empty positions can be
+        identified. If not supplied, it is assumed that the observations frame
+        contains the full grid, and includes nulls in empty positions.
+    grid_coords : str | list[str] | None
+        Optional grid coordinate names. Must be set if grid is set.
 
     Returns
     -------
@@ -227,6 +242,28 @@ def mask_from_obs_frame(
     """
     if isinstance(coords, str):
         coords = [coords]
+    if isinstance(grid_coords, str):
+        grid_coords = [grid_coords]
+
+    if grid is not None:
+        if grid_coords is None:
+            raise ValueError("grid_coords must be set if grid is set.")
+        # Map and Join the Grid such that we have nulls where we don't have
+        # observations
+        obs = map_to_grid(obs, grid, obs_coords=coords, grid_coords=grid_coords)
+        grid_box_coords = [f"grid_{c}" for c in coords]
+        grid_df = pl.from_pandas(
+            grid.to_dataframe(name="grid").reset_index()
+        ).select(grid_coords)
+
+        obs = grid_df.join(
+            obs, left_on=grid_coords, right_on=grid_box_coords, how="left"
+        )
+
+    datetime_col = datetime_col or "datetime"
+    if datetime_col not in obs.columns:
+        obs = obs.with_columns(pl.lit(1).alias(datetime_col))
+
     x = obs.select([*coords, datetime_col, value_col]).pivot(
         on=datetime_col, index=coords, values=value_col
     )
@@ -239,9 +276,9 @@ def mask_from_obs_frame(
 
 
 def mask_from_obs_array(
-    obs: np.ndarray,
+    obs: np.ndarray | xr.DataArray,
     datetime_idx: int,
-) -> np.ndarray:
+) -> np.ndarray | xr.DataArray:
     """
     Infer a mask from an input array. Mask values are those where all values
     are NaN along the time dimension.
@@ -260,7 +297,7 @@ def mask_from_obs_array(
 
     Returns
     -------
-    mask : numpy.ndarray
+    mask : numpy.ndarray | xarray.DataArray
         A boolean array with dimension reduced along the datetime dimension.
         A True value indicates that all values along the datetime dimension
         for this index are numpy.nan and are masked.

@@ -208,6 +208,8 @@ def dist_weight(
 
         If dist_fn is None, then no distances are computed and None is returned
         for the dist value.
+    grid_idx : str
+        Name of the column containing the grid index values
     **dist_kwargs
         Arguments to be passed to dist_fn. In general these should be constant
         across all gridboxes. It is possible to pass a look-up table that
