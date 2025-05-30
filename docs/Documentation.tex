@@ -186,6 +186,154 @@ Elizabeth C. Kent \textless{}\sphinxhref{mailto:eck@noc.ac.uk}{eck@noc.ac.uk}\te
 \sphinxstepscope
 
 
+\chapter{Example Workflow}
+\label{\detokenize{workflow:example-workflow}}\label{\detokenize{workflow::doc}}
+\sphinxAtStartPar
+Here we present a simple example, where we use Ordinary Kriging to interpolate observational data.
+
+
+\section{Load Observations}
+\label{\detokenize{workflow:load-observations}}
+\sphinxAtStartPar
+In this hypothetical example, we are working with data from a \sphinxtitleref{csv} file. This is assumed to be
+point\sphinxhyphen{}observation data.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{obs} \PYG{o}{=} \PYG{n}{pl}\PYG{o}{.}\PYG{n}{read\PYGZus{}csv}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{/path/to/obs.csv}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{o}{.}\PYG{o}{.}\PYG{o}{.}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+
+\section{Output Grid}
+\label{\detokenize{workflow:output-grid}}
+\sphinxAtStartPar
+The first step is to create the output grid, using
+{\hyperref[\detokenize{covariance:glomar_gridding.grid.grid_from_resolution}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.grid\_from\_resolution()}}}}} to specify a global grid with a fixed
+resolution. Here, the grid has a 5\sphinxhyphen{}degree resolution.
+
+\sphinxAtStartPar
+The grid is essentially an empty \sphinxtitleref{xarray.DataArray} with a coordinate system defined by the input
+parameters. This can be used to map to the observations, and to create a covariance matrix with
+consistent coordinates.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{grid} \PYG{o}{=} \PYG{n}{grid\PYGZus{}from\PYGZus{}resolution}\PYG{p}{(}
+    \PYG{n}{resolution}\PYG{o}{=}\PYG{l+m+mi}{5}\PYG{p}{,}
+    \PYG{n}{bounds}\PYG{o}{=}\PYG{p}{[}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{87.5}\PYG{p}{,} \PYG{l+m+mi}{90}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mf}{177.5}\PYG{p}{,} \PYG{l+m+mi}{180}\PYG{p}{)}\PYG{p}{]}\PYG{p}{,}
+    \PYG{n}{coord\PYGZus{}names}\PYG{o}{=}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{latitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{longitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{,}
+\PYG{p}{)}
+\end{sphinxVerbatim}
+
+
+\section{Load And Align Observations}
+\label{\detokenize{workflow:load-and-align-observations}}
+\sphinxAtStartPar
+The input observations may not be located at grid\sphinxhyphen{}box locations, i.e. they may be located somewhere
+between grid\sphinxhyphen{}box centres. {\hyperref[\detokenize{kriging:glomar_gridding.grid.map_to_grid}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.map\_to\_grid()}}}}} can be used to map each point
+observation to a grid\sphinxhyphen{}box by identifying the nearest grid\sphinxhyphen{}box position from an input grid.
+
+\sphinxAtStartPar
+This adds an index column to the observational data\sphinxhyphen{}frame, which is the 1\sphinxhyphen{}dimensional index value of
+the coordinate. This allows for easy mapping to the indices of covariance matrices, etc.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{obs} \PYG{o}{=} \PYG{n}{map\PYGZus{}to\PYGZus{}grid}\PYG{p}{(}
+    \PYG{n}{obs}\PYG{o}{=}\PYG{n}{obs}\PYG{p}{,}
+    \PYG{n}{grid}\PYG{o}{=}\PYG{n}{grid}\PYG{p}{,}
+\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxAtStartPar
+In this example, it is assumed that the observations are such that at most one observation is
+associated with a grid\sphinxhyphen{}box. If this is not the case, the observations can be combined into a
+grid\sphinxhyphen{}box \sphinxstyleemphasis{super}\sphinxhyphen{}observation with a weighting using
+{\hyperref[\detokenize{kriging:glomar_gridding.kriging.prep_obs_for_kriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.prep\_obs\_for\_kriging()}}}}}.
+
+\sphinxAtStartPar
+Extract the observation values, and the grid\sphinxhyphen{}box index for each observation. In this example, the
+observation value is stored in the \sphinxtitleref{“val”} column.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{grid\PYGZus{}obs} \PYG{o}{=} \PYG{n}{obs}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{val}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}
+\PYG{n}{grid\PYGZus{}idx} \PYG{o}{=} \PYG{n}{obs}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{grid\PYGZus{}idx}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}
+\end{sphinxVerbatim}
+
+
+\section{Create or Load Spatial Covariance}
+\label{\detokenize{workflow:create-or-load-spatial-covariance}}
+\sphinxAtStartPar
+The grid can be converted in to a distance matrix, and finally to a covariance matrix using a
+\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.Variogram}} object, for example
+{\hyperref[\detokenize{covariance:glomar_gridding.variogram.GaussianVariogram}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.variogram.GaussianVariogram}}}}}.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{dist} \PYG{o}{=} \PYG{n}{grid\PYGZus{}to\PYGZus{}distance\PYGZus{}matrix}\PYG{p}{(}
+    \PYG{n}{grid}\PYG{o}{=}\PYG{n}{grid}\PYG{p}{,}
+    \PYG{n}{lat\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{latitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+    \PYG{n}{lon\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{longitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+\PYG{p}{)}
+
+\PYG{n}{variogram} \PYG{o}{=} \PYG{n}{GaussianVariogram}\PYG{p}{(}
+    \PYG{n+nb}{range}\PYG{o}{=}\PYG{l+m+mi}{1200}\PYG{p}{,}
+    \PYG{n}{psill}\PYG{o}{=}\PYG{l+m+mf}{1.2}\PYG{p}{,}
+    \PYG{n}{nugget}\PYG{o}{=}\PYG{l+m+mf}{0.0}\PYG{p}{,}
+\PYG{p}{)}\PYG{o}{.}\PYG{n}{fit}\PYG{p}{(}\PYG{n}{dist}\PYG{p}{)}
+
+\PYG{n}{covariance} \PYG{o}{=} \PYG{n}{variogram\PYGZus{}to\PYGZus{}covariance}\PYG{p}{(}\PYG{n}{variogram}\PYG{p}{,} \PYG{n}{sill}\PYG{o}{=}\PYG{l+m+mf}{1.2}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxAtStartPar
+Alternatively, the covariance matrix can be loaded from disk. A non\sphinxhyphen{}stationary (varying parameter)
+covariance matrix can be estimated using ellipse\sphinxhyphen{}based models. See
+{\hyperref[\detokenize{ellipse:glomar_gridding.ellipse.EllipseModel}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.EllipseModel}}}}}.
+
+
+\section{Optionally Load Error Covariance}
+\label{\detokenize{workflow:optionally-load-error-covariance}}
+\sphinxAtStartPar
+In this example an error covariance matrix is loaded from a netCDF file on disk, using
+{\hyperref[\detokenize{misc:glomar_gridding.io.load_array}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.io.load\_array()}}}}}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{error\PYGZus{}cov} \PYG{o}{=} \PYG{n}{load\PYGZus{}array}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{/path/to/error\PYGZus{}cov.nc}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{var}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{error\PYGZus{}covariance}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxAtStartPar
+Alternatively, an error covariance matrix can be computed component wise.
+
+
+\section{Ordinary Kriging}
+\label{\detokenize{workflow:ordinary-kriging}}
+\sphinxAtStartPar
+In this example, we will infill the observations using Ordinary Kriging. For this, we use
+{\hyperref[\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.OrdinaryKriging}}}}}, which requires a spatial covariance matrix as
+input.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{ok} \PYG{o}{=} \PYG{n}{OrdinaryKriging}\PYG{p}{(}\PYG{n}{covariance}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxAtStartPar
+We can now use this class\sphinxhyphen{}instance to solve the system, using the \sphinxtitleref{solve} method.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{result} \PYG{o}{=} \PYG{n}{ok}\PYG{o}{.}\PYG{n}{solve}\PYG{p}{(}\PYG{n}{grid\PYGZus{}obs}\PYG{p}{,} \PYG{n}{grid\PYGZus{}idx}\PYG{p}{,} \PYG{n}{error\PYGZus{}cov}\PYG{o}{=}\PYG{n}{error\PYGZus{}cov}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxAtStartPar
+Finally, the output can be mapped back on to the grid using
+{\hyperref[\detokenize{kriging:glomar_gridding.grid.assign_to_grid}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.assign\_to\_grid()}}}}}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{n}{gridded\PYGZus{}result} \PYG{o}{=} \PYG{n}{assign\PYGZus{}to\PYGZus{}grid}\PYG{p}{(}
+     \PYG{n}{values}\PYG{o}{=}\PYG{n}{result}\PYG{p}{,}
+     \PYG{n}{grid\PYGZus{}idx}\PYG{o}{=}\PYG{n}{np}\PYG{o}{.}\PYG{n}{arange}\PYG{p}{(}\PYG{n}{grid}\PYG{o}{.}\PYG{n}{size}\PYG{p}{)}\PYG{p}{,}
+     \PYG{n}{grid}\PYG{o}{=}\PYG{n}{grid}\PYG{p}{,}
+\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\sphinxstepscope
+
+
 \chapter{Stationary Interpolation Covariance}
 \label{\detokenize{covariance:stationary-interpolation-covariance}}\label{\detokenize{covariance::doc}}
 \sphinxAtStartPar

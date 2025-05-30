@@ -12,6 +12,7 @@ Welcome to GloMarGridding's documentation!
    introduction
    getting_started
    authors
+   workflow
    covariance
    ellipse
    error_covariance
