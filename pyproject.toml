@@ -12,7 +12,7 @@ packages = ["glomar_gridding"]
 
 [project]
 name = "GloMarGridding"
-version = "0.3.0"
+version = "1.0.0-rc.1"
 dependencies = [
   "geopandas",
   "netCDF4",
@@ -135,8 +135,4 @@ netCDF4 = "nc"
 Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
 
 [dependency-groups]
-dev = [
- "ipykernel>=6.29.5",
- "pytest>=8.3.4",
- "pytest-cov>=6.1.1",
-]
+dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1"]
