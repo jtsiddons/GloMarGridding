@@ -3,6 +3,8 @@ Example Workflow
 
 Here we present a simple example, where we use Ordinary Kriging to interpolate observational data.
 
+A full example can be found in the notebooks directory of the repository.
+
 Load Observations
 =================
 
