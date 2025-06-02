@@ -1,5 +1,7 @@
 # GloMar Gridding
 
+[![pipeline status](https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding/badges/master/pipeline.svg)](https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding/-/commits/master)
+
 Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography Centre.
 Currently only available to project collaborators.
 
