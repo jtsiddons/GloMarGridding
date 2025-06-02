@@ -62,6 +62,16 @@ def map_to_grid(
         indicating the positions and grid index of the observation
         respectively. The DataFrame is also sorted (ascendingly) by the
         `grid_idx` columns for consistency with the gridding functions.
+
+    Examples
+    --------
+    >>> obs = pl.read_csv("/path/to/obs.csv")
+    >>> grid = grid_from_resolution(
+            resolution=5,
+            bounds=[(-87.5, 90), (-177.5, 180)],  # Lower bound is centre
+            coord_names=["lat", "lon"]
+        )
+    >>> obs = map_to_grid(obs, grid, grid_coords=["lat", "lon"])
     """
     if bounds is not None:
         grid = select_bounds(grid, bounds, grid_coords)
@@ -111,6 +121,10 @@ def grid_from_resolution(
     Note that all list inputs must have the same length, the ordering of values
     in the lists is assumed align.
 
+    The constructed grid will be regular, in the sense that the grid spacing is
+    constant. However, the resolution in each direction can be different,
+    allowing for finer resolution in some direction.
+
     Parameters
     ----------
     resolution : float | list[float]
@@ -119,14 +133,38 @@ def grid_from_resolution(
         value to each of the coordinates.
     bounds : list[tuple[float, float]]
         A list of bounds of the form `(lower_bound, upper_bound)` indicating
-        the bounding box of the returned grid
+        the bounding box of the returned grid. Typically, one would set the
+        lower bound to be the centre of the first grid box. The upper bound is
+        an open bound (similar to usage in `range`). For example a 5 degree
+        resolution longitude range between -180, 180 could be defined with
+        bounds `(-177.5, 180)`.
     coord_names : list[str]
-        List of coordinate names
+        List of coordinate names in the same order as the bounds and
+        resolution(s).
 
     Returns
     -------
     grid : xarray.DataArray:
         The grid defined by the resolution and bounding box.
+
+    Examples
+    --------
+    >>> grid_from_resolution(
+            resolution=5,
+            bounds=[(-87.5, 90), (-177.5, 180)],  # Lower bound is centre
+            coord_names=["lat", "lon"]
+        )
+    <xarray.DataArray (lat: 36, lon: 72)> Size: 21kB
+    array([[nan, nan, nan, ..., nan, nan, nan],
+           [nan, nan, nan, ..., nan, nan, nan],
+           [nan, nan, nan, ..., nan, nan, nan],
+           ...,
+           [nan, nan, nan, ..., nan, nan, nan],
+           [nan, nan, nan, ..., nan, nan, nan],
+           [nan, nan, nan, ..., nan, nan, nan]], shape=(36, 72))
+    Coordinates:
+      * lat      (lat) float64 288B -87.5 -82.5 -77.5 ... 77.5 82.5 87.5
+      * lon      (lon) float64 576B -177.5 -172.5 ... 172.5 177.5
     """
     if not isinstance(resolution, Iterable):
         resolution = [resolution for _ in range(len(bounds))]
@@ -153,9 +191,9 @@ def assign_to_grid(
 
     Parameters
     ----------
-    values : pl.Series
+    values : polars.Series
         The values to map onto the output grid.
-    grid_idx : pl.Series
+    grid_idx : polars.Series
         The 1d index of the grid (assuming "C" style ravelling) for each value.
     grid : xarray.DataArray
         The grid used to define the output grid.
@@ -212,6 +250,37 @@ def grid_to_distance_matrix(
         of the original grid are also kept as coordinates related to each
         index (the coordinate names are suffixed with "_1" or "_2"
         respectively).
+
+    Examples
+    --------
+    >>> grid = grid_from_resolution(
+            resolution=5,
+            bounds=[(-87.5, 90), (-177.5, 180)],  # Lower bound is centre
+            coord_names=["lat", "lon"]
+        )
+    >>> grid_to_distance_matrix(grid, lat_coord="lat", lon_coord="lon")
+    <xarray.DataArray 'dist' (index_1: 2592, index_2: 2592)> Size: 54MB
+    array([[    0.        ,    24.24359308,    48.44112457, ...,
+            19463.87158499, 19461.22915012, 19459.64166305],
+           [   24.24359308,     0.        ,    24.24359308, ...,
+            19467.56390938, 19463.87158499, 19461.22915012],
+           [   48.44112457,    24.24359308,     0.        , ...,
+            19472.29905588, 19467.56390938, 19463.87158499],
+           ...,
+           [19463.87158499, 19467.56390938, 19472.29905588, ...,
+                0.        ,    24.24359308,    48.44112457],
+           [19461.22915012, 19463.87158499, 19467.56390938, ...,
+               24.24359308,     0.        ,    24.24359308],
+           [19459.64166305, 19461.22915012, 19463.87158499, ...,
+               48.44112457,    24.24359308,     0.        ]],
+          shape=(2592, 2592))
+    Coordinates:
+      * index_1  (index_1) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
+      * index_2  (index_2) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
+        lat_1    (index_1) float64 21kB -87.5 -87.5 -87.5 ... 87.5 87.5
+        lon_1    (index_1) float64 21kB -177.5 -172.5 ... 172.5 177.5
+        lat_2    (index_2) float64 21kB -87.5 -87.5 -87.5 ... 87.5 87.5 87.5
+        lon_2    (index_2) float64 21kB -177.5 -172.5 ... 172.5 177.5
     """
     coords = grid.coords
     out_coords = cross_coords(coords, lat_coord, lon_coord)
@@ -237,7 +306,7 @@ def grid_to_distance_matrix(
 
 
 def cross_coords(
-    coords: xr.Coordinates,
+    coords: xr.Coordinates | xr.Dataset | xr.DataArray,
     lat_coord: str,
     lon_coord: str,
 ) -> xr.Coordinates:
@@ -258,10 +327,11 @@ def cross_coords(
 
     Parameters
     ----------
-    coords : xarray.Coordinates
+    coords : xarray.Coordinates | xarray.DataArray | xarray.Dataset
         The set of coordinates to combine, or cross. This should be of length
         2 and have names defined by `lat_coord` and `lon_coord` input arguments.
-        The ordering of the coordinates will define the cross ordering.
+        The ordering of the coordinates will define the cross ordering. If an
+        array is provided then the coordinates are extracted.
     lat_coord : str
         The name of the latitude coordinate.
     lon_coord : str
@@ -272,7 +342,25 @@ def cross_coords(
     cross_coords : xarray.Coordinates
         The new crossed coordinates, including index, and each of the input
         coordinates, for each dimension.
+
+    Examples
+    --------
+    >>> grid = grid_from_resolution(
+            resolution=5,
+            bounds=[(-87.5, 90), (-177.5, 180)],  # Lower bound is centre
+            coord_names=["lat", "lon"]
+        )
+    >>> cross_coords(grid.coords, lat_coord="lat", lon_coord="lon")
+    Coordinates:
+      * index_1  (index_1) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
+      * index_2  (index_2) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
+        lat_1    (index_1) float64 21kB -87.5 -87.5 -87.5 ... 87.5 87.5
+        lon_1    (index_1) float64 21kB -177.5 -172.5 ... 172.5 177.5
+        lat_2    (index_2) float64 21kB -87.5 -87.5 -87.5 ... 87.5 87.5 87.5
+        lon_2    (index_2) float64 21kB -177.5 -172.5 ... 172.5 177.5
     """
+    if isinstance(coords, (xr.DataArray, xr.Dataset)):
+        coords = coords.coords
     if len(coords) != 2:
         raise ValueError(
             "Input grid must have 2 indexes - "

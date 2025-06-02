@@ -1,4 +1,4 @@
-"""Class to compute covariance matrix from ellipse parameters and positions."""
+"""Class to estimate covariance matrix from ellipse parameters and positions."""
 
 import datetime
 import logging
@@ -52,8 +52,9 @@ class EllipseCovarianceBuilder:
     float (km) or (degrees if you want to work in degrees), default 6000km
     if you want infinite distance, just set it to a large number, some fun
     numbers to use:
-        1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
-        5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
+
+        - 1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
+        - 5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
 
     Parameters
     ----------
@@ -73,11 +74,13 @@ class EllipseCovarianceBuilder:
         np.float32.
     covariance_method : CovarianceMethod
         Set the covariance method used:
-            array (default): faster but uses significantly more memory as
-                more pre-computation is performed. Values are computed in a
-                vectorised method.
-            loop: slower iterative process, computes each value individually
-            batched: combines the above approaches.
+
+            - array (default): faster but uses significantly more memory as
+              more pre-computation is performed. Values are computed in a
+              vectorised method.
+            - loop: slower iterative process, computes each value individually
+            - batched: combines the above approaches.
+
         If the number of grid-points exceeds 10_000 and "array" method is used,
         the method will be overwritten to "loop".
     batch_size : int | None
@@ -280,10 +283,10 @@ class EllipseCovarianceBuilder:
         Each ellipse is defined by values from Lxs, Lys, and thetas, with
         standard deviation in stdevs.
 
-        Reference
-        ---------
-        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        References
+        ----------
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         # Initialise empty matrix
         N = len(self.Lx_compressed)
@@ -334,7 +337,7 @@ class EllipseCovarianceBuilder:
             )
 
             inner = self.sqrt_v_term * tau
-            c_ij *= np.pow(inner, self.v)
+            c_ij *= np.power(inner, self.v)
             c_ij *= modified_bessel_2nd(self.v, inner)
             # if res > stdev_prod:
             #     raise ValueError(
@@ -351,17 +354,18 @@ class EllipseCovarianceBuilder:
         approach.
         This approach is more memory safe and appropriate for low-memory
         operations, but is slower than self.calculate_covariance
-        which uses a lot of pre-computation and a vectorised approach.
+        which pre-computes values at all upper triangle points. This approach
+        performs pre-computation at all points within the current batch.
 
         Each ellipse is defined by values from Lxs, Lys, and thetas, with
         standard deviation in stdevs.
 
         Requires a batch_size parameter.
 
-        Reference
-        ---------
-        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
+        References
+        ----------
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         if self.batch_size is None:
             raise ValueError("batch_size must be set if using 'batched' method")
@@ -409,11 +413,6 @@ class EllipseCovarianceBuilder:
         `itertools.combinations` is used to handle ordering, so the
         displacements must be ordered in the same way.
 
-        Reference
-        ---------
-        1) Paciorek and Schevrish 2006 Equation 8 https://doi.org/10.1002/env.785
-        2) Karspeck et al 2012 Equation 17 https://doi.org/10.1002/qj.900
-
         Parameters
         ----------
         i_s : numpy.ndarray
@@ -427,6 +426,11 @@ class EllipseCovarianceBuilder:
             A vector containing the covariance values between each pair of
             ellipses. This will return the components of the upper triangle of
             the covariance matrix as a vector (excluding the diagonal).
+
+        References
+        ----------
+        1. Paciorek and Schevrish 2006 [PaciorekSchervish]_ Equation 8
+        2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         dy, dx = self.disp_fn(
             self.lat_grid_compressed_rad[i_s],
@@ -510,8 +514,8 @@ def _sigma_rot_func_multi(
     c2 = np.power(ct, 2)
     s2 = np.power(st, 2)
     cs = np.multiply(ct, st)
-    Lx2 = np.pow(Lx, 2)
-    Ly2 = np.pow(Ly, 2)
+    Lx2 = np.power(Lx, 2)
+    Ly2 = np.power(Ly, 2)
     del ct, st
     return np.column_stack(
         [

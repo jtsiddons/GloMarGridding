@@ -2,7 +2,8 @@
 
 ## 0.3.0 (unreleased)
 
-Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Richard Cornes
+(@ricorne).
 
 ### Announcements
 
@@ -16,6 +17,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### Breaking changes
 
+* `kriging.kriging` and `kriging.unmasked_kriging` wrapper functions are removed (!68)
 * `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
 * Removed `variogram.LinearVariagram` and `variogram.PowerVariogram` (!69)
 * `perturbation` module is renamed to `stochastic` (!65)
@@ -23,6 +25,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 ### New features and enhancements
 
+* Added an example notebook (!46)
+* Added documentation pdf (!46)
 * Added `variogram.SphericalVariogram` (!69)
 * `ellipse`, `ellipse_builder`, and `ellipse_covariance` are renamed to `ellipse.model`,
   `ellipse.estimate`, and `ellipse.covariance` respectively. Ellipse classes `EllipseModel`,
@@ -43,6 +47,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan)
 
 * Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
+* Added a GitLab runner pipeline (!64)
 
 ## 0.2.3 (2025-04-30)
 
@@ -63,6 +68,8 @@ Contributors to this version: Joseph Siddons (@josidd)
 ## 0.2.1 (2025-04-28)
 
 Contributors to this version: Joseph Siddons (@josidd)
+
+### New features and enhancements
 
 * Add function to compute mid-point of a month (matching HadCRUT datetimes) (!48)
 * `init_logging` now has a `level` argument (!50)

@@ -76,7 +76,7 @@ def haversine_gaussian(
     check_cols(df, ["lat", "lon"])
     pos = np.radians(df.select(["lat", "lon"]).to_numpy())
     C = haversine_distances(pos) * R
-    C = np.exp(-(np.pow(C, 2)) / np.pow(r, 2))
+    C = np.exp(-(np.power(C, 2)) / np.pow(r, 2))
     return s / 2 * C
 
 
@@ -126,19 +126,17 @@ def euclidean_distance(
     df: pl.DataFrame,
     radius: float = 6371.0,
 ) -> np.ndarray:
-    """
+    r"""
     Calculate the Euclidean distance in kilometers between pairs of lat, lon
     points on the earth (specified in decimal degrees).
 
-    See:
-    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
-    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
-
-    d = SQRT((x_2-x_1)**2 + (y_2-y_1)**2 + (z_2-z_1)**2)
+    .. math::
+        d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2 + (z_2 - z_1)^2}
 
     where
 
-    (x_n y_n z_n) = ( Rcos(lat)cos(lon) Rcos(lat)sin(lon) Rsin(lat) )
+    .. math::
+        (x_n, y_n, z_n) = (R\cos(lat)\cos(lon), R\cos(lat)\sin(lon), R\sin(lat))
 
     Parameters
     ----------
@@ -155,6 +153,11 @@ def euclidean_distance(
     dist : float
         The direct pairwise distance between the positions in the input
         DataFrame through the sphere defined by the radius parameter.
+
+    References
+    ----------
+    https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
+    https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
     """
     if df.columns != ["lat", "lon"]:
         raise ValueError("Input must only contain 'lat' and 'lon' columns")
@@ -214,7 +217,7 @@ def calculate_distance_matrix(
 
     Available functions are `haversine_distance`, `euclidean_distance`. A
     custom function can be used, requiring that the function takes the form:
-        (tuple[float, float], tuple[float, float]) -> float
+    (tuple[float, float], tuple[float, float]) -> float
 
     Parameters
     ----------

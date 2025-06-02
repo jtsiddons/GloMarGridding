@@ -1,6 +1,14 @@
 """
-Functions for loading data from a netCDF file using format strings to find the
-file.
+`glomar_gridding` includes functionality for loading datasets or arrays from
+`netCDF` files using python format strings. This can be useful for loading
+pre-computed inputs for the Kriging process, for example covariance matrices or
+observations. The allowance for passing a string containing format components
+(e.g. python t-string) allows for dynamic configuration if processing a series
+of monthly inputs for example.
+
+Also included is a function for recursively getting sub-keys from a python
+`dict` style object. This can be useful for working with `yaml` formatting
+configuration files for instance.
 """
 
 import os
@@ -21,7 +29,9 @@ def load_dataset(
     path : str
         Full filename (including path), or filename with replacements using
         str.format with named replacements. For example:
+
             /path/to/global_covariance_{month:02d}.nc
+
     **kwargs
         Keywords arguments matching the replacements in the input path.
 
@@ -58,7 +68,9 @@ def load_array(
     path : str
         Full filename (including path), or filename with replacements using
         str.format with named replacements. For example:
+
             /path/to/global_covariance_{month:02d}.nc
+
     var : str
         Name of the variable to select from the input file
     **kwargs
@@ -82,11 +94,15 @@ def get_recurse(config: dict, *keys, default: Any = None) -> Any:
 
     Equivalent to:
 
-    > config[keys[0]][keys[1]]...[keys[n]]
+    .. code-block:: python
+
+        config[keys[0]][keys[1]]...[keys[n]]
 
     Or:
 
-    > config.get(keys[0]).get(keys[1])...get(keys[n])
+    .. code-block:: python
+
+        config.get(keys[0]).get(keys[1])...get(keys[n])
 
     Parameters
     ----------

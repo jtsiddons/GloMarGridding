@@ -1,4 +1,4 @@
-"""Utility functions for GloMarGridding"""
+r"""Utility functions for `glomar_gridding`"""
 
 from calendar import isleap
 from collections.abc import Iterable
@@ -58,7 +58,7 @@ def add_empty_layers(
 
     Parameters
     ----------
-    nc_variables : Iterable[nc.Variable] | nc.Variable
+    nc_variables : Iterable[netcdf.Variable] | netcdf.Variable
         Name(s) of the variables to add empty layers to
     timestamps : Iterable[int] | int
         Indices to add empty layers
@@ -92,26 +92,61 @@ def days_since_by_month(year: int, day: int) -> np.ndarray:
     Get the number of days since `year`-01-`day` for each month. This is used
     to set the time values in a netCDF file where temporal resolution is monthly
     and the units are days since some date.
+
+    Parameters
+    ----------
+    year : int
+        Get a value for each month in this year.
+    day : int
+        Day of month for each returned datetime value in the sequence.
+
+    Returns
+    -------
+    numpy.ndarray
+        Containing 12 values, one for each month in the year containing the
+        number of days since `year`-01-`day`.
+
+    Examples
+    --------
+    >>> days_since_by_month(1988, 14)
+    array([  0,  31,  60,  91, 121, 152, 182, 213, 244, 274, 305, 335])
     """
     dates = _daterange_by_day(year, day)
     return (dates - date(year, 1, day)).dt.total_days().to_numpy()
 
 
-def adjust_small_negative(mat: np.ndarray) -> np.ndarray:
+def adjust_small_negative(
+    mat: np.ndarray,
+    atol: float = 1e-8,
+) -> np.ndarray:
     """
-    Adjusts small negative values (with absolute value < 1e-8)
-    in matrix to 0 in-place.
+    Adjusts small negative values below an absolute tolerance value in a matrix
+    to 0.
 
     Raises a warning if any small negative values are detected.
 
     Parameters
     ----------
-    mat : np.ndarray[float]
-          Squared uncertainty associated with chosen kriging method
-          Derived from the diagonal of the matrix
+    mat : numpy.ndarray[float]
+        Squared uncertainty associated with chosen kriging method
+        Derived from the diagonal of the matrix
+    atol : float, default = 1e-8
+        Absolute tolerance value.
+
+    Returns
+    -------
+    numpy.ndarray
+        With negatice values below an absolute tolerance replaced with 0.
+
+    Examples
+    --------
+    >>> arr = np.array([[1, -1e-10], [-1e-10, 1]])
+    >>> adjust_small_negative(arr, atol=1e-8)
+    array([[1., 0.],
+           [0., 1.]])
     """
     small_negative_check = np.logical_and(
-        np.isclose(mat, 0, atol=1e-08), mat < 0.0
+        np.isclose(mat, 0, atol=atol), mat < 0.0
     )
     # Calls from kriging_ordinary and kriging_simple use np.diag
     # np.diag returns an immutable view of the array; .copy is required. See:
@@ -125,8 +160,8 @@ def adjust_small_negative(mat: np.ndarray) -> np.ndarray:
 
 
 def find_nearest(
-    array: Iterable,
-    values: Iterable,
+    array: np.ndarray,
+    values: np.ndarray,
 ) -> tuple[list[int], np.ndarray]:
     """
     Get the indices and values from an array that are closest to the input
@@ -137,9 +172,9 @@ def find_nearest(
 
     Parameters
     ----------
-    array : Iterable
+    array : numpy.ndarray
         The array to search for nearest values.
-    values : Iterable
+    values : numpy.ndarray
         The values to look-up in the array.
 
     Returns
@@ -148,6 +183,13 @@ def find_nearest(
         The indices of nearest values
     array_values_list : list
         The list of values in array that are closest to the input values.
+
+    Examples
+    --------
+    >>> array = [1.0, 2.5, 2.7, 2.1, 4.5]
+    >>> tests = [1.1, 4.4, 2.2]
+    >>> find_nearest(array, tests)
+    ([np.int64(0), np.int64(4), np.int64(3)], array([1. , 4.5, 2.1]))
     """
     idx_list = [(np.abs(array - value)).argmin() for value in values]
     array_values_list = np.array(array)[idx_list]
@@ -185,7 +227,10 @@ def select_bounds(
     return x.sel(bnd_map)
 
 
-def intersect_mtlb(a, b):
+def intersect_mtlb(
+    a: np.ndarray,
+    b: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Returns data common between two arrays, a and b, in a sorted order and index
     vectors for a and b arrays Reproduces behaviour of Matlab's intersect
@@ -193,14 +238,22 @@ def intersect_mtlb(a, b):
 
     Parameters
     ----------
-    a (array) - 1-D array
-    b (array) - 1-D array
+    a : numpy.ndarray
+    b : numpy.ndarray
 
     Returns
     -------
-    1-D array, c, of common values found in two arrays, a and b, sorted in order
-    List of indices, where the common values are located, for array a
-    List of indices, where the common values are located, for array b
+    tuple[numpy.ndarray]
+        - Intersection
+        - List of indices, where the common values are located, for array a
+        - List of indices, where the common values are located, for array b
+
+    Examples
+    --------
+    >>> a = np.array([1, 2, 3])
+    >>> b = np.array([1, 1, 2, 5, 6])
+    >>> intersect_mtlb(a, b)
+    (array([1, 2]), array([0, 1]), array([0, 2]))
     """
     a1, ia = np.unique(a, return_index=True)
     b1, ib = np.unique(b, return_index=True)
@@ -214,7 +267,21 @@ def check_cols(
     df: pl.DataFrame,
     cols: list[str],
 ) -> None:
-    """Check that all columns in a list of columns are in a DataFrame"""
+    """
+    Check that all columns in a list of columns are in a DataFrame.
+
+    Parameters
+    ----------
+    df : polars.DataFrame
+    cols : list[str]
+        List of columns to check for in `df`
+
+    Raises
+    ------
+    ColumnNotFoundError
+        If any columns in `cols` are not present in `df`. The missing columns
+        are displayed in the error message.
+    """
     # Get name of function that is calling this
     calling_func = str(inspect.stack()[1][3])
 
@@ -251,6 +318,11 @@ def filter_bounds(
         the bounds. If the input is a single instance then all bounds will have
         that closedness. If it is a list of closed values then its length must
         match the length of the bounds list.
+
+    Returns
+    -------
+    polars.DataFrame
+        DataFrame filtered by the positional bounds
     """
     if len(bounds) != len(bound_cols):
         raise ValueError("Length of 'bounds' must equal length of 'bound_cols'")
@@ -299,6 +371,11 @@ def get_pentad_range(centre_date: date) -> tuple[date, date]:
         Two days before centre_date
     end_date : datetime.date
         Two days after centre_date
+
+    Examples
+    --------
+    >>> get_pentad_range(date(2008, 2, 29))
+    (datetime.date(2008, 2, 27), datetime.date(2008, 3, 2))
     """
     centre_year = centre_date.year
     if isleap(centre_year) and not (
@@ -317,6 +394,7 @@ def get_pentad_range(centre_date: date) -> tuple[date, date]:
 
 
 def _get_logging_level(level: str) -> int:
+    """Get the numeric value of a logging level string"""
     match level.lower():
         case "debug":
             level_i = 10
@@ -347,10 +425,6 @@ def init_logging(
         messages to STDout
     level : str
         Level of logging, one of: "debug", "info", "warn", "error", "critical".
-
-    Returns
-    -------
-    None
     """
     from importlib import reload
 
@@ -388,30 +462,62 @@ def get_date_index(year: int, month: int, start_year: int) -> int:
     index : int
         The index of the input date in the monthly datetime series starting from
         the first month of year `start_year`.
+
+    Examples
+    --------
+    >>> get_date_index(2009, 14, start_year=1988)
+    265
     """
     return 12 * (year - start_year) + (month - 1)
 
 
 def deg_to_nm(deg: float) -> float:
     """
-    deg: float (degrees)
     Convert degree latitude change to nautical miles
+
+    Parameters
+    ----------
+    deg : float
+        The difference in latitude in degrees
+
+    Returns
+    -------
+    float
+        The latitude difference in nautical miles
     """
     return NM_PER_LAT * deg
 
 
 def deg_to_km(deg: float) -> float:
     """
-    deg: float (degrees)
     Convert degree latitude change to km
+
+    Parameters
+    ----------
+    deg : float
+        The difference in latitude in degrees
+
+    Returns
+    -------
+    float
+        The latitude difference in kilometers
     """
     return KM_TO_NM * deg_to_nm(deg)
 
 
 def km_to_deg(km: float) -> float:
     """
-    km: float (km)
     Convert meridonal km change to degree latitude
+
+    Parameters
+    ----------
+    km : float
+        The meridonal difference in kilometers
+
+    Returns
+    -------
+    float
+        The meridonal difference in degrees
     """
     return (km / KM_TO_NM) / NM_PER_LAT
 
@@ -458,6 +564,17 @@ def uncompress_masked(
         apply_mask is False. If apply_mask is True, then the result is an
         instance of numpy.ma.MaskedArray with the mask applied to the
         uncompressed result.
+
+    Examples
+    --------
+    >>> arr = np.random.rand(16)
+    >>> mask = arr > 0.65
+    >>> arr = np.ma.masked_where(mask, arr).compressed()
+    >>> uncompress_masked(arr, mask, fill_value=-999.0)
+    array([ 2.79245414e-01, -9.99000000e+02,  3.93541024e-01, -9.99000000e+02,
+            8.07814120e-03,  3.34164220e-01, -9.99000000e+02,  2.08200564e-01,
+            3.32044850e-01,  1.83166093e-01, -9.99000000e+02,  2.57339943e-02,
+            1.76017461e-01,  3.56673893e-01,  1.59393168e-01,  2.17047382e-01])
     """
     not_mask = np.logical_not(mask)
     if np.sum(not_mask) != len(compressed_array):
@@ -602,11 +719,57 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
 
 def sizeof_fmt(num: float, suffix="B") -> str:
     """
-    Convert numbers to kilo/mega... bytes,
-    for interactive printing of code progress
+    Convert numbers to kilo/mega... bytes, for interactive printing of code
+    progress.
+
+    Parameters
+    ----------
+    num : float
+        The number (typically of bytes) to format
+    suffix : str
+
+    Returns
+    -------
+    str
+        The formatted number using power of 1024 base.
+
+    Examples
+    --------
+    >>> sizeof_fmt(123456789)
+    '117.7MiB'
     """
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
         if abs(num) < 1024.0:
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
+
+
+def get_spatial_mean(
+    grid_obs: np.ndarray,
+    covx: np.ndarray,
+) -> float:
+    """
+    Compute the spatial mean accounting for auto-correlation. See [Cornell]_
+
+    Parameters
+    ----------
+    grid_obs : numpy.ndarray
+        Vector containing observations
+    covx : numpy.ndarray
+        Observation covariance matrix
+
+    Returns
+    -------
+    spatial_mean : float
+        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
+
+    References
+    ----------
+    [Cornell]_ https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
+    """
+    n = len(grid_obs)
+    ones = np.ones(n)
+    invcov = ones.T @ np.linalg.inv(covx)
+
+    return float(1 / (invcov @ ones) * (invcov @ grid_obs))

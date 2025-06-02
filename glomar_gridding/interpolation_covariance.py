@@ -1,7 +1,4 @@
-"""
-Functions for computing (components of) the interpolation covariance matrix
-used for the interpolation step.
-"""
+"""I/O functionality for loading a covariance matrix from disk."""
 
 import numpy as np
 
@@ -20,7 +17,7 @@ def load_covariance(
     path : str
         Full filename (including path), or filename with replacements using
         str.format with named replacements. For example:
-            /path/to/global_covariance_{month:02d}.nc
+        /path/to/global_covariance_{month:02d}.nc
     cov_var_name : str
         Name of the variable for the covariance matrix
     **kwargs

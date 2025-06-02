@@ -1,5 +1,5 @@
 """
-Functions for performing Kriging.
+Functions and Classes for performing Kriging.
 
 Interpolation using a Gaussian Process. Available methods are Simple and
 Ordinary Kriging.
@@ -14,7 +14,11 @@ from typing import Literal
 import numpy as np
 from warnings import warn
 
-from .utils import adjust_small_negative, intersect_mtlb
+from glomar_gridding.utils import (
+    adjust_small_negative,
+    intersect_mtlb,
+    get_spatial_mean,
+)
 
 KrigMethod = Literal["simple", "ordinary"]
 
@@ -63,11 +67,11 @@ class Kriging(ABC):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -105,11 +109,11 @@ class Kriging(ABC):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -119,7 +123,7 @@ class Kriging(ABC):
         ----------
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
-            observations. :math:`(K_{obs} + E)^{-1}`
+            observations. :math:`(C_{obs} + E)^{-1}`
         idx : numpy.ndarray[int] | list[int]
             The 1d indices of observation grid points. These values should be
             between 0 and (N * M) - 1 where N, M are the number of longitudes
@@ -144,12 +148,13 @@ class Kriging(ABC):
         Solves the Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
-        .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        .. math::
+            (C_{obs} + E)^{-1} \times C_{cross} \times y
+
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, :math:`K_{cross}` is the covariance between
+        with observations, :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points), and :math:`y` are the observation values.
 
@@ -197,27 +202,32 @@ class Kriging(ABC):
     @abstractmethod
     def constraint_mask(self, idx: np.ndarray) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
         figure out.
 
-        Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+        Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
+
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
-        .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        .. math::
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
+
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -240,9 +250,9 @@ class Kriging(ABC):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        References
+        ----------
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         raise NotImplementedError(
             "`constraint_mask` not implemented for default class"
@@ -254,10 +264,11 @@ class SimpleKriging(Kriging):
     Class for SimpleKriging.
 
     The equation for simple Kriging is:
-    .. math::
-        (K_{obs} + E)^{-1} \\times K_{cross} \\times y + \\mu
 
-    Where :math:`\\mu` is a constant known mean, typically this is 0.
+    .. math::
+        (C_{obs} + E)^{-1} \times C_{cross} \times y + \mu
+
+    Where :math:`\mu` is a constant known mean, typically this is 0.
 
     Parameters
     ----------
@@ -282,11 +293,11 @@ class SimpleKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -331,11 +342,11 @@ class SimpleKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -345,7 +356,7 @@ class SimpleKriging(Kriging):
         ----------
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
-            observations. :math:`(K_{obs} + E)^{-1}`
+            observations. :math:`(C_{obs} + E)^{-1}`
         idx : numpy.ndarray[int] | list[int]
             The 1d indices of observation grid points. These values should be
             between 0 and (N * M) - 1 where N, M are the number of longitudes
@@ -371,12 +382,13 @@ class SimpleKriging(Kriging):
         Solves the simple Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
-        .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        .. math::
+            (C_{obs} + E)^{-1} \times C_{cross} \times y
+
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, :math:`K_{cross}` is the covariance between
+        with observations, :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points), and :math:`y` are the observation values.
 
@@ -405,6 +417,11 @@ class SimpleKriging(Kriging):
         numpy.ndarray
             The solution to the simple Kriging problem (as a Vector, this may
             need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> SK = SimpleKriging(interp_covariance)
+        >>> SK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
@@ -438,27 +455,32 @@ class SimpleKriging(Kriging):
         idx: np.ndarray,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
         figure out.
 
-        Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+        Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
+
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
-        .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        .. math::
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
+
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -481,9 +503,9 @@ class SimpleKriging(Kriging):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        References
+        ----------
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -498,18 +520,19 @@ class OrdinaryKriging(Kriging):
     Class for OrdinaryKriging.
 
     The equation for ordinary Kriging is:
+
     .. math::
-        (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+        (C_{obs} + E)^{-1} \times C_{cross} \times y
 
     with a constant but unknown mean.
 
-    In this case, the :math:`K_{obs}`, :math:`K_{cross}` and :math:`y` values
+    In this case, the :math:`C_{obs}`, :math:`C_{cross}` and :math:`y` values
     are extended with a Lagrange multiplier term, ensuring that the Kriging
     weights are constrained to sum to 1.
 
-    The matrix :math:`K_{obs}` is extended by one row and one column, each
+    The matrix :math:`C_{obs}` is extended by one row and one column, each
     containing the value 1, except at the diagonal point, which is 0. The
-    :math:`K_{cross}` matrix is extended by an extra row containing values of 1.
+    :math:`C_{cross}` matrix is extended by an extra row containing values of 1.
     Finally, the grid observations :math:`y` is extended by a single value of 0
     at the end of the vector.
 
@@ -536,21 +559,21 @@ class OrdinaryKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
-        In this case, the :math:`K_{obs}`, :math:`K_{cross}` and are extended
+        In this case, the :math:`C_{obs}`, :math:`C_{cross}` and are extended
         with a Lagrange multiplier term, ensuring that the Kriging weights are
         constrained to sum to 1.
 
-        The matrix :math:`K_{obs}` is extended by one row and one column, each
+        The matrix :math:`C_{obs}` is extended by one row and one column, each
         containing the value 1, except at the diagonal point, which is 0. The
-        :math:`K_{cross}` matrix is extended by an extra row containing values
+        :math:`C_{cross}` matrix is extended by an extra row containing values
         of 1.
 
         Sets the `kriging_weights` attribute.
@@ -603,11 +626,11 @@ class OrdinaryKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -625,7 +648,7 @@ class OrdinaryKriging(Kriging):
         ----------
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
-            observations. :math:`(K_{obs} + E)^{-1}`
+            observations. :math:`(C_{obs} + E)^{-1}`
         idx : numpy.ndarray[int] | list[int]
             The 1d indices of observation grid points. These values should be
             between 0 and (N * M) - 1 where N, M are the number of longitudes
@@ -654,22 +677,23 @@ class OrdinaryKriging(Kriging):
         Solves the ordinary Kriging problem. Computes the Kriging weights if the
         `kriging_weights` attribute is not already set. The solution to Kriging
         is:
-        .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        .. math::
+            (C_{obs} + E)^{-1} \times C_{cross} \times y
+
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, :math:`K_{cross}` is the covariance between
+        with observations, :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points), and :math:`y` are the observation values.
 
-        In this case, the :math:`K_{obs}`, :math:`K_{cross}` and are extended
+        In this case, the :math:`C_{obs}`, :math:`C_{cross}` and are extended
         with a Lagrange multiplier term, ensuring that the Kriging weights are
         constrained to sum to 1.
 
-        The matrix :math:`K_{obs}` is extended by one row and one column, each
+        The matrix :math:`C_{obs}` is extended by one row and one column, each
         containing the value 1, except at the diagonal point, which is 0. The
-        :math:`K_{cross}` matrix is extended by an extra row containing values
+        :math:`C_{cross}` matrix is extended by an extra row containing values
         of 1.
 
         Parameters
@@ -695,6 +719,11 @@ class OrdinaryKriging(Kriging):
         numpy.ndarray
             The solution to the ordinary Kriging problem (as a Vector, this may
             need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> OK = OrdinaryKriging(interp_covariance)
+        >>> OK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
@@ -737,27 +766,32 @@ class OrdinaryKriging(Kriging):
         error_cov: np.ndarray | None = None,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confirmed by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
         figure out.
 
-        Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+        Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
+
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
-        .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        .. math::
+            \frac{
+                diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})
+            }{diag(C)} < \alpha
+
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -787,9 +821,9 @@ class OrdinaryKriging(Kriging):
             Constraint mask values, the left-hand-side of equation A14 from
             Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        References
+        ----------
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if simple_kriging_weights is None:
             obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
@@ -810,7 +844,7 @@ class OrdinaryKriging(Kriging):
 
     def extended_inverse(self, simple_inv: np.ndarray) -> np.ndarray:
         r"""
-        Compute the inverse of a covariance matrix :math:`S = K_{obs} + E`, and
+        Compute the inverse of a covariance matrix :math:`S = C_{obs} + E`, and
         use that to compute the inverse of the extended version of the
         covariance matrix with Lagrange multipliers, used by Ordinary Kriging.
 
@@ -819,12 +853,15 @@ class OrdinaryKriging(Kriging):
         ordinary Kriging which requires the Kriging weights for the equivalent
         simple Kriging problem.
 
-        The extended form of S is given by
+        The extended form of S is given by:
 
-        |       1 |
-        |   S   1 |
-        |       1 |
-        | 1 1 1 0 |
+        .. math::
+            \begin{pmatrix}
+            &   & & 1 \\
+            & S & & \vdots \\
+            &   & & 1 \\
+            1 & \dots & 1 & 0 \\
+            \end{pmatrix}
 
         This approach follows Guttman 1946 10.1214/aoms/1177730946
 
@@ -885,10 +922,13 @@ def prep_obs_for_kriging(
         All point observations/measurements for the chosen date.
     remove_obs_mean: int
         Should the mean or median from obs be removed and added back onto obs?
-        0 = No (default action)
-        1 = the mean is removed
-        2 = the median is removed
-        3 = the spatial meam os removed
+
+            - 0 = No (default action)
+            - 1 = the mean is removed
+            - 2 = the median is removed
+            - 3 = the spatial meam os removed
+
+        Note that the mean will need to be reapplied to the Kriging result.
     obs_bias : np.ndarray[float] | None
         Bias of all measurement points for a chosen date (corresponds to x_obs).
 
@@ -1079,58 +1119,33 @@ def kriging_ordinary(
     return kriged_result, uncert
 
 
-def get_spatial_mean(
-    grid_obs: np.ndarray,
-    covx: np.ndarray,
-) -> float:
-    """
-    Compute the spatial mean accounting for auto-correlation.
-
-    Parameters
-    ----------
-    grid_obs : np.ndarray
-        Vector containing observations
-    covx : np.ndarray
-        Observation covariance matrix
-
-    Returns
-    -------
-    spatial_mean : float
-        The spatial mean defined as (1^T x C^{-1} x 1)^{-1} * (1^T x C^{-1} x z)
-
-    Reference
-    ---------
-    https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
-    """
-    n = len(grid_obs)
-    ones = np.ones(n)
-    invcov = ones.T @ np.linalg.inv(covx)
-
-    return float(1 / (invcov @ ones) * (invcov @ grid_obs))
-
-
 def constraint_mask(
     obs_obs_cov: np.ndarray,
     obs_grid_cov: np.ndarray,
     interp_cov: np.ndarray,
 ) -> np.ndarray:
-    """
-    Compute the observational constraint mask (A14 in Morice et al. (2021) -
-    10.1029/2019JD032361) to determine if a grid point should be masked/weights
-    modified by how far it is to its near observed point
+    r"""
+    Compute the observational constraint mask (A14 in [Morice_2021]_) to
+    determine if a grid point should be masked/weights modified by how far it is
+    to its near observed point.
 
-    Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+    Note: typo in Section A4 in Morice et al 2021 (confirmed by authors).
 
     Equation to use is A14 is incorrect. Easily noticeable because dimensionally
     incorrect is wrong, but the correct answer is easy to figure out.
 
-    Correct Equation (extra matrix inverse for K+R):
-    1 - diag( K(X*,X*) - k*^T @ (K+R)^{-1} @ k* )  / diag( K(X*,X*) )  < alpha
+    Correct Equation (extra matrix inverse for C+R):
+
+    .. math::
+        1 - diag(C(X*,X*) - k*^T \times (C+R)^{-1} \times k*)  / diag(C(X*,X*))
+        < \alpha
 
     This can be re-written as:
-    diag(k*^T @ (K+R)^{-1} @ k*) / diag(K(X*, X*)) < alpha
 
-    alpha is chosen to be 0.25 in the UKMO paper
+    .. math::
+        diag(k*^T \times (C+R)^{-1} \times k*) / diag(C(X*, X*)) < \alpha
+
+    :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
     Written by S. Chan, modified by J. Siddons.
 
@@ -1140,13 +1155,13 @@ def constraint_mask(
         Covariance between all measured grid points plus the covariance due to
         measurements (i.e. measurement noise, bias noise, and sampling noise).
         Can include error covariance terms, if these are being used. This is
-        `K + R` in the above equation.
+        `C + R` in the above equation.
     obs_grid_cov : np.ndarray[float]
         Covariance between the all (predicted) grid points and measured points.
         Does not contain error covarance. This is `k*` in the above equation.
     interp_cov : np.ndarray[float]
         Interpolation covariance of all output grid points (each point in time
-        and all points against each other). This is `K(X*, X*)` in the above
+        and all points against each other). This is `C(X*, X*)` in the above
         equation.
 
     Returns
@@ -1155,9 +1170,9 @@ def constraint_mask(
         Constraint mask values, the left-hand-side of equation A14 from Morice
         et al. (2021). This is a vector of length `k_obs.size[0]`.
 
-    Reference
-    ---------
-    Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+    References
+    ----------
+    Morice et al. (2021) [Morice_2021]_
     """
     # ky_inv = np.linalg.inv(k_obs + err_cov)
     # NOTE: Ax = b => x = A^{-1}b (x = solve(A, b))

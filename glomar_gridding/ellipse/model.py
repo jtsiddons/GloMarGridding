@@ -1,4 +1,4 @@
-"""Classes and functions for ellipse models"""
+"""Classes and functions for ellipse models."""
 
 import logging
 import math as maths
@@ -172,13 +172,14 @@ class EllipseModel:
         to the best (MLE) estimate of the Matern parameters.
         If one assumes the parameters are normally distributed,
         the mean (best estimate) is independent of its variance.
-        In fact in Karspeck et al 2012, it is simply set to 1 (Eq B1).
+        In fact in Karspeck et al 2012 [Karspeck]_, it is simply set to 1
+        Eq B1).
         This value can however be computed. It serves a similar purpose as
         the original standard deviation:
         in this case, how the actual observed semivariance disperses
         around the fitted variogram.
 
-        The choice to default to 1 follows Karspeck et al. 2012
+        The choice to default to 1 follows Karspeck et al. 2012 [Karspeck]_
     """
 
     def __init__(
@@ -401,8 +402,9 @@ class EllipseModel:
         random_seed: int = 1234,
     ) -> tuple[OptimizeResult, float | None, list[tuple[float, float]]]:
         """
-        Default solver in Nelder-Mead as used in the Karspeck paper
-        https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
+        Default solver in Nelder-Mead as used in Karspeck et al. 2012
+        [Karspeck]_
+        i.e. https://docs.scipy.org/doc/scipy/reference/optimize.minimize-neldermead.html
         default max-iter is 200 x (number_of_variables)
         for 3 variables (Lx, Ly, theta) --> 200x3 = 600
         note: unlike variogram fitting, no nugget, no sill, and no residue
@@ -619,7 +621,7 @@ def cov_ij_anisotropic(
     # See discussion 2nd paragraph in 3.1.1 in Paciroke and Schervish 2006
     # second_term = 1.0
     inner = 2.0 * tau * np.sqrt(v)
-    third_term = np.pow(inner, v)
+    third_term = np.power(inner, v)
     forth_term = modified_bessel_2nd(v, inner)
     return first_term * third_term * forth_term
 

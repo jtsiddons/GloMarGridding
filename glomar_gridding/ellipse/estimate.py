@@ -191,6 +191,7 @@ class EllipseBuilder:
 
         the form of the covariance model depends on the "fform" attribute of the
         Ellipse model:
+
             isotropic (radial distance only)
             anistropic (x and y are different, but not rotated)
             anistropic_rotated (rotated)
@@ -207,15 +208,16 @@ class EllipseBuilder:
         removed
 
         v = matern covariance function shape parameter
-        Karspeck et al and Paciorek and Schervish use 3 and 4
-        but 0.5 and 1.5 are popular
-        0.5 gives an exponential decay
+        Karspeck et al. [Karspeck]_ and Paciorek & Schervish
+        [PaciorekSchervish]_
+        use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits
-            "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-            (in radians)
-            "Modified_Met_Office": uses the average zonal dist at different lat
+        delta_x_method: only meaningful for _pd fits:
+            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+              (in radians)
+            - "Modified_Met_Office": uses the average zonal dist at different
+              lat
 
         Parameters
         ----------
@@ -270,7 +272,7 @@ class EllipseBuilder:
             scales).
 
         opt_method='Nelder-Mead': str
-            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
+            scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
             See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
             for valid options
 
@@ -458,7 +460,7 @@ class EllipseBuilder:
         guesses: list[float] | None = None,
         bounds: list[tuple[float, float]] | None = None,
         opt_method: str = "Nelder-Mead",
-        tol: float = 0.001,
+        tol: float = 1e-4,
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
@@ -467,11 +469,12 @@ class EllipseBuilder:
         Fit ellipses/covariance models using adhoc local covariances to all
         unmasked grid points
 
-        the form of the covariance model depends on the "fform" attribute of the
+        The form of the covariance model depends on the "fform" attribute of the
         Ellipse model:
-            isotropic (radial distance only)
-            anistropic (x and y are different, but not rotated)
-            anistropic_rotated (rotated)
+
+            - isotropic (radial distance only)
+            - anistropic (x and y are different, but not rotated)
+            - anistropic_rotated (rotated)
 
         If the "fform" attribute ends with _pd then physical distances are used
         instead of degrees
@@ -485,15 +488,17 @@ class EllipseBuilder:
         removed
 
         v = matern covariance function shape parameter
-        Karspeck et al and Paciorek and Schervish use 3 and 4
-        but 0.5 and 1.5 are popular
-        0.5 gives an exponential decay
+        Karspeck et al. [Karspeck]_ and Paciorek & Schervish
+        [PaciorekSchervish]_
+        but 0.5 and 1.5 are popular 0.5 gives an exponential decay
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits
-            "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-            (in radians)
-            "Modified_Met_Office": uses the average zonal dist at different lat
+        delta_x_method: only meaningful for _pd fits:
+
+            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+              (in radians)
+            - "Modified_Met_Office": uses the average zonal dist at different
+              lat
 
         Parameters
         ----------
@@ -501,21 +506,9 @@ class EllipseBuilder:
             Default value(s) to fill arrays where parameter estimation is not
             possible (typically due to masking). Typically, one should set a
             value that is appropriate to the type of the field. If a single
-            value is provided, this is used for all fields. If not, 6 values
-            should be provided for the following fields:
-                1. Lx - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                2. Ly - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                3. theta - this should be a float or np.float value - a large
-                   value would be a good choice.
-                4. stdev - this should be a float or np.float value - a negative
-                   value would be a good choice.
-                5. success - this should be a int or np.int value - a negative
-                   value would be a good choice.
-                6. niter - this should be a int or np.int value - a negative
-                   value would be a good choice.
-
+            value is provided, this is used for all fields. If not, the length
+            of the list of default values must equal the number of parameters
+            of the `EllipseModel`
 
         matern_ellipse : EllipseModel
             EllipseModel to use for parameter estimation
@@ -568,7 +561,7 @@ class EllipseBuilder:
             scales).
 
         opt_method='Nelder-Mead': str
-            scipy.optimize method. Nelder-Mead is the one used by Karspeck.
+            scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
             See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
             for valid options
 
@@ -578,7 +571,7 @@ class EllipseBuilder:
 
             Note on new tol kwarg:
             For N-M, this sets the value to both xatol and fatol
-            Default is 1E-4 (?)
+            Default is 1E-4
             Since it affects accuracy of all values including rotation
             rotation angle 0.001 rad ~ 0.05 deg
 
@@ -601,21 +594,17 @@ class EllipseBuilder:
         Returns
         -------
         params : xarray.Dataset
-            Containing the following arrays:
-                - lx : the length of the semi-major axis
-                - ly : the length of the semi-minor axis
-                - theta : angle of rotation of the ellipse in radians from the
-                  equator
-                - stdev : the standard deviation
-                - success : the fitting success score. This takes values:
-                    0: success
-                    2: success but with one parameter reaching upper boundaries
-                    3: success with multiple parameters reaching the boundaries
-                       (aka both Lx and Ly), can be both at lower or upper
-                       boundaries
-                    9: fail, probably due to running out of maxiter (see
-                       scipy.optimize.minimize kwargs "options)"
-                - niter : the number of iterations
+            Containing arrays for each parameter in the ellipse model class.
+            Note that one array is likely to be "qc_code", which takes values:
+
+                - 0: success
+                - 2: success but with one parameter reaching upper
+                  boundaries
+                - 3: success with multiple parameters reaching the
+                  boundaries (aka both Lx and Ly), can be both at lower or
+                  upper boundaries
+                - 9: fail, probably due to running out of maxiter (see
+                  scipy.optimize.minimize kwargs "options)"
         """
         coords_dict = {
             "latitude": self.coords["latitude"].values,

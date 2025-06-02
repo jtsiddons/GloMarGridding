@@ -1,15 +1,26 @@
-"""
-Repair "damaged"/"improper" covariance matrices:
-1) Un-invertible covariance matrices with 0 eigenvalues
-2) Covariance matrices with eigenvalues less than zero
+r"""
+When estimating covariance matrices, using ellipse-based methods for example,
+the results may not be positive-definite. This can be problematic, for instance
+the Kriging equations may not be solvable as the inverse matrix cannot be
+computed, or simulated states cannot be constructed using
+:py:func:`glomar_gridding.stochastic.scipy_mv_normal_draw`. To account for this,
+`glomar_gridding` includes a few tools for *fixing* these covariance matrices.
+In general, these methods attempt to coerce the input matrix to be
+positive-definite by updating the eigenvalues and re-computing the matrix from
+these updated eigenvalues and the original eigenvectors. The indicators of an
+invalid covariance matrix include
 
-Known causes of damage:
-1) Multicollinearity:
-    but nearly all very large cov matrices will have rounding errors to have
-    this occur
-2) Number of spatial points >> length of time series
-    (for ESA monthly pentads: this ratio is about 150)
-3) Covariance is estimated using partial data
+    1. Un-invertible covariance matrices with 0 eigenvalues
+    2. Covariance matrices with eigenvalues less than zero
+
+This can typically be a consequence of
+
+    1. Multicollinearity:
+       but nearly all very large cov matrices will have rounding errors to have
+       this occur
+    2. Number of spatial points >> length of time series
+       (for ESA monthly pentads: this ratio is about 150)
+    3. Covariance is estimated using partial data
 
 In most cases, the most likely causes are 2 and 3.
 
@@ -19,50 +30,67 @@ increased to some minimum threshold. The covariance matrix is then re-calculated
 using these modified eigenvalues and the original eigenvectors.
 
 In general, the recommended approach is Original Clipping, see
-`glomar_gridding.covariance_tools.eigenvalue_clip`.
+:py:func:`glomar_gridding.covariance_tools.eigenvalue_clip`.
 
 Fixes:
-1) Simple clipping - `glomar_gridding.covariance_tools.simple_clipping`:
-    Cut off the negative, zero, and small positive eigenvalues; this is method
-    used in statsmodels.stats.correlation_tools but the version here has better
-    thresholds based on the accuracy of the eigenvalues, plus a iterative
-    version which is slower but more stable with big matrices. The iterative
-    version is recommended for SST/MAT covariances.
 
-    This is used for SST covariance matrices which have less dominant modes
-    than MAT; it also preserves more noise.
+    1. Simple clipping -
+    :py:func:`glomar_gridding.covariance_tools.simple_clipping`:
 
-    Trace (aka total variance) of the covariance matrix is not conserved, but it
-    is less disruptive than EOF chop off (method 3).
+        Cut off the negative, zero, and small positive eigenvalues; this is
+        method used in statsmodels.stats.correlation_tools but the version here
+        has better thresholds based on the accuracy of the eigenvalues, plus a
+        iterative version which is slower but more stable with big matrices. The
+        iterative version is recommended for SST/MAT covariances.
 
-    It is more difficult to use for covariance matrices with one large dominant
-    mode because that raises the bar of accuracy of the eigenvalues, which
-    requires clipping off a lot more eigenvectors.
+        This is used for SST covariance matrices which have less dominant modes
+        than MAT; it also preserves more noise.
 
-2) Original clipping - `glomar_gridding.covariance_tools.eigenvalue_clip`:
-    Determine a noise eigenvalue threshold and replace all eigenvalues below
-    using the average of them, preserving the original trace (aka total
-    variance) of the covariance matrix, but this will require a full computation
-    of all eigenvectors, which may be slow and cause memory problems
+        Trace (aka total variance) of the covariance matrix is not conserved,
+        but it is less disruptive than EOF chop off (method 3).
 
-3) EOF chop-off - `glomar_gridding.covariance_tools.eof_chop`:
-    Set a target explained variance (say 95%) for the empirical orthogonal
-    functions, compute the eigenvalues and eigenvectors up to that explained
-    variance. Reconstruct the covariance keeping only EOFs up to the target.
-    This is very close to 2, but it reduces the total variance of the covariance
-    matrix. The original method requires solving for ALL eigenvectors which may
-    not be possible for massive matrices (40000x40000 square matrices). This is
-    currently done for the MAT covariance matrices which have very large
-    dominant modes.
+        It is more difficult to use for covariance matrices with one large
+        dominant mode because that raises the bar of accuracy of the
+        eigenvalues, which requires clipping off a lot more eigenvectors.
 
-4) Other methods not implemented here
-    a) shrinkage methods
-        https://scikit-learn.org/stable/modules/covariance.html
-    b) reprojection (aka Higham's method)
-        https://github.com/mikecroucher/nearest_correlation
-        https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+        Note, this will adjust all negative eigenvalues to be positive.
+
+    2. Original clipping -
+    :py:func:`glomar_gridding.covariance_tools.eigenvalue_clip`:
+
+        Determine a noise eigenvalue threshold and replace all eigenvalues below
+        using the average of them, preserving the original trace (aka total
+        variance) of the covariance matrix, but this will require a full
+        computation of all eigenvectors, which may be slow and cause memory
+        problems
+
+        Note, this will adjust all negative eigenvalues to be positive.
+
+    3. EOF chop-off -
+    :py:func:`glomar_gridding.covariance_tools.eof_chop`:
+
+        Set a target explained variance (say 95%) for the empirical orthogonal
+        functions, compute the eigenvalues and eigenvectors up to that explained
+        variance. Reconstruct the covariance keeping only EOFs up to the target.
+        This is very close to 2, but it reduces the total variance of the
+        covariance matrix. The original method requires solving for ALL
+        eigenvectors which may not be possible for massive matrices
+        (40000x40000 square matrices). This is currently done for the MAT
+        covariance matrices which have very large dominant modes.
+
+        Note, this may not adjust negative eigenvalues to be positive.
+
+    4. Other methods not implemented here
+
+        a. shrinkage methods
+            https://scikit-learn.org/stable/modules/covariance.html
+        b. reprojection (aka Higham's method) [Higham]_
+            https://github.com/mikecroucher/nearest_correlation
+
+            https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
 
 Author S Chan.
+
 Modified by J. Siddons.
 """
 
@@ -92,7 +120,8 @@ def perturb_cov_to_positive_definite(
     eigenvalue clipping with statsmodels.stats.correlation_tools.cov_nearest
     function.
 
-    Deprecated in favour of glomar_gridding.covariance_tools.simple_clipping.
+    Deprecated in favour of
+    :py:func:`glomar_gridding.covariance_tools.simple_clipping`.
 
     Parameters
     ----------
@@ -110,14 +139,15 @@ def perturb_cov_to_positive_definite(
 
     See Also
     --------
-    Use simple_clipping instead.
+    glomar_gridding.covariance_tool.simple_clipping
 
     Notes
     -----
     Other methods:
-        https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
-        https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
-        https://academic.oup.com/imajna/article/22/3/329/708688
+
+        - https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
+        - https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+        - https://academic.oup.com/imajna/article/22/3/329/708688
     """
     warn(
         "This function is deprecated in favour of "
@@ -205,10 +235,11 @@ def simple_clipping(
     summary_dict : dict[str, Any]
         A dictionary containing a summary of the input and results with the
         following keys:
-            threshold
-            smallest_eigv
-            determinant
-            total_variance
+
+            - "threshold"
+            - "smallest_eigv"
+            - "determinant"
+            - "total_variance"
 
     See Also
     --------
@@ -217,9 +248,10 @@ def simple_clipping(
     Notes
     -----
     Other methods:
-        https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
-        https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
-        https://academic.oup.com/imajna/article/22/3/329/708688
+
+        - https://nhigham.com/2021/02/16/diagonally-perturbing-a-symmetric-matrix-to-make-it-positive-definite/
+        - https://nhigham.com/2013/02/13/the-nearest-correlation-matrix/
+        - https://academic.oup.com/imajna/article/22/3/329/708688
     """
     n = cov.shape[0]
     all_eigval = np.linalg.eigvals(cov)
@@ -496,14 +528,14 @@ def eigenvalue_clip(
     Denoise symmetric damaged covariance/correlation matrix cov by clipping
     eigenvalues
 
-    This is the original method:
-        https://www.worldscientific.com/doi/abs/10.1142/S0219024900000255
-
     Explained variance or aspect ratio based threshold
     Aspect ratios is based on dimensionless parameters
     (number of independent variable and observation size)
-    q = N/T = (num of independent variable)
-              / (num of observation per independent variable)
+
+    .. math::
+        q = N/T = (num of independent variable)
+        / (num of observation per independent variable)
+
     Does not give the same results as in eig_clip
 
     explained_variance here does not have the same meaning.
@@ -521,7 +553,10 @@ def eigenvalue_clip(
     cov : numpy.ndarray
         Input covariance matrix to be adjusted to positive definite.
     method : "explained_variance" | "Laloux_2000"
-        Method used to identify the index of the eigenvalues to clip.
+        Method used to identify the index of the eigenvalues to clip. If set to
+        "explained_variance" then the sorted eigenvalues below the target
+        variance are *clipped*. If "Laloux_2000" is set, then the method of
+        [Laloux]_ is used.
 
     Returns
     -------

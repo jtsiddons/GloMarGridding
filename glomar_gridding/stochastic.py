@@ -16,9 +16,9 @@ from glomar_gridding.kriging import (
 
 class StochasticKriging(Kriging):
     r"""
-    Class for the combined two-stage Kriging approach following Morice et al.
-    2021. The first stage is to produce a gridded field from the observations
-    using Ordinary Kriging. The second stage is to apply a perturbation.
+    Class for the combined two-stage Kriging approach following [Morice_2021]_
+    The first stage is to produce a gridded field from the observations using
+    Ordinary Kriging. The second stage is to apply a perturbation.
 
     The perturbation is constructed by first generating a simulated state from
     the covariance matrix. A set of simulated observations is drawn from the
@@ -29,18 +29,19 @@ class StochasticKriging(Kriging):
     the first stage.
 
     The equation for ordinary Kriging is:
+
     .. math::
-        (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+        (C_{obs} + E)^{-1} \times C_{cross} \times y
 
     with a constant but unknown mean.
 
-    In this case, the :math:`K_{obs}`, :math:`K_{cross}` and :math:`y` values
+    In this case, the :math:`C_{obs}`, :math:`C_{cross}` and :math:`y` values
     are extended with a Lagrange multiplier term for the first stage, ensuring
     that the Kriging weights are constrained to sum to 1.
 
-    Additionally, the matrix :math:`K_{obs}` is extended by one row and one
+    Additionally, the matrix :math:`C_{obs}` is extended by one row and one
     column, each containing the value 1, except at the diagonal point, which is
-    0 for the first Ordinary Kriging stage. The :math:`K_{cross}` matrix is
+    0 for the first Ordinary Kriging stage. The :math:`C_{cross}` matrix is
     extended by an extra row containing values of 1. Finally, the grid
     observations :math:`y` is extended by a single value of 0 at the end of the
     vector.
@@ -85,22 +86,22 @@ class StochasticKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
-        In this case, the :math:`K_{obs}`, :math:`K_{cross}` and are extended
+        In this case, the :math:`C_{obs}`, :math:`C_{cross}` and are extended
         with a Lagrange multiplier term, ensuring that the Kriging weights are
         constrained to sum to 1, for the first stage of the StochasticKriging
         process.
 
-        The matrix :math:`K_{obs}` is extended by one row and one column, each
+        The matrix :math:`C_{obs}` is extended by one row and one column, each
         containing the value 1, except at the diagonal point, which is 0. The
-        :math:`K_{cross}` matrix is extended by an extra row containing values
+        :math:`C_{cross}` matrix is extended by an extra row containing values
         of 1.
 
         Sets the `kriging_weights` and `simple_kriging_weights` attributes.
@@ -145,11 +146,11 @@ class StochasticKriging(Kriging):
         The Kriging weights are calculated as:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross}
+            (C_{obs} + E)^{-1} \times C_{cross}
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, and :math:`K_{cross}` is the covariance between
+        with observations, and :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points).
 
@@ -167,7 +168,7 @@ class StochasticKriging(Kriging):
         ----------
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
-            observations. :math:`(K_{obs} + E)^{-1}`
+            observations. :math:`(C_{obs} + E)^{-1}`
         idx : numpy.ndarray[int] | list[int]
             The 1d indices of observation grid points. These values should be
             between 0 and (N * M) - 1 where N, M are the number of longitudes
@@ -223,27 +224,31 @@ class StochasticKriging(Kriging):
         idx: np.ndarray,
     ) -> np.ndarray:
         r"""
-        Compute the observational constraint mask (A14 in Morice et al. (2021) -
-        10.1029/2019JD032361) to determine if a grid point should be
-        masked/weights modified by how far it is to its near observed point
+        Compute the observational constraint mask (A14 in [Morice_2021]_) to
+        determine if a grid point should be masked/weights modified by how far
+        it is to its near observed point
 
-        Note: typo in Section A4 in Morice et al 2021 (confired by authors).
+        Note: typo in Section A4 in [Morice_2021]_ (confired by authors).
 
         Equation to use is A14 is incorrect. Easily noticeable because
         dimensionally incorrect is wrong, but the correct answer is easy to
         figure out.
 
-        Correct Equation (extra matrix inverse for :math:`K_{obs} + E`):
+        Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
+
         .. math::
-            1 - diag\\(K - K_{cross}^T @ (K + E)^{-1} @ K_{cross}\\)  / diag(K)
-            < alpha
+            \frac{
+                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+                         \times C_{cross})
+            }{diag(C)} < \alpha
 
         This can be re-written as:
-        .. math::
-            diag\\(K_{cross}^T @ (K_{obs} + E)^{-1} @ K_{cross}\\) / diag(K)
-            < alpha
 
-        alpha is chosen to be 0.25 in the UKMO paper
+        .. math::
+            \frac{diag(C_{cross}^T \times (C_{obs} + E)^{-1} \times C_{cross})}
+            {diag(C)} < \alpha
+
+        :math:`\alpha` is chosen to be 0.25 in the UKMO paper
 
         Written by S. Chan, modified by J. Siddons.
 
@@ -265,11 +270,11 @@ class StochasticKriging(Kriging):
         -------
         constraint_mask : numpy.ndarray
             Constraint mask values, the left-hand-side of equation A14 from
-            Morice et al. (2021). This is a vector of length `k_obs.size[0]`.
+            [Morice_2021]_. This is a vector of length `k_obs.size[0]`.
 
-        Reference
-        ---------
-        Morice et al. (2021) : https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
+        References
+        ----------
+        [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if not hasattr(self, "simple_kriging_weights"):
             raise KeyError("Please set kriging weights")
@@ -303,21 +308,21 @@ class StochasticKriging(Kriging):
         The solution to Kriging is:
 
         .. math::
-            (K_{obs} + E)^{-1} \\times K_{cross} \\times y
+            (C_{obs} + E)^{-1} \times C_{cross} \times y
 
-        Where :math:`K_{obs}` is the spatial covariance between grid-points
+        Where :math:`C_{obs}` is the spatial covariance between grid-points
         with observations, :math:`E` is the error covariance between grid-points
-        with observations, :math:`K_{cross}` is the covariance between
+        with observations, :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points), and :math:`y` are the observation values.
 
-        In this case, the :math:`K_{obs}`, :math:`K_{cross}` and are extended
+        In this case, the :math:`C_{obs}`, :math:`C_{cross}` and are extended
         with a Lagrange multiplier term, ensuring that the Kriging weights are
         constrained to sum to 1. For the Ordinary Kriging component.
 
-        The matrix :math:`K_{obs}` is extended by one row and one column, each
+        The matrix :math:`C_{obs}` is extended by one row and one column, each
         containing the value 1, except at the diagonal point, which is 0. The
-        :math:`K_{cross}` matrix is extended by an extra row containing values
+        :math:`C_{cross}` matrix is extended by an extra row containing values
         of 1. For the Ordinary Kriging component.
 
         This additionally sets the following attributes:
@@ -343,12 +348,23 @@ class StochasticKriging(Kriging):
         error_cov : numpy.ndarray | None
             Optionally add error covariance values to the covariance between
             observation grid points. Used to compute Kriging weights.
+        simulated_state : numpy.ndarray | None
+            Flattened simulated state, used as the location basis for the
+            simulated observation draw. If this is not provided it will be
+            calculated. Often it is better to pre-compute a series of states in
+            advance, since this can be a time consuming step (drawing a single
+            state takes approximately the same time as drawing 200).
 
         Returns
         -------
         numpy.ndarray
             The solution to the stochastic Kriging problem (as a Vector, this
             may need to be re-shaped appropriately as a post-processing step).
+
+        Examples
+        --------
+        >>> SK = StochasticKriging(interp_covariance)
+        >>> SK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
             self.get_kriging_weights(idx, error_cov)
@@ -427,6 +443,17 @@ def scipy_mv_normal_draw(  # noqa: C901
         positive-definite then a new covariance will be determined by adjusting
         the eigen decomposition such that the modified covariance should be
         positive-definite.
+
+    Examples
+    --------
+    >>> A = np.random.rand(5, 5)
+    >>> cov = np.dot(A, A.T)
+    >>> scipy_mv_normal_draw(np.zeros(5), cov, ndraws=5)
+    array([[-0.35972806, -0.51289612,  0.85307028, -0.11580307,  0.6677707 ],
+           [-1.38214628, -1.29331638, -0.4879436 , -1.42310831, -0.19369562],
+           [-1.04502143, -1.97686163, -2.058605  , -1.97202206, -2.90116796],
+           [-1.97981119, -2.72330373,  0.0088662 , -2.53521893, -0.03670664],
+           [ 0.49948228,  0.54695988,  0.33864294,  0.53730282,  0.14743019]])
     """
 
     def any_complex(arr: np.ndarray) -> bool:

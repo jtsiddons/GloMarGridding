@@ -21,7 +21,7 @@ def join_climatology_by_doy(
 ) -> pl.DataFrame:
     """
     Merge a climatology from an xarray.DataArray into a polars.DataFrame using
-    the day of year value and position.
+    the **day of year** value and position.
 
     This function accounts for leap years by taking the average of the
     climatology values for 28th Feb and 1st March for observations that were
@@ -81,6 +81,11 @@ def join_climatology_by_doy(
     climatology = climatology.select(
         [clim_lat, clim_lon, clim_doy, pl.col(clim_var).alias(clim_var_name)]
     )
+    # Ensure doy is a Day of Year value
+    if climatology.get_column(clim_doy).dtype.is_temporal():
+        climatology = climatology.with_columns(
+            pl.col(clim_doy).dt.ordinal_day().name.keep()
+        )
 
     obs_lat = obs_df.get_column(lat_col)
     _, lat_vals = find_nearest(climatology_365.coords[clim_lat], obs_lat)
