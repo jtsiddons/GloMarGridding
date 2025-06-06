@@ -384,14 +384,14 @@ class StochasticKriging(Kriging):
 
         # Simulate observations
         error_cov = error_cov[idx[:, None], idx[None, :]]
-        simulated_obs = simulated_state[idx] + scipy_mv_normal_draw(
+        self.simulated_obs = simulated_state[idx] + scipy_mv_normal_draw(
             loc=np.zeros(error_cov.shape[0]),
             cov=error_cov,
             ndraws=1,
         )
 
         # Simulate a gridded field
-        self.simulated_grid = self.simple_kriging_weights @ simulated_obs
+        self.simulated_grid = self.simple_kriging_weights @ self.simulated_obs
         self.epsilon = self.simulated_grid - simulated_state
 
         # Add Lagrange multiplier
