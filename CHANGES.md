@@ -25,6 +25,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Add `simulated_obs` as attribute to `StochasticKriging` in `solve` method (!71)
 * Added an example notebook (!46)
 * Added documentation pdf (!46)
 * Added `variogram.SphericalVariogram` (!69)
