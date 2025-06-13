@@ -108,9 +108,11 @@ def test_ordinary_kriging_class() -> None:  # noqa: D103
     grid_idx = obs.get_column("grid_idx").to_numpy()
     obs_vals = obs.get_column("val").to_numpy()
 
-    OKrige = OrdinaryKriging(covariance=covariance.values)
+    OKrige = OrdinaryKriging(
+        covariance=covariance.values, idx=grid_idx, obs=obs_vals
+    )
 
-    k = OKrige.solve(obs_vals, grid_idx)
+    k = OKrige.solve()
 
     assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
@@ -142,11 +144,15 @@ def test_ordinary_kriging_class_from_weights() -> None:  # noqa: D103
     )
     obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
     kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+    print(kriging_weights.shape)
+    print(len(grid_idx))
 
-    OKrige = OrdinaryKriging(covariance=covariance.values)
+    OKrige = OrdinaryKriging(
+        covariance=covariance.values, idx=grid_idx, obs=obs_vals
+    )
     OKrige.set_kriging_weights(kriging_weights)
 
-    k = OKrige.solve(obs_vals, grid_idx)
+    k = OKrige.solve()
 
     assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
@@ -173,12 +179,14 @@ def test_ordinary_kriging_class_from_inv() -> None:  # noqa: D103
     S = covariance.values[grid_idx[:, None], grid_idx[None, :]]
     S_inv = np.linalg.inv(S)
 
-    OKrige = OrdinaryKriging(covariance=covariance.values)
+    OKrige = OrdinaryKriging(
+        covariance=covariance.values, idx=grid_idx, obs=obs_vals
+    )
 
     S_ext_inv = OKrige.extended_inverse(S_inv)
-    OKrige.kriging_weights_from_inverse(S_ext_inv, grid_idx)
+    OKrige.kriging_weights_from_inverse(S_ext_inv)
 
-    k = OKrige.solve(obs_vals, grid_idx)
+    k = OKrige.solve()
 
     assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None
@@ -210,10 +218,15 @@ def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
     for i, val in zip(idx, err_cov_vals.flatten()):
         err_cov[*i] = val
 
-    OKrige = OrdinaryKriging(covariance=covariance.values)
-    k = OKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
-    u = OKrige.get_uncertainty(grid_idx)
-    a = OKrige.constraint_mask(grid_idx)
+    OKrige = OrdinaryKriging(
+        covariance=covariance.values,
+        idx=grid_idx,
+        obs=obs_vals,
+        error_cov=err_cov,
+    )
+    k = OKrige.solve()
+    u = OKrige.get_uncertainty()
+    a = OKrige.constraint_mask()
 
     assert k.shape == a.shape == u.shape
 
@@ -254,10 +267,15 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
     for i, val in zip(idx, err_cov_vals.flatten()):
         err_cov[*i] = val
 
-    SKrige = SimpleKriging(covariance=covariance.values)
-    k = SKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
-    u = SKrige.get_uncertainty(grid_idx)
-    a = SKrige.constraint_mask(grid_idx)
+    SKrige = SimpleKriging(
+        covariance=covariance.values,
+        idx=grid_idx,
+        obs=obs_vals,
+        error_cov=err_cov,
+    )
+    k = SKrige.solve()
+    u = SKrige.get_uncertainty()
+    a = SKrige.constraint_mask()
 
     assert k.shape == a.shape == u.shape
 
@@ -324,10 +342,15 @@ def test_stochastic_kriging_class_methods() -> None:  # noqa: D103
     for i, val in zip(idx, err_cov_vals.flatten()):
         err_cov[*i] = val
 
-    StochKrige = StochasticKriging(covariance=covariance.values)
-    k = StochKrige.solve(obs_vals, grid_idx, error_cov=err_cov)
-    u = StochKrige.get_uncertainty(grid_idx)
-    a = StochKrige.constraint_mask(grid_idx)
+    StochKrige = StochasticKriging(
+        covariance=covariance.values,
+        idx=grid_idx,
+        obs=obs_vals,
+        error_cov=err_cov,
+    )
+    k = StochKrige.solve()
+    u = StochKrige.get_uncertainty()
+    a = StochKrige.constraint_mask()
 
     assert k.shape == a.shape == u.shape
 
@@ -342,7 +365,7 @@ def test_stochastic_kriging_class_methods() -> None:  # noqa: D103
     sk_weights = StochKrige.simple_kriging_weights
     delattr(StochKrige, "simple_kriging_weights")
     StochKrige.set_simple_kriging_weights(sk_weights)
-    a2 = StochKrige.constraint_mask(grid_idx)
+    a2 = StochKrige.constraint_mask()
 
     assert np.allclose(a, a2)
 
