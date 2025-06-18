@@ -326,18 +326,23 @@ Alternatively, an error covariance matrix can be computed component wise.
 \label{\detokenize{workflow:ordinary-kriging}}
 \sphinxAtStartPar
 In this example, we will infill the observations using Ordinary Kriging. For this, we use
-{\hyperref[\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.OrdinaryKriging}}}}}, which requires a spatial covariance matrix as
-input.
+{\hyperref[\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.OrdinaryKriging}}}}}, which requires a spatial covariance matrix,
+observation grid indices, observation values, and (optionally) error covariance as inputs.
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
-\PYG{n}{ok} \PYG{o}{=} \PYG{n}{OrdinaryKriging}\PYG{p}{(}\PYG{n}{covariance}\PYG{p}{)}
+\PYG{n}{ok} \PYG{o}{=} \PYG{n}{OrdinaryKriging}\PYG{p}{(}
+    \PYG{n}{covariance}\PYG{o}{.}\PYG{n}{values}\PYG{p}{,}
+    \PYG{n}{idx}\PYG{o}{=}\PYG{n}{grid\PYGZus{}idx}\PYG{p}{,}
+    \PYG{n}{obs}\PYG{o}{=}\PYG{n}{grid\PYGZus{}obs}\PYG{p}{,}
+    \PYG{n}{error\PYGZus{}cov}\PYG{o}{=}\PYG{n}{error\PYGZus{}cov}\PYG{p}{,}
+\PYG{p}{)}
 \end{sphinxVerbatim}
 
 \sphinxAtStartPar
 We can now use this class\sphinxhyphen{}instance to solve the system, using the \sphinxtitleref{solve} method.
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
-\PYG{n}{result} \PYG{o}{=} \PYG{n}{ok}\PYG{o}{.}\PYG{n}{solve}\PYG{p}{(}\PYG{n}{grid\PYGZus{}obs}\PYG{p}{,} \PYG{n}{grid\PYGZus{}idx}\PYG{p}{,} \PYG{n}{error\PYGZus{}cov}\PYG{o}{=}\PYG{n}{error\PYGZus{}cov}\PYG{p}{)}
+\PYG{n}{result} \PYG{o}{=} \PYG{n}{ok}\PYG{o}{.}\PYG{n}{solve}\PYG{p}{(}\PYG{p}{)}
 \end{sphinxVerbatim}
 
 \sphinxAtStartPar

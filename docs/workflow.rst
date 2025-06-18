@@ -107,18 +107,23 @@ Ordinary Kriging
 ================
 
 In this example, we will infill the observations using Ordinary Kriging. For this, we use
-:py:class:`glomar_gridding.kriging.OrdinaryKriging`, which requires a spatial covariance matrix as
-input.
+:py:class:`glomar_gridding.kriging.OrdinaryKriging`, which requires a spatial covariance matrix,
+observation grid indices, observation values, and (optionally) error covariance as inputs.
 
 .. code-block:: python
 
-   ok = OrdinaryKriging(covariance)
+   ok = OrdinaryKriging(
+       covariance.values,
+       idx=grid_idx,
+       obs=grid_obs,
+       error_cov=error_cov,
+   )
 
 We can now use this class-instance to solve the system, using the `solve` method.
 
 .. code-block:: python
 
-   result = ok.solve(grid_obs, grid_idx, error_cov=error_cov)
+   result = ok.solve()
 
 Finally, the output can be mapped back on to the grid using
 :py:func:`glomar_gridding.grid.assign_to_grid`
