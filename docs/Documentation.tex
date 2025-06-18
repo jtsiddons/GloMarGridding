@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Jun 06, 2025}
+\date{Jun 18, 2025}
 \release{1.0.0\sphinxhyphen{}rc.2}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -2508,10 +2508,14 @@ Ordinary Kriging
 \sphinxAtStartPar
 For each Kriging method there is a class and a function. The recommended approach is to use the
 classes, the functions will be deprecated in a future version of \sphinxtitleref{glomar\_gridding}. The classes
-require the full grid spatial covariance structure as an input. Each class contains a \sphinxtitleref{solve} method
-that requires the observation values and the 1\sphinxhyphen{}dimensional grid index of each observation,
-optionally an error covariance matrix can be provided. The grid index values are used to index into
-the covariance matrix to obtain the inputs for the Kriging equations.
+require the full grid spatial covariance structure, the observation values, and the grid index of
+each observation, and an optional error covariance matrix as inputs. Each grid index should be a
+single index value, and represents the flattened index, and connects directly to the corresponding
+index of the covariance matrices. If an error covariance matrix is provided, the covariance matrix
+will be automatically subset to the grid index values, if the resulting matrix contains \sphinxtitleref{nan} or \sphinxtitleref{0}
+values on the diagonal, then the observation values and indices are filtered to exclude these
+points, and the error covariance matrix is subset again. Just initialising the class does not solve
+the system, this requires the \sphinxtitleref{solve} method to be called.
 
 
 \section{Preparation}
@@ -2715,7 +2719,7 @@ Note that the mean will need to be reapplied to the Kriging result.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{SimpleKriging}}}
-{\sphinxparam{\DUrole{n}{covariance}}}
+{\sphinxparam{\DUrole{n}{covariance}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2729,11 +2733,35 @@ The equation for simple Kriging is:
 \sphinxAtStartPar
 Where \(\mu\) is a constant known mean, typically this is 0.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The observation values. If there are multiple observations in any
+grid box then these values need to be averaged into one value per
+grid box.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+observation grid points.
+
+\end{itemize}
 
 \end{description}\end{quote}
 \index{constraint\_mask() (glomar\_gridding.kriging.SimpleKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.kriging.SimpleKriging method}}
@@ -2743,7 +2771,7 @@ Ellipse methods.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
-{\sphinxparam{\DUrole{n}{idx}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2783,16 +2811,6 @@ Written by S. Chan, modified by J. Siddons.
 \sphinxAtStartPar
 This requires that the \sphinxtitleref{kriging\_weights} attribute is set.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
 \sphinxstylestrong{constraint\_mask} \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from
@@ -2817,7 +2835,7 @@ numpy.ndarray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
-{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2840,24 +2858,6 @@ grid\sphinxhyphen{}points).
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points.
-
-\end{itemize}
-
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 \DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
@@ -2873,7 +2873,7 @@ observation grid points.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{\sphinxparam{\DUrole{n}{idx}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2899,7 +2899,7 @@ numpy.ndarray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
-{\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
+{\sphinxparam{\DUrole{n}{inv}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2922,23 +2922,10 @@ grid\sphinxhyphen{}points).
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\end{itemize}
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -2955,7 +2942,7 @@ observation should be averaged
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{solve}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
+{\sphinxparam{\DUrole{n}{mean}\DUrole{o}{=}\DUrole{default_value}{0.0}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -2972,33 +2959,9 @@ with observations, \(C_{cross}\) is the covariance between
 grid\sphinxhyphen{}points with observations and all grid\sphinxhyphen{}points (including observation
 grid\sphinxhyphen{}points), and \(y\) are the observation values.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
-grid box then these values need to be averaged into one value per
-grid box.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points. Used to compute Kriging weights.
-
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Constant, known, mean value of the system. Defaults to 0.0.
-
-\end{itemize}
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3100,7 +3063,7 @@ points using simple kriging.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.}}\sphinxbfcode{\sphinxupquote{OrdinaryKriging}}}
-{\sphinxparam{\DUrole{n}{covariance}}}
+{\sphinxparam{\DUrole{n}{covariance}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3126,11 +3089,35 @@ containing the value 1, except at the diagonal point, which is 0. The
 Finally, the grid observations \(y\) is extended by a single value of 0
 at the end of the vector.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged. Used to compute the Kriging weights.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
+grid box then these values need to be averaged into one value per
+grid box.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+observation grid points.
+
+\end{itemize}
 
 \end{description}\end{quote}
 \index{constraint\_mask() (glomar\_gridding.kriging.OrdinaryKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.kriging.OrdinaryKriging method}}
@@ -3140,7 +3127,7 @@ Ellipse methods.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
-{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{simple\_kriging\_weights}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{simple\_kriging\_weights}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3181,28 +3168,10 @@ Written by S. Chan, modified by J. Siddons.
 This requires the Kriging weights from simple Kriging. If these are
 not provided as an input, then they are calculated.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}\sphinxstyleliteralemphasis{\sphinxupquote{,}}) \textendash{} The Kriging weights for the equivalent simple Kriging system.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}\sphinxstyleliteralemphasis{\sphinxupquote{,}}) \textendash{} The error covariance matrix. Used to compute the simple Kriging
-weights if not provided. Can be excluded if not Kriging with an
 error covariance.
-
-\end{itemize}
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3279,7 +3248,7 @@ numpy.matrix
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
-{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3313,24 +3282,6 @@ of 1.
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points.
-
-\end{itemize}
-
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 \DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
@@ -3346,7 +3297,7 @@ observation grid points.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{\sphinxparam{\DUrole{n}{idx}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3372,7 +3323,7 @@ numpy.ndarray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
-{\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
+{\sphinxparam{\DUrole{n}{inv}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3405,23 +3356,10 @@ calculated from that inverse.
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\end{itemize}
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -3438,7 +3376,7 @@ observation should be averaged
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{solve}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3466,30 +3404,6 @@ containing the value 1, except at the diagonal point, which is 0. The
 \(C_{cross}\) matrix is extended by an extra row containing values
 of 1.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
-grid box then these values need to be averaged into one value per
-grid box.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points. Used to compute Kriging weights.
-
-\end{itemize}
-
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
 The solution to the ordinary Kriging problem (as a Vector, this may
@@ -3581,7 +3495,11 @@ points using ordinary kriging.
 \section{Perturbed Gridded Fields}
 \label{\detokenize{kriging:perturbed-gridded-fields}}
 \sphinxAtStartPar
-An additional two\sphinxhyphen{}stage combined Kriging class is provided in the \sphinxtitleref{stochastic} module.
+An additional two\sphinxhyphen{}stage combined Kriging class is provided in the \sphinxtitleref{stochastic} module. In this case,
+the \sphinxtitleref{solve} method has an additional optional \sphinxtitleref{simulated\_state} argument, if this is set, then the
+value is used as the simulated system state used as the base of the perturbed field (from which
+observations are simulated), otherwise the value is computed. This allows for pre\sphinxhyphen{}computation of a
+sequence of simulated states as part of ensemble processing, for example.
 \index{StochasticKriging (class in glomar\_gridding.stochastic)@\spxentry{StochasticKriging}\spxextra{class in glomar\_gridding.stochastic}}
 
 \begin{fulllineitems}
@@ -3589,7 +3507,7 @@ An additional two\sphinxhyphen{}stage combined Kriging class is provided in the 
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.}}\sphinxbfcode{\sphinxupquote{StochasticKriging}}}
-{\sphinxparam{\DUrole{n}{covariance}}}
+{\sphinxparam{\DUrole{n}{covariance}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3627,11 +3545,35 @@ extended by an extra row containing values of 1. Finally, the grid
 observations \(y\) is extended by a single value of 0 at the end of the
 vector.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
+and latitudes respectively. Note that these values should also be
+computed using “C” ordering in numpy reshaping. They can be
+computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
+value should only appear once. Points that contain more than 1
+observation should be averaged. Used to compute the Kriging weights.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
+grid box then these values need to be averaged into one value per
+grid box.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Error covariance values to the covariance between observation grid
+points.
+
+\end{itemize}
 
 \end{description}\end{quote}
 \index{constraint\_mask() (glomar\_gridding.stochastic.StochasticKriging method)@\spxentry{constraint\_mask()}\spxextra{glomar\_gridding.stochastic.StochasticKriging method}}
@@ -3641,7 +3583,7 @@ Ellipse methods.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{constraint\_mask}}}
-{\sphinxparam{\DUrole{n}{idx}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3681,16 +3623,6 @@ Written by S. Chan, modified by J. Siddons.
 This requires the Kriging weights from simple Kriging, set as the
 \sphinxtitleref{simple\_kriging\_weights} attribute.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
 \sphinxstylestrong{constraint\_mask} \textendash{} Constraint mask values, the left\sphinxhyphen{}hand\sphinxhyphen{}side of equation A14 from
@@ -3715,7 +3647,7 @@ numpy.ndarray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_kriging\_weights}}}
-{\sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3750,24 +3682,6 @@ of 1.
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_weights} attributes.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points.
-
-\end{itemize}
-
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 \DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
@@ -3783,7 +3697,7 @@ observation grid points.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{\sphinxparam{\DUrole{n}{idx}}}
+{}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3809,7 +3723,7 @@ numpy.ndarray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{kriging\_weights\_from\_inverse}}}
-{\sphinxparam{\DUrole{n}{inv}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}}
+{\sphinxparam{\DUrole{n}{inv}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3842,23 +3756,10 @@ covariance matrix used for the first Ordinary Kriging stage.
 \sphinxAtStartPar
 Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_weights} attributes.
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged
-
-\end{itemize}
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -3904,7 +3805,7 @@ Sets the \sphinxtitleref{simple\_kriging\_weights} attribute.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{solve}}}
-{\sphinxparam{\DUrole{n}{grid\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{simulated\_state}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{simulated\_state}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3961,37 +3862,13 @@ This additionally sets the following attributes:
 
 \end{itemize}
 \begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
-grid box then these values need to be averaged into one value per
-grid box.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
-between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
-and latitudes respectively. Note that these values should also be
-computed using “C” ordering in numpy reshaping. They can be
-computed from a grid using glomar\_gridding.grid.map\_to\_grid. Each
-value should only appear once. Points that contain more than 1
-observation should be averaged. Used to compute the Kriging weights.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
-observation grid points. Used to compute Kriging weights.
-
-\item {}
+\sphinxlineitem{Parameters}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{simulated\_state}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Flattened simulated state, used as the location basis for the
 simulated observation draw. If this is not provided it will be
 calculated. Often it is better to pre\sphinxhyphen{}compute a series of states in
 advance, since this can be a time consuming step (drawing a single
 state takes approximately the same time as drawing 200).
-
-\end{itemize}
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -5949,7 +5826,7 @@ Error class for Column Not Being Found
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{MonthName}}}
-{\sphinxparam{\DUrole{n}{value}}}
+{\sphinxparam{\DUrole{o}{*}\DUrole{n}{values}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar

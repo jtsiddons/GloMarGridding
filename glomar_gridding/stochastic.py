@@ -52,9 +52,42 @@ class StochasticKriging(Kriging):
         The spatial covariance matrix. This can be a pre-computed matrix loaded
         into the environment, or computed from a Variogram class or using
         Ellipse methods.
+    idx : numpy.ndarray
+        The 1d indices of observation grid points. These values should be
+        between 0 and (N * M) - 1 where N, M are the number of longitudes
+        and latitudes respectively. Note that these values should also be
+        computed using "C" ordering in numpy reshaping. They can be
+        computed from a grid using glomar_gridding.grid.map_to_grid. Each
+        value should only appear once. Points that contain more than 1
+        observation should be averaged. Used to compute the Kriging weights.
+    obs : numpy.ndarray
+        The observation values. If there are multiple observations in any
+        grid box then these values need to be averaged into one value per
+        grid box.
+    error_cov : numpy.ndarray
+        Error covariance values to the covariance between observation grid
+        points.
     """
 
     method = "stochastic"
+
+    def __init__(
+        self,
+        covariance: np.ndarray,
+        idx: np.ndarray,
+        obs: np.ndarray,
+        error_cov: np.ndarray,
+    ) -> None:
+        if error_cov is None:
+            raise ValueError(
+                "Error Covariance must be provided for StochasticKriging"
+            )
+        super().__init__(
+            covariance=covariance,
+            idx=idx,
+            obs=obs,
+            error_cov=error_cov,
+        )
 
     def set_simple_kriging_weights(
         self,
@@ -148,14 +181,6 @@ class StochasticKriging(Kriging):
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
             observations. :math:`(C_{obs} + E)^{-1}`
-        idx : numpy.ndarray[int] | list[int]
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged
         """
         if len(self.idx) != inv.shape[0]:
             # NOTE: input is the simple Kriging inverse

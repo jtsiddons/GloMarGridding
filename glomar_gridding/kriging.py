@@ -31,14 +31,22 @@ class Kriging(ABC):
 
     Parameters
     ----------
-    idx : numpy.ndarray[int] | list[int]
+    covariance : numpy.ndarray
+        The spatial covariance matrix. This can be a pre-computed matrix loaded
+        into the environment, or computed from a Variogram class or using
+        Ellipse methods.
+    idx : numpy.ndarray
         The 1d indices of observation grid points. These values should be
         between 0 and (N * M) - 1 where N, M are the number of longitudes
         and latitudes respectively. Note that these values should also be
         computed using "C" ordering in numpy reshaping. They can be
         computed from a grid using glomar_gridding.grid.map_to_grid. Each
         value should only appear once. Points that contain more than 1
-        observation should be averaged
+        observation should be averaged. Used to compute the Kriging weights.
+    obs : numpy.ndarray
+        The observation values. If there are multiple observations in any
+        grid box then these values need to be averaged into one value per
+        grid box.
     error_cov : numpy.ndarray | None
         Optionally add error covariance values to the covariance between
         observation grid points.
@@ -128,20 +136,6 @@ class Kriging(ABC):
         grid-points).
 
         Sets the `kriging_weights` attribute.
-
-        Parameters
-        ----------
-        idx : numpy.ndarray[int] | list[int]
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged
-        error_cov : numpy.ndarray | None
-            Optionally add error covariance values to the covariance between
-            observation grid points.
         """
         raise NotImplementedError(
             "`get_kriging_weights` not implemented for default class"
@@ -195,24 +189,6 @@ class Kriging(ABC):
         with observations, :math:`C_{cross}` is the covariance between
         grid-points with observations and all grid-points (including observation
         grid-points), and :math:`y` are the observation values.
-
-        Parameters
-        ----------
-        grid_obs : numpy.ndarray
-            The observation values. If there are multiple observations in any
-            grid box then these values need to be averaged into one value per
-            grid box.
-        idx : numpy.ndarray
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged. Used to compute the Kriging weights.
-        error_cov : numpy.ndarray | None
-            Optionally add error covariance values to the covariance between
-            observation grid points. Used to compute Kriging weights.
 
         Returns
         -------
@@ -270,17 +246,6 @@ class Kriging(ABC):
         Written by S. Chan, modified by J. Siddons.
 
         This requires that the `kriging_weights` attribute is set.
-
-        Parameters
-        ----------
-        idx : numpy.ndarray
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged. Used to compute the Kriging weights.
 
         Returns
         -------
@@ -351,20 +316,6 @@ class SimpleKriging(Kriging):
         grid-points).
 
         Sets the `kriging_weights` attribute.
-
-        Parameters
-        ----------
-        idx : numpy.ndarray[int] | list[int]
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged
-        error_cov : numpy.ndarray | None
-            Optionally add error covariance values to the covariance between
-            observation grid points.
         """
         obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
         obs_grid_cov = self.covariance[self.idx, :]
@@ -550,6 +501,21 @@ class OrdinaryKriging(Kriging):
         The spatial covariance matrix. This can be a pre-computed matrix loaded
         into the environment, or computed from a Variogram class or using
         Ellipse methods.
+    idx : numpy.ndarray
+        The 1d indices of observation grid points. These values should be
+        between 0 and (N * M) - 1 where N, M are the number of longitudes
+        and latitudes respectively. Note that these values should also be
+        computed using "C" ordering in numpy reshaping. They can be
+        computed from a grid using glomar_gridding.grid.map_to_grid. Each
+        value should only appear once. Points that contain more than 1
+        observation should be averaged. Used to compute the Kriging weights.
+    obs : numpy.ndarray
+        The observation values. If there are multiple observations in any
+        grid box then these values need to be averaged into one value per
+        grid box.
+    error_cov : numpy.ndarray | None
+        Optionally add error covariance values to the covariance between
+        observation grid points.
     """
 
     method: str = "ordinary"
