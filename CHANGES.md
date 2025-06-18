@@ -17,6 +17,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Breaking changes
 
+* `Kriging` class objects now have required `idx`, `obs`, and optional `error_cov` inputs, these
+  inputs are no longer required for class methods (!75)
 * `kriging.kriging` and `kriging.unmasked_kriging` wrapper functions are removed (!68)
 * `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
 * Removed `variogram.LinearVariagram` and `variogram.PowerVariogram` (!69)
