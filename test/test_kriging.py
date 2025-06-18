@@ -415,3 +415,48 @@ def test_filter_bad_error_cov_values() -> None:
     assert (OKrige.idx == grid_idx[:2]).all()
     assert (OKrige.obs == obs_vals[:2]).all()
     assert OKrige.error_cov.shape == (2, 2)
+
+
+def test_filter_bad_error_cov_values_stochastic() -> None:
+    grid = grid_from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    ).pipe(map_to_grid, grid, grid_coords=["lat", "lon"])
+
+    grid_idx = obs.get_column("grid_idx").to_numpy()
+    obs_vals = obs.get_column("val").to_numpy()
+
+    dist: xr.DataArray = grid_to_distance_matrix(grid, euclidean_distances)
+
+    variogram = MaternVariogram(range=35 / 3, psill=4.0, nugget=0.0, nu=1.5)
+
+    covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
+
+    err_cov = np.full(covariance.shape, np.nan)
+    err_cov_vals = np.random.rand(3, 3)
+    # Add a nan on the diagonal
+    err_cov_vals = np.dot(err_cov_vals, err_cov_vals.T)
+    err_cov_vals[2, 2] = np.nan
+    idx = list(product(grid_idx, grid_idx))
+    for i, val in zip(idx, err_cov_vals.flatten()):
+        err_cov[*i] = val
+
+    expected_warn = (
+        "Have nans or zeros on the error covariance diagonal. "
+        + f"At positions {grid_idx[2]}. Filtering input accordingly"
+    )
+    with pytest.warns(UserWarning, match=expected_warn):
+        OKrige = StochasticKriging(
+            covariance.values,
+            idx=grid_idx,
+            obs=obs_vals,
+            error_cov=err_cov,
+        )
+
+    assert (OKrige.idx == grid_idx[:2]).all()
+    assert (OKrige.obs == obs_vals[:2]).all()
+    assert OKrige.error_cov.shape == (2, 2)
