@@ -81,25 +81,26 @@ class Kriging(ABC):
                 self.error_cov = self.error_cov[
                     self.idx[:, None], self.idx[None, :]
                 ]
+            print("HERE!")
             if (
                 mismatch := np.logical_or(
                     np.isnan(self.error_cov.diagonal()),
                     self.error_cov.diagonal() == 0,
                 )
             ).any():
-                drop_idx = self.idx[mismatch]
+                idx_keep = np.where(np.logical_not(mismatch))[0]
+                drop_idx = self.idx[mismatch].tolist()
                 msg = (
                     "Have nans or zeros on the error covariance diagonal. "
                     + "At positions "
-                    + " ,".join(drop_idx)
-                    + "Filtering input accordingly"
+                    + " ,".join(map(str, drop_idx))
+                    + ". Filtering input accordingly"
                 )
                 warn(msg)
-                idx_keep = [i for i in self.idx if i not in drop_idx]
                 self.idx = self.idx[idx_keep]
                 self.obs = self.obs[idx_keep]
                 self.error_cov = self.error_cov[
-                    self.idx[:, None], self.idx[None, :]
+                    idx_keep[:, None], idx_keep[None, :]
                 ]
         return None
 
