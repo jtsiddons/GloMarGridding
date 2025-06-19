@@ -52,9 +52,42 @@ class StochasticKriging(Kriging):
         The spatial covariance matrix. This can be a pre-computed matrix loaded
         into the environment, or computed from a Variogram class or using
         Ellipse methods.
+    idx : numpy.ndarray
+        The 1d indices of observation grid points. These values should be
+        between 0 and (N * M) - 1 where N, M are the number of longitudes
+        and latitudes respectively. Note that these values should also be
+        computed using "C" ordering in numpy reshaping. They can be
+        computed from a grid using glomar_gridding.grid.map_to_grid. Each
+        value should only appear once. Points that contain more than 1
+        observation should be averaged. Used to compute the Kriging weights.
+    obs : numpy.ndarray
+        The observation values. If there are multiple observations in any
+        grid box then these values need to be averaged into one value per
+        grid box.
+    error_cov : numpy.ndarray
+        Error covariance values to the covariance between observation grid
+        points.
     """
 
     method = "stochastic"
+
+    def __init__(
+        self,
+        covariance: np.ndarray,
+        idx: np.ndarray,
+        obs: np.ndarray,
+        error_cov: np.ndarray,
+    ) -> None:
+        if error_cov is None:
+            raise ValueError(
+                "Error Covariance must be provided for StochasticKriging"
+            )
+        super().__init__(
+            covariance=covariance,
+            idx=idx,
+            obs=obs,
+            error_cov=error_cov,
+        )
 
     def set_simple_kriging_weights(
         self,
@@ -73,11 +106,7 @@ class StochasticKriging(Kriging):
         """
         self.simple_kriging_weights = simple_kriging_weights
 
-    def get_kriging_weights(
-        self,
-        idx: np.ndarray,
-        error_cov: np.ndarray | None = None,
-    ) -> None:
+    def get_kriging_weights(self) -> None:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation. Optionally add an error covariance to the
@@ -105,38 +134,21 @@ class StochasticKriging(Kriging):
         of 1.
 
         Sets the `kriging_weights` and `simple_kriging_weights` attributes.
-
-        Parameters
-        ----------
-        idx : numpy.ndarray[int] | list[int]
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged
-        error_cov : numpy.ndarray | None
-            Optionally add error covariance values to the covariance between
-            observation grid points.
         """
-        obs_obs_cov = self.covariance[idx[:, None], idx[None, :]]
+        obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
 
         # Add error covariance
-        if error_cov is not None:
-            if error_cov.shape[0] != len(idx):
-                error_cov = error_cov[idx[:, None], idx[None, :]]
-            obs_obs_cov += error_cov
+        if self.error_cov is not None:
+            obs_obs_cov += self.error_cov
 
         obs_obs_cov_inv = np.linalg.inv(obs_obs_cov)
-        self.kriging_weights_from_inverse(obs_obs_cov_inv, idx)
+        self.kriging_weights_from_inverse(obs_obs_cov_inv)
 
         return None
 
     def kriging_weights_from_inverse(
         self,
         inv: np.ndarray,
-        idx: np.ndarray,
     ) -> None:
         r"""
         Compute the Kriging weights from the flattened grid indices where
@@ -169,19 +181,13 @@ class StochasticKriging(Kriging):
         inv : numpy.ndarray
             The pre-computed inverse of the covariance between grid-points with
             observations. :math:`(C_{obs} + E)^{-1}`
-        idx : numpy.ndarray[int] | list[int]
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged
         """
-        if len(idx) != inv.shape[0]:
+        if len(self.idx) != inv.shape[0]:
             # NOTE: input is the simple Kriging inverse
-            raise ValueError("inv must be square with side length == len(idx)")
-        obs_grid_cov = self.covariance[idx, :]
+            raise ValueError(
+                "inv must be square with side length == len(self.idx)"
+            )
+        obs_grid_cov = self.covariance[self.idx, :]
         M = self.covariance.shape[0]
 
         self.simple_kriging_weights = (inv @ obs_grid_cov).T
@@ -193,7 +199,7 @@ class StochasticKriging(Kriging):
 
         return None
 
-    def get_uncertainty(self, idx: np.ndarray) -> np.ndarray:
+    def get_uncertainty(self) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
@@ -207,7 +213,7 @@ class StochasticKriging(Kriging):
             raise KeyError("Please compute Kriging Weights first")
 
         M = self.covariance.shape[0]
-        obs_grid_cov = self.covariance[idx, :]
+        obs_grid_cov = self.covariance[self.idx, :]
         obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
 
         alpha = self.kriging_weights[:, -1]
@@ -219,10 +225,7 @@ class StochasticKriging(Kriging):
 
         return uncert
 
-    def constraint_mask(
-        self,
-        idx: np.ndarray,
-    ) -> np.ndarray:
+    def constraint_mask(self) -> np.ndarray:
         r"""
         Compute the observational constraint mask (A14 in [Morice_2021]_) to
         determine if a grid point should be masked/weights modified by how far
@@ -255,17 +258,6 @@ class StochasticKriging(Kriging):
         This requires the Kriging weights from simple Kriging, set as the
         `simple_kriging_weights` attribute.
 
-        Parameters
-        ----------
-        idx : numpy.ndarray
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged. Used to compute the Kriging weights.
-
         Returns
         -------
         constraint_mask : numpy.ndarray
@@ -280,16 +272,13 @@ class StochasticKriging(Kriging):
             raise KeyError("Please set kriging weights")
 
         numerator = np.diag(
-            self.covariance[:, idx] @ self.simple_kriging_weights.T
+            self.covariance[:, self.idx] @ self.simple_kriging_weights.T
         )
         denominator = np.diag(self.covariance)
         return np.divide(numerator, denominator)
 
     def solve(
         self,
-        grid_obs: np.ndarray,
-        idx: np.ndarray,
-        error_cov: np.ndarray | None = None,
         simulated_state: np.ndarray | None = None,
     ) -> np.ndarray:
         r"""
@@ -333,21 +322,6 @@ class StochasticKriging(Kriging):
 
         Parameters
         ----------
-        grid_obs : numpy.ndarray
-            The observation values. If there are multiple observations in any
-            grid box then these values need to be averaged into one value per
-            grid box.
-        idx : numpy.ndarray
-            The 1d indices of observation grid points. These values should be
-            between 0 and (N * M) - 1 where N, M are the number of longitudes
-            and latitudes respectively. Note that these values should also be
-            computed using "C" ordering in numpy reshaping. They can be
-            computed from a grid using glomar_gridding.grid.map_to_grid. Each
-            value should only appear once. Points that contain more than 1
-            observation should be averaged. Used to compute the Kriging weights.
-        error_cov : numpy.ndarray | None
-            Optionally add error covariance values to the covariance between
-            observation grid points. Used to compute Kriging weights.
         simulated_state : numpy.ndarray | None
             Flattened simulated state, used as the location basis for the
             simulated observation draw. If this is not provided it will be
@@ -367,9 +341,9 @@ class StochasticKriging(Kriging):
         >>> SK.solve(obs, idx, error_covariance)
         """
         if not hasattr(self, "kriging_weights"):
-            self.get_kriging_weights(idx, error_cov)
+            self.get_kriging_weights()
 
-        if error_cov is None:
+        if self.error_cov is None:
             raise ValueError(
                 "Error Covariance must be set to draw simulated observations"
             )
@@ -383,10 +357,9 @@ class StochasticKriging(Kriging):
             )
 
         # Simulate observations
-        error_cov = error_cov[idx[:, None], idx[None, :]]
-        self.simulated_obs = simulated_state[idx] + scipy_mv_normal_draw(
-            loc=np.zeros(error_cov.shape[0]),
-            cov=error_cov,
+        self.simulated_obs = simulated_state[self.idx] + scipy_mv_normal_draw(
+            loc=np.zeros(self.error_cov.shape[0]),
+            cov=self.error_cov,
             ndraws=1,
         )
 
@@ -395,7 +368,7 @@ class StochasticKriging(Kriging):
         self.epsilon = self.simulated_grid - simulated_state
 
         # Add Lagrange multiplier
-        grid_obs = np.append(grid_obs, 0)
+        grid_obs = np.append(self.obs, 0)
         self.gridded_field = self.kriging_weights @ grid_obs
         return self.gridded_field + self.epsilon
 
