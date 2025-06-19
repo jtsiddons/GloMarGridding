@@ -444,7 +444,7 @@ wheels = [
 
 [[package]]
 name = "glomargridding"
-version = "0.3.0"
+version = "1.0.0rc3"
 source = { editable = "." }
 dependencies = [
     { name = "geopandas" },
