@@ -1,4 +1,4 @@
-name: geotrees Testing Suite
+name: glomar_gridding Testing Suite
 on:
   push:
     branches:
