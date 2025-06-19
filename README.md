@@ -1,7 +1,5 @@
 # GloMar Gridding
 
-[![pipeline status](https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding/badges/master/pipeline.svg)](https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding/-/commits/master)
-
 Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography Centre.
 Currently only available to project collaborators.
 
@@ -12,7 +10,7 @@ Part of the NOC Surface Processes _GloMar_ suite of libraries and datasets.
 Clone the repository
 
 ```bash
-git clone git@git.noc.ac.uk:nocsurfaceprocesses/glomar_gridding.git /path/to/glomar_gridding
+git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git /path/to/glomar_gridding
 ```
 
 Create virtual environment and install dependencies. We recommend using [`uv`](https://docs.astral.sh/uv/) for python as an alternative to `pip`.
@@ -27,7 +25,7 @@ uv sync  # Install dependencies
 ### Install as a dependency
 
 ```bash
-uv add git+git@git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git
+uv add git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
 ```
 
 ### `pip` instructions
@@ -44,7 +42,7 @@ pip install -e .
 Or as a dependency:
 
 ```bash
-pip install git+git@git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git
+pip install git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
 ```
 
 ## Acknowledgements

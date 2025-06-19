@@ -35,7 +35,7 @@ We recommend [uv](https://docs.astral.sh/uv/) for development purposes.
 Clone the repository and create your development branch
 
 ```bash
-git clone git@git.noc.ac.uk:noc_surface_processes/glomar_gridding.git /path/to/glomar_gridding
+git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git /path/to/glomar_gridding
 cd /path/to/glomar_gridding
 git checkout -b new-branch-name  # if not a new branch exclude the '-b'
 ```
@@ -52,10 +52,6 @@ To install the dependencies run:
 ```bash
 uv sync
 ```
-
-Or to install all development dependencies and dependencies for the runner scripts (including
-`PyCOADS` which requires access to
-[https://git.noc.ac.uk/josidd/pycoads](https://git.noc.ac.uk/josidd/pycoads)) run:
 
 ```bash
 uv sync --extra all

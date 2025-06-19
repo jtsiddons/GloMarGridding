@@ -12,7 +12,7 @@ GloMarGridding is not available on PyPI, however it can be installed via pip wit
 
 .. code-block:: console
 
-   pip install GloMarGridding@git+ssh://git@git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git
+   pip install GloMarGridding@git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
 
 From Source
 -----------
@@ -21,8 +21,8 @@ Alternatively, you can clone the repository and install using pip (or conda if p
 
 .. code-block:: console
 
-   git clone git@git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git
-   cd glomar_gridding
+   git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git
+   cd GloMarGridding
    python -m venv venv
    source venv/bin/activate
    pip install -e .
