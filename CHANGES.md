@@ -7,6 +7,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Announcements
 
+* License updated to Apache 2.0 (!77)
 * Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
 
 ### Deprecations

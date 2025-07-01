@@ -41,7 +41,7 @@ maintainers = [
 ]
 description = "National Oceanography Centre library for performing gridding."
 readme = "README.md"
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 keywords = [
   "gridding",
   "kriging",
