@@ -526,10 +526,87 @@ def _find_index_aspect_ratio(
     return -int(np.sum(eigvals > threshold))
 
 
+def laloux_clip(
+    cov: np.ndarray,
+    num_grid_pts: int = 180 * 360,
+    num_time_pts: int = 41 * 6,
+) -> np.ndarray:
+    """DOCUMENTATION"""
+    sigma = np.sqrt(np.diag(cov))
+    one_over_sigma = np.divide(1, sigma)
+    standardised_cov = one_over_sigma @ cov @ one_over_sigma.T
+
+    eigvals, eigvecs = np.linalg.eigh(standardised_cov)
+
+    keep_i = _find_index_aspect_ratio(
+        eigvals,
+        num_grid_pts=num_grid_pts,
+        num_times=num_time_pts,
+    )
+
+    standardised_clipped = _eigenvalue_clip(
+        eigvals=eigvals,
+        eigvecs=eigvecs,
+        keep_i=keep_i,
+    )
+
+    return sigma @ standardised_clipped @ sigma.T
+
+
+def explained_variance_clip(
+    cov: np.ndarray,
+    target_variance_fraction: float = 0.95,
+) -> np.ndarray:
+    """DOCUMENTATION"""
+    eigvals, eigvecs = np.linalg.eigh(cov)
+
+    keep_i = _find_index_explained_variance(
+        eigvals,
+        target=target_variance_fraction,
+    )
+
+    return _eigenvalue_clip(
+        eigvals=eigvals,
+        eigvecs=eigvecs,
+        keep_i=keep_i,
+    )
+
+
+def _eigenvalue_clip(
+    eigvals: np.ndarray,
+    eigvecs: np.ndarray,
+    keep_i: int,
+) -> np.ndarray:
+    print(f"top 5 eigenvalues = {eigvals[:5]}")
+    print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
+    n_eigvals = len(eigvals)
+
+    clip_i = n_eigvals + keep_i  # Note i2keep is NEGATIVE
+    print(f"Number of kept eigenvalues = {-keep_i}")
+    print(f"Number of clipped eigenvalues = {clip_i}")
+
+    # The total variance should be preserved after clipping
+    # within precision error of the eigenvalues which is
+    # O(Max(Eig) * float_accuracy)
+    total_var = np.sum(eigvals)
+    var_explained_by_i2keep = np.sum(eigvals[keep_i:])
+    if total_var < var_explained_by_i2keep:
+        warn(
+            "Variance explained by retained eigenvalues exceeds total variance"
+        )
+    unexplained_var = total_var - var_explained_by_i2keep
+    avg_eigenvals_4_unexplained = unexplained_var / clip_i
+
+    # Find eigenvectors associated up to i2keep
+    new_eigvals = eigvals.copy()
+    new_eigvals[:keep_i] = avg_eigenvals_4_unexplained
+    return eigvecs @ np.diag(new_eigvals) @ eigvecs.T
+
+
 def eigenvalue_clip(
     cov: np.ndarray,
     method: Literal["explained_variance", "Laloux_2000"] = "explained_variance",
-    method_parms={"target": 0.95},
+    **kwargs,
 ) -> np.ndarray:
     """
     Denoise symmetric damaged covariance/correlation matrix cov by clipping
@@ -564,38 +641,22 @@ def eigenvalue_clip(
         "explained_variance" then the sorted eigenvalues below the target
         variance are *clipped*. If "Laloux_2000" is set, then the method of
         [Laloux]_ is used.
+    **kwargs
 
     Returns
     -------
-    cov_adj : numpy.ndarray
+    numpy.ndarray
         Adjusted covariance matrix.
-    """
-    eigvals, eigvecs = np.linalg.eigh(cov)
-    print(f"top 5 eigenvalues = {eigvals[:5]}")
-    print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
-    n_eigvals = len(eigvals)
 
+    See Also
+    --------
+    - :py:func:`glomar_gridding.covariance_tools.explained_variance_clip`.
+    - :py:func:`glomar_gridding.covariance_tools.laloux_clip`.
+    """
     match method:
         case "explained_variance":
-            keep_i = _find_index_explained_variance(eigvals, **method_parms)
+            return explained_variance_clip(cov, **kwargs)
         case "Laloux_2000":
-            keep_i = _find_index_aspect_ratio(eigvals, **method_parms)
+            return laloux_clip(cov, **kwargs)
         case _:
             raise ValueError("Unknown clipping method")
-
-    clip_i = n_eigvals + keep_i  # Note i2keep is NEGATIVE
-    print(f"Number of kept eigenvalues = {-keep_i}")
-    print(f"Number of clipped eigenvalues = {clip_i}")
-
-    # The total variance should be preserved after clipping
-    # within precision error of the eigenvalues which is
-    # O(Max(Eig) * float_accuracy)
-    total_var = np.sum(eigvals)
-    var_explained_by_i2keep = np.sum(eigvals[keep_i:])
-    unexplained_var = total_var - var_explained_by_i2keep
-    avg_eigenvals_4_unexplained = unexplained_var / clip_i
-
-    # Find eigenvectors associated up to i2keep
-    new_eigvals = eigvals.copy()
-    new_eigvals[:keep_i] = avg_eigenvals_4_unexplained
-    return eigvecs @ np.diag(new_eigvals) @ eigvecs.T
