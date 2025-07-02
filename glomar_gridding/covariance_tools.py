@@ -115,6 +115,8 @@ import scipy as sp
 from statsmodels.stats import correlation_tools
 from warnings import warn
 
+from glomar_gridding.utils import cor_2_cov, cov_2_cor
+
 
 def check_symmetric(
     a: np.ndarray,
@@ -532,11 +534,10 @@ def laloux_clip(
     num_time_pts: int = 41 * 6,
 ) -> np.ndarray:
     """DOCUMENTATION"""
-    sigma = np.sqrt(np.diag(cov))
-    one_over_sigma = np.divide(1, sigma)
-    standardised_cov = one_over_sigma @ cov @ one_over_sigma.T
+    vars = np.diag(cov)
+    cor = cov_2_cor(cov)
 
-    eigvals, eigvecs = np.linalg.eigh(standardised_cov)
+    eigvals, eigvecs = np.linalg.eigh(cor)
 
     keep_i = _find_index_aspect_ratio(
         eigvals,
@@ -544,13 +545,13 @@ def laloux_clip(
         num_times=num_time_pts,
     )
 
-    standardised_clipped = _eigenvalue_clip(
+    clipped_cor = _eigenvalue_clip(
         eigvals=eigvals,
         eigvecs=eigvecs,
         keep_i=keep_i,
     )
 
-    return sigma @ standardised_clipped @ sigma.T
+    return cor_2_cov(clipped_cor, vars)
 
 
 def explained_variance_clip(
