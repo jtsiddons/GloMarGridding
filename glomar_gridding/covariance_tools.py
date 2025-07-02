@@ -512,16 +512,9 @@ def _find_index_aspect_ratio(
         q ~ 65, threshold ~ 82
 
     These parameters do not work in general must be determined from input data.
-    """
-    _, threshold = _estimate_threshold(num_grid_pts, num_times)
-    return -int(np.sum(eigvals > threshold))
 
-
-def _estimate_threshold(
-    num_grid_pts: int = 180 * 360,
-    num_times: int = 41 * 6,
-) -> tuple[float, float]:
-    """
+    References
+    ----------
     See 7.2.2 in https://doi.org/10.1016/j.physrep.2016.10.005
     Eigenvalue threshold: threshold = (1.0 + SQRT(q))**2
     Below calculates q and threshold
@@ -530,7 +523,7 @@ def _estimate_threshold(
     if q < 1.0:
         q = 1.0 / q
     threshold = (1.0 + np.sqrt(q)) ** 2.0
-    return q, threshold
+    return -int(np.sum(eigvals > threshold))
 
 
 def eigenvalue_clip(
