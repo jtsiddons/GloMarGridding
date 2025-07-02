@@ -581,7 +581,7 @@ def laloux_clip(
         Length of the time series that is behind the covariance generation
         Default 40 (aka 40 Jans from 1981-2020), since this is what used
         originally when covariances are generated for modern satellite era
-        data (early 1980-ish to 2020-ish). It is important this value to 
+        data (early 1980-ish to 2020-ish). It is important this value to
         be set correctly.
 
     Returns
@@ -628,7 +628,7 @@ def explained_variance_clip(
 
     lambda_clipped = (lambda_n, lambda_n+1, ..., lambda_N)
 
-    They now recieve a revised eigenvalue of E(lambda_clipped).
+    They now get a revised eigenvalue of E(lambda_clipped).
     Checks are in place within _eigenvalue_clip to ensure the
     threshold is suitable.
 
@@ -640,7 +640,7 @@ def explained_variance_clip(
     diagonal of the covariance matrix is constant).
 
     - Jolliffe 2002 recommends 70-90% for truncation
-    - Graphical guidances (``specturm of eigenvalues'') are helpful
+    - Graphical guidances (``spectrum of eigenvalues'') are helpful
     (Wilks 2006, Laloux et al 2000)
 
     Noting that Wilks and Jolliffe mostly concern with TRUNCATION not
