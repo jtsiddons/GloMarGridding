@@ -55,10 +55,10 @@ def test_det_multi():
 @pytest.mark.parametrize(
     "angle,",
     [
-        (np.pi / 2,),
-        (0.123,),
-        (-np.pi / 3,),
-        (np.pi / 12,),
+        np.pi / 2,
+        0.123,
+        -np.pi / 3,
+        np.pi / 12,
     ],
 )
 def test_rot(angle):
@@ -66,8 +66,6 @@ def test_rot(angle):
     r = np.asarray(R.from_rotvec(angle * np.array([0, 0, 1])).as_matrix())[
         :2, :2
     ]
-    print(f"{rot = }")
-    print(f"{r= }")
 
     assert np.allclose(r, rot)
 
