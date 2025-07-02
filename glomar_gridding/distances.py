@@ -30,6 +30,7 @@ import numpy as np
 import geopandas as gpd
 import pandas as pd
 import polars as pl
+from math import cos, sin
 
 from shapely.geometry import Point
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
@@ -44,8 +45,8 @@ def rot_mat(angle: float) -> np.ndarray:
 
     The input angle must be in radians
     """
-    c_ang = float(np.cos(angle))
-    s_ang = float(np.sin(angle))
+    c_ang = cos(angle)
+    s_ang = sin(angle)
     return np.array([[c_ang, -s_ang], [s_ang, c_ang]])
 
 
