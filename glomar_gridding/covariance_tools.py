@@ -559,6 +559,9 @@ def explained_variance_clip(
     target_variance_fraction: float = 0.95,
 ) -> np.ndarray:
     """DOCUMENTATION"""
+    if not 0.0 < target_variance_fraction <= 1.0:
+        raise ValueError("'target_variance_fraction' must be (0, 1.0]")
+
     eigvals, eigvecs = np.linalg.eigh(cov)
 
     keep_i = _find_index_explained_variance(
@@ -578,6 +581,27 @@ def _eigenvalue_clip(
     eigvecs: np.ndarray,
     keep_i: int,
 ) -> np.ndarray:
+    total_var = np.sum(eigvals)
+    var_explained_by_i2keep = np.sum(eigvals[keep_i:])
+
+    print(f"total explained variance = {total_var}")
+    print(f"clipped explained variance = {var_explained_by_i2keep}")
+
+    if total_var < var_explained_by_i2keep:
+        explained_needed = np.sum(eigvals[keep_i + 1 :])
+        new_threshold = explained_needed / total_var
+        raise ValueError(
+            "Variance explained by retained eigenvalues exceeds total "
+            + "variance. Resulting matrix will have negative eigenvalues. "
+            + f"Try using a lower threshold. A value below {new_threshold} "
+            + "may work with "
+            + "glomar_gridding.covariance_tools.explained_variance_clip."
+        )
+
+    print(
+        f"New explained variance = {(var_explained_by_i2keep / total_var):.2%}"
+    )
+
     print(f"top 5 eigenvalues = {eigvals[:5]}")
     print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
     n_eigvals = len(eigvals)
@@ -592,19 +616,21 @@ def _eigenvalue_clip(
     # The total variance should be preserved after clipping
     # within precision error of the eigenvalues which is
     # O(Max(Eig) * float_accuracy)
-    total_var = np.sum(eigvals)
-    var_explained_by_i2keep = np.sum(eigvals[keep_i:])
-    if total_var < var_explained_by_i2keep:
-        warn(
-            "Variance explained by retained eigenvalues exceeds total variance"
-        )
     unexplained_var = total_var - var_explained_by_i2keep
     avg_eigenvals_4_unexplained = unexplained_var / clip_i
 
     # Find eigenvectors associated up to i2keep
     new_eigvals = eigvals.copy()
     new_eigvals[:keep_i] = avg_eigenvals_4_unexplained
-    return eigvecs @ np.diag(new_eigvals) @ eigvecs.T
+    out = eigvecs @ np.diag(new_eigvals) @ eigvecs.T
+
+    if not (np.linalg.eigvalsh(out) > 0).all():
+        warn(
+            "Resulting matrix is not positive-definite, and may not be a "
+            + "valid covariance matrix."
+        )
+
+    return out
 
 
 def eigenvalue_clip(
