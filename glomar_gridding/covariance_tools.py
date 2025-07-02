@@ -661,7 +661,7 @@ def explained_variance_clip(
     Jolliffe, I. T., 2002: Principal Component Analysis. Springer, 487 pp.
 
     Laloux, L., Cizeau, P., Potters, M., & Bouchaud, J.-P. (2000).
-    Random Matrix Theory and Financial Correlations. 
+    Random Matrix Theory and Financial Correlations.
     International Journal of Theoretical and Applied Finance, 03(03), 391–397.
     https://doi.org/10.1142/S0219024900000255
 
