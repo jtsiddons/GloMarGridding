@@ -170,6 +170,8 @@ def adjust_small_negative(
         warn("Small negative vals are detected. Setting to 0.")
         print(mat[small_negative_check])
         ret[small_negative_check] = 0.0
+    if (ret < 0).any():
+        warn("Negative values are detected")
     return ret
 
 
