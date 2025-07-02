@@ -205,7 +205,7 @@ def find_nearest(
     >>> find_nearest(array, tests)
     ([np.int64(0), np.int64(4), np.int64(3)], array([1. , 4.5, 2.1]))
     """
-    idx_list = [(np.abs(array - value)).argmin() for value in values]
+    idx_list = [int(np.argmin((np.abs(array - value)))) for value in values]
     array_values_list = np.array(array)[idx_list]
     # print(values)
     # print(array_values_list)
