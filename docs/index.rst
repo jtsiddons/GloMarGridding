@@ -27,6 +27,8 @@ Welcome to GloMarGridding's documentation!
 .. * :ref:`modindex`
 .. * :ref:`search`
 
+.. [Bun] Bun, J., Bouchaud, J.-P., and Potters, M: Cleaning large correlation matrices: Tools from Random Matrix Theory, Physics Reports, Volume 666, 2017, Pages 1-109, ISSN 0370-1573, https://doi.org/10.1016/j.physrep.2016.10.005.
+
 .. [Cornell] https://www.css.cornell.edu/faculty/dgr2/_static/files/distance_ed_geostats/ov5.pdf
 
 .. [Cressie] Cressie, N. A. C.: Statistics for Spatial Data, Wiley Series in Probability and Statistics, Wiley, 1 edn., ISBN 978-0-471-00255-0 978-1-119-11515-1, https://doi.org/10.1002/9781119115151, 1993.

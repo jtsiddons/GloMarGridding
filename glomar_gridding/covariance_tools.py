@@ -513,11 +513,11 @@ def _find_index_aspect_ratio(
 
     These parameters do not work in general must be determined from input data.
 
+    Eigenvalue threshold: threshold = (1.0 + SQRT(q))**2
+
     References
     ----------
-    See 7.2.2 in https://doi.org/10.1016/j.physrep.2016.10.005
-    Eigenvalue threshold: threshold = (1.0 + SQRT(q))**2
-    Below calculates q and threshold
+    See 7.2.2 in [Bun]_
     """
     q = num_grid_pts / num_times
     if q < 1.0:
