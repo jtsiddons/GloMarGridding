@@ -581,6 +581,9 @@ def _eigenvalue_clip(
     print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
     n_eigvals = len(eigvals)
 
+    # Ensure keep_i is negative
+    keep_i = keep_i if keep_i < 0 else -keep_i
+
     clip_i = n_eigvals + keep_i  # Note i2keep is NEGATIVE
     print(f"Number of kept eigenvalues = {-keep_i}")
     print(f"Number of clipped eigenvalues = {clip_i}")
