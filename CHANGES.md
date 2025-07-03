@@ -28,6 +28,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Added new functions `glomar_gridding.covariance_tools.laloux_clip` and
+  `glomar_gridding.covariance_tools.explained_variance_clip` (!78)
 * Add `simulated_obs` as attribute to `StochasticKriging` in `solve` method (!71)
 * Added an example notebook (!46)
 * Added documentation pdf (!46)
@@ -46,6 +48,11 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 * Add module for estimating ellipse parameters from observational datasets (`ellipse_builder`) (!54)
 * Add module containing ellipse models (`ellipse`) (!54)
 * Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
+
+### Bug fixes
+
+* Corrected `glomar_gridding.covariance_tools.eigenvalue_clip` with `"Laloux"` method to compute new
+  eigenvalues using correlation matrix rather than covariance matrix (!78)
 
 ### Internal changes
 

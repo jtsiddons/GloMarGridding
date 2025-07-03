@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Jul 01, 2025}
+\date{Jul 03, 2025}
 \release{1.0.0\sphinxhyphen{}rc.3}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -5222,33 +5222,12 @@ problems
 \sphinxAtStartPar
 Note, this will adjust all negative eigenvalues to be positive.
 \end{quote}
-
-\sphinxAtStartPar
-3. EOF chop\sphinxhyphen{}off \sphinxhyphen{}
-\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.eof\_chop()}}:
-\begin{quote}
-
-\sphinxAtStartPar
-Set a target explained variance (say 95\%) for the empirical orthogonal
-functions, compute the eigenvalues and eigenvectors up to that explained
-variance. Reconstruct the covariance keeping only EOFs up to the target.
-This is very close to 2, but it reduces the total variance of the
-covariance matrix. The original method requires solving for ALL
-eigenvectors which may not be possible for massive matrices
-(40000x40000 square matrices). This is currently done for the MAT
-covariance matrices which have very large dominant modes.
-
-\sphinxAtStartPar
-Note, this may not adjust negative eigenvalues to be positive.
 \end{quote}
-\begin{enumerate}
-\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
-\setcounter{enumi}{3}
-\item {}
+
 \sphinxAtStartPar
-Other methods not implemented here
+Other methods not implemented here \sphinxhyphen{}
 \begin{enumerate}
-\sphinxsetlistlabels{\alph}{enumii}{enumiii}{}{.}%
+\sphinxsetlistlabels{\alph}{enumi}{enumii}{}{.}%
 \item {} \begin{description}
 \sphinxlineitem{shrinkage methods}
 \sphinxAtStartPar
@@ -5268,11 +5247,8 @@ Other methods not implemented here
 
 \end{enumerate}
 
-\end{enumerate}
-\end{quote}
-
 \sphinxAtStartPar
-Author S Chan.
+Author S. Chan.
 
 \sphinxAtStartPar
 Modified by J. Siddons.
@@ -5407,7 +5383,7 @@ this function.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.}}\sphinxbfcode{\sphinxupquote{eigenvalue\_clip}}}
-{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}explained\_variance\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method\_parms}\DUrole{o}{=}\DUrole{default_value}{\{\textquotesingle{}target\textquotesingle{}: 0.95\}}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}explained\_variance\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{o}{**}\DUrole{n}{kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -5419,8 +5395,8 @@ Explained variance or aspect ratio based threshold
 Aspect ratios is based on dimensionless parameters
 (number of independent variable and observation size)
 \begin{equation*}
-\begin{split}q = N/T = (num of independent variable)
-/ (num of observation per independent variable)\end{split}
+\begin{split}q = N/T = \frac{\text{num of independent variable}}{\text{num of
+                                  observation per independent variable}}\end{split}
 \end{equation*}
 \sphinxAtStartPar
 Does not give the same results as in eig\_clip
@@ -5449,17 +5425,260 @@ eigenvalues
 variance are \sphinxstyleemphasis{clipped}. If “Laloux\_2000” is set, then the method of
 \sphinxcite{index:laloux} is used.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{**kwargs}}
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{cov\_adj} \textendash{} Adjusted covariance matrix.
+Adjusted covariance matrix.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 numpy.ndarray
 
 \end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
+
+\end{fulllineitems}
+
+\index{explained\_variance\_clip() (in module glomar\_gridding.covariance\_tools)@\spxentry{explained\_variance\_clip()}\spxextra{in module glomar\_gridding.covariance\_tools}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.}}\sphinxbfcode{\sphinxupquote{explained\_variance\_clip}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{target\_variance\_fraction}\DUrole{o}{=}\DUrole{default_value}{0.95}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Clip all EOFs beyond a certain level of explained variance
+Starting from the EOF with the largest eigenvalue (explained variance)
+descending down the eigenvalues until the cumulative sum of the
+eigenvalues just goes beyond ( Trace(cov) x target\_variance\_fraction )
+
+\sphinxAtStartPar
+All the larger eigenvalues up to the above thresholds are left unchanged.
+
+\sphinxAtStartPar
+Eigenvalues beyond (smaller positive and negative ones) are clipped instead.
+If n is the first eigenvalue to be clipped, and there are N eigenvalues,
+sorted in descending order:
+\begin{equation*}
+\begin{split}(\lambda)_{clipped} = (\lambda_{n}, \lambda_{n+1}, ..., \lambda_{N})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+They now get a revised eigenvalue of E(lambda\_clipped).
+Checks are in place within \_eigenvalue\_clip to ensure the
+threshold is suitable.
+
+\sphinxAtStartPar
+The threshold itself is subjective, but they are based on
+on making intelligent guesses where noise EOF begins.
+
+\sphinxAtStartPar
+The automatic method (laloux\_clip) (sort\sphinxhyphen{}of) does it for you,
+but it only works after the covariance is standardised (or the
+diagonal of the covariance matrix is constant).
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:jolliffe} recommends 70\sphinxhyphen{}90\% for truncation
+
+\item {}
+\sphinxAtStartPar
+Graphical guidances (“spectrum of eigenvalues”) are helpful (\sphinxcite{index:wilks},
+\sphinxcite{index:laloux})
+
+\end{itemize}
+
+\sphinxAtStartPar
+Noting that \sphinxcite{index:wilks} and \sphinxcite{index:jolliffe} mostly concern with TRUNCATION not
+clipping. However, clipping is essentially a modified version of
+truncation but with the explained variance fully conserved, nor
+we cannot use covariances based on truncated EOFs; it will have 0
+eigenvalues, many of them will become negative after floating point
+errors.
+
+\sphinxAtStartPar
+95\% is somewhat higher than \sphinxcite{index:jolliffe} 70\sphinxhyphen{}90\% guidance. Operational
+experience with 5x5 monthly data indicates even at 95\%, you are
+only retaining 200\sphinxhyphen{}400 eigenvalues out of 36 x 72 = 2592 possible
+eigenvalues (if data is global). There are only \textasciitilde{}10\sphinxhyphen{}20 negative eigenvalues
+plus the 2000\sphinxhyphen{}ish eigenvalues that sits out of 95\% threshold. The magitude
+of the negative values are 2\sphinxhyphen{}plus order of mangitude smaller than the
+largest positive eigenvalues.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Input covariance matrix to be adjusted to positive definite.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{target\_variance\_fraction}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Starting from the largest eigenvalue and descending, all eigenvalues
+larger than (the trace of cov x target\_variance\_fraction) are left
+unmodified. Eigenvalues beyond are modified.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+Adjusted covariance matrix.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+\subsubsection*{References}
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:laloux}
+
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:jolliffe}
+
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:wilks}
+
+\end{itemize}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
+
+\end{fulllineitems}
+
+\index{laloux\_clip() (in module glomar\_gridding.covariance\_tools)@\spxentry{laloux\_clip()}\spxextra{in module glomar\_gridding.covariance\_tools}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.}}\sphinxbfcode{\sphinxupquote{laloux\_clip}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{num\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{num\_time\_pts}\DUrole{o}{=}\DUrole{default_value}{40}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Estimate the largest eigenvalue that one will get from covariance or
+correlation matrices that are generated by random uncorrelated matrices.
+
+\sphinxAtStartPar
+Eq 0.3 in \sphinxcite{index:laloux} says eigenvalues of covariances generated by
+uncorrelated random vectors have a min and max of:
+\begin{equation*}
+\begin{split}\lambda_{min} = \sigma^2 (1 + Q - 2 \sqrt{Q})\end{split}
+\end{equation*}\begin{equation*}
+\begin{split}\lambda_{max} = \sigma^2 (1 + Q + 2 \sqrt{Q})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+in which:
+\begin{equation*}
+\begin{split}Q = \frac{\text{num of features}}{\text{length of each feature}}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+One can make a simple Monte\sphinxhyphen{}Carlo simulation to check that.
+
+\sphinxAtStartPar
+Hence \(\lambda_{max}\) can be thought of a floor for non\sphinxhyphen{}noise EOFs,
+as this is the largest eigenvalue that can be generated by random
+uncorrelated data, and is only a function of Q (aka aspect ratio
+of the number of features with the length of each feature vector).
+
+\sphinxAtStartPar
+Any eigenvalues smaller than \(\lambda_{max}\) (including negative ones)
+are essentially noise and can be trimmed.
+
+\sphinxAtStartPar
+Above requires q and sigma be the same for all features/independent
+variables. A way to get to around that is standardise the covariance into
+correlation and to apply the trimming to the correlation. The trimmed
+correlation can then converted back to the covariance by putting the
+correct standard deviations back into the diagonal.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Input covariance matrix to be adjusted to positive definite.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{num\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Number of spatial grid points for covariance, this should usually be the
+shape of the covariance matrix. If unset, this will default to the size
+of the input covariance matrix (\sphinxtitleref{cov.shape{[}0{]}}).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{num\_time\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Length of the time series that is behind the covariance generation
+Default 40 (aka 40 Jans from 1981\sphinxhyphen{}2020), since this is what used
+originally when covariances are generated for modern satellite era
+data (early 1980\sphinxhyphen{}ish to 2020\sphinxhyphen{}ish). It is important this value to
+be set correctly.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+Adjusted covariance matrix.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+\subsubsection*{References}
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:laloux}
+
+\item {}
+\sphinxAtStartPar
+\sphinxcite{index:bun}
+
+\end{itemize}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
 
 \end{fulllineitems}
 
@@ -5509,7 +5728,7 @@ numpy.ndarray
 \begin{sphinxseealso}{See also:}
 
 \sphinxAtStartPar
-\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tool.simple\_clipping}}
+\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tool.simple\_clipping()}}
 
 
 \end{sphinxseealso}
@@ -5618,7 +5837,7 @@ following keys:
 \begin{sphinxseealso}{See also:}
 
 \sphinxAtStartPar
-\sphinxcode{\sphinxupquote{statsmodels.stats.correlation\_tools.cov\_nearest}}
+\sphinxcode{\sphinxupquote{statsmodels.stats.correlation\_tools.cov\_nearest()}}
 
 
 \end{sphinxseealso}
@@ -6782,6 +7001,9 @@ numpy.ndarray | numpy.ma.MaskedArray
 
 
 \begin{sphinxthebibliography}{Paciorek}
+\bibitem[Bun]{index:bun}
+\sphinxAtStartPar
+Bun, J., Bouchaud, J.\sphinxhyphen{}P., and Potters, M: Cleaning large correlation matrices: Tools from Random Matrix Theory, Physics Reports, Volume 666, 2017, Pages 1\sphinxhyphen{}109, ISSN 0370\sphinxhyphen{}1573, \sphinxurl{https://doi.org/10.1016/j.physrep.2016.10.005}.
 \bibitem[Cornell]{index:cornell}
 \sphinxAtStartPar
 \sphinxurl{https://www.css.cornell.edu/faculty/dgr2/\_static/files/distance\_ed\_geostats/ov5.pdf}
@@ -6797,6 +7019,9 @@ Huang, B., Yin, X., Menne, M. J., Vose, R., and Zhang, H.\sphinxhyphen{}M.: Impr
 \bibitem[IPCC]{index:ipcc}
 \sphinxAtStartPar
 Intergovernmental Panel On Climate Change: Climate Change 2021 \textendash{} The Physical Science Basis: Working Group I Contribution to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change, Cambridge University Press, 1 edn., ISBN 978\sphinxhyphen{}1\sphinxhyphen{}00\sphinxhyphen{}915789\sphinxhyphen{}6, \sphinxurl{https://doi.org/10.1017/9781009157896}, 2021.
+\bibitem[Jolliffe]{index:jolliffe}
+\sphinxAtStartPar
+Jolliffe, I. T., Principal Component Analysis, pp 487, Springer, 2002
 \bibitem[Kadow]{index:kadow}
 \sphinxAtStartPar
 Kadow, C., Hall, D. M., and Ulbrich, U.: Artificial intelligence reconstructs missing climate information, Nature Geoscience, 13, 408\textendash{}413, \sphinxurl{https://doi.org/10.1038/s41561-020-0582-5}, 2020
@@ -6827,6 +7052,9 @@ Rohde, R. A. and Hausfather, Z.: The Berkeley Earth Land/Ocean Temperature Recor
 \bibitem[Thorne]{index:thorne}
 \sphinxAtStartPar
 Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper\sphinxhyphen{}air temperature records, Bull. Am. Meteorol. Soc., 86, 1437\textendash{}1442, \sphinxurl{https://doi.org/10.1175/BAMS-86-10-1437}, 2005
+\bibitem[Wilks]{index:wilks}
+\sphinxAtStartPar
+Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006
 \end{sphinxthebibliography}
 
 
