@@ -4,6 +4,8 @@ import numpy as np
 from glomar_gridding.covariance_tools import (
     csum_up_to_val,
     eigenvalue_clip,
+    explained_variance_clip,
+    laloux_clip,
     perturb_cov_to_positive_definite,
     simple_clipping,
 )
@@ -123,6 +125,9 @@ def test_perturb_pos_def():
     assert np.sum(evals < 0) == n_neg
 
     S_new = evecs @ np.diag(evals) @ evecs.T
+    new_evals = np.linalg.eigvalsh(S_new)
+    assert np.min(new_evals) < 0
+    assert np.sum(new_evals < 0) == n_neg
 
     # "Fix" the new Covariance
     S_fixed = perturb_cov_to_positive_definite(S_new)
@@ -151,3 +156,66 @@ def test_cumsum(name, n, expected_i):
 
     assert expected_i == i - 1
     assert target_sum == csum
+
+
+def test_cumsum_exceeds_target():
+    vals = np.random.rand(50)
+    vals = np.sort(vals)
+    target = 0.9
+    total = vals.sum()
+    target_csum = target * total
+
+    csum, _ = csum_up_to_val(vals, target_csum, reverse=True)
+    assert csum >= target_csum
+
+
+def test_explained_clip():
+    np.random.seed(314159)
+    A = np.random.rand(5, 5)
+    S = np.dot(A, A.T)
+    _, evecs = np.linalg.eigh(S)
+    new_evals = np.array([-3.0, 2.0, 4.2, 5.5, 5.8])
+
+    target_explained_variance_frac = 0.9
+    total_variance = np.sum(new_evals)
+    tar = target_explained_variance_frac * total_variance
+    csum, i = csum_up_to_val(new_evals, tar)
+    assert csum > total_variance
+
+    valid_target = np.sum(new_evals[i + 1 :]) / total_variance
+
+    S_new = evecs @ np.diag(new_evals) @ evecs.T
+
+    # TEST: Fails with target as explained variance exceeds total
+    with pytest.raises(ValueError, match=f"{valid_target:.2f}"):
+        explained_variance_clip(S_new, target_explained_variance_frac)
+
+    # TEST: Now works with valid target
+    out = explained_variance_clip(S_new, valid_target * 0.99)
+
+    assert out.shape == S.shape
+    assert (np.linalg.eigvalsh(out) > 0).all()
+
+    return None
+
+
+def test_laloux_clip():
+    np.random.seed(2718)
+    n = 100
+    A = np.random.rand(n, n)
+    S = np.dot(A, A.T)
+    evals, evecs = np.linalg.eigh(S)
+
+    evals -= np.sum(evals[:5])
+
+    S_new = evecs @ np.diag(evals) @ evecs.T
+    new_evals = np.linalg.eigvalsh(S_new)
+    assert (new_evals < 0).any()
+    assert (new_evals > 0).any()
+
+    out = laloux_clip(S_new, num_time_pts=20)
+
+    assert out.shape == S.shape
+    assert (np.linalg.eigvalsh(out) > 0).all()
+
+    assert True

@@ -723,7 +723,7 @@ def _eigenvalue_clip(
         raise ValueError(
             "Variance explained by retained eigenvalues exceeds total "
             + "variance. Resulting matrix will have negative eigenvalues. "
-            + f"Try using a lower threshold. A value below {new_threshold} "
+            + f"Try using a lower threshold. A value below {new_threshold:.2f} "
             + "may work with "
             + "glomar_gridding.covariance_tools.explained_variance_clip."
         )
