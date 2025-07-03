@@ -646,8 +646,8 @@ def explained_variance_clip(
     diagonal of the covariance matrix is constant).
 
     - [Jolliffe]_ recommends 70-90% for truncation
-    - Graphical guidances (``spectrum of eigenvalues'') are helpful
-    ([Wilks]_, [Laloux]_)
+    - Graphical guidances ("spectrum of eigenvalues") are helpful ([Wilks]_,
+      [Laloux]_)
 
     Noting that [Wilks]_ and [Jolliffe]_ mostly concern with TRUNCATION not
     clipping. However, clipping is essentially a modified version of
