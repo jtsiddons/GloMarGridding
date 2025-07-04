@@ -178,7 +178,10 @@ def test_const_Ellipse(v, params, size):
     ).cov_ns
     p = chisq(simulated_cov, true_cov, n)
 
-    assert p < 5e-2
+    # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
+    #       similarity
+    p = chisq(simulated_cov, true_cov, n)
+    assert (1 - p) < 5e-2
 
 
 def test_ellipse_covariance():
