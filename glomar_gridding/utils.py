@@ -652,13 +652,15 @@ def cov_2_cor(
     normalisation = np.outer(stdevs, stdevs)
     cor = cov / normalisation
     if not np.all(np.diag(cor) == 1.0):
-        print(np.max(np.abs(np.diag(cor) - 1.0)))
+        bad_val = np.max(np.abs(np.diag(cor) - 1.0))
         if np.max(np.abs(np.diag(cor) - 1.0)) > 1e-6:
             raise ValueError(
-                "Correlation Diagonal contains values not close to 1."
+                "Correlation Diagonal contains values not close to 1. "
+                + f"With difference to 1: {bad_val}"
             )  # This should never get flagged:
         print(
-            "Numerical error correction applied to correlation matrix diagonal"
+            "Numerical error correction applied to correlation matrix diagonal "
+            + f"With difference to 1: {bad_val}"
         )
         np.fill_diagonal(cor, 1.0)
     cor[cov == 0] = 0
