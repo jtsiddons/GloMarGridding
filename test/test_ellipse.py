@@ -89,7 +89,11 @@ def initialise_covariance(
         lons=lons,
         lats=lats,
     ).cov_ns
-    return eigenvalue_clip(out)
+    return eigenvalue_clip(
+        out,
+        method="explained_variance",
+        target_variance_fraction=0.99,
+    )
 
 
 def get_test_data(
@@ -108,7 +112,7 @@ def get_test_data(
             {"Lx": 1500, "Ly": 800, "theta": np.pi / 3, "stdev": 0.6},
             (10, 6),
         ),
-        (1.5, {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 0.6}, (8, 8)),
+        (1.5, {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 1.2}, (8, 8)),
     ],
 )
 def test_const_Ellipse(v, params, size):
@@ -176,7 +180,11 @@ def test_const_Ellipse(v, params, size):
         lats=coords["latitude"].values,
         v=v,
     ).cov_ns
-    p = chisq(simulated_cov, true_cov, n)
+    simulated_cov = eigenvalue_clip(
+        simulated_cov,
+        method="explained_variance",
+        target_variance_fraction=0.99,
+    )
 
     # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
     #       similarity
