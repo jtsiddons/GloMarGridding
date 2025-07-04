@@ -294,7 +294,7 @@ def simple_clipping(
         # For most climate science applications,
         # these eigenvalues are essentially noise to the data
         finfo = np.finfo(all_eigval.dtype)
-        threshold = 5.0 * finfo.resolution * np.max(np.abs(all_eigval))
+        threshold = float(5.0 * finfo.resolution * np.max(np.abs(all_eigval)))
     elif threshold == "statsmodels_default":
         # 1e-15 is the precision for np.float64
         # This is the default used in
@@ -306,7 +306,8 @@ def simple_clipping(
         threshold = 1e-15
     if not isinstance(threshold, (float, int)):
         raise TypeError(
-            "threshold must either be number, auto or statsmodels_default"
+            "threshold must either be number, auto or statsmodels_default. "
+            + f"Got {threshold = }."
         )
 
     n_negative = int(np.sum(all_eigval < threshold))
