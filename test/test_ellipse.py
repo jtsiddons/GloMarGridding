@@ -14,6 +14,24 @@ from glomar_gridding.ellipse import (
     EllipseBuilder,
     EllipseCovarianceBuilder,
 )
+from glomar_gridding.utils import cov_2_cor
+
+
+def frob(mat: np.ndarray) -> float:
+    return float(np.linalg.matrix_norm(mat, ord="fro"))  # codespell:ignore
+
+
+def correlation_distance(cov1: np.ndarray, cov2: np.ndarray) -> float:
+    """
+    Correlation Matrix Distance
+
+    from: https://www.researchgate.net/publication/4194743_Correlation_Matrix_Distance_a_Meaningful_Measure_for_Evaluation_of_Non-Stationary_MIMO_Channels
+    """
+    cor1 = cov_2_cor(cov1)
+    cor2 = cov_2_cor(cov2)
+    num = np.trace(np.matmul(cor1, cor2))
+    denom = frob(cor1) * frob(cor2)
+    return 1 - num / denom
 
 
 def chisq(
@@ -124,7 +142,7 @@ def test_const_Ellipse(v, params, size):
     np.random.seed(40814)
 
     # Generate Test Data from A Known Covariance (from known Ellipse Params)
-    n = 15000
+    n = 5_000
     true_cov = initialise_covariance(**params, v=v, size=size)
     test_data = get_test_data(true_cov, n=n)
     in_cov = np.cov(test_data.T)
@@ -187,6 +205,8 @@ def test_const_Ellipse(v, params, size):
         target_variance_fraction=0.99,
     )
 
+    cmd = correlation_distance(in_cov, simulated_cov)
+    assert cmd < 1e-4
     assert np.allclose(simulated_cov, in_cov, rtol=5e-2)
 
     # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
@@ -228,6 +248,8 @@ def test_ellipse_covariance():
         v=0.5,
     )
 
+    cmd = correlation_distance(ellipseCov.cov_ns, expected)
+    assert cmd < 1e-4
     assert np.allclose(ellipseCov.cov_ns, expected, rtol=1e-5)
 
     # TEST: correlation matrix
