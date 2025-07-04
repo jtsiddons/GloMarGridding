@@ -722,8 +722,8 @@ def _eigenvalue_clip(
         f"New explained variance = {(var_explained_by_i2keep / total_var):.2%}"
     )
 
-    print(f"top 5 eigenvalues = {eigvals[:5]}")
-    print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
+    print(f"bottom 5 eigenvalues = {eigvals[:5]}")
+    print(f"top 5 eigenvalues = {eigvals[-5:]}")
     n_eigvals = len(eigvals)
 
     # Ensure keep_i is negative
