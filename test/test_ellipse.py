@@ -189,6 +189,7 @@ def test_const_Ellipse(v, params, size):
 
     # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
     #       similarity
+    np.allclose(simulated_cov, in_cov, rtol=1e-1)
     p = chisq(simulated_cov, in_cov, n)
     assert (1 - p) < 5e-2
 
