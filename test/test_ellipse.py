@@ -144,8 +144,8 @@ def test_const_Ellipse(v, params, size):
     # Set-up output fields
     v = ellipse.v
     nparams = ellipse.supercategory_n_params
-    default_values = [0 for _ in range(nparams)]
-    init_values = [2000.0, 2000.0, 0]
+    default_values = [0.0 for _ in range(nparams)]
+    init_values = [300.0, 300.0, 0.0]
     fit_bounds = [
         (300.0, 30000.0),
         (300.0, 30000.0),
