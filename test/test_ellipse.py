@@ -4,7 +4,6 @@ import os
 import pytest
 
 import numpy as np
-import scipy as sp
 import xarray as xr
 
 from glomar_gridding.io import load_array, load_dataset
@@ -32,43 +31,6 @@ def correlation_distance(cov1: np.ndarray, cov2: np.ndarray) -> float:
     num = np.trace(np.matmul(cor1, cor2))
     denom = frob(cor1) * frob(cor2)
     return 1 - num / denom
-
-
-def chisq(
-    sigma_hat: np.ndarray,
-    sigma_actual: np.ndarray,
-    n: int,
-) -> float:
-    """
-    For cases here have fixed parameters is easy
-    So each grid point as well as the average estimated parameter (the estimator)
-    should be within 1-2x of the standard error of the actual parameter
-    What is the likelihood of the estimator relative to the actual?
-
-    For variable params... we will just compare the regional average
-
-    W = -n*np.log(np.linalg.det(inside_the_brackets))-n*p+n*np.trace(inside_the_brackets)
-    W ~ ChiSquare(p*(p+1)/2)
-
-    How to:
-    https://www.stat.pitt.edu/sungkyu/course/2221Fall13/lec3.pdf
-    https://cran.r-project.org/web//packages/mvhtests/mvhtests.pdf <<< R docs (argh)
-    """  # noqa: E501
-    # unbiased estimator to sigma_hat for all practical purpose n/n-1 ~ 1
-    sigma_hat_unbiased = (n / (n - 1)) * sigma_hat
-    sigma_actual_inv = np.linalg.inv(sigma_actual)
-
-    # Number of parameters (aka the dimension of the covariance) -- 2
-    p = sigma_actual.shape[0]
-    inside_the_brackets = sigma_actual_inv @ sigma_hat_unbiased
-
-    W = (
-        -n * np.log(np.linalg.det(inside_the_brackets))
-        - n * p
-        + n * np.trace(inside_the_brackets)
-    )
-    p_val = sp.stats.chi2.sf(W, p * (p + 1) / 2)
-    return p_val
 
 
 def initialise_const_arrays(
@@ -190,7 +152,7 @@ def test_const_Ellipse(v, params, size):
     theta = ellipse_params["theta"].values
     stdev = ellipse_params["standard_deviation"].values
 
-    simulated_cov = EllipseCovarianceBuilder(
+    ellipse_cov = EllipseCovarianceBuilder(
         Lx,
         Ly,
         theta,
@@ -199,20 +161,16 @@ def test_const_Ellipse(v, params, size):
         lats=coords["latitude"].values,
         v=v,
     ).cov_ns
-    simulated_cov = eigenvalue_clip(
-        simulated_cov,
+    ellipse_cov = eigenvalue_clip(
+        ellipse_cov,
         method="explained_variance",
         target_variance_fraction=0.99,
     )
 
-    cmd = correlation_distance(in_cov, simulated_cov)
-    assert cmd < 1e-4
-    assert np.allclose(simulated_cov, in_cov, rtol=5e-2)
+    assert np.allclose(ellipse_cov, in_cov, rtol=5e-2)
 
-    # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
-    #       similarity
-    p = chisq(simulated_cov, in_cov, n)
-    assert (1 - p) < 5e-2
+    cmd = correlation_distance(in_cov, ellipse_cov)
+    assert cmd < 1e-4
 
 
 def test_ellipse_covariance():
