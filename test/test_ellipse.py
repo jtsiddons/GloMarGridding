@@ -124,7 +124,7 @@ def test_const_Ellipse(v, params, size):
     np.random.seed(40814)
 
     # Generate Test Data from A Known Covariance (from known Ellipse Params)
-    n = 1500
+    n = 15000
     true_cov = initialise_covariance(**params, v=v, size=size)
     test_data = get_test_data(true_cov, n=n)
     in_cov = np.cov(test_data.T)
@@ -187,9 +187,10 @@ def test_const_Ellipse(v, params, size):
         target_variance_fraction=0.99,
     )
 
+    assert np.allclose(simulated_cov, in_cov, rtol=5e-2)
+
     # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
     #       similarity
-    np.allclose(simulated_cov, in_cov, rtol=1e-1)
     p = chisq(simulated_cov, in_cov, n)
     assert (1 - p) < 5e-2
 
