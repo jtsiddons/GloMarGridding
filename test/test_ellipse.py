@@ -127,6 +127,7 @@ def test_const_Ellipse(v, params, size):
     n = 1500
     true_cov = initialise_covariance(**params, v=v, size=size)
     test_data = get_test_data(true_cov, n=n)
+    in_cov = np.cov(test_data.T)
     test_data = test_data.reshape((n, *size))
     coord_dict = {
         "time": np.arange(n),
@@ -188,7 +189,7 @@ def test_const_Ellipse(v, params, size):
 
     # NOTE: a low p-value from chi-sq test indicates difference, want 1-p for
     #       similarity
-    p = chisq(simulated_cov, true_cov, n)
+    p = chisq(simulated_cov, in_cov, n)
     assert (1 - p) < 5e-2
 
 
