@@ -17,7 +17,7 @@ from glomar_gridding.utils import cov_2_cor, uncompress_masked
 
 
 def frob(mat: np.ndarray) -> float:
-    return float(np.linalg.matrix_norm(mat, ord="fro"))  # codespell:ignore
+    return float(np.linalg.norm(mat, ord="fro"))  # codespell:ignore
 
 
 def correlation_distance(cov1: np.ndarray, cov2: np.ndarray) -> float:
