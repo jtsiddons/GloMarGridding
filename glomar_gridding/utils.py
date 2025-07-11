@@ -14,21 +14,21 @@
 
 r"""Utility functions for `glomar_gridding`"""
 
+import inspect
+import logging
 from calendar import isleap
 from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
-import inspect
 from itertools import islice
-import logging
 from typing import Any, TypeVar
+from warnings import warn
+
 import netCDF4 as nc
 import numpy as np
 import polars as pl
 import xarray as xr
-from warnings import warn
 from polars._typing import ClosedInterval
-
 
 from glomar_gridding.constants import (
     KM_TO_NM,
@@ -170,6 +170,8 @@ def adjust_small_negative(
         warn("Small negative vals are detected. Setting to 0.")
         print(mat[small_negative_check])
         ret[small_negative_check] = 0.0
+    if (ret < 0).any():
+        warn("Negative values are detected")
     return ret
 
 
@@ -205,7 +207,7 @@ def find_nearest(
     >>> find_nearest(array, tests)
     ([np.int64(0), np.int64(4), np.int64(3)], array([1. , 4.5, 2.1]))
     """
-    idx_list = [(np.abs(array - value)).argmin() for value in values]
+    idx_list = [int(np.argmin((np.abs(array - value)))) for value in values]
     array_values_list = np.array(array)[idx_list]
     # print(values)
     # print(array_values_list)
@@ -652,13 +654,15 @@ def cov_2_cor(
     normalisation = np.outer(stdevs, stdevs)
     cor = cov / normalisation
     if not np.all(np.diag(cor) == 1.0):
-        print(np.max(np.abs(np.diag(cor) - 1.0)))
+        bad_val = np.max(np.abs(np.diag(cor) - 1.0))
         if np.max(np.abs(np.diag(cor) - 1.0)) > 1e-6:
             raise ValueError(
-                "Correlation Diagonal contains values not close to 1."
+                "Correlation Diagonal contains values not close to 1. "
+                + f"With difference to 1: {bad_val}"
             )  # This should never get flagged:
         print(
-            "Numerical error correction applied to correlation matrix diagonal"
+            "Numerical error correction applied to correlation matrix diagonal "
+            + f"With difference to 1: {bad_val}"
         )
         np.fill_diagonal(cor, 1.0)
     cor[cov == 0] = 0

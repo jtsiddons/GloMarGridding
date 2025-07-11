@@ -1,14 +1,14 @@
 import numpy as np
-import pytest  # noqa: F401
 import polars as pl
+import pytest  # noqa: F401
 
+from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.error_covariance import (
     correlated_components,
     dist_weight,
     get_weights,
     uncorrelated_components,
 )
-from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.kriging import prep_obs_for_kriging
 
 

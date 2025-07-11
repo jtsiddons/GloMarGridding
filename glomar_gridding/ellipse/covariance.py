@@ -17,7 +17,6 @@
 import datetime
 import logging
 import sys
-
 from itertools import combinations
 from typing import Any
 from warnings import warn
@@ -25,7 +24,6 @@ from warnings import warn
 import numpy as np
 from scipy.special import gamma
 from scipy.special import kv as modified_bessel_2nd
-
 
 from glomar_gridding.constants import RADIUS_OF_EARTH_KM
 from glomar_gridding.types import CovarianceMethod, DeltaXMethod

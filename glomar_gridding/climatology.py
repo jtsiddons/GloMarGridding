@@ -16,8 +16,9 @@
 
 import polars as pl
 import xarray as xr
-from glomar_gridding.utils import find_nearest, select_bounds
+
 from glomar_gridding.io import load_dataset
+from glomar_gridding.utils import find_nearest, select_bounds
 
 
 def join_climatology_by_doy(
@@ -102,10 +103,10 @@ def join_climatology_by_doy(
         )
 
     obs_lat = obs_df.get_column(lat_col)
-    _, lat_vals = find_nearest(climatology_365.coords[clim_lat], obs_lat)
+    _, lat_vals = find_nearest(climatology_365.coords[clim_lat].values, obs_lat)
 
     obs_lon = obs_df.get_column(lon_col)
-    _, lon_vals = find_nearest(climatology_365.coords[clim_lon], obs_lon)
+    _, lon_vals = find_nearest(climatology_365.coords[clim_lon].values, obs_lon)
 
     obs_df = obs_df.with_columns(
         pl.Series("clim_lat", lat_vals),

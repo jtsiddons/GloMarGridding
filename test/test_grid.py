@@ -1,23 +1,24 @@
-from datetime import datetime
 import os
-import pytest  # noqa: F401
-import numpy as np
-import polars as pl
-import xarray as xr
+from datetime import datetime
 from itertools import product
 
-from glomar_gridding.io import load_array
-from glomar_gridding.grid import grid_from_resolution, cross_coords
+import numpy as np
+import polars as pl
+import pytest  # noqa: F401
+import xarray as xr
+
 from glomar_gridding.climatology import (
     join_climatology_by_doy,
     read_climatology,
 )
+from glomar_gridding.grid import cross_coords, grid_from_resolution
+from glomar_gridding.io import load_array
 from glomar_gridding.mask import (
-    mask_observations,
-    mask_dataset,
     mask_array,
+    mask_dataset,
     mask_from_obs_array,
     mask_from_obs_frame,
+    mask_observations,
 )
 
 

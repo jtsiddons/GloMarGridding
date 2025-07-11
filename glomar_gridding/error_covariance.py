@@ -31,12 +31,12 @@ be more than 1 observation in a gridbox.
 """
 
 from collections.abc import Callable
+from warnings import warn
 
 import numpy as np
 import polars as pl
-from warnings import warn
 
-from .utils import check_cols, ColumnNotFoundError
+from .utils import ColumnNotFoundError, check_cols
 
 
 def uncorrelated_components(

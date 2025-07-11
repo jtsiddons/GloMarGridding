@@ -17,14 +17,15 @@ Kriging class for performing a two-stage Kriging process using a perturbation
 approach. Plus function for drawing from a covariance matrix.
 """
 
+import logging
+
 import numpy as np
 from scipy import stats
-import logging
 
 from glomar_gridding.kriging import (
     Kriging,
-    adjust_small_negative,
     _extended_inverse,
+    adjust_small_negative,
 )
 
 

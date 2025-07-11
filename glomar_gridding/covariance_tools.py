@@ -96,10 +96,11 @@ Modified by J. Siddons.
 
 from itertools import accumulate
 from typing import Any, Literal
+from warnings import warn
+
 import numpy as np
 import scipy as sp
 from statsmodels.stats import correlation_tools
-from warnings import warn
 
 from glomar_gridding.utils import cor_2_cov, cov_2_cor
 
@@ -294,7 +295,7 @@ def simple_clipping(
         # For most climate science applications,
         # these eigenvalues are essentially noise to the data
         finfo = np.finfo(all_eigval.dtype)
-        threshold = 5.0 * finfo.resolution * np.max(np.abs(all_eigval))
+        threshold = float(5.0 * finfo.resolution * np.max(np.abs(all_eigval)))
     elif threshold == "statsmodels_default":
         # 1e-15 is the precision for np.float64
         # This is the default used in
@@ -306,7 +307,8 @@ def simple_clipping(
         threshold = 1e-15
     if not isinstance(threshold, (float, int)):
         raise TypeError(
-            "threshold must either be number, auto or statsmodels_default"
+            "threshold must either be number, auto or statsmodels_default. "
+            + f"Got {threshold = }."
         )
 
     n_negative = int(np.sum(all_eigval < threshold))
@@ -722,8 +724,8 @@ def _eigenvalue_clip(
         f"New explained variance = {(var_explained_by_i2keep / total_var):.2%}"
     )
 
-    print(f"top 5 eigenvalues = {eigvals[:5]}")
-    print(f"bottom 5 eigenvalues = {eigvals[-5:]}")
+    print(f"bottom 5 eigenvalues = {eigvals[:5]}")
+    print(f"top 5 eigenvalues = {eigvals[-5:]}")
     n_eigvals = len(eigvals)
 
     # Ensure keep_i is negative
