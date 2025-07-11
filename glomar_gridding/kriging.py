@@ -96,7 +96,6 @@ class Kriging(ABC):
                 self.error_cov = self.error_cov[
                     self.idx[:, None], self.idx[None, :]
                 ]
-            print("HERE!")
             if (
                 mismatch := np.logical_or(
                     np.isnan(self.error_cov.diagonal()),
@@ -117,6 +116,8 @@ class Kriging(ABC):
                 self.error_cov = self.error_cov[
                     idx_keep[:, None], idx_keep[None, :]
                 ]
+            # Fill remaining NaNs with 0.0
+            self.error_cov[np.isnan(self.error_cov)] = 0.0
         return None
 
     def set_kriging_weights(self, kriging_weights: np.ndarray) -> None:
