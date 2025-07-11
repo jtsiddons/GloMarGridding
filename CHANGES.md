@@ -28,6 +28,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* `NaN` values remaining in error covariance after filtering to observations and dropping `NaN`
+  values on the diagonal are set to 0.0 in `glomar_gridding.kriging.Kriging` classes (!83)
 * Added new functions `glomar_gridding.covariance_tools.laloux_clip` and
   `glomar_gridding.covariance_tools.explained_variance_clip` (!78)
 * Add `simulated_obs` as attribute to `StochasticKriging` in `solve` method (!71)
