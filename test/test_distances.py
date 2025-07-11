@@ -1,14 +1,16 @@
 """Tests of the distances module"""
 
 from itertools import product
-import pytest
 from math import sqrt
+
 import numpy as np
 import polars as pl
+import pytest
 from scipy.spatial.distance import mahalanobis
+
 from glomar_gridding.distances import (
-    euclidean_distance,
     calculate_distance_matrix,
+    euclidean_distance,
     haversine_distance_from_frame,
     mahal_dist_func,
     sigma_rot_func,

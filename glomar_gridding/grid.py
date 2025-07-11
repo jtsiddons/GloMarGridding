@@ -16,12 +16,13 @@
 
 from collections.abc import Callable, Iterable
 from typing import Any
+
 import numpy as np
 import polars as pl
 import xarray as xr
 
-from .utils import filter_bounds, find_nearest, select_bounds
 from .distances import calculate_distance_matrix, haversine_distance_from_frame
+from .utils import filter_bounds, find_nearest, select_bounds
 
 
 def map_to_grid(

@@ -1,15 +1,14 @@
-import pytest
 import numpy as np
+import pytest
 
 from glomar_gridding.grid import grid_from_resolution, grid_to_distance_matrix
 from glomar_gridding.variogram import (
-    MaternVariogram,
-    GaussianVariogram,
     ExponentialVariogram,
+    GaussianVariogram,
+    MaternVariogram,
     SphericalVariogram,
     variogram_to_covariance,
 )
-
 
 GRID = grid_from_resolution(
     5, [(-25, 25), (-25, 25)], ["latitude", "longitude"]

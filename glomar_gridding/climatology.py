@@ -16,8 +16,9 @@
 
 import polars as pl
 import xarray as xr
-from glomar_gridding.utils import find_nearest, select_bounds
+
 from glomar_gridding.io import load_dataset
+from glomar_gridding.utils import find_nearest, select_bounds
 
 
 def join_climatology_by_doy(

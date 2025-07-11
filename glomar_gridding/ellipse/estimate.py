@@ -24,7 +24,6 @@ from warnings import warn
 
 import numpy as np
 import xarray as xr
-
 from sklearn.metrics.pairwise import haversine_distances
 
 from glomar_gridding.constants import DEFAULT_N_JOBS, RADIUS_OF_EARTH_KM

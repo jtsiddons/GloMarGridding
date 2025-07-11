@@ -26,13 +26,12 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 from collections.abc import Callable
 from typing import get_args
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import polars as pl
-
 from shapely.geometry import Point
-from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
+from sklearn.metrics.pairwise import euclidean_distances, haversine_distances
 
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import check_cols

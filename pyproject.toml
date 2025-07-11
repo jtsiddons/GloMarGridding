@@ -99,6 +99,8 @@ select = [
   "D",    # docstrings
   "E",    # pycodestyle errors
   "F",    # pyflakes
+  "I",    # isort
+  "ICN",  # Flake8 Import Conventions
   "N802", # invalid-function-name
   "S",    # bandit
   "W",    # pycodestyle warnings

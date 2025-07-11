@@ -1,17 +1,18 @@
-import pytest
 import numpy as np
+import pytest
 from scipy.spatial.transform import Rotation as R
 from sklearn.metrics.pairwise import haversine_distances
-from glomar_gridding.distances import rot_mat, inv_2d, displacements
+
+from glomar_gridding.distances import displacements, inv_2d, rot_mat
 from glomar_gridding.ellipse.covariance import (
-    _det_22_single,
     _det_22_multi,
+    _det_22_single,
+    _haversine_multi,
+    _haversine_single,
     _mo_disp_multi,
     _mo_disp_single,
     _mod_mo_disp_multi,
     _mod_mo_disp_single,
-    _haversine_multi,
-    _haversine_single,
 )
 
 

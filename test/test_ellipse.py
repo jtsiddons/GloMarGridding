@@ -1,19 +1,19 @@
 """Tests for Ellipse Parameter estimation"""
 
 import os
-import pytest
 
 import numpy as np
+import pytest
 import scipy as sp
 import xarray as xr
 
-from glomar_gridding.io import load_array, load_dataset
 from glomar_gridding.covariance_tools import eigenvalue_clip
 from glomar_gridding.ellipse import (
-    EllipseModel,
     EllipseBuilder,
     EllipseCovarianceBuilder,
+    EllipseModel,
 )
+from glomar_gridding.io import load_array, load_dataset
 
 
 def chisq(
