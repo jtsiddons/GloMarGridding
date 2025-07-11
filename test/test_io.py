@@ -1,9 +1,9 @@
 import os
+
 import xarray as xr
 
-from glomar_gridding.io import load_array, load_dataset
 from glomar_gridding.interpolation_covariance import load_covariance
-
+from glomar_gridding.io import load_array, load_dataset
 
 PATH: str = os.path.join(os.path.dirname(__file__), "data")
 

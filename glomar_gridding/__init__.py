@@ -18,13 +18,13 @@ observational data to in-filled gridded fields. Typically this will make use
 of Kriging as the inteprolation method.
 """
 
-from .grid import map_to_grid
 from .error_covariance import (
+    correlated_components,
     dist_weight,
     get_weights,
     uncorrelated_components,
-    correlated_components,
 )
+from .grid import map_to_grid
 from .variogram import (
     ExponentialVariogram,
     GaussianVariogram,

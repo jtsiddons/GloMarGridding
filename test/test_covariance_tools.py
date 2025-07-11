@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 from glomar_gridding.covariance_tools import (
     csum_up_to_val,

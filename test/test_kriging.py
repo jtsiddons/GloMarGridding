@@ -24,30 +24,30 @@ The intent of this test is to make sure that our implementation of Ordinary
 Kriging is correct.
 """
 
-import pytest  # noqa: F401
 import os
-import numpy as np
-import polars as pl
-import xarray as xr
 from itertools import product
 
+import numpy as np
+import polars as pl
+import pytest  # noqa: F401
+import xarray as xr
 from sklearn.metrics.pairwise import euclidean_distances
 
 from glomar_gridding.grid import (
-    map_to_grid,
     grid_from_resolution,
     grid_to_distance_matrix,
+    map_to_grid,
 )
-from glomar_gridding.variogram import MaternVariogram
 from glomar_gridding.kriging import (
+    OrdinaryKriging,
     SimpleKriging,
+    _extended_inverse,
     constraint_mask,
     kriging_ordinary,
-    OrdinaryKriging,
     kriging_simple,
-    _extended_inverse,
 )
 from glomar_gridding.stochastic import StochasticKriging
+from glomar_gridding.variogram import MaternVariogram
 
 
 def _load_results() -> np.ndarray:

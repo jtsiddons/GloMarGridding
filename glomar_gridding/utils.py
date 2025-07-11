@@ -14,21 +14,21 @@
 
 r"""Utility functions for `glomar_gridding`"""
 
+import inspect
+import logging
 from calendar import isleap
 from collections.abc import Iterable
 from datetime import date, timedelta
 from enum import IntEnum
-import inspect
 from itertools import islice
-import logging
 from typing import Any, TypeVar
+from warnings import warn
+
 import netCDF4 as nc
 import numpy as np
 import polars as pl
 import xarray as xr
-from warnings import warn
 from polars._typing import ClosedInterval
-
 
 from glomar_gridding.constants import (
     KM_TO_NM,

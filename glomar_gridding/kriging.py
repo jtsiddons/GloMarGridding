@@ -25,13 +25,14 @@ Ordinary Kriging.
 
 from abc import ABC, abstractmethod
 from typing import Literal
-import numpy as np
 from warnings import warn
+
+import numpy as np
 
 from glomar_gridding.utils import (
     adjust_small_negative,
-    intersect_mtlb,
     get_spatial_mean,
+    intersect_mtlb,
 )
 
 KrigMethod = Literal["simple", "ordinary"]

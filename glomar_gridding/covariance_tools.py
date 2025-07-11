@@ -96,10 +96,11 @@ Modified by J. Siddons.
 
 from itertools import accumulate
 from typing import Any, Literal
+from warnings import warn
+
 import numpy as np
 import scipy as sp
 from statsmodels.stats import correlation_tools
-from warnings import warn
 
 from glomar_gridding.utils import cor_2_cov, cov_2_cor
 
