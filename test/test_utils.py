@@ -153,6 +153,7 @@ def test_cov_cor():
 
     assert np.allclose(cov, cor_2_cov(cor, vars))
     assert np.allclose(cor, cov_2_cor(cov))
+    assert np.allclose(cov, cor_2_cov(cov_2_cor(cov), vars))
 
 
 def test_month_midpoint():

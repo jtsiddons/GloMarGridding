@@ -170,6 +170,8 @@ def adjust_small_negative(
         warn("Small negative vals are detected. Setting to 0.")
         print(mat[small_negative_check])
         ret[small_negative_check] = 0.0
+    if (ret < 0).any():
+        warn("Negative values are detected")
     return ret
 
 
@@ -205,7 +207,7 @@ def find_nearest(
     >>> find_nearest(array, tests)
     ([np.int64(0), np.int64(4), np.int64(3)], array([1. , 4.5, 2.1]))
     """
-    idx_list = [(np.abs(array - value)).argmin() for value in values]
+    idx_list = [int(np.argmin((np.abs(array - value)))) for value in values]
     array_values_list = np.array(array)[idx_list]
     # print(values)
     # print(array_values_list)
