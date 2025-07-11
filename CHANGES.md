@@ -28,6 +28,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Added new functions `glomar_gridding.covariance_tools.laloux_clip` and
+  `glomar_gridding.covariance_tools.explained_variance_clip` (!78)
 * Add `simulated_obs` as attribute to `StochasticKriging` in `solve` method (!71)
 * Added an example notebook (!46)
 * Added documentation pdf (!46)
@@ -47,8 +49,16 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 * Add module containing ellipse models (`ellipse`) (!54)
 * Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
 
+### Bug fixes
+
+* Corrected `glomar_gridding.covariance_tools.eigenvalue_clip` with `"Laloux"` method to compute new
+  eigenvalues using correlation matrix rather than covariance matrix (!78)
+
 ### Internal changes
 
+* Additional unit test for ellipse-based covariance self-consistency (!80)
+* Unit test for ellipse covariance from uniform parameters fixed, Chi squared test dropped in favour
+  of correlation distance from https://doi.org/10.1109/VETECS.2005.1543265 (!80)
 * Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
 * Added a GitLab runner pipeline (!64)

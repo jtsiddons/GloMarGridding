@@ -4,7 +4,6 @@ import os
 import pytest
 
 import numpy as np
-import scipy as sp
 import xarray as xr
 
 from glomar_gridding.io import load_array, load_dataset
@@ -14,43 +13,24 @@ from glomar_gridding.ellipse import (
     EllipseBuilder,
     EllipseCovarianceBuilder,
 )
+from glomar_gridding.utils import cov_2_cor, uncompress_masked
 
 
-def chisq(
-    sigma_hat: np.ndarray,
-    sigma_actual: np.ndarray,
-    n: int,
-) -> float:
+def frob(mat: np.ndarray) -> float:
+    return float(np.linalg.norm(mat, ord="fro"))  # codespell:ignore
+
+
+def correlation_distance(cov1: np.ndarray, cov2: np.ndarray) -> float:
     """
-    For cases here have fixed parameters is easy
-    So each grid point as well as the average estimated parameter (the estimator)
-    should be within 1-2x of the standard error of the actual parameter
-    What is the likelihood of the estimator relative to the actual?
+    Correlation Matrix Distance
 
-    For variable params... we will just compare the regional average
-
-    W = -n*np.log(np.linalg.det(inside_the_brackets))-n*p+n*np.trace(inside_the_brackets)
-    W ~ ChiSquare(p*(p+1)/2)
-
-    How to:
-    https://www.stat.pitt.edu/sungkyu/course/2221Fall13/lec3.pdf
-    https://cran.r-project.org/web//packages/mvhtests/mvhtests.pdf <<< R docs (argh)
-    """  # noqa: E501
-    # unbiased estimator to sigma_hat for all practical purpose n/n-1 ~ 1
-    sigma_hat_unbiased = (n / (n - 1)) * sigma_hat
-    sigma_actual_inv = np.linalg.inv(sigma_actual)
-
-    # Number of parameters (aka the dimension of the covariance) -- 2
-    p = sigma_actual.shape[0]
-    inside_the_brackets = sigma_actual_inv @ sigma_hat_unbiased
-
-    W = (
-        -n * np.log(np.linalg.det(inside_the_brackets))
-        - n * p
-        + n * np.trace(inside_the_brackets)
-    )
-    p_val = sp.stats.chi2.sf(W, p * (p + 1) / 2)
-    return p_val
+    from: https://www.researchgate.net/publication/4194743_Correlation_Matrix_Distance_a_Meaningful_Measure_for_Evaluation_of_Non-Stationary_MIMO_Channels
+    """
+    cor1 = cov_2_cor(cov1)
+    cor2 = cov_2_cor(cov2)
+    num = np.trace(np.matmul(cor1, cor2))
+    denom = frob(cor1) * frob(cor2)
+    return 1 - num / denom
 
 
 def initialise_const_arrays(
@@ -89,7 +69,11 @@ def initialise_covariance(
         lons=lons,
         lats=lats,
     ).cov_ns
-    return eigenvalue_clip(out)
+    return eigenvalue_clip(
+        out,
+        method="explained_variance",
+        target_variance_fraction=0.99,
+    )
 
 
 def get_test_data(
@@ -108,7 +92,7 @@ def get_test_data(
             {"Lx": 1500, "Ly": 800, "theta": np.pi / 3, "stdev": 0.6},
             (10, 6),
         ),
-        (1.5, {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 0.6}, (8, 8)),
+        (1.5, {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 1.2}, (8, 8)),
     ],
 )
 def test_const_Ellipse(v, params, size):
@@ -120,9 +104,10 @@ def test_const_Ellipse(v, params, size):
     np.random.seed(40814)
 
     # Generate Test Data from A Known Covariance (from known Ellipse Params)
-    n = 1500
+    n = 5_000
     true_cov = initialise_covariance(**params, v=v, size=size)
     test_data = get_test_data(true_cov, n=n)
+    in_cov = np.cov(test_data.T)
     test_data = test_data.reshape((n, *size))
     coord_dict = {
         "time": np.arange(n),
@@ -144,8 +129,8 @@ def test_const_Ellipse(v, params, size):
     # Set-up output fields
     v = ellipse.v
     nparams = ellipse.supercategory_n_params
-    default_values = [0 for _ in range(nparams)]
-    init_values = [2000.0, 2000.0, 0]
+    default_values = [0.0 for _ in range(nparams)]
+    init_values = [300.0, 300.0, 0.0]
     fit_bounds = [
         (300.0, 30000.0),
         (300.0, 30000.0),
@@ -167,7 +152,7 @@ def test_const_Ellipse(v, params, size):
     theta = ellipse_params["theta"].values
     stdev = ellipse_params["standard_deviation"].values
 
-    simulated_cov = EllipseCovarianceBuilder(
+    ellipse_cov = EllipseCovarianceBuilder(
         Lx,
         Ly,
         theta,
@@ -176,9 +161,16 @@ def test_const_Ellipse(v, params, size):
         lats=coords["latitude"].values,
         v=v,
     ).cov_ns
-    p = chisq(simulated_cov, true_cov, n)
+    ellipse_cov = eigenvalue_clip(
+        ellipse_cov,
+        method="explained_variance",
+        target_variance_fraction=0.99,
+    )
 
-    assert p < 5e-2
+    assert np.allclose(ellipse_cov, in_cov, rtol=5e-2)
+
+    cmd = correlation_distance(in_cov, ellipse_cov)
+    assert cmd < 1e-4
 
 
 def test_ellipse_covariance():
@@ -214,12 +206,93 @@ def test_ellipse_covariance():
         v=0.5,
     )
 
+    cmd = correlation_distance(ellipseCov.cov_ns, expected)
+    assert cmd < 1e-4
     assert np.allclose(ellipseCov.cov_ns, expected, rtol=1e-5)
 
     # TEST: correlation matrix
     ellipseCov.calculate_cor()
     assert hasattr(ellipseCov, "cor_ns")
     assert np.isclose(1, np.max(np.diag(ellipseCov.cor_ns)))
+
+
+def test_ellipse_covariance_self_consistency():
+    """Test covariance result matches known result (from @stchan)"""
+    in_file = os.path.join(
+        os.path.dirname(__file__), "data", "Atlantic_Ocean_07.nc"
+    )
+    Lxs = load_array(in_file, "lx")[50:70, 50:70]
+    in_coords = Lxs.coords
+    mask = Lxs.values > 1e5
+
+    cov_file = os.path.join(os.path.dirname(__file__), "data", "cov_no_hfix.nc")
+
+    known_cov = load_array(cov_file, "covariance").values
+    n = 1_000
+    coord_dict = {
+        "time": np.arange(n),
+        "longitude": in_coords["longitude"].values,
+        "latitude": in_coords["latitude"].values,
+    }
+    coords = xr.Coordinates(coord_dict)
+
+    test_data = get_test_data(known_cov, n)
+    test_data = np.array(
+        [
+            uncompress_masked(test_data[i, :], mask, fill_value=np.nan)
+            for i in range(n)
+        ]
+    )
+    test_data = test_data.reshape((n, *Lxs.shape))
+    test_data = np.ma.masked_where(np.isnan(test_data), test_data)
+
+    ellipse = EllipseModel(
+        anisotropic=True,
+        rotated=True,
+        physical_distance=True,
+        v=0.5,
+        unit_sigma=True,
+    )
+    ellipse_builder = EllipseBuilder(test_data, coords)
+
+    # Set-up output fields
+    v = ellipse.v
+    nparams = ellipse.supercategory_n_params
+    default_values = [-999.0 for _ in range(nparams)]
+    init_values = [300.0, 300.0, 0.0]
+    fit_bounds = [
+        (300.0, 30000.0),
+        (300.0, 30000.0),
+        (-2.0 * np.pi, 2.0 * np.pi),
+    ]
+    fit_max_distance = 10_000.0
+
+    # Estimate Ellipse Parameters
+    ellipse_params = ellipse_builder.compute_params(
+        default_value=default_values,
+        matern_ellipse=ellipse,
+        bounds=fit_bounds,
+        guesses=init_values,
+        max_distance=fit_max_distance,
+    )
+
+    Lx = ellipse_params["Lx"].values
+    Ly = ellipse_params["Ly"].values
+    theta = ellipse_params["theta"].values
+    stdev = ellipse_params["standard_deviation"].values
+
+    ellipseCov = EllipseCovarianceBuilder(
+        np.ma.masked_less(Lx, -900.0),
+        np.ma.masked_less(Ly, -900.0),
+        np.ma.masked_less(theta, -900.0),
+        np.ma.masked_less(stdev, -900.0),
+        in_coords["latitude"].values,
+        in_coords["longitude"].values,
+        v=v,
+    ).cov_ns
+
+    cdm = correlation_distance(ellipseCov, ellipse_builder.cov)
+    assert cdm < 1e-3
 
 
 def test_ellipse_covariance_methods():
