@@ -56,6 +56,9 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Internal changes
 
+* Additional unit test for ellipse-based covariance self-consistency (!80)
+* Unit test for ellipse covariance from uniform parameters fixed, Chi squared test dropped in favour
+  of correlation distance from https://doi.org/10.1109/VETECS.2005.1543265 (!80)
 * Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
 * Added a GitLab runner pipeline (!64)
