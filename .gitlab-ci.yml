@@ -1,5 +1,5 @@
 variables:
-  UV_VERSION: "0.5"
+  UV_VERSION: "0.7.19"
   PYTHON_VERSION: "3.12"
   BASE_LAYER: "bookworm-slim"
   UV_CACHE_DIR: ".uv-cache"
@@ -16,7 +16,7 @@ pre-commit:
     - pre-commit run --all-files
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "master" && $CI_PROJECT_NAMESPACE == "nocsurfaceprocesses"
 pytest:
   stage: test
   image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
@@ -40,12 +40,12 @@ pytest:
       junit: test_results.xml
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "master" && $CI_PROJECT_NAMESPACE == "nocsurfaceprocesses"
 ruff:
   stage: lint
   interruptible: true
   image:
-    name: ghcr.io/astral-sh/ruff:0.9.9-alpine
+    name: ghcr.io/astral-sh/ruff:0.12.2-alpine
   before_script:
     - cd $CI_PROJECT_DIR
     - ruff --version
@@ -56,4 +56,4 @@ ruff:
       codequality: $CI_PROJECT_DIR/code-quality-report.json
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "master" && $CI_PROJECT_NAMESPACE == "nocsurfaceprocesses"
