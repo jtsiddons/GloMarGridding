@@ -473,7 +473,7 @@ class EllipseModel:
         guesses = guesses or self.default_guesses
         bounds = bounds or self.default_bounds
 
-        if not self.unit_sigma:
+        if (not self.unit_sigma) and len(guesses) != self.n_params + 1:
             guesses.append(0.1)
             bounds.append((0.0001, 0.5))
 

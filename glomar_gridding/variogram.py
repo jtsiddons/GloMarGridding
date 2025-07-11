@@ -26,6 +26,10 @@ import xarray as xr
 from scipy.special import gamma, kv
 
 
+def _kv(v, z):
+    return np.nan_to_num(kv(v, z), nan=np.nan, posinf=np.nan, neginf=np.nan)
+
+
 @dataclass()
 class Variogram(ABC):
     """Generic Variogram Class - defines the abstract class"""
@@ -401,14 +405,14 @@ class MaternVariogram(Variogram):
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "sklearn":
-                return kv(
+                return _kv(
                     self.nu,
                     np.sqrt(2.0 * self.nu) * dist_over_range,
                 )
             case "gstat":
-                return kv(self.nu, dist_over_range)
+                return _kv(self.nu, dist_over_range)
             case "karspeck":
-                return kv(
+                return _kv(
                     self.nu,
                     2.0 * np.sqrt(self.nu) * dist_over_range,
                 )
