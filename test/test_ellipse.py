@@ -145,6 +145,7 @@ def test_const_Ellipse(v, params, size):
         bounds=fit_bounds,
         guesses=init_values,
         max_distance=fit_max_distance,
+        delta_x_method="Modified_Met_Office",
     )
 
     Lx = ellipse_params["Lx"].values
@@ -274,6 +275,7 @@ def test_ellipse_covariance_self_consistency():
         bounds=fit_bounds,
         guesses=init_values,
         max_distance=fit_max_distance,
+        delta_x_method="Modified_Met_Office",
     )
 
     Lx = ellipse_params["Lx"].values
