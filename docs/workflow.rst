@@ -85,7 +85,7 @@ The grid can be converted in to a distance matrix, and finally to a covariance m
        nugget=0.0,
    ).fit(dist)
 
-   covariance = variogram_to_covariance(variogram, sill=1.2)
+   covariance = variogram_to_covariance(variogram, variance=1.2)
 
 Alternatively, the covariance matrix can be loaded from disk. A non-stationary (varying parameter)
 covariance matrix can be estimated using ellipse-based models. See
