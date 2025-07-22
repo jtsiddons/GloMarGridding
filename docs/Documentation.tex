@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Jul 11, 2025}
+\date{Jul 22, 2025}
 \release{1.0.0\sphinxhyphen{}rc.3}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -1419,7 +1419,7 @@ Calculate covariance and correlation matrices.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{compute\_params}}}
-{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{20.0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}}
+{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1591,6 +1591,14 @@ The code does it using bootstrapping.
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of simulations to bootstrap for SE estimation.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Select training data using physical distance (haversine distance) or
+Euclidean distance of degree difference between each position and
+all possible training data. Data that falls within the min and max
+distance values using the selected distance method are selected as
+training data.
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
@@ -1660,7 +1668,7 @@ that corresponds to a specific lat lon
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{fit\_ellipse\_model}}}
-{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{20.0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}}
+{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1815,6 +1823,14 @@ The code does it using bootstrapping.
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of simulations to bootstrap for SE estimation.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Select training data using physical distance (haversine distance) or
+Euclidean distance of degree difference between each position and
+all possible training data. Data that falls within the min and max
+distance values using the selected distance method are selected as
+training data.
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
@@ -1843,7 +1859,7 @@ dict
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{EllipseCovarianceBuilder}}}
-{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method=\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist=6000.0}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision=\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method=\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size=None}}}
+{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method=\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist=None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision=\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method=\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size=None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1871,22 +1887,6 @@ Valid (ocean) point:
 \sphinxAtStartPar
 Invalid (masked) points:
 1) Skipped over
-
-\sphinxAtStartPar
-max\_dist:
-float (km) or (degrees if you want to work in degrees), default 6000km
-if you want infinite distance, just set it to a large number, some fun
-numbers to use:
-\begin{itemize}
-\item {}
-\sphinxAtStartPar
-1.5E8 (i.e. \textasciitilde{}1 astronomical unit (Earth\sphinxhyphen{}Sun distance))
-
-\item {}
-\sphinxAtStartPar
-5.0E9 (average distance between Earth and not\sphinxhyphen{}a\sphinxhyphen{}planet\sphinxhyphen{}anymore Pluto)
-
-\end{itemize}
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
@@ -1923,8 +1923,9 @@ numbers to use:
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{max\_dist}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} If the Haversine distance between 2 points exceed max\_dist,
-covariance is set to 0
+\sphinxstyleliteralstrong{\sphinxupquote{max\_dist}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} If the Haversine distance between 2 points exceed max\_dist,
+covariance is set to 0. If set to None then an infinite max dist is
+assumed and covariance between all pairs of positions will be computed.
 
 \item {}
 \sphinxAtStartPar
