@@ -30,6 +30,8 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Allow for option to select training data for ellipse parameter estimation using Euclidean degree
+  distance, option to use Haversine distance as selection criteria is the default (!84)
 * `NaN` values remaining in error covariance after filtering to observations and dropping `NaN`
   values on the diagonal are set to 0.0 in `glomar_gridding.kriging.Kriging` classes (!83)
 * Added new functions `glomar_gridding.covariance_tools.laloux_clip` and

@@ -188,7 +188,7 @@ class EllipseBuilder:
         self,
         xy_point: int,
         matern_ellipse: EllipseModel,
-        max_distance: float = 20.0,
+        max_distance: float = 6000,
         min_distance: float = 0.3,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
@@ -198,6 +198,7 @@ class EllipseBuilder:
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
+        physical_distance_selection: bool = True,
     ) -> dict[str, Any] | None:
         """
         Fit ellipses/covariance models using adhoc local covariances
@@ -315,6 +316,13 @@ class EllipseBuilder:
         n_sim : int
             Number of simulations to bootstrap for SE estimation.
 
+        physical_distance_selection : bool
+            Select training data using physical distance (haversine distance) or
+            Euclidean distance of degree difference between each position and
+            all possible training data. Data that falls within the min and max
+            distance values using the selected distance method are selected as
+            training data.
+
         Returns
         -------
         dict
@@ -331,6 +339,8 @@ class EllipseBuilder:
             max_distance=max_distance,
             anisotropic=matern_ellipse.anisotropic,
             delta_x_method=delta_x_method,
+            physical_distance=matern_ellipse.physical_distance,
+            physical_distance_selection=physical_distance_selection,
         )
 
         if len(y_train) == 0:
@@ -418,9 +428,16 @@ class EllipseBuilder:
         max_distance: float,
         anisotropic: bool,
         delta_x_method: DeltaXMethod | None,
+        physical_distance: bool = True,
+        physical_distance_selection: bool = True,
     ) -> tuple[np.ndarray, np.ndarray]:
+        if physical_distance and (delta_x_method is None):
+            raise ValueError(
+                "Cannot have physical_distance with unset delta_x_method"
+            )
         lonlat = self.xy_masked[xy_point]
         y = self.cor[xy_point, :]
+
         disp_y, disp_x = displacements(
             self.xy_masked[:, 1],
             self.xy_masked[:, 0],
@@ -428,11 +445,23 @@ class EllipseBuilder:
             lonlat[0],
             delta_x_method=delta_x_method,
         )
-        if delta_x_method is None:
-            # disp_y and disp_x are in degrees
-            deg_distance = np.linalg.norm(
-                np.column_stack([disp_x, disp_y]), axis=1
-            )
+
+        if delta_x_method is None or not physical_distance_selection:
+            if delta_x_method is not None:
+                dy, dx = displacements(
+                    self.xy_masked[:, 1],
+                    self.xy_masked[:, 0],
+                    lonlat[1],
+                    lonlat[0],
+                    delta_x_method=None,
+                )
+                # dy and dx are in degrees
+                deg_distance = np.linalg.norm(np.column_stack([dy, dx]), axis=1)
+            else:
+                # disp_y and disp_x are in degrees
+                deg_distance = np.linalg.norm(
+                    np.column_stack([disp_x, disp_y]), axis=1
+                )
             valid_dist_idx = np.where(
                 (deg_distance <= max_distance)
                 & (deg_distance >= min_distance)
@@ -440,9 +469,29 @@ class EllipseBuilder:
                 & (deg_distance != 0)
             )[0]
             y_train = y[valid_dist_idx]
+
             if anisotropic:
                 X_train = np.column_stack([disp_x, disp_y])[valid_dist_idx, :]
+                if physical_distance:
+                    X_train *= RADIUS_OF_EARTH_KM
                 return X_train, y_train
+
+            if physical_distance:
+                latlons = np.radians(
+                    np.column_stack(
+                        [
+                            self.xy_masked[valid_dist_idx, 1],
+                            self.xy_masked[valid_dist_idx, 0],
+                        ]
+                    )
+                )
+                latlon = np.radians(np.array([lonlat[1], lonlat[0]])).reshape(
+                    1, -1
+                )
+                distance = (
+                    haversine_distances(latlon, latlons)[0] * RADIUS_OF_EARTH_KM
+                )
+                return distance, y_train
             return deg_distance[valid_dist_idx], y_train
 
         # disp_y and disp_x are in radians
@@ -467,7 +516,7 @@ class EllipseBuilder:
         self,
         default_value: Any,
         matern_ellipse: EllipseModel,
-        max_distance: float = 20.0,
+        max_distance: float = 6000,
         min_distance: float = 0.3,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
         guesses: list[float] | None = None,
@@ -477,6 +526,7 @@ class EllipseBuilder:
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
+        physical_distance_selection: bool = True,
     ) -> xr.Dataset:
         """
         Fit ellipses/covariance models using adhoc local covariances to all
@@ -604,6 +654,13 @@ class EllipseBuilder:
         n_sim : int
             Number of simulations to bootstrap for SE estimation.
 
+        physical_distance_selection : bool
+            Select training data using physical distance (haversine distance) or
+            Euclidean distance of degree difference between each position and
+            all possible training data. Data that falls within the min and max
+            distance values using the selected distance method are selected as
+            training data.
+
         Returns
         -------
         params : xarray.Dataset
@@ -647,6 +704,7 @@ class EllipseBuilder:
                 estimate_SE=estimate_SE,
                 n_jobs=n_jobs,
                 n_sim=n_sim,
+                physical_distance_selection=physical_distance_selection,
             )
             if result is None:
                 continue
