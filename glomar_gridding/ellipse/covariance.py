@@ -34,7 +34,6 @@ if sys.version_info.minor >= 12:
 else:
     from glomar_gridding.utils import batched
 
-MAX_DIST_COMPROMISE: float = 6000.0  # Compromise _MAX_DIST_Kar &_MAX_DIST_UKMO
 TWO_PI = 2 * np.pi
 
 
@@ -60,14 +59,6 @@ class EllipseCovarianceBuilder:
     Invalid (masked) points:
     1) Skipped over
 
-    max_dist:
-    float (km) or (degrees if you want to work in degrees), default 6000km
-    if you want infinite distance, just set it to a large number, some fun
-    numbers to use:
-
-        - 1.5E8 (i.e. ~1 astronomical unit (Earth-Sun distance))
-        - 5.0E9 (average distance between Earth and not-a-planet-anymore Pluto)
-
     Parameters
     ----------
     Lx, Ly, theta, stdev: numpy.ndarray
@@ -78,9 +69,10 @@ class EllipseCovarianceBuilder:
         Matern shape parameter
     delta_x_method : str
         How are displacements computed between points
-    max_dist : float
+    max_dist : float | None
         If the Haversine distance between 2 points exceed max_dist,
-        covariance is set to 0
+        covariance is set to 0. If set to None then an infinite max dist is
+        assumed and covariance between all pairs of positions will be computed.
     precision : type
         Floating point precision of the output covariance numpy defaults to
         np.float32.
@@ -110,7 +102,7 @@ class EllipseCovarianceBuilder:
         lons: np.ndarray,
         v: float,
         delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
-        max_dist: float = MAX_DIST_COMPROMISE,
+        max_dist: float | None = None,
         precision=np.float32,
         covariance_method: CovarianceMethod = "array",
         batch_size: int | None = None,
@@ -121,7 +113,7 @@ class EllipseCovarianceBuilder:
             ove_start_time.strftime("%Y-%m-%d %H:%M:%S"),
         )
 
-        if not isinstance(max_dist, (int, float)):
+        if max_dist is not None and not isinstance(max_dist, (int, float)):
             raise ValueError("max_dist must be a number")
 
         # Defining the input data
@@ -261,16 +253,17 @@ class EllipseCovarianceBuilder:
 
         # Calculate distances & Displacements
         i_s, j_s = np.asarray(list(combinations(range(N), 2))).transpose()
-        dists = _haversine_multi(
-            self.lat_grid_compressed_rad[i_s],
-            self.lon_grid_compressed_rad[i_s],
-            self.lat_grid_compressed_rad[j_s],
-            self.lon_grid_compressed_rad[j_s],
-        )
-        mask = dists > self.max_dist
-        del dists
-        i_s = i_s.compress(~mask)
-        j_s = j_s.compress(~mask)
+        if self.max_dist is not None:
+            dists = _haversine_multi(
+                self.lat_grid_compressed_rad[i_s],
+                self.lon_grid_compressed_rad[i_s],
+                self.lat_grid_compressed_rad[j_s],
+                self.lon_grid_compressed_rad[j_s],
+            )
+            mask = dists > self.max_dist
+            del dists
+            i_s = i_s.compress(~mask)
+            j_s = j_s.compress(~mask)
 
         # Calculate covariance values
         cij = self.c_ij_anisotropic_array(i_s, j_s)
@@ -306,7 +299,7 @@ class EllipseCovarianceBuilder:
 
         for i, j in combinations(range(N), 2):
             # Leave as zero if too far away
-            if (
+            if (self.max_dist is not None) and (
                 _haversine_single(
                     self.lat_grid_compressed_rad[i],
                     self.lon_grid_compressed_rad[i],
@@ -390,16 +383,17 @@ class EllipseCovarianceBuilder:
             i_s, j_s = np.asarray(batch).T
 
             # Mask large distances
-            dists = _haversine_multi(
-                self.lat_grid_compressed_rad[i_s],
-                self.lon_grid_compressed_rad[i_s],
-                self.lat_grid_compressed_rad[j_s],
-                self.lon_grid_compressed_rad[j_s],
-            )
-            mask = dists > self.max_dist
-            del dists
-            i_s = i_s.compress(~mask)
-            j_s = j_s.compress(~mask)
+            if self.max_dist is not None:
+                dists = _haversine_multi(
+                    self.lat_grid_compressed_rad[i_s],
+                    self.lon_grid_compressed_rad[i_s],
+                    self.lat_grid_compressed_rad[j_s],
+                    self.lon_grid_compressed_rad[j_s],
+                )
+                mask = dists > self.max_dist
+                i_s = i_s.compress(~mask)
+                j_s = j_s.compress(~mask)
+                del dists
 
             loop_c_ij = self.c_ij_anisotropic_array(i_s, j_s)
             self.cov_ns[i_s, j_s] = loop_c_ij.astype(self.precision)
