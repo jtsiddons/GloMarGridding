@@ -156,7 +156,9 @@ class StochasticKriging(Kriging):
         if self.error_cov is not None:
             obs_obs_cov += self.error_cov
 
-        obs_obs_cov_inv = np.linalg.inv(obs_obs_cov)
+        obs_obs_cov_inv = np.linalg.inv(obs_obs_cov).astype(
+            self.covariance.dtype
+        )
         self.kriging_weights_from_inverse(obs_obs_cov_inv)
 
         return None
@@ -209,7 +211,8 @@ class StochasticKriging(Kriging):
 
         # Add Lagrange multiplier
         obs_obs_cov_inv = _extended_inverse(inv)
-        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
         self.kriging_weights = (obs_obs_cov_inv @ obs_grid_cov).T
 
         return None
@@ -229,7 +232,8 @@ class StochasticKriging(Kriging):
 
         M = self.covariance.shape[0]
         obs_grid_cov = self.covariance[self.idx, :]
-        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
 
         alpha = self.kriging_weights[:, -1]
         kriging_weights = self.kriging_weights @ obs_grid_cov
@@ -369,21 +373,21 @@ class StochasticKriging(Kriging):
                 loc=np.zeros(self.covariance.shape[0]),
                 cov=self.covariance,
                 ndraws=1,
-            )
+            ).astype(self.covariance.dtype)
 
         # Simulate observations
         self.simulated_obs = simulated_state[self.idx] + scipy_mv_normal_draw(
             loc=np.zeros(self.error_cov.shape[0]),
             cov=self.error_cov,
             ndraws=1,
-        )
+        ).astype(self.covariance.dtype)
 
         # Simulate a gridded field
         self.simulated_grid = self.simple_kriging_weights @ self.simulated_obs
         self.epsilon = self.simulated_grid - simulated_state
 
         # Add Lagrange multiplier
-        grid_obs = np.append(self.obs, 0)
+        grid_obs = np.append(self.obs, 0).astype(self.obs.dtype)
         self.gridded_field = self.kriging_weights @ grid_obs
         return self.gridded_field + self.epsilon
 

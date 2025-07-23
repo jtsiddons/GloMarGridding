@@ -576,11 +576,14 @@ class OrdinaryKriging(Kriging):
             obs_obs_cov += self.error_cov
 
         # Add Lagrange multiplier
-        obs_obs_cov = np.block(
-            [[obs_obs_cov, np.ones((N, 1))], [np.ones((1, N)), 0]]
-        )
-        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
-        self.kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+        ones_n = np.ones((1, N), dtype=self.covariance.dtype)
+        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        zero = np.zeros((1, 1), dtype=self.covariance.dtype)
+        obs_obs_cov = np.block([[obs_obs_cov, ones_n.T], [ones_n, zero]])
+        obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
+        self.kriging_weights = (
+            np.linalg.solve(obs_obs_cov, obs_grid_cov).T
+        ).astype(self.covariance.dtype)
 
         return None
 
@@ -626,8 +629,11 @@ class OrdinaryKriging(Kriging):
 
         # Add Lagrange multiplier
         M = self.covariance.shape[0]
-        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
-        self.kriging_weights = (inv @ obs_grid_cov).T
+        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
+        self.kriging_weights = ((inv @ obs_grid_cov).T).astype(
+            self.covariance.dtype
+        )
 
     def solve(self) -> np.ndarray:
         r"""
@@ -668,7 +674,7 @@ class OrdinaryKriging(Kriging):
             self.get_kriging_weights()
 
         # Add Lagrange multiplier
-        grid_obs = np.append(self.obs, 0)
+        grid_obs = np.append(self.obs, 0).astype(self.obs.dtype)
 
         return self.kriging_weights @ grid_obs
 
@@ -687,7 +693,8 @@ class OrdinaryKriging(Kriging):
 
         M = self.covariance.shape[0]
         obs_grid_cov = self.covariance[self.idx, :]
-        obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
+        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
 
         alpha = self.kriging_weights[:, -1]
         kriging_weights = self.kriging_weights @ obs_grid_cov
@@ -802,7 +809,7 @@ class OrdinaryKriging(Kriging):
             Inverse of the extended covariance matrix between observation
             grid-points including the Lagrange multiplier factors.
         """
-        return _extended_inverse(simple_inv)
+        return _extended_inverse(simple_inv).astype(self.covariance.dtype)
 
 
 def _extended_inverse(simple_inv: np.ndarray) -> np.ndarray:
@@ -810,7 +817,7 @@ def _extended_inverse(simple_inv: np.ndarray) -> np.ndarray:
         raise ValueError("S must be a matrix")
 
     d = 0
-    B = np.ones((simple_inv.shape[0], 1))
+    B = np.ones((simple_inv.shape[0], 1), dtype=simple_inv.dtype)
 
     E = np.matmul(simple_inv, B)
     f = d - np.matmul(B.T, E)
