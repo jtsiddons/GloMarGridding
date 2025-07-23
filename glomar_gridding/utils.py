@@ -172,7 +172,7 @@ def adjust_small_negative(
         ret[small_negative_check] = 0.0
     if (ret < 0).any():
         warn("Negative values are detected")
-    return ret
+    return ret.astype(mat.dtype)
 
 
 def find_nearest(
