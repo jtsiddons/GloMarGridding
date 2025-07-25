@@ -58,6 +58,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Bug fixes
 
+* Accounted for `xarray.DataArray` in `variogram.SphericalVariogram` (!88)
 * Corrected `glomar_gridding.covariance_tools.eigenvalue_clip` with `"Laloux"` method to compute new
   eigenvalues using correlation matrix rather than covariance matrix (!78)
 
