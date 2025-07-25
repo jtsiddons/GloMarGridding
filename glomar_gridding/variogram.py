@@ -128,6 +128,12 @@ class SphericalVariogram(Variogram):
             )
             + self.nugget
         )
+        if isinstance(out, xr.DataArray):
+            out.name = "variogram"
+            out = out.where(
+                distance_matrix < self.range, self.nugget + self.psill
+            )
+            return out
         out[distance_matrix >= self.range] = self.nugget + self.psill
         return out
 
