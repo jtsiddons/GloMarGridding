@@ -55,14 +55,15 @@ def load_dataset(
     arr : xarray.Dataset
         The netcdf dataset as an xarray.Dataset.
     """
+    dirname = os.path.dirname(path) or "."
     if os.path.isfile(path):
         filename = path
     elif kwargs:
-        if not os.path.isdir(os.path.dirname(path)):
-            raise FileNotFoundError(f"Covariance path: {path} not found")
         filename = path.format(**kwargs)
+        if not os.path.isdir(dirname):
+            raise FileNotFoundError(f"Array path: {path} not found")
         if not os.path.isfile(filename):
-            raise FileNotFoundError(f"Covariance file: {filename} not found")
+            raise FileNotFoundError(f"Array file: {filename} not found")
     else:
         raise FileNotFoundError("Cannot determine filename")
 
