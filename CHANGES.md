@@ -30,6 +30,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Added additional example to the jupyter notebook (!89)
 * Input `dtype`s are maintained through the `Kriging` classes (!87)
 * Allow for option to select training data for ellipse parameter estimation using Euclidean degree
   distance, option to use Haversine distance as selection criteria is the default (!84)
