@@ -30,6 +30,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Updated docstrings for `glomar_gridding.covariance_tools.laloux_clip` (!90)
 * Added additional example to the jupyter notebook (!89)
 * Input `dtype`s are maintained through the `Kriging` classes (!87)
 * Allow for option to select training data for ellipse parameter estimation using Euclidean degree
