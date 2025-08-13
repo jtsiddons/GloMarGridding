@@ -9,10 +9,14 @@ Two methods of Kriging are supported by `glomar_gridding`:
 
 For each Kriging method there is a class and a function. The recommended approach is to use the
 classes, the functions will be deprecated in a future version of `glomar_gridding`. The classes
-require the full grid spatial covariance structure as an input. Each class contains a `solve` method
-that requires the observation values and the 1-dimensional grid index of each observation,
-optionally an error covariance matrix can be provided. The grid index values are used to index into
-the covariance matrix to obtain the inputs for the Kriging equations.
+require the full grid spatial covariance structure, the observation values, and the grid index of
+each observation, and an optional error covariance matrix as inputs. Each grid index should be a
+single index value, and represents the flattened index, and connects directly to the corresponding
+index of the covariance matrices. If an error covariance matrix is provided, the covariance matrix
+will be automatically subset to the grid index values, if the resulting matrix contains `nan` or `0`
+values on the diagonal, then the observation values and indices are filtered to exclude these
+points, and the error covariance matrix is subset again. Just initialising the class does not solve
+the system, this requires the `solve` method to be called.
 
 Preparation
 ===========
@@ -51,7 +55,11 @@ Ordinary Kriging
 Perturbed Gridded Fields
 ========================
 
-An additional two-stage combined Kriging class is provided in the `stochastic` module.
+An additional two-stage combined Kriging class is provided in the `stochastic` module. In this case,
+the `solve` method has an additional optional `simulated_state` argument, if this is set, then the
+value is used as the simulated system state used as the base of the perturbed field (from which
+observations are simulated), otherwise the value is computed. This allows for pre-computation of a
+sequence of simulated states as part of ensemble processing, for example.
 
 .. autoclass:: glomar_gridding.stochastic.StochasticKriging
    :members:

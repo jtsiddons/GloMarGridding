@@ -1,21 +1,22 @@
-import pytest  # noqa: F401
-import numpy as np
-import polars as pl
 from datetime import date, datetime
 
-from glomar_gridding.io import get_recurse
+import numpy as np
+import polars as pl
+import pytest  # noqa: F401
+
 from glomar_gridding.grid import grid_from_resolution
+from glomar_gridding.io import get_recurse
 from glomar_gridding.utils import (
     ColumnNotFoundError,
+    batched,
     check_cols,
     cor_2_cov,
     cov_2_cor,
-    get_month_midpoint,
-    select_bounds,
-    filter_bounds,
-    get_pentad_range,
     days_since_by_month,
-    batched,
+    filter_bounds,
+    get_month_midpoint,
+    get_pentad_range,
+    select_bounds,
     uncompress_masked,
 )
 
@@ -153,6 +154,7 @@ def test_cov_cor():
 
     assert np.allclose(cov, cor_2_cov(cor, vars))
     assert np.allclose(cor, cov_2_cor(cov))
+    assert np.allclose(cov, cor_2_cov(cov_2_cor(cov), vars))
 
 
 def test_month_midpoint():

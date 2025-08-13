@@ -1,7 +1,22 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Functions for applying masks to grids and DataFrames"""
 
 from typing import Any
 from warnings import warn
+
 import numpy as np
 import polars as pl
 import xarray as xr
@@ -83,11 +98,12 @@ def mask_observations(
         add_grid_pts=align_to_mask,
     )
 
-    obs = obs.with_columns(
-        pl.Series(
-            "mask", [mask.values.flatten()[i] for i in obs[grid_idx_name]]
-        )
+    mask_frame = (
+        pl.from_numpy(mask.values.flatten())
+        .rename({"column_0": "mask"})
+        .with_row_index(grid_idx_name)
     )
+    obs = obs.join(mask_frame, on=grid_idx_name, how="left")
 
     mask_map: dict = {mask_value: masked_value}
     obs = obs.with_columns(

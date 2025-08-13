@@ -1,17 +1,18 @@
-import pytest
 import numpy as np
+import pytest
 from scipy.spatial.transform import Rotation as R
 from sklearn.metrics.pairwise import haversine_distances
-from glomar_gridding.distances import rot_mat, inv_2d, displacements
+
+from glomar_gridding.distances import displacements, inv_2d, rot_mat
 from glomar_gridding.ellipse.covariance import (
-    _det_22_single,
     _det_22_multi,
+    _det_22_single,
+    _haversine_multi,
+    _haversine_single,
     _mo_disp_multi,
     _mo_disp_single,
     _mod_mo_disp_multi,
     _mod_mo_disp_single,
-    _haversine_multi,
-    _haversine_single,
 )
 
 
@@ -55,10 +56,10 @@ def test_det_multi():
 @pytest.mark.parametrize(
     "angle,",
     [
-        (np.pi / 2,),
-        (0.123,),
-        (-np.pi / 3,),
-        (np.pi / 12,),
+        np.pi / 2,
+        0.123,
+        -np.pi / 3,
+        np.pi / 12,
     ],
 )
 def test_rot(angle):
@@ -66,8 +67,6 @@ def test_rot(angle):
     r = np.asarray(R.from_rotvec(angle * np.array([0, 0, 1])).as_matrix())[
         :2, :2
     ]
-    print(f"{rot = }")
-    print(f"{r= }")
 
     assert np.allclose(r, rot)
 

@@ -7,6 +7,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Announcements
 
+* License updated to Apache 2.0 (!77)
 * Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
 
 ### Deprecations
@@ -17,6 +18,10 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Breaking changes
 
+* `ellipse.covariance.EllipseCovarianceBuilder` argument `max_dist` is now optional and treated as
+  infinite if not set (!85)
+* `Kriging` class objects now have required `idx`, `obs`, and optional `error_cov` inputs, these
+  inputs are no longer required for class methods (!75)
 * `kriging.kriging` and `kriging.unmasked_kriging` wrapper functions are removed (!68)
 * `covariance_tools.eof_chop` is removed. It does not return a valid covariance matrix (!68)
 * Removed `variogram.LinearVariagram` and `variogram.PowerVariogram` (!69)
@@ -25,6 +30,15 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### New features and enhancements
 
+* Updated docstrings for `glomar_gridding.covariance_tools.laloux_clip` (!90)
+* Added additional example to the jupyter notebook (!89)
+* Input `dtype`s are maintained through the `Kriging` classes (!87)
+* Allow for option to select training data for ellipse parameter estimation using Euclidean degree
+  distance, option to use Haversine distance as selection criteria is the default (!84)
+* `NaN` values remaining in error covariance after filtering to observations and dropping `NaN`
+  values on the diagonal are set to 0.0 in `glomar_gridding.kriging.Kriging` classes (!83)
+* Added new functions `glomar_gridding.covariance_tools.laloux_clip` and
+  `glomar_gridding.covariance_tools.explained_variance_clip` (!78)
 * Add `simulated_obs` as attribute to `StochasticKriging` in `solve` method (!71)
 * Added an example notebook (!46)
 * Added documentation pdf (!46)
@@ -44,8 +58,17 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 * Add module containing ellipse models (`ellipse`) (!54)
 * Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
 
+### Bug fixes
+
+* Accounted for `xarray.DataArray` in `variogram.SphericalVariogram` (!88)
+* Corrected `glomar_gridding.covariance_tools.eigenvalue_clip` with `"Laloux"` method to compute new
+  eigenvalues using correlation matrix rather than covariance matrix (!78)
+
 ### Internal changes
 
+* Additional unit test for ellipse-based covariance self-consistency (!80)
+* Unit test for ellipse covariance from uniform parameters fixed, Chi squared test dropped in favour
+  of correlation distance from https://doi.org/10.1109/VETECS.2005.1543265 (!80)
 * Additional unit tests added (!68)
 * Removed `requirements.txt` file. Dependencies are managed by `pyproject.toml` (!63)
 * Added a GitLab runner pipeline (!64)

@@ -12,7 +12,7 @@ packages = ["glomar_gridding"]
 
 [project]
 name = "GloMarGridding"
-version = "1.0.0-rc.2"
+version = "1.0.0-rc.3"
 dependencies = [
   "geopandas",
   "netCDF4",
@@ -41,7 +41,7 @@ maintainers = [
 ]
 description = "National Oceanography Centre library for performing gridding."
 readme = "README.md"
-license = { file = "LICENSE" }
+license-files = ["LICENSE"]
 keywords = [
   "gridding",
   "kriging",
@@ -68,6 +68,7 @@ docs = [
   "sphinx-autodoc-typehints>=3.1.0",
   "sphinx-rtd-theme>=3.0.2",
 ]
+test = ["pytest>=8.3.4", "pytest-cov>=6.1.1"]
 all = [
   "ipykernel",
   "sphinx>=8.2.0",
@@ -99,6 +100,7 @@ select = [
   "D",    # docstrings
   "E",    # pycodestyle errors
   "F",    # pyflakes
+  "ICN",  # Flake8 Import Conventions
   "N802", # invalid-function-name
   "S",    # bandit
   "W",    # pycodestyle warnings

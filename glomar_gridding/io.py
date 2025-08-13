@@ -1,3 +1,17 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 `glomar_gridding` includes functionality for loading datasets or arrays from
 `netCDF` files using python format strings. This can be useful for loading
@@ -13,6 +27,7 @@ configuration files for instance.
 
 import os
 from typing import Any
+
 import xarray as xr
 
 
@@ -40,14 +55,15 @@ def load_dataset(
     arr : xarray.Dataset
         The netcdf dataset as an xarray.Dataset.
     """
+    dirname = os.path.dirname(path) or "."
     if os.path.isfile(path):
         filename = path
     elif kwargs:
-        if not os.path.isdir(os.path.dirname(path)):
-            raise FileNotFoundError(f"Covariance path: {path} not found")
         filename = path.format(**kwargs)
+        if not os.path.isdir(dirname):
+            raise FileNotFoundError(f"Array path: {path} not found")
         if not os.path.isfile(filename):
-            raise FileNotFoundError(f"Covariance file: {filename} not found")
+            raise FileNotFoundError(f"Array file: {filename} not found")
     else:
         raise FileNotFoundError("Cannot determine filename")
 

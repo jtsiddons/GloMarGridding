@@ -1,15 +1,33 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Varigram classes for construction of spatial covariance structure from distance
 matrices.
 """
 
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Literal
+
 import numpy as np
 import xarray as xr
-
 from scipy.special import gamma, kv
+
+
+def _kv(v, z):
+    return np.nan_to_num(kv(v, z), nan=np.nan, posinf=np.nan, neginf=np.nan)
 
 
 @dataclass()
@@ -110,6 +128,12 @@ class SphericalVariogram(Variogram):
             )
             + self.nugget
         )
+        if isinstance(out, xr.DataArray):
+            out.name = "variogram"
+            out = out.where(
+                distance_matrix < self.range, self.nugget + self.psill
+            )
+            return out
         out[distance_matrix >= self.range] = self.nugget + self.psill
         return out
 
@@ -387,14 +411,14 @@ class MaternVariogram(Variogram):
     ) -> np.ndarray | xr.DataArray:
         match self.method.lower():
             case "sklearn":
-                return kv(
+                return _kv(
                     self.nu,
                     np.sqrt(2.0 * self.nu) * dist_over_range,
                 )
             case "gstat":
-                return kv(self.nu, dist_over_range)
+                return _kv(self.nu, dist_over_range)
             case "karspeck":
-                return kv(
+                return _kv(
                     self.nu,
                     2.0 * np.sqrt(self.nu) * dist_over_range,
                 )

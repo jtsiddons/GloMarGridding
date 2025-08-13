@@ -1,9 +1,24 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Functions for mapping climatologies and computing anomalies"""
 
 import polars as pl
 import xarray as xr
-from glomar_gridding.utils import find_nearest, select_bounds
+
 from glomar_gridding.io import load_dataset
+from glomar_gridding.utils import find_nearest, select_bounds
 
 
 def join_climatology_by_doy(
@@ -88,10 +103,10 @@ def join_climatology_by_doy(
         )
 
     obs_lat = obs_df.get_column(lat_col)
-    _, lat_vals = find_nearest(climatology_365.coords[clim_lat], obs_lat)
+    _, lat_vals = find_nearest(climatology_365.coords[clim_lat].values, obs_lat)
 
     obs_lon = obs_df.get_column(lon_col)
-    _, lon_vals = find_nearest(climatology_365.coords[clim_lon], obs_lon)
+    _, lon_vals = find_nearest(climatology_365.coords[clim_lon].values, obs_lon)
 
     obs_df = obs_df.with_columns(
         pl.Series("clim_lat", lat_vals),

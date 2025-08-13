@@ -1,15 +1,28 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Classes and functions for ellipse models."""
 
 import logging
 import math as maths
 import warnings
-
 from collections import OrderedDict
 from collections.abc import Callable
-from joblib import Parallel, delayed
 from typing import Any, cast, get_args
 
 import numpy as np
+from joblib import Parallel, delayed
 from scipy import stats
 from scipy.optimize import OptimizeResult, minimize
 from scipy.special import gamma
@@ -19,7 +32,6 @@ from glomar_gridding.constants import DEFAULT_BACKEND, DEFAULT_N_JOBS
 from glomar_gridding.distances import mahal_dist_func
 from glomar_gridding.types import FForm, ModelType, SuperCategory
 from glomar_gridding.utils import deg_to_km
-
 
 MODEL_TYPE_TO_SUPERCATEGORY: dict[ModelType, SuperCategory] = {
     "ps2006_kks2011_iso": "1_param_matern",
@@ -461,7 +473,7 @@ class EllipseModel:
         guesses = guesses or self.default_guesses
         bounds = bounds or self.default_bounds
 
-        if not self.unit_sigma:
+        if (not self.unit_sigma) and len(guesses) != self.n_params + 1:
             guesses.append(0.1)
             bounds.append((0.0001, 0.5))
 

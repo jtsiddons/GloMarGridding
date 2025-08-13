@@ -1,3 +1,17 @@
+# Copyright 2025 National Oceanography Centre
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Functions for calculating distances or distance-based covariance components.
 
@@ -10,15 +24,15 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 """
 
 from collections.abc import Callable
+from math import cos, sin
 from typing import get_args
 
-import numpy as np
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 import polars as pl
-
 from shapely.geometry import Point
-from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
+from sklearn.metrics.pairwise import euclidean_distances, haversine_distances
 
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import check_cols
@@ -30,8 +44,8 @@ def rot_mat(angle: float) -> np.ndarray:
 
     The input angle must be in radians
     """
-    c_ang = float(np.cos(angle))
-    s_ang = float(np.sin(angle))
+    c_ang = cos(angle)
+    s_ang = sin(angle)
     return np.array([[c_ang, -s_ang], [s_ang, c_ang]])
 
 
