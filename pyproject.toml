@@ -11,7 +11,7 @@ build-backend = "setuptools.build_meta"
 packages = ["glomar_gridding"]
 
 [project]
-name = "GloMarGridding"
+name = "glomar_gridding"
 version = "1.0.0-rc.3"
 dependencies = [
   "geopandas",
