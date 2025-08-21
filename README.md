@@ -33,7 +33,7 @@ Create virtual environment and install dependencies. We recommend using
 
 ```bash
 cd /path/to/glomar_gridding
-uv sync --python 3.11 # Install dependencies, recommended python version
+uv sync --all-extras --python 3.11  # Install dependencies, recommended python version
 ```
 
 #### `pip` instructions
@@ -46,6 +46,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
+
+## Documentation
+
+Documentation PDF can be found in the docs directory. Or
+[here](https://github.com/NOCSurfaceProcesses/GloMarGridding/blob/main/docs/Documentation.pdf).
+
+An example workflow can be found in the documentation PDF, or in the notebooks directory.
 
 ## Acknowledgements
 
