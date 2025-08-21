@@ -1,14 +1,6 @@
 [build-system]
-requires = [
-  "setuptools>=42",
-  "wheel",
-  "setuptools_scm[toml]>=3.4",
-  "setuptools_scm_git_archive",
-]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = ["glomar_gridding"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "glomar_gridding"
@@ -138,3 +130,18 @@ Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
 
 [dependency-groups]
 dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "CHANGES.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+  "README.md",
+  "docs/**/*.rst",
+  "docs/Makefile",
+  "docs/conf.py",
+  "docs/make.bat",
+  "test/**/*.py",
+  "glomar_gridding/**/*.py",
+]
+exclude = ["**/*.py[co]", "**/__pycache__", ".*", "doc/_*", "pylintrc"]
