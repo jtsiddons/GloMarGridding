@@ -12,7 +12,7 @@ packages = ["glomar_gridding"]
 
 [project]
 name = "glomar_gridding"
-version = "1.0.0-rc.3"
+version = "1.0.0"
 dependencies = [
   "geopandas",
   "netCDF4",
@@ -52,7 +52,7 @@ keywords = [
   "observations",
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Science/Research",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
