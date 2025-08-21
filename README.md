@@ -1,11 +1,26 @@
 # GloMar Gridding
 
-Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography Centre.
-Currently only available to project collaborators.
+Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography
+Centre. Currently only available to project collaborators.
 
 Part of the NOC Surface Processes _GloMar_ suite of libraries and datasets.
 
 ## Installation
+
+`GloMarGridding` is available on [PyPI](https://pypi.org/project/glomar_gridding/), as
+`glomar_gridding`:
+
+```bash
+pip install glomar_gridding
+```
+
+Or using uv:
+
+```bash
+uv add glomar_gridding
+```
+
+### Development
 
 Clone the repository
 
@@ -13,22 +28,15 @@ Clone the repository
 git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git /path/to/glomar_gridding
 ```
 
-Create virtual environment and install dependencies. We recommend using [`uv`](https://docs.astral.sh/uv/) for python as an alternative to `pip`.
+Create virtual environment and install dependencies. We recommend using
+[uv](https://docs.astral.sh/uv/) for python as an alternative to `pip`.
 
 ```bash
 cd /path/to/glomar_gridding
-uv venv --python 3.11  # Recommended python version
-source .venv/bin/activate  # Assuming bash or zsh
-uv sync  # Install dependencies
+uv sync --all-extras --python 3.11  # Install dependencies, recommended python version
 ```
 
-### Install as a dependency
-
-```bash
-uv add git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
-```
-
-### `pip` instructions
+#### `pip` instructions
 
 For development:
 
@@ -39,11 +47,12 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-Or as a dependency:
+## Documentation
 
-```bash
-pip install git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
-```
+Documentation PDF can be found in the docs directory. Or
+[here](https://github.com/NOCSurfaceProcesses/GloMarGridding/blob/main/docs/Documentation.pdf).
+
+An example workflow can be found in the documentation PDF, or in the notebooks directory.
 
 ## Acknowledgements
 

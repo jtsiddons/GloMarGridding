@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Aug 12, 2025}
+\date{Aug 21, 2025}
 \release{1.0.0\sphinxhyphen{}rc.3}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -124,24 +124,35 @@ choices.
 \subsection{Via Pip}
 \label{\detokenize{getting_started:via-pip}}
 \sphinxAtStartPar
-GloMarGridding is not available on PyPI, however it can be installed via pip with the following command:
+GloMarGridding is available on \sphinxhref{https://pypi.org/project/glomar\_gridding/}{PyPI}, and can be
+installed with \sphinxtitleref{pip} or \sphinxhref{https://docs.astral.sh/uv/}{uv}:
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
-\PYG{g+go}{pip install GloMarGridding@git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git}
+pip\PYG{+w}{ }install\PYG{+w}{ }glomar\PYGZus{}gridding
+\end{sphinxVerbatim}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+uv\PYG{+w}{ }add\PYG{+w}{ }glomar\PYGZus{}gridding
 \end{sphinxVerbatim}
 
 
 \subsection{From Source}
 \label{\detokenize{getting_started:from-source}}
 \sphinxAtStartPar
-Alternatively, you can clone the repository and install using pip (or conda if preferred).
+Alternatively, you can clone the repository and install using pip (or uv if preferred).
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
-\PYG{g+go}{git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git}
-\PYG{g+go}{cd GloMarGridding}
-\PYG{g+go}{python \PYGZhy{}m venv venv}
-\PYG{g+go}{source venv/bin/activate}
-\PYG{g+go}{pip install \PYGZhy{}e .}
+git\PYG{+w}{ }clone\PYG{+w}{ }https://github.com/NOCSurfaceProcesses/GloMarGridding.git
+\PYG{n+nb}{cd}\PYG{+w}{ }GloMarGridding
+python\PYG{+w}{ }\PYGZhy{}m\PYG{+w}{ }venv\PYG{+w}{ }venv
+\PYG{n+nb}{source}\PYG{+w}{ }venv/bin/activate
+pip\PYG{+w}{ }install\PYG{+w}{ }\PYGZhy{}e\PYG{+w}{ }.
+\end{sphinxVerbatim}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+git\PYG{+w}{ }clone\PYG{+w}{ }https://github.com/NOCSurfaceProcesses/GloMarGridding.git
+\PYG{n+nb}{cd}\PYG{+w}{ }GloMarGridding
+uv\PYG{+w}{ }sync\PYG{+w}{ }\PYGZhy{}\PYGZhy{}all\PYGZhy{}extras\PYG{+w}{ }\PYGZhy{}\PYGZhy{}python\PYG{+w}{ }\PYG{l+m}{3}.11
 \end{sphinxVerbatim}
 
 \sphinxstepscope
@@ -6107,7 +6118,7 @@ Error class for Column Not Being Found
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{MonthName}}}
-{\sphinxparam{\DUrole{o}{*}\DUrole{n}{values}}}
+{\sphinxparam{\DUrole{n}{value}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar

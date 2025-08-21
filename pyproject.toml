@@ -29,15 +29,15 @@ dependencies = [
 ]
 requires-python = ">=3.11"
 authors = [
+  { name = "Joseph Siddons", email = "josidd@noc.ac.uk" },
   { name = "Agnieszka Faulkner", email = "agfaul@noc.ac.uk" },
   { name = "Richard Cornes", email = "rcornes@noc.ac.uk" },
   { name = "Steven Chan", email = "stchan@noc.ac.uk" },
-  { name = "Joseph Siddons", email = "josidd@noc.ac.uk" },
 ]
 maintainers = [
+  { name = "Joseph Siddons", email = "josidd@noc.ac.uk" },
   { name = "Agnieszka Faulkner", email = "agfaul@noc.ac.uk" },
   { name = "Steven Chan", email = "stchan@noc.ac.uk" },
-  { name = "Joseph Siddons", email = "josidd@noc.ac.uk" },
 ]
 description = "National Oceanography Centre library for performing gridding."
 readme = "README.md"

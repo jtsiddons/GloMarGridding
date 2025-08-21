@@ -8,21 +8,32 @@ Installation
 Via Pip
 -------
 
-GloMarGridding is not available on PyPI, however it can be installed via pip with the following command:
+GloMarGridding is available on `PyPI <https://pypi.org/project/glomar_gridding/>`_, and can be
+installed with `pip` or `uv <https://docs.astral.sh/uv/>`_:
 
-.. code-block:: console
+.. code-block:: bash
 
-   pip install GloMarGridding@git+https://github.com/NOCSurfaceProcesses/GloMarGridding.git
+   pip install glomar_gridding
+
+.. code-block:: bash
+
+   uv add glomar_gridding
 
 From Source
 -----------
 
-Alternatively, you can clone the repository and install using pip (or conda if preferred).
+Alternatively, you can clone the repository and install using pip (or uv if preferred).
 
-.. code-block:: console
+.. code-block:: bash
 
    git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git
    cd GloMarGridding
    python -m venv venv
    source venv/bin/activate
    pip install -e .
+
+.. code-block:: bash
+
+   git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git
+   cd GloMarGridding
+   uv sync --all-extras --python 3.11
