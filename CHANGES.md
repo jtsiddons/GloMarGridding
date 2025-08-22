@@ -1,14 +1,17 @@
 # Changelog
 
-## 1.0.0 (unreleased)
+## 1.0.0 (2025-08-22)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Richard Cornes
 (@ricorne).
 
 ### Announcements
 
+* Released on PyPI
 * License updated to Apache 2.0 (!77)
-* Added components for constructing spatial covariances from ellipses following [Paciorek and Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
+* Added components for constructing spatial covariances from ellipses following [Paciorek and
+  Schervish (2006)](https://pmc.ncbi.nlm.nih.gov/articles/PMC2157553/pdf/nihms13857.pdf) and
+  [Karspeck et al. (2012)](https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.900).
 
 ### Deprecations
 
@@ -53,10 +56,12 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
   allowing for easy computation of uncertainty, and alpha values (!62)
 * Add `covariance_tools` module for adjusting estimated covariance matrices to positive definite (!54)
 * Improved performance of ellipse covariance with vectorised and batch-vectorised methods (!54)
-* Add module for calculating spatial covariance matrix from ellipse parameters (`ellipse_covariance`) (!54)
+* Add module for calculating spatial covariance matrix from ellipse parameters
+  (`ellipse_covariance`) (!54)
 * Add module for estimating ellipse parameters from observational datasets (`ellipse_builder`) (!54)
 * Add module containing ellipse models (`ellipse`) (!54)
-* Add new function to combine coordinates, for example for the index/coordinates for a distance matrix (!61)
+* Add new function to combine coordinates, for example for the index/coordinates for a distance
+  matrix (!61)
 
 ### Bug fixes
 
@@ -66,6 +71,7 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), R
 
 ### Internal changes
 
+* Build method changed to [hatchling](https://hatch.pypa.io/1.9/config/build/)
 * Additional unit test for ellipse-based covariance self-consistency (!80)
 * Unit test for ellipse covariance from uniform parameters fixed, Chi squared test dropped in favour
   of correlation distance from https://doi.org/10.1109/VETECS.2005.1543265 (!80)
@@ -97,7 +103,8 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 * Add function to compute mid-point of a month (matching HadCRUT datetimes) (!48)
 * `init_logging` now has a `level` argument (!50)
-* Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to join (!40)
+* Added script to combine LSAT and SST for HadCRUT reconstruction using weights file using polars to
+  join (!40)
 * Added `io.get_recurse` for scanning nested dictionaries by a key list (!38)
 
 ### Bug fixes
@@ -113,7 +120,8 @@ Contributors to this version: Joseph Siddons (@josidd)
     * Outputs are no-longer yearly files
     * Use xarray rather than open a netCDF file
     * Loop over all ensembles in script
-    * Simplify arguments for script, now only require config, all parameters must be set in config file
+    * Simplify arguments for script, now only require config, all parameters must be set in config
+      file
     * Outputs include information for traceability (including git commit, user)
 
 ### Internal changes
@@ -124,7 +132,8 @@ Contributors to this version: Joseph Siddons (@josidd)
 
 ## 0.2.0 (2025-02-18)
 
-Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Agnieszka Faulkner (@agfaul)
+Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Agnieszka Faulkner
+(@agfaul)
 
 ### Announcements
 
@@ -133,16 +142,19 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), A
 
 ### New features and enhancements
 
-* Added `perturbation` module for perturbing kriging output fields following Morice et al. (2021) (!30)
+* Added `perturbation` module for perturbing kriging output fields following Morice et al. (2021)
+  (!30)
 * Added `io` module for loading netCDF files, making use of format strings (!30)
 * Computation of distance matrix from grid (!30)
 * Added `noc_runners/noc_helpers` to contain shared job-specific functions (!30)
 * Added `interpolation_covariance` module (!30)
 * Added `climatology` module for joining climatology data to observational data (!30)
-* Added `error_covariance` module for computing correlated, uncorrelated, and spatial components of error covariance matrices (functions moved from `observations`, `kriging` modules) (!30)
+* Added `error_covariance` module for computing correlated, uncorrelated, and spatial components of
+  error covariance matrices (functions moved from `observations`, `kriging` modules) (!30)
 * Added `distances` module for computing haversine, euclidean distances for covariance matrices (!30)
 * Added `mask` module for working with masks and grids, some functions moved from `observations` (!30)
-* Added `grid` module for constructing, mapping to grids for outputs, allowing for consistent indexing (!30)
+* Added `grid` module for constructing, mapping to grids for outputs, allowing for consistent
+  indexing (!30)
 
 ### Bug fixes
 
@@ -164,14 +176,16 @@ Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), A
 * Remove specific `io` functions, added to `noc_runners/noc_helpers` (!30)
 * Variogram functions re-factored to classes, class names follow CamelCase naming convention (!30)
 * Re-name `covariance_variogram` -> `variogram`, remove unused functions (!30)
-* Removal of `observations`, `observations_plus_qc`, `simple_plots`, `covariance`, `covariance_calculation` modules, code moved to other modules (!30)
+* Removal of `observations`, `observations_plus_qc`, `simple_plots`, `covariance`,
+  `covariance_calculation` modules, code moved to other modules (!30)
 * Modules moved to `glomar_gridding` (!30)
 * Main scripts and config files now moved to `noc_runners` (!30)
 * Use `polars` in place of `python` (!30)
 
 ## 0.1.0 (2024-12-09)
 
-Contributors to this version: Agnieszka Faulkner (@agfaul), Steven Chan (@stchan), Joseph Siddons (@josidd), Richard Cornes (@ricorne)
+Contributors to this version: Agnieszka Faulkner (@agfaul), Steven Chan (@stchan), Joseph Siddons
+(@josidd), Richard Cornes (@ricorne)
 
 ### New features and enhancements
 
