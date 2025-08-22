@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (2025-08-21)
+## 1.0.0 (2025-08-22)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Richard Cornes
 (@ricorne).
