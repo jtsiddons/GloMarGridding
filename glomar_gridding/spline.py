@@ -2,8 +2,10 @@
 
 from abc import ABC, abstractmethod
 from types import NoneType
+from sklearn.metrics.pairwise import haversine_distances
 from scipy.optimize import OptimizeResult, minimize_scalar
 from scipy.spatial.distance import cdist
+from math import factorial
 
 import numpy as np
 
@@ -31,6 +33,17 @@ class Spline(ABC):
             error_cov if error_cov is not None else self.default_error_cov
         )
 
+        if self.error_cov.shape[0] != self.n_pts:
+            raise ValueError("Mismatch in size of error covariance")
+
+        return None
+
+    def clear(self) -> NoneType:
+        """Clear the set variables"""
+        to_delete = ["D", "K", "P", "w", "c", "lam"]
+        for var in to_delete:
+            if hasattr(self, var):
+                delattr(self, var)
         return None
 
     @property
@@ -77,7 +90,7 @@ class Spline(ABC):
     def distances(
         self,
         positions: np.ndarray,
-        X2: np.ndarray | None = None,
+        X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Distances between each pair of points"""
         raise NotImplementedError()
@@ -95,8 +108,8 @@ class Spline(ABC):
     def solve(
         self,
         lam: float = 0,
-        w: np.ndarray | None = None,
-        c: np.ndarray | None = None,
+        w: np.ndarray | NoneType = None,
+        c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Solve"""
         if (w is None) ^ (c is None):
@@ -104,7 +117,7 @@ class Spline(ABC):
 
         if w is None:
             if not hasattr(self, "w") or lam != self.lam:
-                w, c = self.fit(lam=lam, set_results=False)
+                w, c = self.fit(lam=lam, set_results=True)
             else:
                 w = self.w
                 c = self.c
@@ -115,8 +128,8 @@ class Spline(ABC):
         self,
         X_test: np.ndarray,
         lam: float = 0,
-        w: np.ndarray | None = None,
-        c: np.ndarray | None = None,
+        w: np.ndarray | NoneType = None,
+        c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Predict for new positions"""
         if (w is None) ^ (c is None):
@@ -178,7 +191,7 @@ class ThinPlateSpline(Spline):
     def distances(
         self,
         positions: np.ndarray,
-        X2: np.ndarray | None = None,
+        X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Pairwise Euclidean distances between positions"""
         return (
@@ -198,3 +211,50 @@ class ThinPlateSpline(Spline):
             return np.where(
                 distances == 0, 0.0, np.power(distances, 2) * np.log(distances)
             )
+
+
+class SphericalThinPlateSpline(Spline):
+    """Spherical form of Thin Plate Spline Interpolation and Smoothing"""
+
+    method: str = "spherical_thin_plate_spline"
+
+    @property
+    def default_error_cov(self) -> np.ndarray:
+        """Default Error Covariance"""
+        return self.n_pts * np.eye(self.n_pts)
+
+    def distances(
+        self,
+        positions: np.ndarray,
+        X2: np.ndarray | NoneType = None,
+    ) -> np.ndarray:
+        """Pairwise Haversine distances between positions"""
+        if positions.shape[1] != 2:
+            raise ValueError(
+                "Coordinates must be 2 dimensional lat and lon in radians."
+            )
+        return (
+            haversine_distances(positions, X2)
+            if X2 is not None
+            else haversine_distances(positions, positions)
+        )
+
+    def trend_basis(self, positions: np.ndarray) -> np.ndarray:
+        """Linear trend basis for universal kriging: [1, x, y, ...]"""
+        n_pts = positions.shape[0]
+        return np.ones((n_pts, 1))
+
+    def kernel(self, distances: np.ndarray) -> np.ndarray:
+        """Spherical Thin Plate Spline RBF kernel"""
+        with np.errstate(divide="ignore", invalid="ignore"):
+            m = 2
+            z = np.cos(distances)
+            W = (1 - z) / 2
+            sqrtW = np.sqrt(W)
+            C = 2 * sqrtW
+            A = np.where(sqrtW == 0, 0.0, np.log(1 + 1 / sqrtW))
+            q2m2 = (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2  # q2
+            pi_frac = 1 / (2 * np.pi)
+            fac2m2 = factorial(2 * m - 2)
+            fac2m1 = factorial(2 * m - 1)
+            return pi_frac * (1 / fac2m2 * q2m2 - 1 / fac2m1)
