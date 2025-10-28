@@ -1,13 +1,13 @@
 """Spline Methods"""
 
 from abc import ABC, abstractmethod
-from types import NoneType
-from sklearn.metrics.pairwise import haversine_distances
-from scipy.optimize import OptimizeResult, minimize_scalar
-from scipy.spatial.distance import cdist
 from math import factorial
+from types import NoneType
 
 import numpy as np
+from scipy.optimize import OptimizeResult, minimize_scalar
+from scipy.spatial.distance import cdist
+from sklearn.metrics.pairwise import haversine_distances
 
 
 class Spline(ABC):
