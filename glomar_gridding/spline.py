@@ -33,7 +33,7 @@ class Spline(ABC):
             error_cov if error_cov is not None else self.default_error_cov
         )
 
-        if self.error_cov.shape[0] != self.n_pts:
+        if error_cov is not None and self.error_cov.shape[0] != self.n_pts:
             raise ValueError("Mismatch in size of error covariance")
 
         return None
