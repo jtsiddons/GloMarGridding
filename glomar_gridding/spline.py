@@ -247,14 +247,24 @@ class SphericalThinPlateSpline(Spline):
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spherical Thin Plate Spline RBF kernel"""
         with np.errstate(divide="ignore", invalid="ignore"):
-            m = 2
-            z = np.cos(distances)
-            W = (1 - z) / 2
-            sqrtW = np.sqrt(W)
-            C = 2 * sqrtW
-            A = np.where(sqrtW == 0, 0.0, np.log(1 + 1 / sqrtW))
-            q2m2 = (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2  # q2
-            pi_frac = 1 / (2 * np.pi)
-            fac2m2 = factorial(2 * m - 2)
-            fac2m1 = factorial(2 * m - 1)
-            return pi_frac * (1 / fac2m2 * q2m2 - 1 / fac2m1)
+            return np.where(distances == 0, 0.0, q2(distances))
+
+
+def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
+    z = np.cos(distances)
+    W = (1 - z) / 2
+    sqrtW = np.sqrt(W)
+    C = 2 * sqrtW
+    A = np.log(1 + 1 / sqrtW)
+    return z, W, C, A
+
+
+def q2(distances: np.ndarray) -> np.ndarray:
+    """q2 from Wabha"""
+    m = 2
+    _, W, C, A = _zwca(distances)
+    q2m2 = (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2  # q2
+    pi_frac = 1 / (2 * np.pi)
+    fac2m2 = factorial(2 * m - 2)
+    fac2m1 = factorial(2 * m - 1)
+    return pi_frac * (1 / fac2m2 * q2m2 - 1 / fac2m1)
