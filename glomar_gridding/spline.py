@@ -112,6 +112,7 @@ class Spline(ABC):
         c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Solve"""
+        # "^" is XOR (Exclusive OR)
         if (w is None) ^ (c is None):
             raise ValueError()
 
@@ -260,7 +261,7 @@ def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
 
 
 def q2(distances: np.ndarray) -> np.ndarray:
-    """q2 from Wabha"""
+    """R with q2 from Wabha"""
     m = 2
     _, W, C, A = _zwca(distances)
     q2m2 = (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2  # q2
