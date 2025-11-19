@@ -727,9 +727,9 @@ def get_month_midpoint(dates: pl.Series) -> pl.Series:
     month_len = (
         dates.dt.month_end().dt.date().dt.offset_by("1d")
         - dates.dt.month_start().dt.date()
-    )
+    ).dt.cast_time_unit("us")
     dates = dates.dt.month_start() + (month_len.cast(pl.Int64) / 2).cast(
-        pl.Duration("ms")
+        pl.Duration("us")
     )
 
     return dates

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "glomar_gridding"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
   "geopandas",
   "netCDF4",
@@ -110,7 +110,6 @@ skip-magic-trailing-comma = false # Like Black, respect magic trailing commas.
 line-ending = "auto"              # Like Black, automatically detect the appropriate line ending.
 
 [tool.pytest]
-python_files = "test_*.py"
 testpaths = ["./test"]
 
 [tool.ruff.lint.pydocstyle]

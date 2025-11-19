@@ -311,7 +311,7 @@ def grid_to_distance_matrix(
         lon_2    (index_2) float64 21kB -177.5 -172.5 ... 172.5 177.5
     """
     coords = grid.coords
-    out_coords = cross_coords(coords, lat_coord, lon_coord)
+    out_coords = cross_coords(coords)
 
     dist: np.ndarray = calculate_distance_matrix(
         pl.DataFrame(
@@ -335,8 +335,6 @@ def grid_to_distance_matrix(
 
 def cross_coords(
     coords: xr.Coordinates | xr.Dataset | xr.DataArray,
-    lat_coord: str,
-    lon_coord: str,
 ) -> xr.Coordinates:
     """
     Combine a set of coordinates into a cross-product, for example to construct
@@ -360,10 +358,6 @@ def cross_coords(
         2 and have names defined by `lat_coord` and `lon_coord` input arguments.
         The ordering of the coordinates will define the cross ordering. If an
         array is provided then the coordinates are extracted.
-    lat_coord : str
-        The name of the latitude coordinate.
-    lon_coord : str
-        The name of the longitude coordinate.
 
     Returns
     -------
@@ -378,7 +372,7 @@ def cross_coords(
             bounds=[(-87.5, 90), (-177.5, 180)],  # Lower bound is centre
             coord_names=["lat", "lon"]
         )
-    >>> cross_coords(grid.coords, lat_coord="lat", lon_coord="lon")
+    >>> cross_coords(grid.coords)
     Coordinates:
       * index_1  (index_1) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
       * index_2  (index_2) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591
@@ -389,23 +383,11 @@ def cross_coords(
     """
     if isinstance(coords, (xr.DataArray, xr.Dataset)):
         coords = coords.coords
-    if len(coords) != 2:
-        raise ValueError(
-            "Input grid must have 2 indexes - "
-            + "specifying latitude and longitude, in decimal degree."
-        )
-    if lat_coord not in coords:
-        raise KeyError(
-            f"Cannot find latitude coordinate {lat_coord} in the grid."
-        )
-    if lon_coord not in coords:
-        raise KeyError(
-            f"Cannot find longitude coordinate {lon_coord} in the grid."
-        )
+    dims = coords.dims
 
     coord_df = pl.from_records(
         list(coords.to_index()),
-        schema=list(coords.keys()),  # type: ignore
+        schema=list(dims),  # type: ignore
         orient="row",
     )
 

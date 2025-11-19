@@ -53,11 +53,7 @@ def test_grid():
 
 def test_cross_grid():
     grid = new_grid()
-    crossed_grid = cross_coords(
-        grid.coords,
-        lat_coord="latitude",
-        lon_coord="longitude",
-    )
+    crossed_grid = cross_coords(grid.coords)
     new_array = xr.DataArray(coords=crossed_grid)
 
     assert new_array.shape == (2592, 2592)
@@ -67,6 +63,11 @@ def test_cross_grid():
     calc_cross = list(product(grid["latitude"], grid["longitude"]))
 
     assert crossed_coords == calc_cross
+
+    grid2 = grid.transpose()
+    crossed_grid2 = cross_coords(grid2)
+    assert crossed_grid2["latitude_1"][0] == -87.5
+    assert crossed_grid2["longitude_1"][0] == -177.5
 
 
 def test_masking_frame():

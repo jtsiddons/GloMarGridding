@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 (2025-11-11)
+
+Contributors to this version: Joseph Siddons (@jtsiddons, @josidd).
+
+### Bug fixes
+
+- Fix bug with `grid.cross_coords` that reversed coordinate names for transposed grid (#44).
+- Fix bug with potential mixed duration units when computing mid-point of months (#44).
+
 ## 1.0.0 (2025-08-22)
 
 Contributors to this version: Joseph Siddons (@josidd), Steven Chan (@stchan), Richard Cornes

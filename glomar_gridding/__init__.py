@@ -44,4 +44,4 @@ __all__ = [
     "uncorrelated_components",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

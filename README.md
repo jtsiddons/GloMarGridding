@@ -1,7 +1,7 @@
 # GloMar Gridding
 
 Library for performing Gridding as used by the GloMar datasets produced by the National Oceanography
-Centre. Currently only available to project collaborators.
+Centre.
 
 Part of the NOC Surface Processes _GloMar_ suite of libraries and datasets.
 
