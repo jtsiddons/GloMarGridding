@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons, @josidd).
+
+### Announcements
+
+- Now supports python 3.14 (#61).
+
 ## 1.0.1 (2025-11-11)
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd).
