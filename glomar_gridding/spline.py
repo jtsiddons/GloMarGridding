@@ -84,6 +84,7 @@ class Spline(ABC):
             self.w = w
             self.c = c
             self.lam = lam
+            self.K_reg = K_reg
 
         return w, c
 
