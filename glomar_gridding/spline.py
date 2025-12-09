@@ -7,6 +7,7 @@ from types import NoneType
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize_scalar
 from scipy.spatial.distance import cdist
+from scipy.stats import norm
 from sklearn.metrics.pairwise import haversine_distances
 
 
@@ -124,6 +125,31 @@ class Spline(ABC):
                 c = self.c
 
         return self.K @ w + self.P @ c
+
+    def fit_variance(
+        self,
+        y_fit: np.ndarray,
+        alpha: float = 0.05,
+        lam: float | None = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Get variance"""
+        if lam is None:
+            lam = getattr(self, "lam", 0.0)
+
+        residual = self.y - y_fit
+
+        tmp = np.linalg.solve(self.K_reg, np.eye(self.n_pts))
+
+        df: float = self.n_pts - np.trace(self.K_reg @ tmp)
+        sigma2: float = np.sum(residual**2) / df
+        H_diag: np.ndarray = np.sum(self.K_reg * tmp, axis=1)
+
+        var_y_fit: np.ndarray = sigma2 * H_diag
+
+        z = norm.ppf(1 - alpha / 2)
+        sigma = z * np.sqrt(var_y_fit)
+
+        return sigma, var_y_fit
 
     def predict(
         self,
