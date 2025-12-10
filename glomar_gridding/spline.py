@@ -264,18 +264,27 @@ class SphericalThinPlateSpline(Spline):
         return (
             haversine_distances(positions, X2)
             if X2 is not None
-            else haversine_distances(positions, positions)
+            else haversine_distances(positions)
         )
 
     def trend_basis(self, positions: np.ndarray) -> np.ndarray:
         """Linear trend basis for universal kriging: [1, x, y, ...]"""
         n_pts = positions.shape[0]
+        # return np.hstack((np.ones((n_pts, 1)), positions))
         return np.ones((n_pts, 1))
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spherical Thin Plate Spline RBF kernel"""
+        m = 2
+        m2_1 = 2 * m - 1
+        fac_m2_1 = factorial(m2_1)
+        pi_frac = 1 / (2 * np.pi)
+        frac = pi_frac / fac_m2_1
+
         with np.errstate(divide="ignore", invalid="ignore"):
-            return np.where(distances == 0, 0.0, q2(distances))
+            q = np.where(distances == 0, 0.5, _q2(distances))
+
+        return frac * (m2_1 * q - 1)
 
 
 def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
@@ -287,12 +296,7 @@ def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
     return z, W, C, A
 
 
-def q2(distances: np.ndarray) -> np.ndarray:
+def _q2(distances: np.ndarray) -> np.ndarray:
     """R with q2 from Wabha"""
-    m = 2
     _, W, C, A = _zwca(distances)
-    q2m2 = (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2  # q2
-    pi_frac = 1 / (2 * np.pi)
-    fac2m2 = factorial(2 * m - 2)
-    fac2m1 = factorial(2 * m - 1)
-    return pi_frac * (1 / fac2m2 * q2m2 - 1 / fac2m1)
+    return (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2
