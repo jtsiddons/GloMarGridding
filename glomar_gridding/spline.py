@@ -13,8 +13,19 @@ from sklearn.metrics.pairwise import haversine_distances
 
 class Spline(ABC):
     """
-    Class for Spline Interpolatation and Smoothing approaches.
-    ...
+    Generic class for Spline Interpolatation and Smoothing approaches.
+
+    Do not use this default class.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - in most cases this will be the identity matrix.
     """
 
     def __init__(
@@ -29,6 +40,10 @@ class Spline(ABC):
         self.X = X
         self.y = y
         self.n_pts = len(self.y)
+        distances = self.distances(self.X)
+        self.P = self.trend_basis(self.X)
+        self.K = self.kernel(distances)
+        del distances
 
         self.error_cov = (
             error_cov if error_cov is not None else self.default_error_cov
@@ -40,7 +55,11 @@ class Spline(ABC):
         return None
 
     def clear(self) -> NoneType:
-        """Clear the set variables"""
+        """
+        Clear the set variables.
+
+        Clears the "D", "K", "P", "w", "c", and "lam" attributes.
+        """
         to_delete = ["D", "K", "P", "w", "c", "lam"]
         for var in to_delete:
             if hasattr(self, var):
@@ -50,20 +69,25 @@ class Spline(ABC):
     @property
     def default_error_cov(self) -> np.ndarray:
         """Default error covariance"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Not implemented for the generic Spline class"
+        )
 
     def fit(
         self,
-        lam: float = 0,
+        lam: float | None = None,
         set_results: bool = True,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Fit a spline model with an optional smoothing parameter"""
-        if not hasattr(self, "D"):
-            self.D = self.distances(self.X)
         if not hasattr(self, "P"):
             self.P = self.trend_basis(self.X)
         if not hasattr(self, "K"):
-            self.K = self.kernel(self.D)
+            distances = self.distances(self.X)
+            self.K = self.kernel(distances)
+            del distances
+
+        if lam is None:
+            lam = getattr(self, "lam", 0.0)
 
         K_reg = self.K + lam * self.error_cov
 
@@ -95,21 +119,27 @@ class Spline(ABC):
         X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Distances between each pair of points"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Not implemented for the generic Spline class"
+        )
 
     @abstractmethod
     def trend_basis(self, positions: np.ndarray) -> np.ndarray:
         """Trend Basis"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Not implemented for the generic Spline class"
+        )
 
     @abstractmethod
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spline Kernel"""
-        raise NotImplementedError()
+        raise NotImplementedError(
+            "Not implemented for the generic Spline class"
+        )
 
     def solve(
         self,
-        lam: float = 0,
+        lam: float | None = None,
         w: np.ndarray | NoneType = None,
         c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
@@ -118,9 +148,12 @@ class Spline(ABC):
         if (w is None) ^ (c is None):
             raise ValueError()
 
+        if lam is None:
+            lam = getattr(self, "lam", 0.0)
+
         if w is None:
             if not hasattr(self, "w") or lam != self.lam:
-                w, c = self.fit(lam=lam, set_results=True)
+                w, c = self.fit(lam=lam, set_results=True)  # type: ignore
             else:
                 w = self.w
                 c = self.c
@@ -131,15 +164,11 @@ class Spline(ABC):
         self,
         y_fit: np.ndarray,
         alpha: float = 0.05,
-        lam: float | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Get variance"""
-        if lam is None:
-            lam = getattr(self, "lam", 0.0)
-
         residual = self.y - y_fit
 
-        tmp = np.linalg.solve(self.K_reg, np.eye(self.n_pts))
+        tmp = np.linalg.inv(self.K_reg)
 
         df: float = self.n_pts - np.trace(self.K_reg @ tmp)
         sigma2: float = np.sum(residual**2) / df
@@ -155,13 +184,16 @@ class Spline(ABC):
     def predict(
         self,
         X_test: np.ndarray,
-        lam: float = 0,
+        lam: float | None = None,
         w: np.ndarray | NoneType = None,
         c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Predict for new positions"""
         if (w is None) ^ (c is None):
             raise ValueError()
+
+        if lam is None:
+            lam = getattr(self, "lam", 0.0)
 
         if w is None:
             if not hasattr(self, "w") or lam != self.lam:
@@ -173,14 +205,31 @@ class Spline(ABC):
         D = self.distances(X_test, self.X)
         P = self.trend_basis(X_test)
         K = self.kernel(D)
+        del D
 
         return K @ w + P @ c
 
     def estimate_lambda_gcv(
         self,
         lambda_bounds: tuple[float, float] = (1e-6, 1e2),
+        set_result: bool = True,
     ) -> float:
-        """Something"""
+        """
+        Use Generalised Cross-Validation to estimate an optimal smoothing
+        parameter.
+
+        Parameters
+        ----------
+        lambda_bounds : tuple[float, float]
+            Bounds on the optimisation for lambda.
+        set_result : bool
+            Store the result as the 'lam' attribute.
+
+        Returns
+        -------
+        lam : float
+            The result of an optimisation for the smoothing parameter.
+        """
 
         def gcv_loss(lam: float) -> float:
             w, c = self.fit(lam, set_results=False)
@@ -203,7 +252,10 @@ class Spline(ABC):
                 "result of estimation is not an instance of "
                 + "'scipy.optimize.OptimizeResult'"
             )
-        return result.x
+        lam = result.x
+        if set_result:
+            self.lam = lam
+        return lam
 
 
 class ThinPlateSpline(Spline):
@@ -270,8 +322,7 @@ class SphericalThinPlateSpline(Spline):
     def trend_basis(self, positions: np.ndarray) -> np.ndarray:
         """Linear trend basis for universal kriging: [1, x, y, ...]"""
         n_pts = positions.shape[0]
-        # return np.hstack((np.ones((n_pts, 1)), positions))
-        return np.ones((n_pts, 1))
+        return np.hstack((np.ones((n_pts, 1)), positions))
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spherical Thin Plate Spline RBF kernel"""
