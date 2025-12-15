@@ -17,6 +17,7 @@ Welcome to GloMarGridding's documentation!
    ellipse
    error_covariance
    kriging
+   splines
    misc
 
 ..
@@ -64,5 +65,8 @@ Welcome to GloMarGridding's documentation!
 .. [RohdeBerkeley] Rohde, R. A. and Hausfather, Z.: The Berkeley Earth Land/Ocean Temperature Record, Earth System Science Data, 12, 3469–3479, https://doi.org/10.5194/essd-12-3469-2020, 2020
 
 .. [Thorne] Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper-air temperature records, Bull. Am. Meteorol. Soc., 86, 1437–1442, https://doi.org/10.1175/BAMS-86-10-1437, 2005
+
+.. [Wahba_Sphere] Wahba, G: Spline Interpolation and Smoothing on the Sphere, SIAM Journal on
+   Scientific and Statistical Computing, 2(1), 5-16, https://doi.org/10.1137/0902002, 1981
 
 .. [Wilks] Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006

@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Nov 10, 2025}
+\date{Dec 15, 2025}
 \release{1.0.1}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -1438,7 +1438,7 @@ Calculate covariance and correlation matrices.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{compute\_params}}}
-{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{return\_r2}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1618,10 +1618,6 @@ all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
 training data.
 
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{return\_r2}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add R2 / Correlation Matrix to output fields.
-
 \end{itemize}
 
 \sphinxlineitem{Returns}
@@ -1649,7 +1645,7 @@ upper boundaries
 \item {}
 \sphinxAtStartPar
 9: fail, probably due to running out of maxiter (see
-scipy.optimize.minimize kwargs “options”)
+scipy.optimize.minimize kwargs “options)”
 
 \end{itemize}
 
@@ -1691,7 +1687,7 @@ that corresponds to a specific lat lon
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{fit\_ellipse\_model}}}
-{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{return\_r2}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1853,10 +1849,6 @@ Euclidean distance of degree difference between each position and
 all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
 training data.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{return\_r2}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add R2 / Correlation Matrix to output fields.
 
 \end{itemize}
 
@@ -2739,7 +2731,7 @@ Note that the mean will need to be reapplied to the Kriging result.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
 
 \end{itemize}
 
@@ -2814,7 +2806,7 @@ grid box.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Optionally add error covariance values to the covariance between
 observation grid points.
 
 \end{itemize}
@@ -3170,7 +3162,7 @@ grid box.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally add error covariance values to the covariance between
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Optionally add error covariance values to the covariance between
 observation grid points.
 
 \end{itemize}
@@ -3226,7 +3218,7 @@ not provided as an input, then they are calculated.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}\sphinxstyleliteralemphasis{\sphinxupquote{,}}) \textendash{} The Kriging weights for the equivalent simple Kriging system.
+\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}\sphinxstyleliteralemphasis{\sphinxupquote{,}}) \textendash{} The Kriging weights for the equivalent simple Kriging system.
 error covariance.
 
 \sphinxlineitem{Returns}
@@ -4082,6 +4074,197 @@ input \sphinxtitleref{values} data type.
 xarray.DataArray
 
 \end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\sphinxstepscope
+
+
+\chapter{Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
+\label{\detokenize{splines:thin-plate-splines}}\label{\detokenize{splines::doc}}\index{ThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{ThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{ThinPlateSpline}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Thin Plate Spline Interpolation and Smoothing
+\index{default\_error\_cov (glomar\_gridding.spline.ThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.ThinPlateSpline property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.default_error_cov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Default Error Covariance
+
+\end{fulllineitems}
+
+\index{distances() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{distances()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.distances}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{distances}}}
+{\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Pairwise Euclidean distances between positions
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kernel() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{kernel()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.kernel}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kernel}}}
+{\sphinxparam{\DUrole{n}{distances}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Thin Plate Spline RBF kernel
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{trend\_basis() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{trend\_basis()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Linear trend basis for universal kriging: {[}1, x, y, …{]}
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\chapter{Spherical Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
+\label{\detokenize{splines:spherical-thin-plate-splines}}\index{SphericalThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{SphericalThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{SphericalThinPlateSpline}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spherical form of Thin Plate Spline Interpolation and Smoothing.
+Adapted from \sphinxcite{index:wahba-sphere}.
+\index{default\_error\_cov (glomar\_gridding.spline.SphericalThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.default_error_cov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Default Error Covariance
+
+\end{fulllineitems}
+
+\index{distances() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{distances()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.distances}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{distances}}}
+{\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Pairwise Haversine distances between positions
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kernel() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{kernel()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.kernel}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kernel}}}
+{\sphinxparam{\DUrole{n}{distances}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spherical Thin Plate Spline RBF kernel
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{trend\_basis() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{trend\_basis()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Linear trend basis for universal kriging: {[}1, x, y, …{]}
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 
 \end{fulllineitems}
 
@@ -7120,6 +7303,10 @@ Rohde, R. A. and Hausfather, Z.: The Berkeley Earth Land/Ocean Temperature Recor
 \bibitem[Thorne]{index:thorne}
 \sphinxAtStartPar
 Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper\sphinxhyphen{}air temperature records, Bull. Am. Meteorol. Soc., 86, 1437\textendash{}1442, \sphinxurl{https://doi.org/10.1175/BAMS-86-10-1437}, 2005
+\bibitem[Wahba\_Sphere]{index:wahba-sphere}
+\sphinxAtStartPar
+Wahba, G: Spline Interpolation and Smoothing on the Sphere, SIAM Journal on
+Scientific and Statistical Computing, 2(1), 5\sphinxhyphen{}16, \sphinxurl{https://doi.org/10.1137/0902002}, 1981
 \bibitem[Wilks]{index:wilks}
 \sphinxAtStartPar
 Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006

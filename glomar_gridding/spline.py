@@ -294,7 +294,10 @@ class ThinPlateSpline(Spline):
 
 
 class SphericalThinPlateSpline(Spline):
-    """Spherical form of Thin Plate Spline Interpolation and Smoothing"""
+    """
+    Spherical form of Thin Plate Spline Interpolation and Smoothing.
+    Adapted from [Wahba_Sphere]_.
+    """
 
     method: str = "spherical_thin_plate_spline"
 
