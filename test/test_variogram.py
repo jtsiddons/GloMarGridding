@@ -123,5 +123,10 @@ def test_variogram(variogram_model, parameters, variance):
     covariance = variogram_to_covariance(variogram_result, variance)
 
     evals = np.linalg.eigvalsh(covariance)
+
+    # TEST: symmetric
+    assert np.allclose(covariance, covariance.T)
+    # TEST: positive definite
     assert (evals > 0).all()
+
     return None

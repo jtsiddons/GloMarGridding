@@ -11,7 +11,7 @@ from glomar_gridding.climatology import (
     join_climatology_by_doy,
     read_climatology,
 )
-from glomar_gridding.grid import cross_coords, grid_from_resolution
+from glomar_gridding.grid import cross_coords, grid_from_resolution, Grid
 from glomar_gridding.io import load_array
 from glomar_gridding.mask import (
     mask_array,
@@ -22,12 +22,20 @@ from glomar_gridding.mask import (
 )
 
 
+TEST_GRID = Grid.from_resolution(
+    resolution=5,
+    bounds=[(-87.5, 90), (-177.5, 180)],
+    coord_names=["latitude", "longitude"],
+)
+
+
 def new_grid() -> xr.DataArray:
     """Get a new grid for the test"""
     return grid_from_resolution(
         resolution=5,
         bounds=[(-87.5, 90), (-177.5, 180)],
         coord_names=["latitude", "longitude"],
+        definition="center",
     )
 
 
@@ -45,10 +53,49 @@ def new_dataframe(n) -> pl.DataFrame:
     )
 
 
+def test_grid_definition():
+    grid = new_grid()
+    grid2 = grid_from_resolution(
+        resolution=5,
+        bounds=[(-90, 90), (-180, 180)],
+        coord_names=["latitude", "longitude"],
+        definition="left",
+    )
+    assert np.all(np.equal(grid.latitude, grid2.latitude))
+    assert np.all(np.equal(grid.longitude, grid2.longitude))
+
+
 def test_grid():
     grid = new_grid()
 
     assert grid.shape == (36, 72)
+    assert grid.shape == TEST_GRID.shape
+
+
+def test_grid_class():
+    grid = Grid.from_resolution(
+        resolution=5,
+        bounds=[(-87.5, 90), (-177.5, 180)],
+        coord_names=["latitude", "longitude"],
+    )
+    assert grid.shape == (36, 72)
+    assert grid.coord_names == ["latitude", "longitude"]
+    assert grid.index_map.height == 2592
+
+    mask = np.random.rand(*grid.shape) > 0.75
+    expected = 2592 - np.sum(mask)
+
+    grid.add_mask(mask)
+    assert grid.index_map.height == expected
+
+    grid.distance_matrix(lat_coord="latitude", lon_coord="longitude")
+    assert grid.dist.shape == (expected, expected)
+
+    vals = np.ones(expected, dtype=float)
+
+    vals_on_grid = grid.assign_values(vals, fill_value=0.0)
+
+    assert np.all(mask == (vals_on_grid == 0.0))
 
 
 def test_cross_grid():
@@ -68,6 +115,21 @@ def test_cross_grid():
     crossed_grid2 = cross_coords(grid2)
     assert crossed_grid2["latitude_1"][0] == -87.5
     assert crossed_grid2["longitude_1"][0] == -177.5
+
+
+def test_cross_grid_class():
+    crossed_grid = TEST_GRID._cross_coords()
+    new_array = xr.DataArray(coords=crossed_grid)
+
+    assert new_array.shape == (2592, 2592)
+    crossed_coords = list(
+        zip(crossed_grid["latitude_1"], crossed_grid["longitude_1"])
+    )
+    calc_cross = list(
+        product(TEST_GRID.grid["latitude"], TEST_GRID.grid["longitude"])
+    )
+
+    assert crossed_coords == calc_cross
 
 
 def test_masking_frame():

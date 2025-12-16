@@ -138,6 +138,9 @@ def radial_dist(
 
 def euclidean_distance(
     df: pl.DataFrame,
+    lat_coord: str = "lat",
+    lon_coord: str = "lon",
+    to_radians: bool = True,
     radius: float = 6371.0,
 ) -> np.ndarray:
     r"""
@@ -158,6 +161,14 @@ def euclidean_distance(
         DataFrame containing latitude and longitude columns indicating the
         positions between which distances are computed to form the distance
         matrix
+    lat_coord : str
+        Name of the column in the input DataFrame containing latitude values.
+    lon_coord : str
+        Name of the column in the input DataFrame containing longitude values.
+    to_radians : bool
+        Convert inputs from degrees to radians. The distance methodology assumes
+        that the input latitude and longitudes are in radians so must be
+        converted if they are in degrees.
     radius : float
         The radius of the sphere used for the calculation. Defaults to the
         radius of the earth in km (6371.0 km).
@@ -173,15 +184,15 @@ def euclidean_distance(
     https://math.stackexchange.com/questions/29157/how-do-i-convert-the-distance-between-two-lat-long-points-into-feet-meters
     https://cesar.esa.int/upload/201709/Earth_Coordinates_Booklet.pdf
     """
-    if df.columns != ["lat", "lon"]:
-        raise ValueError("Input must only contain 'lat' and 'lon' columns")
-    df = df.select(pl.all().radians())
+    df = df.select([lat_coord, lon_coord])
+    if to_radians:
+        df = df.select(pl.all().radians())
 
     df = df.select(
         [
-            (pl.col("lat").cos() * pl.col("lon").cos()).alias("x"),
-            (pl.col("lat").cos() * pl.col("lon").sin()).alias("y"),
-            pl.col("lat").sin().alias("z"),
+            (pl.col(lat_coord).cos() * pl.col(lon_coord).cos()).alias("x"),
+            (pl.col(lat_coord).cos() * pl.col(lon_coord).sin()).alias("y"),
+            pl.col(lat_coord).sin().alias("z"),
         ]
     )
 
@@ -190,6 +201,9 @@ def euclidean_distance(
 
 def haversine_distance_from_frame(
     df: pl.DataFrame,
+    lat_coord: str = "lat",
+    lon_coord: str = "lon",
+    to_radians: bool = True,
     radius: float = 6371,
 ) -> np.ndarray:
     """
@@ -202,6 +216,14 @@ def haversine_distance_from_frame(
         DataFrame containing latitude and longitude columns indicating the
         positions between which distances are computed to form the distance
         matrix
+    lat_coord : str
+        Name of the column in the input DataFrame containing latitude values.
+    lon_coord : str
+        Name of the column in the input DataFrame containing longitude values.
+    to_radians : bool
+        Convert inputs from degrees to radians. The distance methodology assumes
+        that the input latitude and longitudes are in radians so must be
+        converted if they are in degrees.
     radius : float
         The radius of the sphere used for the calculation. Defaults to the
         radius of the earth in km (6371.0 km).
@@ -212,17 +234,15 @@ def haversine_distance_from_frame(
         The pairwise haversine distances between the inputs in the DataFrame,
         on the sphere defined by the radius parameter.
     """
-    if df.columns != ["lat", "lon"]:
-        raise ValueError("Input must only contain 'lat' and 'lon' columns")
-    df = df.select(pl.all().radians())
+    df = df.select([lat_coord, lon_coord])
+    if to_radians:
+        df = df.select(pl.all().radians())
     return haversine_distances(df) * radius
 
 
 def calculate_distance_matrix(
     df: pl.DataFrame,
     dist_func: Callable = haversine_distance_from_frame,
-    lat_col: str = "lat",
-    lon_col: str = "lon",
     **dist_kwargs,
 ) -> np.ndarray:
     """
@@ -246,10 +266,6 @@ def calculate_distance_matrix(
         A custom function can be based, that takes as input two tuples of
         positions (computing a single distance value between the pair of
         positions). (tuple[float, float], tuple[float, float]) -> float
-    lat_col : str
-        Name of the column in the input DataFrame containing latitude values.
-    lon_col : str
-        Name of the column in the input DataFrame containing longitude values.
     **dist_kwargs
         Keyword arguments to pass to the distance function.
 
@@ -259,7 +275,7 @@ def calculate_distance_matrix(
         A matrix of pairwise distances.
     """
     return dist_func(
-        df.select([pl.col(lat_col).alias("lat"), pl.col(lon_col).alias("lon")]),
+        df,
         **dist_kwargs,
     )
 

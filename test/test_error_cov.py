@@ -2,12 +2,15 @@ import numpy as np
 import polars as pl
 import pytest  # noqa: F401
 
+from datetime import datetime
+
 from glomar_gridding.distances import haversine_gaussian
 from glomar_gridding.error_covariance import (
     correlated_components,
     dist_weight,
     get_weights,
     uncorrelated_components,
+    weighted_sum,
 )
 from glomar_gridding.kriging import prep_obs_for_kriging
 
@@ -92,6 +95,70 @@ def test_weights() -> None:
         .to_numpy()
     )
     assert np.allclose(grid_obs, summ)
+
+
+def test_weighted_sum() -> None:
+    df = pl.DataFrame(
+        {
+            "lon": [23.1, 23.9, 23.45, 45.1, 45.6, 45.2, 45.3, -11.3, -11.3],
+            "latitude": [
+                -19.8,
+                -19.2,
+                -19.0,
+                71.4,
+                71.6,
+                71.8,
+                71.1,
+                75.2,
+                75.2,
+            ],
+            "grid_idx": [0, 0, 0, 1, 1, 1, 1, 2, 2],
+            "id": [
+                "SHIP",
+                "A1",
+                "A1",
+                "A1",
+                "MASKSTID",
+                "A1",
+                "A1",
+                "A2",
+                "A2",
+            ],
+            "datetime": pl.datetime_range(
+                datetime(1995, 3, 1, 6),
+                datetime(1995, 3, 2, 18),
+                interval="6h",
+                eager=True,
+            ).append(
+                pl.Series([datetime(1995, 3, 13, 6), datetime(1995, 3, 13, 6)])
+            ),
+            "correlated": [0.9, 0.6, 0.6, 0.6, 1.2, 0.6, 0.6, 0.4, 0.4],
+            "uncorrelated": [0.6, 0.6, 0.6, 0.9, 0.9, 0.9, 0.9, 0.45, 0.45],
+        }
+    )
+    sill, space_range, time_range = 1, 10, 10
+    df = df.with_columns(
+        pl.lit(sill).alias("sill"),
+        pl.lit(space_range).alias("space_range"),
+        pl.lit(time_range).alias("time_range"),
+    )
+
+    result = weighted_sum(
+        df,
+        grid_idx="grid_idx",
+        group_col="id",
+        error_group_correlated="correlated",
+        error_uncorrelated="uncorrelated",
+        lat_col="latitude",
+    )
+
+    # TEST: number grid-boxes * total number of records
+    assert result.shape == (3, 9)
+    # TEST: Weights sum to 1 for each grid-box
+    assert np.allclose(np.sum(result, axis=1), 1)
+    # TEST: duplicates have same weight
+    assert result[2, -2] == result[2, -1]
+    return None
 
 
 def test_distweight() -> None:

@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Dec 15, 2025}
+\date{Dec 16, 2025}
 \release{1.0.1}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -118,7 +118,7 @@ choices.
 \sphinxAtStartPar
 Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
 Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square {\color{red}\bfseries{}\textasciigrave{}https://doi.org/10.21203/rs.3.rs\sphinxhyphen{}7427869/v1\textasciigrave{}\_}
+PREPRINT (Version 1) available at Research Square: \sphinxurl{https://doi.org/10.21203/rs.3.rs-7427869/v1}.
 
 \sphinxstepscope
 
@@ -456,7 +456,7 @@ all positions \sphinxhyphen{} each position has the same influence over a fixed 
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{grid\_from\_resolution}}}
-{\sphinxparam{\DUrole{n}{resolution}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}}\sphinxparamcomma \sphinxparam{\DUrole{n}{coord\_names}}}
+{\sphinxparam{\DUrole{n}{resolution}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}}\sphinxparamcomma \sphinxparam{\DUrole{n}{coord\_names}}\sphinxparamcomma \sphinxparam{\DUrole{n}{definition}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}center\textquotesingle{}}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -482,16 +482,36 @@ value to each of the coordinates.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
-the bounding box of the returned grid. Typically, one would set the
-lower bound to be the centre of the first grid box. The upper bound is
-an open bound (similar to usage in \sphinxtitleref{range}). For example a 5 degree
-resolution longitude range between \sphinxhyphen{}180, 180 could be defined with
-bounds \sphinxtitleref{(\sphinxhyphen{}177.5, 180)}.
+the bounding box of the returned grid. For a grid between \sphinxhyphen{}180 and 180
+degrees in Longitude, one would set the bounds in this dimension to
+\sphinxtitleref{(\sphinxhyphen{}180, 180)} (if using “left” for the ‘definition’ argument).
 
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} List of coordinate names in the same order as the bounds and
 resolution(s).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ (}}\sphinxstyleliteralemphasis{\sphinxupquote{"left"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"center"}}\sphinxstyleliteralemphasis{\sphinxupquote{)}}) \textendash{}
+\sphinxAtStartPar
+Each grid box is defined by the centre of the box in each coordinate.
+This argument defines whether the lower bound in each coordinate
+direction defines the “left”\sphinxhyphen{}edge or the “center” of the 1st grid\sphinxhyphen{}box.
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+”left”: The lower\sphinxhyphen{}bound can be used to define the left\sphinxhyphen{}side of each
+grid\sphinxhyphen{}box. The grid\sphinxhyphen{}box value will be the left\sphinxhyphen{}edge + 1/2 of resolution
+in each direction.
+
+\item {}
+\sphinxAtStartPar
+”center”: The lower\sphinxhyphen{}bound can be used to define the center of each
+grid\sphinxhyphen{}box. The grid\sphinxhyphen{}box value will be the center in each direction
+
+\end{itemize}
+
 
 \end{itemize}
 
@@ -534,7 +554,7 @@ xarray.DataArray:
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{grid\_to\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_coord=\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_coord=\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -555,15 +575,9 @@ information.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lat\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the latitude coordinate in the input grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lon\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the longitude coordinate in the input grid.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{**dist\_kwargs}} \textendash{} Keyword arguments to pass to the distance function.
+\sphinxstyleliteralstrong{\sphinxupquote{**dist\_kwargs}} \textendash{} Keyword arguments to pass to the distance function. This may include
+requirements for the name of specific coordinates, for example
+“lat\_coord” and “lon\_coord”.
 
 \end{itemize}
 
@@ -585,8 +599,9 @@ xarray.DataArray
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid} \PYG{o}{=} \PYG{n}{grid\PYGZus{}from\PYGZus{}resolution}\PYG{p}{(}
 \PYG{g+go}{        resolution=5,}
-\PYG{g+go}{        bounds=[(\PYGZhy{}87.5, 90), (\PYGZhy{}177.5, 180)],  \PYGZsh{} Lower bound is centre}
-\PYG{g+go}{        coord\PYGZus{}names=[\PYGZdq{}lat\PYGZdq{}, \PYGZdq{}lon\PYGZdq{}]}
+\PYG{g+go}{        bounds=[(\PYGZhy{}90, 90), (\PYGZhy{}180, 180)],  \PYGZsh{} Lower bound is left\PYGZhy{}edge}
+\PYG{g+go}{        coord\PYGZus{}names=[\PYGZdq{}lat\PYGZdq{}, \PYGZdq{}lon\PYGZdq{}],}
+\PYG{g+go}{        definition=\PYGZdq{}left\PYGZdq{},}
 \PYG{g+go}{    )}
 \PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid\PYGZus{}to\PYGZus{}distance\PYGZus{}matrix}\PYG{p}{(}\PYG{n}{grid}\PYG{p}{,} \PYG{n}{lat\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{lat}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{lon\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{lon}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
 \PYG{g+go}{\PYGZlt{}xarray.DataArray \PYGZsq{}dist\PYGZsq{} (index\PYGZus{}1: 2592, index\PYGZus{}2: 2592)\PYGZgt{} Size: 54MB}
@@ -2465,6 +2480,123 @@ numpy.matrix
 
 \end{fulllineitems}
 
+\index{grid\_box\_weighted\_sum() (in module glomar\_gridding.error\_covariance)@\spxentry{grid\_box\_weighted\_sum()}\spxextra{in module glomar\_gridding.error\_covariance}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{error_covariance:glomar_gridding.error_covariance.grid_box_weighted_sum}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.error\_covariance.}}\sphinxbfcode{\sphinxupquote{grid\_box\_weighted\_sum}}}
+{\sphinxparam{\DUrole{n}{grid\_box\_frame}}\sphinxparamcomma \sphinxparam{\DUrole{n}{group\_col}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_group\_correlated}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_uncorrelated}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{date\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}datetime\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sill}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}sill\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{space\_range}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}space\_range\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{time\_range}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}time\_range\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bad\_groups}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the weighted mean weights for a grid\sphinxhyphen{}box. The weights are computed using
+uncertainty from a simple spatio\sphinxhyphen{}temporal exponential variogram model, the
+correlated error covariance components (group\sphinxhyphen{}wise) and the uncorrelated
+error covariance components (group\sphinxhyphen{}wise).
+
+\sphinxAtStartPar
+The correlated components of the error covariance are 0 between pairs of
+records with \_different\_ groups, and the value from the
+‘error\_group\_correlated’ column squared when the groups match.
+
+\sphinxAtStartPar
+This computes the weights for a grid\sphinxhyphen{}box using the local inverse error
+covariance.
+
+\sphinxAtStartPar
+A factor of 1/4 can be applied to the cross\sphinxhyphen{}record pairs in the computation
+of correlated components for a subset of groupings considered “bad” \sphinxhyphen{} for
+example generic ids.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_box\_frame}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} DataFrame containing the observations for all records within a grid\sphinxhyphen{}box.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{group\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column by which records are grouped for the purpose of
+correlated and uncorrelated components of the error covariance
+structure.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_group\_correlated}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column containing correlated error values by group.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_uncorrelated}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column containing uncorrelated error values by group.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lat\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the latitude column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lon\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the longitude column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{date\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the datetime column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sill}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing sill values of the simplified varigram
+model.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{space\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing space range values for the simplified
+varigram model. {[}km{]}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{time\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing time range values for the simplified
+varigram model. {[}days{]}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bad\_groups}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Values in the groups that required lower priority in the weightings.
+For example, this could be records with invalid, or generic, ids.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{weights} (\sphinxstyleemphasis{np.ndarray}) \textendash{} A vector containing the weights for each record in the grid\sphinxhyphen{}box.
+Retaining the order within the grid\sphinxhyphen{}cell.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{vario} (\sphinxstyleemphasis{np.ndarray}) \textendash{} A matrix containing the output of the spatio\sphinxhyphen{}temporal variogram model
+for the grid\sphinxhyphen{}box records.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{correlated} (\sphinxstyleemphasis{np.ndarray}) \textendash{} Correlated error covariance matrix for the grid\sphinxhyphen{}box. Contains correlated
+error values when the group between each pair of records matches, zero
+otherwise.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{uncorrelated} (\sphinxstyleemphasis{np.ndarray}) \textendash{} Uncorrelated error matrx for the grid\sphinxhyphen{}box. Diagonal matrix.
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 \index{uncorrelated\_components() (in module glomar\_gridding.error\_covariance)@\spxentry{uncorrelated\_components()}\spxextra{in module glomar\_gridding.error\_covariance}}
 
 \begin{fulllineitems}
@@ -2528,6 +2660,109 @@ the diagonal of the returned covariance matrix.
 
 \end{itemize}
 
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{weighted\_sum() (in module glomar\_gridding.error\_covariance)@\spxentry{weighted\_sum()}\spxextra{in module glomar\_gridding.error\_covariance}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{error_covariance:glomar_gridding.error_covariance.weighted_sum}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.error\_covariance.}}\sphinxbfcode{\sphinxupquote{weighted\_sum}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_idx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{group\_col}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_group\_correlated}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_uncorrelated}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{date\_col}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}datetime\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sill}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}sill\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{space\_range}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}space\_range\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{time\_range}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}time\_range\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bad\_groups}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the weights matrix for the weighted sum approach, accounting for
+correlated and uncorrelated error components. The weights are computed using
+uncertainty from a simple spatio\sphinxhyphen{}temporal exponential variogram model, the
+correlated error covariance components (group\sphinxhyphen{}wise) and the uncorrelated
+error covariance components (group\sphinxhyphen{}wise).
+
+\sphinxAtStartPar
+The correlated components of the error covariance are 0 between pairs of
+records with \_different\_ groups, and the value from the
+‘error\_group\_correlated’ column squared when the groups match.
+
+\sphinxAtStartPar
+This computes the weights for each grid\sphinxhyphen{}box using the local inverse error
+covariance.
+
+\sphinxAtStartPar
+A factor of 1/4 can be applied to the cross\sphinxhyphen{}record pairs in the computation
+of correlated components for a subset of groupings considered “bad” \sphinxhyphen{} for
+example generic ids.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{df}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observation DataFrame. Contains the “grid\_idx” column which
+indicates the gridbox for a given observation. The index of the
+DataFrame should match the index ordering for the output weights.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column containing the gridbox index from the output grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{group\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column by which records are grouped for the purpose of
+correlated and uncorrelated components of the error covariance
+structure.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_group\_correlated}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column containing correlated error values by group.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_uncorrelated}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column containing uncorrelated error values by group.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lat\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the latitude column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lon\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the longitude column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{date\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the datetime column.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bad\_groups}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Values in the groups that required lower priority in the weightings.
+For example, this could be records with invalid, or generic, ids.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sill}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing sill values of the simplified varigram
+model.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{space\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing space range values for the simplified
+varigram model. {[}km{]}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{time\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} The name of the column containing time range values for the simplified
+varigram model. {[}days{]}
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{weights} \textendash{} A matrix containing the weights for each record in the data.
+Retaining the order within the frame.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+np.ndarray
 
 \end{description}\end{quote}
 
@@ -2838,8 +3073,8 @@ figure out.
 \sphinxAtStartPar
 Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}\frac{
-    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+\begin{split}1 - \frac{
+    diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
              \times C_{cross})
 }{diag(C)} < \alpha\end{split}
 \end{equation*}
@@ -3194,8 +3429,8 @@ figure out.
 \sphinxAtStartPar
 Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}\frac{
-    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+\begin{split}1 - \frac{
+    diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
              \times C_{cross})
 }{diag(C)} < \alpha\end{split}
 \end{equation*}
@@ -3650,8 +3885,8 @@ figure out.
 \sphinxAtStartPar
 Correct Equation (extra matrix inverse for \(C_{obs} + E\)):
 \begin{equation*}
-\begin{split}\frac{
-    1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+\begin{split}1 - \frac{
+    diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
              \times C_{cross})
 }{diag(C)} < \alpha\end{split}
 \end{equation*}
@@ -4272,6 +4507,761 @@ Linear trend basis for universal kriging: {[}1, x, y, …{]}
 \sphinxstepscope
 
 
+\chapter{Grid Class}
+\label{\detokenize{grid:grid-class}}\label{\detokenize{grid::doc}}
+\sphinxAtStartPar
+An alternative workflow is to use the \sphinxtitleref{Grid} class added in version 1.1.0. The \sphinxtitleref{Grid} class can be
+used to run the full Kriging process from defining an output grid to interpolating the observational
+data.
+
+\sphinxAtStartPar
+This class allows for easy masking of positions, so that masked positions are not infilled.
+
+\sphinxAtStartPar
+A new notebook was added (“Mask\_example.ipynb”) to demonstrate the full process.
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{from}\PYG{+w}{ }\PYG{n+nn}{glomar\PYGZus{}gridding}\PYG{n+nn}{.}\PYG{n+nn}{grid}\PYG{+w}{ }\PYG{k+kn}{import} \PYG{n}{Grid}
+
+\PYG{c+c1}{\PYGZsh{} Initialise, like with grid\PYGZus{}from\PYGZus{}resolution}
+\PYG{n}{grid} \PYG{o}{=} \PYG{n}{Grid}\PYG{o}{.}\PYG{n}{from\PYGZus{}resolution}\PYG{p}{(}
+    \PYG{n}{resolution}\PYG{o}{=}\PYG{l+m+mi}{5}\PYG{p}{,}
+    \PYG{n}{bounds}\PYG{o}{=}\PYG{p}{[}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{90}\PYG{p}{,} \PYG{l+m+mi}{90}\PYG{p}{)}\PYG{p}{,} \PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{180}\PYG{p}{,} \PYG{l+m+mi}{180}\PYG{p}{)}\PYG{p}{]}\PYG{p}{,}
+    \PYG{n}{coord\PYGZus{}names}\PYG{o}{=}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{latitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{longitude}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]}\PYG{p}{,}
+    \PYG{n}{definition}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{left}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Can now easily add a mask and only used unmasked positions on the grid}
+\PYG{n}{mask} \PYG{o}{=} \PYG{o}{.}\PYG{o}{.}\PYG{o}{.}
+\PYG{n}{grid}\PYG{o}{.}\PYG{n}{add\PYGZus{}mask}\PYG{p}{(}\PYG{n}{mask}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Add distance matrix and covariance matrix}
+\PYG{n}{grid}\PYG{o}{.}\PYG{n}{distance\PYGZus{}matrix}\PYG{p}{(}\PYG{p}{)}
+\PYG{n}{grid}\PYG{o}{.}\PYG{n}{covariance\PYGZus{}matrix}\PYG{p}{(}
+    \PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{matern}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+    \PYG{n+nb}{range}\PYG{o}{=}\PYG{l+m+mi}{1300}\PYG{p}{,}
+    \PYG{n}{psill}\PYG{o}{=}\PYG{l+m+mf}{1.2}\PYG{p}{,}
+    \PYG{n}{nu}\PYG{o}{=}\PYG{l+m+mf}{1.5}\PYG{p}{,}
+    \PYG{n}{nugget}\PYG{o}{=}\PYG{l+m+mf}{0.0}\PYG{p}{,}
+    \PYG{n}{method}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{sklearn}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,}
+\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Add observations}
+\PYG{n}{obs} \PYG{o}{=} \PYG{o}{.}\PYG{o}{.}\PYG{o}{.}
+\PYG{n}{grid}\PYG{o}{.}\PYG{n}{map\PYGZus{}observations}\PYG{p}{(}\PYG{n}{obs}\PYG{p}{,} \PYG{o}{.}\PYG{o}{.}\PYG{o}{.}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Can ensure an external error covariance matrix is aligned to the grid}
+\PYG{n}{error\PYGZus{}cov} \PYG{o}{=} \PYG{o}{.}\PYG{o}{.}\PYG{o}{.}
+\PYG{n}{error\PYGZus{}cov} \PYG{o}{=} \PYG{n}{grid}\PYG{o}{.}\PYG{n}{prep\PYGZus{}covariance}\PYG{p}{(}\PYG{n}{error\PYGZus{}cov}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} Perform Kriging}
+\PYG{n}{grid}\PYG{o}{.}\PYG{n}{kriging}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{ordinary}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{error\PYGZus{}cov}\PYG{p}{)}
+\end{sphinxVerbatim}
+\index{Grid (class in glomar\_gridding.grid)@\spxentry{Grid}\spxextra{class in glomar\_gridding.grid}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{Grid}}}
+{\sphinxparam{\DUrole{n}{coords}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Grid Class.
+
+\sphinxAtStartPar
+Allows for construction of a grid to use in the Kriging process. A mask
+can be applied to the grid with the \sphinxtitleref{add\_mask} method. If a mask is applied
+then computed fields will account for the mask. This has the ability to
+improve performance of the Kriging process as masked positions will not be
+infilled.
+
+\sphinxAtStartPar
+The class is constructed from an instance of \sphinxtitleref{xarray.Coordinates}, however
+it can also be constructed using the \sphinxtitleref{from\_resolution} method, which
+replicates the behaviour of
+{\hyperref[\detokenize{covariance:glomar_gridding.grid.grid_from_resolution}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.grid.grid\_from\_resolution()}}}}}.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Coordinates}}) \textendash{} The coordinates of the output grid.
+
+\end{description}\end{quote}
+\subsubsection*{Examples}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid} \PYG{o}{=} \PYG{n}{Grid}\PYG{p}{(}\PYG{n}{coordinates}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{add\PYGZus{}mask}\PYG{p}{(}\PYG{n}{mask}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{distance\PYGZus{}matrix}\PYG{p}{(}\PYG{p}{)}  \PYG{c+c1}{\PYGZsh{} Haversine by default}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{covariance}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{matern}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{psill}\PYG{o}{=}\PYG{l+m+mf}{0.36}\PYG{p}{,} \PYG{n+nb}{range}\PYG{o}{=}\PYG{l+m+mi}{1300}\PYG{p}{,} \PYG{n}{nugget}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n}{nu}\PYG{o}{=}\PYG{l+m+mf}{1.5}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{map\PYGZus{}observations}\PYG{p}{(}\PYG{n}{obs}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{kriging}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{ordinary}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{error\PYGZus{}covariance}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{masked\PYGZus{}infilled} \PYG{o}{=} \PYG{n}{grid}\PYG{o}{.}\PYG{n}{krige}\PYG{o}{.}\PYG{n}{solve}\PYG{p}{(}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{infilled} \PYG{o}{=} \PYG{n}{grid}\PYG{o}{.}\PYG{n}{assign}\PYG{p}{(}\PYG{n}{masked\PYGZus{}infilled}\PYG{p}{)}
+\end{sphinxVerbatim}
+\index{add\_mask() (glomar\_gridding.grid.Grid method)@\spxentry{add\_mask()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.add_mask}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{add\_mask}}}
+{\sphinxparam{\DUrole{n}{mask}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Add and apply a mask to the grid.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ma.MaskedArray}}) \textendash{} The mask to apply, either an array of Booleans or a masked array.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{assign\_values() (glomar\_gridding.grid.Grid method)@\spxentry{assign\_values()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.assign_values}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{assign\_values}}}
+{\sphinxparam{\DUrole{n}{values}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_idx}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{fill\_value}\DUrole{o}{=}\DUrole{default_value}{nan}}\sphinxparamcomma \sphinxparam{\DUrole{n}{apply\_mask}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Assign a vector of values to a grid, using a list of grid index values.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The values to map onto the output grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each
+value. If unset then it is assumed that the values are complete for
+the (possibly masked) grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The value to fill unassigned grid boxes. Must be a valid value of
+the input \sphinxtitleref{values} data type.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} The input grid\_idx represents the index for the masked grid, apply
+the mapping to the final grid index.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{out\_grid} \textendash{} A new grid containing the values mapped onto the grid.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{coord\_df (glomar\_gridding.grid.Grid property)@\spxentry{coord\_df}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.coord_df}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{coord\_df}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }DataFrame}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Convert the coordinates to a DataFrame
+
+\end{fulllineitems}
+
+\index{coord\_names (glomar\_gridding.grid.Grid property)@\spxentry{coord\_names}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.coord_names}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{coord\_names}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }list\DUrole{p}{{[}}str\DUrole{p}{{]}}}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Names of the coordinates
+
+\end{fulllineitems}
+
+\index{coords (glomar\_gridding.grid.Grid property)@\spxentry{coords}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.coords}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{coords}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }Coordinates}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Grid coordinates
+
+\end{fulllineitems}
+
+\index{covariance\_matrix() (glomar\_gridding.grid.Grid method)@\spxentry{covariance\_matrix()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.covariance_matrix}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{covariance\_matrix}}}
+{\sphinxparam{\DUrole{n}{variogram}}\sphinxparamcomma \sphinxparam{\DUrole{o}{**}\DUrole{n}{kwargs}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute a covariance matrix from the grid using the distance matrix and
+a varigoram model, this requires the pre\sphinxhyphen{}computation of the distance
+matrix attribute (\sphinxtitleref{dist}). If the grid is masked then the resulting
+\sphinxtitleref{covariance} attribute (set by this method) will be filtered to align
+with the mask.
+
+\sphinxAtStartPar
+This sets the \sphinxtitleref{covariance} and \sphinxtitleref{variogram} attributes.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Lower\sphinxhyphen{}case name of the variogram model to use. One of “exponential”,
+“gaussian”, “matern”, or “spherical”. The \sphinxtitleref{variogram} attribute will
+be set to an instance of the equivalent class from
+\sphinxtitleref{glomar\_gridding.variogram}.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{**kwargs}} \textendash{} Keyword arguments for the variogram model.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{distance\_matrix() (glomar\_gridding.grid.Grid method)@\spxentry{distance\_matrix()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.distance_matrix}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{distance\_matrix}}}
+{\sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Calculate a distance matrix between all positions in a grid. Orientation
+of latitude and longitude will be maintained in the returned distance
+matrix.
+
+\sphinxAtStartPar
+One distances between unmasked coordinates will be calculated if the
+grid is masked.
+
+\sphinxAtStartPar
+This sets the \sphinxtitleref{dist} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} A 2\sphinxhyphen{}d grid containing latitude and longitude indexes specified in
+decimal degrees.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{dist\_func}} (\sphinxstyleliteralemphasis{\sphinxupquote{Callable}}) \textendash{} Distance function to use to compute pairwise distances. See
+glomar\_gridding.distances.calculate\_distance\_matrix for more
+information. Defaults to Haversine distances.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{**dist\_kwargs}} \textendash{} Keyword arguments to pass to the distance function. This may include
+requirements for the name of specific coordinates, for example
+“lat\_coord” and “lon\_coord”.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+\subsubsection*{Examples}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid} \PYG{o}{=} \PYG{n}{Grid}\PYG{o}{.}\PYG{n}{from\PYGZus{}resolution}\PYG{p}{(}
+\PYG{g+go}{        resolution=5,}
+\PYG{g+go}{        bounds=[(\PYGZhy{}87.5, 90), (\PYGZhy{}177.5, 180)],  \PYGZsh{} Lower bound is centre}
+\PYG{g+go}{        coord\PYGZus{}names=[\PYGZdq{}lat\PYGZdq{}, \PYGZdq{}lon\PYGZdq{}]}
+\PYG{g+go}{    )}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{to\PYGZus{}distance\PYGZus{}matrix}\PYG{p}{(}\PYG{n}{grid}\PYG{p}{,} \PYG{n}{lat\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{lat}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{,} \PYG{n}{lon\PYGZus{}coord}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{lon}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{dist}
+\PYG{g+go}{\PYGZlt{}xarray.DataArray \PYGZsq{}dist\PYGZsq{} (index\PYGZus{}1: 2592, index\PYGZus{}2: 2592)\PYGZgt{} Size: 54MB}
+\PYG{g+go}{array([[    0.        ,    24.24359308,    48.44112457, ...,}
+\PYG{g+go}{        19463.87158499, 19461.22915012, 19459.64166305],}
+\PYG{g+go}{       [   24.24359308,     0.        ,    24.24359308, ...,}
+\PYG{g+go}{        19467.56390938, 19463.87158499, 19461.22915012],}
+\PYG{g+go}{       [   48.44112457,    24.24359308,     0.        , ...,}
+\PYG{g+go}{        19472.29905588, 19467.56390938, 19463.87158499],}
+\PYG{g+go}{       ...,}
+\PYG{g+go}{       [19463.87158499, 19467.56390938, 19472.29905588, ...,}
+\PYG{g+go}{            0.        ,    24.24359308,    48.44112457],}
+\PYG{g+go}{       [19461.22915012, 19463.87158499, 19467.56390938, ...,}
+\PYG{g+go}{           24.24359308,     0.        ,    24.24359308],}
+\PYG{g+go}{       [19459.64166305, 19461.22915012, 19463.87158499, ...,}
+\PYG{g+go}{           48.44112457,    24.24359308,     0.        ]],}
+\PYG{g+go}{      shape=(2592, 2592))}
+\PYG{g+go}{Coordinates:}
+\PYG{g+go}{  * index\PYGZus{}1  (index\PYGZus{}1) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591}
+\PYG{g+go}{  * index\PYGZus{}2  (index\PYGZus{}2) int64 21kB 0 1 2 3 4 ... 2587 2588 2589 2590 2591}
+\PYG{g+go}{    lat\PYGZus{}1    (index\PYGZus{}1) float64 21kB \PYGZhy{}87.5 \PYGZhy{}87.5 \PYGZhy{}87.5 ... 87.5 87.5}
+\PYG{g+go}{    lon\PYGZus{}1    (index\PYGZus{}1) float64 21kB \PYGZhy{}177.5 \PYGZhy{}172.5 ... 172.5 177.5}
+\PYG{g+go}{    lat\PYGZus{}2    (index\PYGZus{}2) float64 21kB \PYGZhy{}87.5 \PYGZhy{}87.5 \PYGZhy{}87.5 ... 87.5 87.5 87.5}
+\PYG{g+go}{    lon\PYGZus{}2    (index\PYGZus{}2) float64 21kB \PYGZhy{}177.5 \PYGZhy{}172.5 ... 172.5 177.5}
+\end{sphinxVerbatim}
+
+\end{fulllineitems}
+
+\index{from\_resolution() (glomar\_gridding.grid.Grid class method)@\spxentry{from\_resolution()}\spxextra{glomar\_gridding.grid.Grid class method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.from_resolution}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{classmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{from\_resolution}}}
+{\sphinxparam{\DUrole{n}{resolution}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}}\sphinxparamcomma \sphinxparam{\DUrole{n}{coord\_names}}\sphinxparamcomma \sphinxparam{\DUrole{n}{definition}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}center\textquotesingle{}}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Generate a grid from a resolution value, or a list of resolutions for
+given boundaries and coordinate names.
+
+\sphinxAtStartPar
+Note that all list inputs must have the same length, the ordering of
+values in the lists is assumed align.
+
+\sphinxAtStartPar
+The constructed grid will be regular, in the sense that the grid spacing
+is constant. However, the resolution in each direction can be different,
+allowing for finer resolution in some direction.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{resolution}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Resolution of the grid. Can be a single resolution value that will
+be applied to all coordinates, or a list of values mapping a
+resolution value to each of the coordinates.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
+the bounding box of the returned grid. For a grid between \sphinxhyphen{}180 and
+180 degrees in Longitude, one would set the bounds in this dimension
+to \sphinxtitleref{(\sphinxhyphen{}180, 180)} (if using “left” for the ‘definition’ argument).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} List of coordinate names in the same order as the bounds and
+resolution(s).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ (}}\sphinxstyleliteralemphasis{\sphinxupquote{"left"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"center"}}\sphinxstyleliteralemphasis{\sphinxupquote{)}}) \textendash{}
+\sphinxAtStartPar
+Each grid box is defined by the centre of the box in each
+coordinate. This argument defines whether the lower bound in each
+coordinate direction defines the “left”\sphinxhyphen{}edge or the “center” of the
+1st grid\sphinxhyphen{}box.
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+”left”: The lower\sphinxhyphen{}bound can be used to define the left\sphinxhyphen{}side of
+each grid\sphinxhyphen{}box. The grid\sphinxhyphen{}box value will be the left\sphinxhyphen{}edge + 1/2 of
+resolution in each direction.
+
+\item {}
+\sphinxAtStartPar
+”center”: The lower\sphinxhyphen{}bound can be used to define the center of each
+grid\sphinxhyphen{}box. The grid\sphinxhyphen{}box value will be the center in each direction
+
+\end{itemize}
+
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{grid} \textendash{} The grid defined by the resolution and bounding box.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+{\hyperref[\detokenize{grid:glomar_gridding.grid.Grid}]{\sphinxcrossref{Grid}}}
+
+\end{description}\end{quote}
+\subsubsection*{Examples}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid} \PYG{o}{=} \PYG{n}{Grid}\PYG{o}{.}\PYG{n}{from\PYGZus{}resolution}\PYG{p}{(}
+\PYG{g+go}{        resolution=5,}
+\PYG{g+go}{        bounds=[(\PYGZhy{}87.5, 90), (\PYGZhy{}177.5, 180)],  \PYGZsh{} Lower bound is center}
+\PYG{g+go}{        coord\PYGZus{}names=[\PYGZdq{}lat\PYGZdq{}, \PYGZdq{}lon\PYGZdq{}],}
+\PYG{g+go}{        definition=\PYGZdq{}center\PYGZdq{},}
+\PYG{g+go}{    )}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid}\PYG{o}{.}\PYG{n}{grid}
+\PYG{g+go}{\PYGZlt{}xarray.DataArray (lat: 36, lon: 72)\PYGZgt{} Size: 21kB}
+\PYG{g+go}{array([[nan, nan, nan, ..., nan, nan, nan],}
+\PYG{g+go}{       [nan, nan, nan, ..., nan, nan, nan],}
+\PYG{g+go}{       [nan, nan, nan, ..., nan, nan, nan],}
+\PYG{g+go}{       ...,}
+\PYG{g+go}{       [nan, nan, nan, ..., nan, nan, nan],}
+\PYG{g+go}{       [nan, nan, nan, ..., nan, nan, nan],}
+\PYG{g+go}{       [nan, nan, nan, ..., nan, nan, nan]], shape=(36, 72))}
+\PYG{g+go}{Coordinates:}
+\PYG{g+go}{  * lat      (lat) float64 288B \PYGZhy{}87.5 \PYGZhy{}82.5 \PYGZhy{}77.5 ... 77.5 82.5 87.5}
+\PYG{g+go}{  * lon      (lon) float64 576B \PYGZhy{}177.5 \PYGZhy{}172.5 ... 172.5 177.5}
+\end{sphinxVerbatim}
+
+\end{fulllineitems}
+
+\index{grid\_idx (glomar\_gridding.grid.Grid property)@\spxentry{grid\_idx}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.grid_idx}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{grid\_idx}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+All grid indices
+
+\end{fulllineitems}
+
+\index{index\_map (glomar\_gridding.grid.Grid property)@\spxentry{index\_map}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.index_map}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{index\_map}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }DataFrame}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the mapping between mask and grid indices
+
+\end{fulllineitems}
+
+\index{kriging() (glomar\_gridding.grid.Grid method)@\spxentry{kriging()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.kriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kriging}}}
+{\sphinxparam{\DUrole{n}{kriging\_method}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Add a Kriging class object to the grid. Allowing for easy Kriging over
+a masked grid.
+
+\sphinxAtStartPar
+This sets the \sphinxtitleref{krige} attribute with a instance of a
+\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.Kriging()}} class object, which will have
+all of the attributes and methods of that class.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{kriging\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Lower\sphinxhyphen{}case name of the Kriging class to use. One of “simple”,
+“ordinary”, or “stochastic”.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optional error covariance matrix. This will apply a smoothing
+effect to the observation points (as well as over the infilling).
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{map\_observations() (glomar\_gridding.grid.Grid method)@\spxentry{map\_observations()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.map_observations}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{map\_observations}}}
+{\sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_col}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sort}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{add\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}grid\_\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{apply\_mask}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Align an observation dataframe to the Grid.
+
+\sphinxAtStartPar
+Maps observations to the nearest grid\sphinxhyphen{}point, and sorts the data by the
+1d index of the DataArray in a row\sphinxhyphen{}major format.
+
+\sphinxAtStartPar
+The grid defined by the latitude and longitude coordinates of the input
+DataArray is then used as the output grid of the Gridding process.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observational DataFrame containing positional data with
+latitude, longitude values within the \sphinxtitleref{obs\_latname} and
+\sphinxtitleref{obs\_lonname} columns respectively. Observations are mapped to the
+nearest grid\sphinxhyphen{}point in the grid.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the column containing positional values in the input
+observational DataFrame.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Sort the observational DataFrame by the grid index
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial
+bounds. This list must have the same size and ordering as
+\sphinxtitleref{obs\_coords} and \sphinxtitleref{grid\_coords} arguments.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add the grid positional information to the observational DataFrame.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Prefix to use for the new grid columns in the observational
+DataFrame.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} If the Grid is masked convert the grid index values to the masked
+grid values. This will drop any observations whose grid position is
+masked.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{obs} \textendash{} Containing additional \sphinxtitleref{grid\_*}, and \sphinxtitleref{grid\_idx} values
+indicating the positions and grid index of the observation
+respectively. The DataFrame is also sorted (ascendingly) by the
+\sphinxtitleref{grid\_idx} columns for consistency with the gridding functions.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+pandas.DataFrame
+
+\end{description}\end{quote}
+\subsubsection*{Examples}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{obs} \PYG{o}{=} \PYG{n}{pl}\PYG{o}{.}\PYG{n}{read\PYGZus{}csv}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{/path/to/obs.csv}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{grid} \PYG{o}{=} \PYG{n}{Grid}\PYG{o}{.}\PYG{n}{grid\PYGZus{}from\PYGZus{}resolution}\PYG{p}{(}
+\PYG{g+go}{        resolution=5,}
+\PYG{g+go}{        bounds=[(\PYGZhy{}87.5, 90), (\PYGZhy{}177.5, 180)],  \PYGZsh{} Lower bound is centre}
+\PYG{g+go}{        coord\PYGZus{}names=[\PYGZdq{}lat\PYGZdq{}, \PYGZdq{}lon\PYGZdq{}]}
+\PYG{g+go}{    )}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{obs} \PYG{o}{=} \PYG{n}{grid}\PYG{o}{.}\PYG{n}{map\PYGZus{}observations}\PYG{p}{(}\PYG{n}{obs}\PYG{p}{)}
+\end{sphinxVerbatim}
+
+\end{fulllineitems}
+
+\index{prep\_covariance() (glomar\_gridding.grid.Grid method)@\spxentry{prep\_covariance()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.prep_covariance}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{prep\_covariance}}}
+{\sphinxparam{\DUrole{n}{covariance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Apply the mask to a covariance matrix. This could be used to resize an
+error covariance matrix ahead of masked kriging, for example.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The covariance matrix.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{remove\_mask() (glomar\_gridding.grid.Grid method)@\spxentry{remove\_mask()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.remove_mask}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{remove\_mask}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Remove the mask
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{select\_bounds() (glomar\_gridding.grid.Grid method)@\spxentry{select\_bounds()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.select_bounds}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{select\_bounds}}}
+{\sphinxparam{\DUrole{n}{bounds}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Filter the Grid by a set of bounds. Updates the \sphinxtitleref{grid} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of tuples containing the lower and upper bounds for each
+dimension.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{variables}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the dimensions (the order must match the bounds).
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{set\_covariance() (glomar\_gridding.grid.Grid method)@\spxentry{set\_covariance()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.set_covariance}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{set\_covariance}}}
+{\sphinxparam{\DUrole{n}{covariance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Set a covariance matrix. This is automatically adjusted if the grid is
+masked.
+
+\sphinxAtStartPar
+Sets the \sphinxtitleref{covariance} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The covariance matrix for the full (unmasked) grid.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{set\_distance\_matrix() (glomar\_gridding.grid.Grid method)@\spxentry{set\_distance\_matrix()}\spxextra{glomar\_gridding.grid.Grid method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.set_distance_matrix}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{set\_distance\_matrix}}}
+{\sphinxparam{\DUrole{n}{distance\_matrix}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Set a distance matrix. This is automatically adjusted if the grid is
+masked.
+
+\sphinxAtStartPar
+Sets the \sphinxtitleref{dist} attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix for the full (unmasked) grid.
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{shape (glomar\_gridding.grid.Grid property)@\spxentry{shape}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.shape}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{shape}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }tuple\DUrole{p}{{[}}int\DUrole{p}{,}\DUrole{w}{ }\DUrole{p}{...}\DUrole{p}{{]}}}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Shape of the grid
+
+\end{fulllineitems}
+
+\index{size (glomar\_gridding.grid.Grid property)@\spxentry{size}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.size}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{size}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }int}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Size of grid
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+\sphinxstepscope
+
+
 \chapter{Miscallaneous Modules}
 \label{\detokenize{misc:miscallaneous-modules}}\label{\detokenize{misc::doc}}
 
@@ -4820,7 +5810,7 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.distances.}}\sphinxbfcode{\sphinxupquote{calculate\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_col=\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_col=\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -4847,14 +5837,6 @@ available for this function are \sphinxtitleref{haversine\_distance} and
 A custom function can be based, that takes as input two tuples of
 positions (computing a single distance value between the pair of
 positions). (tuple{[}float, float{]}, tuple{[}float, float{]}) \sphinxhyphen{}\textgreater{} float
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lat\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing latitude values.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lon\_col}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing longitude values.
 
 \item {}
 \sphinxAtStartPar
@@ -4950,7 +5932,7 @@ of the latitudes to set the horizontal displacement scale.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.distances.}}\sphinxbfcode{\sphinxupquote{euclidean\_distance}}}
-{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{radius}\DUrole{o}{=}\DUrole{default_value}{6371.0}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_coord}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_coord}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{to\_radians}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{radius}\DUrole{o}{=}\DUrole{default_value}{6371.0}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -4970,6 +5952,20 @@ where
 \sphinxstyleliteralstrong{\sphinxupquote{df}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} DataFrame containing latitude and longitude columns indicating the
 positions between which distances are computed to form the distance
 matrix
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lat\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing latitude values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lon\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing longitude values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{to\_radians}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Convert inputs from degrees to radians. The distance methodology assumes
+that the input latitude and longitudes are in radians so must be
+converted if they are in degrees.
 
 \item {}
 \sphinxAtStartPar
@@ -5003,7 +5999,7 @@ float
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.distances.}}\sphinxbfcode{\sphinxupquote{haversine\_distance\_from\_frame}}}
-{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{radius}\DUrole{o}{=}\DUrole{default_value}{6371}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lat\_coord}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lat\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lon\_coord}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}lon\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{to\_radians}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{radius}\DUrole{o}{=}\DUrole{default_value}{6371}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -5016,6 +6012,20 @@ points on the earth (specified in decimal degrees).
 \sphinxstyleliteralstrong{\sphinxupquote{df}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} DataFrame containing latitude and longitude columns indicating the
 positions between which distances are computed to form the distance
 matrix
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lat\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing latitude values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lon\_coord}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the column in the input DataFrame containing longitude values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{to\_radians}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Convert inputs from degrees to radians. The distance methodology assumes
+that the input latitude and longitudes are in radians so must be
+converted if they are in degrees.
 
 \item {}
 \sphinxAtStartPar

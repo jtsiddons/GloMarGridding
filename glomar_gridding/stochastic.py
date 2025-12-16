@@ -259,8 +259,8 @@ class StochasticKriging(Kriging):
         Correct Equation (extra matrix inverse for :math:`C_{obs} + E`):
 
         .. math::
-            \frac{
-                1 - diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
+            1 - \frac{
+                diag(C - C_{cross}^T \times (C_{obs} + E)^{-1}
                          \times C_{cross})
             }{diag(C)} < \alpha
 

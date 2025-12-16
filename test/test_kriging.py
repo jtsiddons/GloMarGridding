@@ -37,6 +37,7 @@ from glomar_gridding.grid import (
     grid_from_resolution,
     grid_to_distance_matrix,
     map_to_grid,
+    Grid,
 )
 from glomar_gridding.kriging import (
     OrdinaryKriging,
@@ -113,6 +114,34 @@ def test_ordinary_kriging_class() -> None:  # noqa: D103
     )
 
     k = OKrige.solve()
+
+    assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
+    return None
+
+
+def test_ordinary_kriging_class_from_grid_class() -> None:
+    grid = Grid.from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    grid.distance_matrix(dist_func=euclidean_distances)
+    grid.covariance_matrix(
+        variogram="matern",
+        range=35 / 3,
+        psill=4.0,
+        nugget=0.0,
+        nu=1.5,
+    )
+
+    obs = pl.DataFrame(
+        {
+            "lat": [5.0, 15.0, 10.0],
+            "lon": [5.0, 10.0, 15.0],
+            "val": [1.0, 0.0, 1.0],
+        }
+    )
+
+    obs = grid.map_observations(obs, obs_col="val")
+
+    grid.kriging(kriging_method="ordinary")
+    k = grid.krige.solve()
 
     assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
     return None

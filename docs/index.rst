@@ -18,6 +18,7 @@ Welcome to GloMarGridding's documentation!
    error_covariance
    kriging
    splines
+   grid
    misc
 
 ..

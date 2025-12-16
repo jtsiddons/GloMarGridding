@@ -28,4 +28,4 @@ Citation
 
 Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
 Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square `https://doi.org/10.21203/rs.3.rs-7427869/v1`_
+PREPRINT (Version 1) available at Research Square: https://doi.org/10.21203/rs.3.rs-7427869/v1.

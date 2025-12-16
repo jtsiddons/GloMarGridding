@@ -47,6 +47,8 @@ def test_eigenvalue_clip() -> None:
     S_fixed = eigenvalue_clip(S_new)
     evals_fixed = np.linalg.eigvalsh(S_fixed)
 
+    assert np.allclose(S_fixed, S_fixed.T)
+
     # TEST: trace is not changed
     assert np.allclose(np.trace(S_fixed), np.trace(S_new))
     # TEST: top eigenvalues are not modified
@@ -75,6 +77,8 @@ def test_eigenvalue_clip_negative_evals() -> None:
     # "Fix" the new Covariance
     S_fixed = eigenvalue_clip(S_new)
     evals_fixed = np.linalg.eigvalsh(S_fixed)
+
+    assert np.allclose(S_fixed, S_fixed.T)
 
     # TEST: trace is not changed
     assert np.allclose(np.trace(S_fixed), np.trace(S_new))
@@ -131,6 +135,7 @@ def test_perturb_pos_def():
 
     # "Fix" the new Covariance
     S_fixed = perturb_cov_to_positive_definite(S_new)
+    assert np.allclose(S_fixed, S_fixed.T)
     evals_fixed = np.linalg.eigvalsh(S_fixed)
 
     # TEST: all eigenvalues are positive
@@ -194,6 +199,7 @@ def test_explained_clip():
     out = explained_variance_clip(S_new, valid_target * 0.99)
 
     assert out.shape == S.shape
+    assert np.allclose(out, out.T)
     assert (np.linalg.eigvalsh(out) > 0).all()
 
     return None
@@ -216,6 +222,7 @@ def test_laloux_clip():
     out = laloux_clip(S_new, num_time_pts=20)
 
     assert out.shape == S.shape
+    assert np.allclose(out, out.T)
     assert (np.linalg.eigvalsh(out) > 0).all()
 
     assert True
