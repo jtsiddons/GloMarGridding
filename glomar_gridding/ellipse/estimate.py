@@ -18,6 +18,7 @@ over time. These values are used to estimate the ellipse parameters with an
 instance of `glomar_gridding.ellipse.EllipseModel` as a reference.
 """
 
+from joblib import Parallel, delayed
 import math as maths
 from typing import Any
 from warnings import warn
@@ -26,11 +27,16 @@ import numpy as np
 import xarray as xr
 from sklearn.metrics.pairwise import haversine_distances
 
-from glomar_gridding.constants import DEFAULT_N_JOBS, RADIUS_OF_EARTH_KM
+from glomar_gridding.constants import (
+    DEFAULT_BACKEND,
+    DEFAULT_N_JOBS,
+    RADIUS_OF_EARTH_KM,
+)
 from glomar_gridding.distances import displacements
 from glomar_gridding.ellipse import EllipseModel
 from glomar_gridding.types import DeltaXMethod
 from glomar_gridding.utils import (
+    batched,
     cov_2_cor,
     is_iter,
     mask_array,
@@ -657,6 +663,7 @@ class EllipseBuilder:
             Containing arrays for each parameter in the ellipse model class.
             Note that one array is likely to be "qc_code", which takes values:
 
+                - -1: Not computed (masked)
                 - 0: success
                 - 2: success but with one parameter reaching upper
                   boundaries
@@ -702,6 +709,261 @@ class EllipseBuilder:
             for i, param_name in enumerate(param_names.keys()):
                 params[param_name][grid_j, grid_i] = result["ModelParams"][i]
 
+        return params
+
+    def compute_params_par(
+        self,
+        default_value: Any,
+        matern_ellipse: EllipseModel,
+        max_distance: float = 6000,
+        min_distance: float = 0.3,
+        delta_x_method: DeltaXMethod | None = "Modified_Met_Office",
+        guesses: list[float] | None = None,
+        bounds: list[tuple[float, float]] | None = None,
+        opt_method: str = "Nelder-Mead",
+        tol: float = 1e-4,
+        n_jobs: int = DEFAULT_N_JOBS,
+        physical_distance_selection: bool = True,
+        batch_size: int | None = None,
+        backend: str = DEFAULT_BACKEND,
+    ):
+        """
+        Fit ellipses/covariance models using local covariances to all unmasked
+        grid points. Applies a batched parallel approach to speed-up parameter
+        estimation. The positions are batched, for each batch of positions, the
+        training data are computed, from which the batch set of parameters are
+        estimated in parallel.
+
+        The form of the covariance model depends on the 'anistropic' and
+        'rotated' attributes of the ellipse model:
+
+        - anisotropic=False (radial distance only)
+        - anistropic=True and rotated=False (x and y are different, but not
+          rotated)
+        - anistropic=True and rotated=True (x and y are different, ellipse can
+          be rotated)
+
+        The ellipse model attribute v = matern covariance function shape
+        parameter.
+        Karspeck et al. [Karspeck]_ and Paciorek & Schervish
+        [PaciorekSchervish]_
+        use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
+        lim v-->inf, Gaussian shape
+
+        delta_x_method: only meaningful for physical_distance ellipses:
+
+        - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+          (in radians)
+        - "Modified_Met_Office": uses the average zonal dist at different
+          lat
+
+        Parameters
+        ----------
+        default_value : Any
+            Default value(s) to fill arrays where parameter estimation is not
+            possible (typically due to masking). Typically, one should set a
+            value that is appropriate to the type of the field. If a single
+            value is provided, this is used for all fields. If not, the length
+            of the list of default values must equal the number of parameters
+            of the `EllipseModel`
+
+        matern_ellipse : EllipseModel
+            EllipseModel to use for parameter estimation
+
+        max_distance : float
+            Maximum separation in distance unit that data will be fed
+            into parameter fitting
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
+
+        min_distance: float
+            Minimum separation in distance unit that data
+            will be fed into parameter fitting
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
+            Note: Due to the way we compute the Matern function,
+            it is undefined at dist == 0 even if the limit -> zero is obvious.
+
+        delta_x_method="Modified_Met_Office": str
+            How to compute distances between grid points
+            For istropic variogram/covariances, this is a trivial problem;
+            you can just take the haversine or
+            Euclidean ("tunnel") distance as they are non-directional.
+
+            But it is non trivial for anistropic cases,
+            you have to define a set of orthogonal space. In HadSST4,
+            Earth is assumed to be cylindrical "tin can" Earth,
+            so you can just define the orthogonal space by
+            lines of constant lat and lon (delta_x_method="Met_Office").
+
+            The modified "Modified_Met_Office" is a variation to that,
+            but allow the tin can get squished at the poles.
+            (Sinusoidal projection). This does results in a problem:
+            the zonal displacement now depends in which latitude
+            you compute on (at the beginning latitude or at the end latitude).
+            Here we take the average of the two.
+
+        guesses=None: tuple of floats; None uses default guess values
+            Initial guess values that get feeds in the optimizer for MLE.
+            In scipy, you are required to do so (but R often doesn't).
+            You should anyway; sometimes they do funny things
+            if you don't (per recommendation of David Stephenson)
+
+        bounds=None: tuple of floats; None uses default bounds values
+            This is essentially a Bayesian "uniformative prior"
+            that forces convergence if the optimizer hits the bound.
+            For lower resolution fitting, this is rarely a problem.
+            For higher resolution fits, this often interacts with
+            the limit of the data you can put into the fit the optimizer
+            may fail to converge if the input data is very smooth (aka ENSO
+            region, where anomalies are smooth over very large (~10000km)
+            scales).
+
+        opt_method='Nelder-Mead': str
+            scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
+            See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
+            for valid options
+
+        tol=0.001: float
+            Set convergence tolerance for scipy optimize.
+            See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
+
+            Note on new tol kwarg:
+            For N-M, this sets the value to both xatol and fatol
+            Default is 1E-4
+            Since it affects accuracy of all values including rotation
+            rotation angle 0.001 rad ~ 0.05 deg
+
+        estimate_SE=None : str | None
+            The code can estimate the standard error if the Matern parameters.
+            This is not usually used or discussed for the purpose of kriging.
+            Certain opt_method (gradient descent) can do this automatically
+            using Fisher Info for certain covariance function,
+            but is not possible for some nasty functions (aka Bessel
+            func) gets involved nor it is possible for some optimisers
+            (such as Nelder-Mead).
+            The code does it using bootstrapping.
+
+        n_jobs=4: int
+            Number of parallel jobs to use
+
+        physical_distance_selection : bool
+            Select training data using physical distance (haversine distance) or
+            Euclidean distance of degree difference between each position and
+            all possible training data. Data that falls within the min and max
+            distance values using the selected distance method are selected as
+            training data.
+
+        backend : str
+            Parallel backend to use from joblib. Defaults to 'loky'.
+
+        batch_size : int
+            Size of batches to use. Defaults to 8 x n_jobs.
+
+        Returns
+        -------
+        params : xarray.Dataset
+            Containing arrays for each parameter in the ellipse model class.
+            Note that one array is likely to be "qc_code", which takes values:
+
+                - -1: Not computed (masked)
+                - 0: success
+                - 2: success but with one parameter reaching upper
+                  boundaries
+                - 3: success with multiple parameters reaching the
+                  boundaries (aka both Lx and Ly), can be both at lower or
+                  upper boundaries
+                - 9: fail, probably due to running out of maxiter (see
+                  scipy.optimize.minimize kwargs "options)"
+        """
+        guesses = guesses or matern_ellipse.default_guesses
+        bounds = bounds or matern_ellipse.default_bounds
+        batch_size = batch_size or 8 * n_jobs
+
+        coords_dict = {
+            "latitude": self.coords["latitude"].values,
+            "longitude": self.coords["longitude"].values,
+        }
+        coords = xr.Coordinates(coords_dict)
+        param_names = matern_ellipse.supercategory_params
+        params = init_parameter_set(
+            coords,
+            parameters=param_names,
+            default_value=default_value,
+        )
+
+        def _run_batch(
+            train,
+            cov,
+        ):
+            X, y = train
+            results, _, _ = matern_ellipse.fit(
+                X,
+                y,
+                guesses=guesses,
+                bounds=bounds,
+                opt_method=opt_method,
+                tol=tol,
+                estimate_SE=None,
+                n_jobs=1,
+                n_sim=0,
+            )
+            model_params = results.x.tolist()
+
+            self._check_params(matern_ellipse, model_params)
+
+            if not matern_ellipse.unit_sigma:
+                _ = model_params.pop()
+
+            if results.success:
+                fit_success = _get_fit_score(model_params, bounds, results.nit)
+                # print("RMSE of multivariate norm fit = ", stdev)
+            else:
+                # print("Convergence fail after ", results.nit, " iterations.")
+                # print(model_params)
+                fit_success = 9
+            # print("QC flag = ", fit_success)
+
+            model_params.append(np.sqrt(cov))
+            model_params.append(fit_success)
+            model_params.append(results.nit)
+            return model_params
+
+        first_loop = True
+        results: np.ndarray = np.array([])
+        for batch in batched(
+            enumerate(zip(self.xi_masked, self.yi_masked)), batch_size
+        ):
+            # Training data (X, y) for each point in the batch, pre-computed
+            # to avoid shared memory problems
+            train_data = [
+                self._get_train_data(
+                    xy_point=b[0],
+                    min_distance=min_distance,
+                    max_distance=max_distance,
+                    anisotropic=matern_ellipse.anisotropic,
+                    delta_x_method=delta_x_method,
+                    physical_distance=matern_ellipse.physical_distance,
+                    physical_distance_selection=physical_distance_selection,
+                )
+                for b in batch
+            ]
+            covs = [self.cov[b[0], b[0]] for b in batch]
+            sim_params = Parallel(n_jobs=n_jobs, backend=backend)(
+                delayed(_run_batch)(train, cov)
+                for train, cov in zip(train_data, covs)
+            )
+            if first_loop:
+                results = np.array(sim_params)
+                first_loop = False
+                continue
+            results = np.vstack([results, np.array(sim_params)])
+        for i, param_name in enumerate(param_names.keys()):
+            params[param_name].values = uncompress_masked(
+                results[:, i],
+                self.mask,
+                default_value[i],
+            )
         return params
 
     def find_nearest_xy_index_in_cov_matrix(

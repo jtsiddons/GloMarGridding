@@ -166,6 +166,21 @@ def test_const_Ellipse(name, v, params, size):
         delta_x_method="Modified_Met_Office",
     )
 
+    # Test Parallel
+    if name == "ellipse":
+        ellipse_params_par = ellipse_builder.compute_params_par(
+            default_value=default_values,
+            matern_ellipse=ellipse,
+            # bounds=fit_bounds,
+            # guesses=init_values,
+            max_distance=fit_max_distance,
+            delta_x_method="Modified_Met_Office",
+            n_jobs=1,
+        )
+        assert np.allclose(
+            ellipse_params["Lx"], ellipse_params_par["Lx"], atol=1e-4
+        )
+
     Lx = (
         ellipse_params["Lx"].values
         if params["Ly"] is not None

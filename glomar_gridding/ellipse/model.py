@@ -265,9 +265,9 @@ class EllipseModel:
 
     def negative_log_likelihood(
         self,
+        params: list[float],
         X: np.ndarray,
         y: np.ndarray,
-        params: list[float],
         arctanh_transform: bool = True,
     ) -> float:
         """
@@ -394,9 +394,9 @@ class EllipseModel:
 
         def f(params: list[float]) -> float:
             return self.negative_log_likelihood(
+                params,
                 X,
                 y,
-                params,
             )
 
         return f
