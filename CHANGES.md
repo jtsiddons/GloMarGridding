@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons, @josidd).
+
+### New Features
+
+* Add parallel option to estimate ellipse parameters using `itertools.batched` and
+  `joblib.parallel`. `ellipse.estimate.EllipseBuilder.compute_params_par` (#91)
+
 ## 1.1.0 (2026-01-12)
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd), Steven Chan (@SCChan21), Richard
