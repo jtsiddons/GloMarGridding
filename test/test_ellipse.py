@@ -12,6 +12,7 @@ from glomar_gridding.ellipse import (
     EllipseCovarianceBuilder,
     EllipseModel,
 )
+from glomar_gridding.ellipse.estimate import get_ellipse_params
 from glomar_gridding.io import load_array, load_dataset
 from glomar_gridding.utils import cov_2_cor, uncompress_masked
 
@@ -167,19 +168,20 @@ def test_const_Ellipse(name, v, params, size):
     )
 
     # Test Parallel
-    if name == "ellipse":
-        ellipse_params_par = ellipse_builder.compute_params_par(
-            default_value=default_values,
-            matern_ellipse=ellipse,
-            # bounds=fit_bounds,
-            # guesses=init_values,
-            max_distance=fit_max_distance,
-            delta_x_method="Modified_Met_Office",
-            n_jobs=1,
-        )
-        assert np.allclose(
-            ellipse_params["Lx"], ellipse_params_par["Lx"], atol=1e-4
-        )
+    ellipse_params_par = get_ellipse_params(
+        ellipse_model=ellipse,
+        ellipse_builder=ellipse_builder,
+        # bounds=fit_bounds,
+        # guesses=init_values,
+        max_distance=fit_max_distance,
+        delta_x_method="Modified_Met_Office",
+        n_par_jobs=1,
+        default_value=default_values,
+    )
+    for p in ellipse_params_par.data_vars:
+        if p == "number_of_iterations":
+            continue
+        assert np.allclose(ellipse_params[p], ellipse_params_par[p], atol=1e-4)
 
     Lx = (
         ellipse_params["Lx"].values
