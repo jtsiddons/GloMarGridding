@@ -204,6 +204,12 @@ class EllipseModel:
     ) -> None:
         if v <= 0:
             raise ValueError("'v' must be > 0")
+
+        if not unit_sigma:
+            raise NotImplementedError(
+                "EllipseModel not supported for unit_sigma=False"
+            )
+
         self.anisotropic = anisotropic
         self.rotated = rotated
         self.physical_distance = physical_distance
@@ -414,6 +420,7 @@ class EllipseModel:
         n_jobs: int = DEFAULT_N_JOBS,
         backend: str = DEFAULT_BACKEND,
         random_seed: int = 1234,
+        options: dict[str, Any] | None = None,
     ) -> tuple[OptimizeResult, float | None, list[tuple[float, float]]]:
         """
         Default solver in Nelder-Mead as used in Karspeck et al. 2012
@@ -462,6 +469,8 @@ class EllipseModel:
             joblib backend for bootstrapping.
         random_seed=1234 : int
             Random seed for bootstrap
+        options : dict[str, Any] | None
+            Options to use in fitting.
 
         Returns
         -------
@@ -495,6 +504,7 @@ class EllipseModel:
             bounds=bounds,
             method=opt_method,
             tol=tol,
+            options=options,
         )
 
         # This does not account for standard errors in the
