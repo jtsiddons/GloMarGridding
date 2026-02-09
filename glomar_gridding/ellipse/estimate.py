@@ -207,6 +207,7 @@ class EllipseBuilder:
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
         physical_distance_selection: bool = True,
+        options: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         """
         Fit ellipses/covariance models using local covariances.
@@ -326,6 +327,9 @@ class EllipseBuilder:
             distance values using the selected distance method are selected as
             training data.
 
+        options : dict[str, Any] | None
+            Options to use in fitting.
+
         Returns
         -------
         dict
@@ -360,6 +364,7 @@ class EllipseBuilder:
             estimate_SE=estimate_SE,
             n_jobs=n_jobs,
             n_sim=n_sim,
+            options=options,
         )
 
         model_params = results.x.tolist()
@@ -508,6 +513,7 @@ class EllipseBuilder:
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
         physical_distance_selection: bool = True,
+        options: dict[str, Any] | None = None,
     ) -> xr.Dataset:
         """
         Fit ellipses/covariance models using local covariances to all unmasked
@@ -636,6 +642,9 @@ class EllipseBuilder:
             distance values using the selected distance method are selected as
             training data.
 
+        options : dict[str, Any] | None
+            Options to use in fitting.
+
         Returns
         -------
         params : xarray.Dataset
@@ -648,7 +657,7 @@ class EllipseBuilder:
               boundaries
             - 3: success with multiple parameters reaching the
               boundaries (aka both Lx and Ly), can be both at lower or
-              upper boundaries
+              upper bound.
             - 9: fail, probably due to running out of maxiter (see
               scipy.optimize.minimize kwargs "options)"
         """
@@ -681,6 +690,7 @@ class EllipseBuilder:
                 n_jobs=n_jobs,
                 n_sim=n_sim,
                 physical_distance_selection=physical_distance_selection,
+                options=options,
             )
             if result is None:
                 continue
@@ -724,27 +734,22 @@ class EllipseBuilder:
         # return str(self.__class__) + ": " + str(self.__dict__)
 
 
-def _get_fit_score(model_params, bounds, niter=1) -> int:
+def _get_fit_score(
+    model_params,
+    bounds,
+    niter=1,
+    options: dict[str, Any] | None = None,
+) -> int:
     fit_success: int = 0
+    if (
+        options is not None
+        and options.get("maxiter") is not None
+        and niter > options["maxiter"]
+    ):
+        return 9
     for model_param, bb in zip(model_params, bounds):
         left_check = maths.isclose(model_param, bb[0], rel_tol=0.01)
         right_check = maths.isclose(model_param, bb[1], rel_tol=0.01)
-        # left_advisory = (
-        #     "near_left_bnd" if left_check else "not_near_left_bnd"
-        # )
-        # right_advisory = (
-        #     "near_right_bnd" if right_check else "not_near_rgt_bnd"
-        # )
-        # print(
-        #     "Convergence success after ",
-        #     niter,
-        #     " iterations: ",
-        #     model_param,
-        #     bb[0],
-        #     bb[1],
-        #     left_advisory,
-        #     right_advisory,
-        # )
         if left_check:
             fit_success = 1 if fit_success == 0 else 3
         if right_check:
@@ -829,6 +834,7 @@ def _get_fit_function(
     guesses: list[float],
     method: str,
     tol: float,
+    options: dict[str, Any] | None = None,
 ) -> Callable[[tuple[np.ndarray, np.ndarray]], list[Any]]:
     def run_with_train(
         train: tuple[np.ndarray, np.ndarray],
@@ -841,6 +847,7 @@ def _get_fit_function(
             bounds=bounds,
             method=method,
             tol=tol,
+            options=options,
         )
         model_params = list(result.x)
         if not ellipse_model.unit_sigma:
@@ -849,10 +856,14 @@ def _get_fit_function(
         validate_ellipse_params(model_params, ellipse_model)
         model_params.append(0.0)  # Space for standard deviation
 
-        success = _get_fit_score(model_params, bounds)
+        n_iter = result.nit
+        if result.success:
+            success = _get_fit_score(model_params, bounds, n_iter, options)
+        else:
+            success = 9
 
         model_params.append(success)
-        model_params.append(result.nit)
+        model_params.append(n_iter)
 
         return model_params
 
@@ -862,11 +873,38 @@ def _get_fit_function(
 def params_to_xarray(
     params: np.ndarray,
     ellipse_model: EllipseModel,
-    mask: np.ndarray,
     coords: xr.Coordinates,
+    mask: np.ndarray | None = None,
     default_value: Any = np.nan,
 ) -> xr.Dataset:
-    """Convert numpy array of parameters to a Dataset"""
+    """
+    Convert NumPy array of ellipse parameters to an xarray Dataset using
+    an ellipse model.
+
+    Parameters
+    ----------
+    params : numpy.ndarray
+        Containing the ellipse parameters, and estimator information including
+        standard deviation, fit success, and number of iterations. Each variable
+        is a column in this array, and the number of columns is expected to be
+        the length of the `supercategory_params` attribute of the ellipse_model.
+    ellipse_model : EllipseModel
+        The ellipse model used to define the parameters.
+    coords : xarray.Coordinates
+        The coordinate system of the output Dataset.
+    mask : numpy.ndarray | None
+        Optional mask used in generation of the ellipse parameters.
+    default_value : Any
+        Default value(s) to be used for masked values in the returned dataset.
+        Can be specified as a single value used for each parameter, or a list
+        of values.
+
+    Returns
+    -------
+    params_ds : xarray.Dataset
+        An xarray Dataset containing each parameter as a DataArray with
+        parameter name and unit derived from the input ellipse_model.
+    """
     parameters = ellipse_model.supercategory_params
     n_params = len(parameters)
 
@@ -892,8 +930,12 @@ def params_to_xarray(
     params_ds = xr.Dataset(coords=coords)
 
     for i, (param_name, unit) in enumerate(parameters.items()):
-        data = uncompress_masked(
-            params[:, i], mask, fill_value=default_value[i]
+        data = (
+            params[:, i]
+            if mask is None
+            else uncompress_masked(
+                params[:, i], mask, fill_value=default_value[i]
+            )
         )
         params_ds[param_name] = xr.DataArray(
             data=data,
@@ -920,8 +962,145 @@ def get_ellipse_params(
     method: str = "Nelder-Mead",
     tol: float = 0.001,
     default_value: Any = np.nan,
+    options: dict[str, Any] | None = None,
 ) -> xr.Dataset:
-    """Get ellipse parameters using a parallel process"""
+    """
+    Get ellipse parameters using a batched parallel process.
+
+    Compute all ellipse parameters at all unmasked positions for an input
+    EllipseBuilder object.
+
+    Makes use of a batched approach to precompute training data for a batch
+    of positions, allowing parallel processing with duplication of the
+    EllipseBuilder class.
+
+    Parameters
+    ----------
+    ellipse_model : EllipseModel
+        The ellipse model used to define the parameters of the system.
+
+    ellipse_builder : EllipseBuilder
+        The ellipse build object used to define the training data used for
+        estimating the ellipse parameters.
+
+    n_par_jobs : int
+        Number of parallel jobs to spawn, defaults to 1.
+
+    par_backend : str
+        Parallel backend to use with 'joblib.Parallel'. Defaults to
+        "loky".
+
+    batch_size : int | None
+        Size of the batches used to precompute training data. Defaults to
+        8 x n_par_jobs.
+
+    max_distance : float
+        Maximum separation in distance unit that data will be fed
+        into parameter fitting
+        Units depend on physical_distance attribute (km if True, otherwise
+        degrees). Defaults to 6000 km.
+
+    min_distance: float
+        Minimum separation in distance unit that data
+        will be fed into parameter fitting
+        Units depend on physical_distance attribute (km if True, otherwise
+        degrees).
+        Note: Due to the way we compute the Matern function,
+        it is undefined at dist == 0 even if the limit -> zero is obvious.
+        Defaults to 0.3 km.
+
+    delta_x_method : str
+        How to compute distances between grid points
+        For istropic variogram/covariances, this is a trivial problem;
+        you can just take the haversine or
+        Euclidean ("tunnel") distance as they are non-directional.
+
+        But it is non trivial for anistropic cases,
+        you have to define a set of orthogonal space. In HadSST4,
+        Earth is assumed to be cylindrical "tin can" Earth,
+        so you can just define the orthogonal space by
+        lines of constant lat and lon (delta_x_method="Met_Office").
+
+        The modified "Modified_Met_Office" is a variation to that,
+        but allow the tin can get squished at the poles.
+        (Sinusoidal projection). This does results in a problem:
+        the zonal displacement now depends in which latitude
+        you compute on (at the beginning latitude or at the end latitude).
+        Here we take the average of the two.
+
+        Defaults to "Modified_Met_Office".
+
+    physical_distance_selection : bool
+        Select training data using physical distance (haversine distance) or
+        Euclidean distance of degree difference between each position and
+        all possible training data. Data that falls within the min and max
+        distance values using the selected distance method are selected as
+        training data.
+
+    guesses : list | None
+        Initial guess values that get feeds in the optimizer for MLE.
+        In scipy, you are required to do so (but R often doesn't).
+        You should anyway; sometimes they do funny things
+        if you don't (per recommendation of David Stephenson).
+        Defaults to the defaults for the input ellipse_model.
+
+    bounds : list[tuple[float, float]] | None
+        This is essentially a Bayesian "uniformative prior"
+        that forces convergence if the optimizer hits the bound.
+        For lower resolution fitting, this is rarely a problem.
+        For higher resolution fits, this often interacts with
+        the limit of the data you can put into the fit the optimizer
+        may fail to converge if the input data is very smooth (aka ENSO
+        region, where anomalies are smooth over very large (~10000km)
+        scales). Defaults to defaults for the input ellipse_model.
+
+    method : str
+        scipy.optimize method. Nelder-Mead is the one used by [Karspeck]_.
+        See https://docs.scipy.org/doc/scipy/tutorial/optimize.html
+        for valid options. Defaults to "Nelder-Mead".
+
+    tol : float
+        Set convergence tolerance for scipy optimize.
+        See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html#scipy.optimize.minimize
+
+        Note on new tol kwarg:
+        For N-M, this sets the value to both xatol and fatol
+        Default is 1E-4
+        Since it affects accuracy of all values including rotation angle
+        0.001 rad ~ 0.05 deg,
+
+    default_value : Any
+        Default value(s) to be used for masked values in the returned dataset.
+        Can be specified as a single value used for each parameter, or a list
+        of values.
+
+    options : dict[str, Any] | None
+        Options to use in fitting.
+
+    Returns
+    -------
+    xarray.Dataset
+        Containing the ellipse parameters, the standard deviation, fit
+        success defined by
+
+        - -1: Not computed (masked)
+        - 0: success
+        - 2: success but with one parameter reaching upper
+          boundaries
+        - 3: success with multiple parameters reaching the
+          boundaries (aka both Lx and Ly), can be both at lower or
+          upper bound.
+        - 9: fail, probably due to running out of maxiter (see
+          scipy.optimize.minimize kwargs "options)"
+
+        and the number of iterations.
+    """
+    if n_par_jobs == 1:
+        warn(
+            "Using 1 job, it is recommended to use "
+            + "`EllipseBuilder.compute_params` in this case."
+        )
+
     first_loop = True
     results = np.array([])
     batch_size = batch_size or 8 * n_par_jobs
@@ -937,6 +1116,7 @@ def get_ellipse_params(
         guesses=guesses,
         method=method,
         tol=tol,
+        options=options,
     )
 
     for batch in batched(range(len(ellipse_builder.xi_masked)), batch_size):
