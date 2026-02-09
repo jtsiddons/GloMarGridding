@@ -64,7 +64,7 @@
 
 
 \title{GloMarGridding}
-\date{Jan 12, 2026}
+\date{Feb 09, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -1194,7 +1194,7 @@ The choice to default to 1 follows Karspeck et al. 2012 \sphinxcite{index:karspe
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{fit}}}
-{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}bootstrap\_parallel\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{backend}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}loky\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{random\_seed}\DUrole{o}{=}\DUrole{default_value}{1234}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}bootstrap\_parallel\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{backend}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}loky\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{random\_seed}\DUrole{o}{=}\DUrole{default_value}{1234}}\sphinxparamcomma \sphinxparam{\DUrole{n}{options}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1266,6 +1266,10 @@ error is computed.
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{random\_seed=1234}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Random seed for bootstrap
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{options}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{Any}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Options to use in fitting.
+
 \end{itemize}
 
 \sphinxlineitem{Return type}
@@ -1301,7 +1305,7 @@ error is computed.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{negative\_log\_likelihood}}}
-{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{params}}\sphinxparamcomma \sphinxparam{\DUrole{n}{arctanh\_transform}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{\sphinxparam{\DUrole{n}{params}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{arctanh\_transform}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1453,7 +1457,7 @@ Calculate covariance and correlation matrices.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{compute\_params}}}
-{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{\sphinxparam{\DUrole{n}{default\_value}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.0001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{options}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1624,6 +1628,10 @@ all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
 training data.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{options}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{Any}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Options to use in fitting.
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
@@ -1633,6 +1641,10 @@ training data.
 \sphinxstylestrong{params} \textendash{} Containing arrays for each parameter in the ellipse model class.
 Note that one array is likely to be “qc\_code”, which takes values:
 \begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxhyphen{}1: Not computed (masked)
+
 \item {}
 \sphinxAtStartPar
 0: success
@@ -1646,7 +1658,7 @@ boundaries
 \sphinxAtStartPar
 3: success with multiple parameters reaching the
 boundaries (aka both Lx and Ly), can be both at lower or
-upper boundaries
+upper bound.
 
 \item {}
 \sphinxAtStartPar
@@ -1693,7 +1705,7 @@ that corresponds to a specific lat lon
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{fit\_ellipse\_model}}}
-{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{\sphinxparam{\DUrole{n}{xy\_point}}\sphinxparamcomma \sphinxparam{\DUrole{n}{matern\_ellipse}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{opt\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimate\_SE}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_sim}\DUrole{o}{=}\DUrole{default_value}{500}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{options}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1854,6 +1866,10 @@ all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
 training data.
 
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{options}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{Any}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Options to use in fitting.
+
 \end{itemize}
 
 \sphinxlineitem{Returns}
@@ -1869,6 +1885,202 @@ dict
 
 \end{fulllineitems}
 
+
+\end{fulllineitems}
+
+\index{get\_ellipse\_params() (in module glomar\_gridding.ellipse.estimate)@\spxentry{get\_ellipse\_params()}\spxextra{in module glomar\_gridding.ellipse.estimate}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.estimate.get_ellipse_params}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.estimate.}}\sphinxbfcode{\sphinxupquote{get\_ellipse\_params}}}
+{\sphinxparam{\DUrole{n}{ellipse\_model}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ellipse\_builder}}\sphinxparamcomma \sphinxparam{\DUrole{n}{n\_par\_jobs}\DUrole{o}{=}\DUrole{default_value}{4}}\sphinxparamcomma \sphinxparam{\DUrole{n}{par\_backend}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}loky\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_distance}\DUrole{o}{=}\DUrole{default_value}{6000}}\sphinxparamcomma \sphinxparam{\DUrole{n}{min\_distance}\DUrole{o}{=}\DUrole{default_value}{0.3}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{physical\_distance\_selection}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{guesses}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Nelder\sphinxhyphen{}Mead\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{tol}\DUrole{o}{=}\DUrole{default_value}{0.001}}\sphinxparamcomma \sphinxparam{\DUrole{n}{default\_value}\DUrole{o}{=}\DUrole{default_value}{nan}}\sphinxparamcomma \sphinxparam{\DUrole{n}{options}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get ellipse parameters using a batched parallel process.
+
+\sphinxAtStartPar
+Compute all ellipse parameters at all unmasked positions for an input
+EllipseBuilder object.
+
+\sphinxAtStartPar
+Makes use of a batched approach to precompute training data for a batch
+of positions, allowing parallel processing with duplication of the
+EllipseBuilder class.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{ellipse\_model}} ({\hyperref[\detokenize{ellipse:glomar_gridding.ellipse.EllipseModel}]{\sphinxcrossref{\sphinxstyleliteralemphasis{\sphinxupquote{EllipseModel}}}}}) \textendash{} The ellipse model used to define the parameters of the system.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{ellipse\_builder}} ({\hyperref[\detokenize{ellipse:glomar_gridding.ellipse.EllipseBuilder}]{\sphinxcrossref{\sphinxstyleliteralemphasis{\sphinxupquote{EllipseBuilder}}}}}) \textendash{} The ellipse build object used to define the training data used for
+estimating the ellipse parameters.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{n\_par\_jobs}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of parallel jobs to spawn, defaults to 1.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{par\_backend}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Parallel backend to use with ‘joblib.Parallel’. Defaults to
+“loky”.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{batch\_size}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Size of the batches used to precompute training data. Defaults to
+8 x n\_par\_jobs.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Maximum separation in distance unit that data will be fed
+into parameter fitting
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees). Defaults to 6000 km.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Minimum separation in distance unit that data
+will be fed into parameter fitting
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees).
+Note: Due to the way we compute the Matern function,
+it is undefined at dist == 0 even if the limit \sphinxhyphen{}\textgreater{} zero is obvious.
+Defaults to 0.3 km.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{delta\_x\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{}
+\sphinxAtStartPar
+How to compute distances between grid points
+For istropic variogram/covariances, this is a trivial problem;
+you can just take the haversine or
+Euclidean (“tunnel”) distance as they are non\sphinxhyphen{}directional.
+
+\sphinxAtStartPar
+But it is non trivial for anistropic cases,
+you have to define a set of orthogonal space. In HadSST4,
+Earth is assumed to be cylindrical “tin can” Earth,
+so you can just define the orthogonal space by
+lines of constant lat and lon (delta\_x\_method=”Met\_Office”).
+
+\sphinxAtStartPar
+The modified “Modified\_Met\_Office” is a variation to that,
+but allow the tin can get squished at the poles.
+(Sinusoidal projection). This does results in a problem:
+the zonal displacement now depends in which latitude
+you compute on (at the beginning latitude or at the end latitude).
+Here we take the average of the two.
+
+\sphinxAtStartPar
+Defaults to “Modified\_Met\_Office”.
+
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Select training data using physical distance (haversine distance) or
+Euclidean distance of degree difference between each position and
+all possible training data. Data that falls within the min and max
+distance values using the selected distance method are selected as
+training data.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{guesses}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Initial guess values that get feeds in the optimizer for MLE.
+In scipy, you are required to do so (but R often doesn’t).
+You should anyway; sometimes they do funny things
+if you don’t (per recommendation of David Stephenson).
+Defaults to the defaults for the input ellipse\_model.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} This is essentially a Bayesian “uniformative prior”
+that forces convergence if the optimizer hits the bound.
+For lower resolution fitting, this is rarely a problem.
+For higher resolution fits, this often interacts with
+the limit of the data you can put into the fit the optimizer
+may fail to converge if the input data is very smooth (aka ENSO
+region, where anomalies are smooth over very large (\textasciitilde{}10000km)
+scales). Defaults to defaults for the input ellipse\_model.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize method. Nelder\sphinxhyphen{}Mead is the one used by \sphinxcite{index:karspeck}.
+See \sphinxurl{https://docs.scipy.org/doc/scipy/tutorial/optimize.html}
+for valid options. Defaults to “Nelder\sphinxhyphen{}Mead”.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{tol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{}
+\sphinxAtStartPar
+Set convergence tolerance for scipy optimize.
+See \sphinxurl{https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html\#scipy.optimize.minimize}
+
+\sphinxAtStartPar
+Note on new tol kwarg:
+For N\sphinxhyphen{}M, this sets the value to both xatol and fatol
+Default is 1E\sphinxhyphen{}4
+Since it affects accuracy of all values including rotation angle
+0.001 rad \textasciitilde{} 0.05 deg,
+
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{default\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} Default value(s) to be used for masked values in the returned dataset.
+Can be specified as a single value used for each parameter, or a list
+of values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{options}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{Any}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Options to use in fitting.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+
+\sphinxAtStartPar
+Containing the ellipse parameters, the standard deviation, fit
+success defined by
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxhyphen{}1: Not computed (masked)
+
+\item {}
+\sphinxAtStartPar
+0: success
+
+\item {}
+\sphinxAtStartPar
+2: success but with one parameter reaching upper
+boundaries
+
+\item {}
+\sphinxAtStartPar
+3: success with multiple parameters reaching the
+boundaries (aka both Lx and Ly), can be both at lower or
+upper bound.
+
+\item {}
+\sphinxAtStartPar
+9: fail, probably due to running out of maxiter (see
+scipy.optimize.minimize kwargs “options)”
+
+\end{itemize}
+
+\sphinxAtStartPar
+and the number of iterations.
+
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.Dataset
+
+\end{description}\end{quote}
 
 \end{fulllineitems}
 
