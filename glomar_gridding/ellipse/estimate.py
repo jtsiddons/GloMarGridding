@@ -950,7 +950,7 @@ def params_to_xarray(
 def get_ellipse_params(
     ellipse_model: EllipseModel,
     ellipse_builder: EllipseBuilder,
-    n_par_jobs: int = DEFAULT_N_JOBS,
+    n_par_jobs: int = 1,
     par_backend: str = DEFAULT_BACKEND,
     batch_size: int | None = None,
     max_distance: float = 6_000,
