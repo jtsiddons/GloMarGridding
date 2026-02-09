@@ -300,7 +300,7 @@ class EllipseBuilder:
 
             Note on new tol kwarg:
             For N-M, this sets the value to both xatol and fatol
-            Default is 1E-4 (?)
+            Default is 1E-3 (?)
             Since it affects accuracy of all values including rotation
             rotation angle 0.001 rad ~ 0.05 deg
 
@@ -508,7 +508,7 @@ class EllipseBuilder:
         guesses: list[float] | None = None,
         bounds: list[tuple[float, float]] | None = None,
         opt_method: str = "Nelder-Mead",
-        tol: float = 1e-4,
+        tol: float = 1e-3,
         estimate_SE: str | None = None,
         n_jobs: int = DEFAULT_N_JOBS,
         n_sim: int = 500,
@@ -615,7 +615,7 @@ class EllipseBuilder:
 
             Note on new tol kwarg:
             For N-M, this sets the value to both xatol and fatol
-            Default is 1E-4
+            Default is 1E-3
             Since it affects accuracy of all values including rotation
             rotation angle 0.001 rad ~ 0.05 deg
 
@@ -1065,7 +1065,7 @@ def get_ellipse_params(
 
         Note on new tol kwarg:
         For N-M, this sets the value to both xatol and fatol
-        Default is 1E-4
+        Default is 1E-3
         Since it affects accuracy of all values including rotation angle
         0.001 rad ~ 0.05 deg,
 
