@@ -4,6 +4,10 @@
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd).
 
+### Breaking Changes
+
+* Raise `NotImplementedError` for `ellipse.EllipseModel` if `unit_sigma=False` (#91)
+
 ### New Features
 
 * Add parallel option to estimate ellipse parameters using `itertools.batched` and
