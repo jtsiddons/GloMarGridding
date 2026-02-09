@@ -927,7 +927,7 @@ def params_to_xarray(
             "Cannot set default values for input default values size mismatch "
             + "to parameters."
         )
-    params_ds = xr.Dataset(coords=coords)
+    params_ds = xr.Dataset(coords=out_coords)
 
     for i, (param_name, unit) in enumerate(parameters.items()):
         data = (
