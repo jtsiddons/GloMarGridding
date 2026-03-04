@@ -735,11 +735,40 @@ class EllipseBuilder:
 
 
 def _get_fit_score(
-    model_params,
-    bounds,
-    niter=1,
+    model_params: list[float],
+    bounds: list[tuple[float, float]],
+    niter: int = 1,
     options: dict[str, Any] | None = None,
 ) -> int:
+    """
+    Get a score of the fit following:
+
+    - 0: success
+    - 2: success but with one parameter reaching upper
+      boundaries
+    - 3: success with multiple parameters reaching the
+      boundaries (aka both Lx and Ly), can be both at lower or
+      upper bound.
+    - 9: fail, probably due to running out of maxiter (see
+      scipy.optimize.minimize kwargs "options)"
+
+    Parameters
+    ----------
+    model_params : list[float]
+        The parameters from ellipse fitting.
+    bounds : list[tuple[float, float]]
+        The bounds on the parameters
+    niter : int
+        The number of iterations from the fitting.
+    options : dict[str, Any] | None
+        The options used in fitting. The number of iterations will be checked
+        against the 'maxiter' value if set.
+
+    Returns
+    -------
+    fit_success : int
+        The score of the fitting.
+    """
     fit_success: int = 0
     if (
         options is not None
@@ -806,10 +835,23 @@ def init_parameter_set(
 
 
 def validate_ellipse_params(
-    model_params: list[Any],
+    model_params: list[float],
     ellipse: EllipseModel,
 ) -> None:
-    """Ensure Lx > Ly, ensure theta is between -pi, pi"""
+    """
+    Ensure Lx > Ly, ensure theta is between -pi, pi. Updates values in-place.
+
+    Parameters
+    ----------
+    model_params : list[Any]
+        Parameters from the ellipse model fitting.
+    ellipse : EllipseModel
+        The ellipse_model used for fitting.
+
+    Returns
+    -------
+    None
+    """
     # Updates in place
     # Handle Ly > Lx
     if ellipse.anisotropic and model_params[1] > model_params[0]:
@@ -836,6 +878,32 @@ def _get_fit_function(
     tol: float,
     options: dict[str, Any] | None = None,
 ) -> Callable[[tuple[np.ndarray, np.ndarray]], list[Any]]:
+    """
+    Get a fitting function for training data for an ellipse model. For use in
+    the parallel ellipse parameter estimation.
+
+    Parameters
+    ----------
+    ellipse_model : EllipseModel
+        The ellipse model used in the estimation.
+    bounds : list[tuple[float, float]]
+        The bounds for the parameters in the fitting.
+    guesses : list[float]
+        The initial guesses for the parameters.
+    method : str
+        The minimisation method used by `scipy.optimize.minimize`.
+    tol : float
+        Tolerance for the minimisation.
+    options : dict[str, Any] | None
+        Optional options used in the fitting.
+
+    Returns
+    -------
+    Callable[[tuple[numpy.ndarray, numpy.ndarray]], list[Any]]
+        Function taking training data and returning estimated parameters for
+        an ellipse defined the ellipse_model.
+    """
+
     def run_with_train(
         train: tuple[np.ndarray, np.ndarray],
     ) -> list[Any]:
