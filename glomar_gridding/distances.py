@@ -42,7 +42,17 @@ def rot_mat(angle: float) -> np.ndarray:
     """
     Compute a 2d rotation matrix from an angle.
 
-    The input angle must be in radians
+    The input angle must be in radians.
+
+    Parameters
+    ----------
+    angle : float
+        The angle in radians.
+
+    Returns
+    -------
+    numpy.ndarray
+        A rotation matrix defined by the input angle.
     """
     c_ang = cos(angle)
     s_ang = sin(angle)
@@ -50,7 +60,19 @@ def rot_mat(angle: float) -> np.ndarray:
 
 
 def inv_2d(mat: np.ndarray) -> np.ndarray:
-    """Compute the inverse of a 2 x 2 matrix"""
+    """
+    Compute the inverse of a 2 x 2 matrix.
+
+    Parameters
+    ----------
+    mat : numpy.ndarray
+        The 2 x 2 matrix to invert.
+
+    Returns
+    -------
+    inv : numpy.ndarray
+        The inverse matrix.
+    """
     det_denom = mat[0, 0] * mat[1, 1] - mat[0, 1] * mat[1, 0]
     if det_denom == 0:
         raise ValueError("Denominator is 0")
@@ -288,20 +310,20 @@ def _latlon2ne(
     """
     Compute Northing and Easting from Latitude and Longitude
 
-    latlons -- a (N, 2) (numpy) array of latlons
-    By GIS and netcdf as well as sklearn convention
-    [X, 0] = lat
-    [X, 1] = lon
-    aka [LAT, LON] [Y,X] NOT [X,Y]!!!!!
+    Parameters
+    ----------
+    latlons : numpy.ndarray
+        An array containing rows of latitude and longitude pairs. Shape (N, 2).
+    latlons_in_rads : bool
+        Boolean indicating whether latlons are in radians.
+    latlon0 : tuple[float, float]
+        tuple containing the latitude and longitude of the central point
+        Transverse Mercator for reprojecting to Northing East
 
-    latlons_in_rads -- boolean stating if latlons are in radians
-    (default False -- input are in degrees)
-
-    latlon0 - a (lat, lon) in degree tuple stating
-    the central point of Transverse Mercator for reprojecting to
-    Northing East
-
-    returns a (N, 2) numpy array of Northing Easting [km]
+    Returns
+    -------
+    ne : numpy.ndarray
+        The Northing and Easting values in a numpy.ndarray. Shape (N, 2).
     """
     if latlons_in_rads:
         latlons2 = np.rad2deg(latlons)
@@ -327,16 +349,26 @@ def _latlon2ne(
     df1.to_crs(proj4, inplace=True)
     df1["easting"] = df1.geometry.x
     df1["northing"] = df1.geometry.y
-    pos = df1[["northing", "easting"]].to_numpy()
-    return pos
+    ne = df1[["northing", "easting"]].to_numpy()
+    return ne
 
 
 def _paired_vector_dist(yx: np.ndarray) -> np.ndarray:
     """
-    Input:
-    (N, 2) array
-    [X, 0] = lat or northing
-    [X, 1] = lon or easting
+    Get a paired vector distance.
+
+    Parameters
+    ----------
+    yx : numpy.ndarray
+        The positions:
+
+        - (N, 2) array
+        - [X, 0] = lat or northing
+        - [X, 1] = lon or easting
+
+    Returns
+    -------
+    numpy.ndarray
     """
     return yx[:, None, :] - yx
 
@@ -347,19 +379,26 @@ def sigma_rot_func(
     theta: float | None,
 ) -> np.ndarray:
     """
-    Equation 15 in Karspeck el al 2011 and Equation 6
-    in Paciorek and Schervish 2006,
-    assuming Sigma(Lx, Ly, theta) locally/moving-window invariant or
-    we have already taken the mean (Sigma overbar, PP06 3.1.1)
+    Compute sigma rotation matrix for an ellipse.
 
-    Lx, Ly - anistropic variogram length scales
-    theta - angle relative to lines of constant latitude
-    theta should be radians, and the fitting code outputs radians by default
+    Parameters
+    ----------
+    Lx : float
+        Long ellipse length scale.
+    Ly : float
+        Short ellipse length scale.
+    theta : float
+        Angle of the ellipse in radians.
 
     Returns
     -------
-    sigma : np.ndarray
+    sigma : numpy.ndarray
         2 x 2 matrix
+
+    References
+    ----------
+    Equation 15 from Karspeck et al. 2011 [Karspeck]_, and Equation 6 from
+    Paciorek and Schervish 2006 [PaciorekSchervish]_.
     """
     L = np.diag([Lx**2.0, Ly**2.0])
     if theta is None:
@@ -375,18 +414,46 @@ def tau_dist(
     sigma: np.ndarray,
 ) -> np.ndarray:
     """
-    Eq.15 in Karspeck paper
-    but it is standard formulation to the
-    Mahalanobis distance
-    https://en.wikipedia.org/wiki/Mahalanobis_distance
-    10.1002/qj.900
+    The Mahalanobis distance.
+
+    Parameters
+    ----------
+    dE : float
+        Easting
+    dN : float
+        Northing
+    sigma : numpy.ndarray
+        2 x 2 sigma rotation matrix
+
+    Returns
+    -------
+    numpy.ndarray
+        Mahalanobis distance matrix
+
+    References
+    ----------
+    Equation 15 in Karspeck et al. 2011 [Karspeck]_
     """
     dx_vec = np.array([dE, dN])
     return np.sqrt(dx_vec.T @ inv_2d(sigma) @ dx_vec)
 
 
 def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
-    """Wrapper function for computing tau"""
+    """
+    Wrapper function for computing tau/Mahalanobis distance.
+
+    Parameters
+    ----------
+    dyx : numpy.ndarray
+        Array of Northing and Easting values.
+    sigma : numpy.ndarray
+        Sigma rotation matrix for an ellipse.
+
+    Returns
+    -------
+    tau : numpy.ndarray
+        Mahalanobis distances for all points.
+    """
     DE = dyx[:, :, 1]
     DN = dyx[:, :, 0]
 
@@ -403,12 +470,6 @@ def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
 
     Can be used as an input function for observations.dist_weight.
 
-    Eq.15 in Karspeck paper
-    but it is standard formulation to the
-    Mahalanobis distance
-    https://en.wikipedia.org/wiki/Mahalanobis_distance
-    10.1002/qj.900
-
     By Steven Chan - @stchan
 
     Parameters
@@ -424,6 +485,10 @@ def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
     tau : numpy.matrix
         A matrix of dimension n x n where n is the number of rows in `df` and
         is the tau/Mahalanobis distance.
+
+    References
+    ----------
+    Equation 15 in Karspeck et al. 2011 [Karspeck]_
     """
     required_cols = [
         "grid_lon",

@@ -106,12 +106,29 @@ from glomar_gridding.utils import cor_2_cov, cov_2_cor
 
 
 def check_symmetric(
-    a: np.ndarray,
+    mat: np.ndarray,
     rtol: float = 1e-5,
     atol: float = 1e-8,
 ) -> bool:
-    """Helper function for perturb_sym_matrix_2_positive_definite"""
-    return np.allclose(a, a.T, rtol=rtol, atol=atol)
+    """
+    Check that a matrix is symmetric, within some relative or absolute tolerance
+    values.
+
+    Parameters
+    ----------
+    mat : numpy.ndarray
+        The matrix to check.
+    rtol : float
+        The relative tolerance value.
+    atol : float
+        The absolute tolerance value.
+
+    Returns
+    -------
+    bool
+        Indicating if the input matrix is symmetric within the tolerances.
+    """
+    return np.allclose(mat, mat.T, rtol=rtol, atol=atol)
 
 
 def perturb_cov_to_positive_definite(
@@ -461,19 +478,49 @@ def csum_up_to_val(
 
 
 def clean_small(
-    matrix: np.ndarray,
+    mat: np.ndarray,
     atol: float = 1e-5,
 ) -> np.ndarray:
-    """Set small values (abs(x) < atol) in an matrix to 0"""
-    cleaned = matrix.copy()
-    cleaned[np.abs(matrix) < atol] = 0.0
+    """
+    Clean a matrix by setting small values below some absolute tolerance
+    (abs(val) < atol) to 0.
+
+    Parameters
+    ----------
+    mat : numpy.ndarray
+        The matrix to clean.
+    atol : float
+        The value below which absolute values in the matrix are set to 0.
+
+    Returns
+    -------
+    cleaned : numpy.ndarray
+        The cleaned matrix with small values set to 0.
+    """
+    cleaned = mat.copy()
+    cleaned[np.abs(mat) < atol] = 0.0
     return cleaned
 
 
-def _find_index_explained_variance(eigvals, target=0.95):
+def _find_index_explained_variance(
+    eigvals: np.ndarray,
+    target: float = 0.95,
+) -> int:
     """
     Find the index of the eigenvalue for which the normalised cumulative sum
     exceeds a target variance.
+
+    Parameters
+    ----------
+    eigvals : numpy.ndarray
+        The eigenvalues
+    target : float
+        The target
+
+    Returns
+    -------
+    i2goal : int
+        The resulting index.
     """
     total_variance = np.sum(eigvals)
     target_explained_variance = target * total_variance
@@ -504,6 +551,20 @@ def _find_index_aspect_ratio(
     These parameters do not work in general must be determined from input data.
 
     Eigenvalue threshold: threshold = (1.0 + SQRT(q))**2
+
+    Parameters
+    ----------
+    eigvals : numpy.ndarray
+        The eigenvalues.
+    num_grid_pts : int
+        Number of grid points in the system.
+    num_times : int
+        Number of time-points in the system.
+
+    Returns
+    -------
+    int
+        The index of the eigenvalues.
 
     References
     ----------
@@ -609,7 +670,7 @@ def laloux_clip(
     - [Laloux]_
     - [Bun]_
     """
-    num_grid_pts = num_grid_pts or cov.shape[0]
+    num_grid_pts = num_grid_pts or int(cov.shape[0])
     vars = np.diag(cov)
     cor = cov_2_cor(cov)
 
