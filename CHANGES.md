@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons).
+
+### Internal changes
+
+* Added "DOC" ruleset for ruff linting, and amended docstrings to align with rules (#99).
+
 ## 1.1.0 (2026-01-12)
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd), Steven Chan (@SCChan21), Richard
