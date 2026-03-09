@@ -216,15 +216,20 @@ class Kriging(ABC):
         raise NotImplementedError("`solve` not implemented for default class")
 
     @abstractmethod
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, full_covariance: bool = False) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
 
+        Parameters
+        ----------
+        full_covariance : bool
+            Return the full Kriging covariance if True. Defaults to False.
+
         Returns
         -------
         uncert : numpy.ndarray
-            The Kriging uncertainty.
+            The Kriging uncertainty or the full Kriging covariance.
         """
         raise NotImplementedError(
             "`get_uncertainty` not implemented for default class"
@@ -416,15 +421,20 @@ class SimpleKriging(Kriging):
 
         return self.kriging_weights @ self.obs + mean
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, full_covariance: bool = False) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
 
+        Parameters
+        ----------
+        full_covariance : bool
+            Return the full Kriging covariance if True. Defaults to False.
+
         Returns
         -------
         uncert : numpy.ndarray
-            The Kriging uncertainty.
+            The Kriging uncertainty or the full Kriging covariance.
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -432,6 +442,10 @@ class SimpleKriging(Kriging):
         obs_grid_cov = self.covariance[self.idx, :]
 
         kriging_weights = self.kriging_weights @ obs_grid_cov
+
+        if full_covariance:
+            return self.covariance - kriging_weights
+
         dz_squared = np.diag(self.covariance - kriging_weights)
         dz_squared = adjust_small_negative(dz_squared)
         uncert = np.sqrt(dz_squared)
@@ -678,15 +692,20 @@ class OrdinaryKriging(Kriging):
 
         return self.kriging_weights @ grid_obs
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, full_covariance: bool = False) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
 
+        Parameters
+        ----------
+        full_covariance : bool
+            Return the full Kriging covariance if True. Defaults to False.
+
         Returns
         -------
         uncert : numpy.ndarray
-            The Kriging uncertainty.
+            The Kriging uncertainty or the full Kriging covariance.
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -698,6 +717,10 @@ class OrdinaryKriging(Kriging):
 
         alpha = self.kriging_weights[:, -1]
         kriging_weights = self.kriging_weights @ obs_grid_cov
+
+        if full_covariance:
+            return self.covariance - kriging_weights - np.diag(alpha)
+
         uncert_squared = np.diag(self.covariance - kriging_weights) - alpha
         uncert_squared = adjust_small_negative(uncert_squared)
         uncert = np.sqrt(uncert_squared)

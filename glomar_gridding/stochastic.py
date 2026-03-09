@@ -219,15 +219,20 @@ class StochasticKriging(Kriging):
 
         return None
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, full_covariance: bool = False) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
 
+        Parameters
+        ----------
+        full_covariance : bool
+            Return the full Kriging covariance if True. Defaults to False.
+
         Returns
         -------
         uncert : numpy.ndarray
-            The Kriging uncertainty.
+            The Kriging uncertainty or the full Kriging covariance.
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -239,6 +244,10 @@ class StochasticKriging(Kriging):
 
         alpha = self.kriging_weights[:, -1]
         kriging_weights = self.kriging_weights @ obs_grid_cov
+
+        if full_covariance:
+            return self.covariance - kriging_weights - np.diag(alpha)
+
         uncert_squared = np.diag(self.covariance - kriging_weights) - alpha
         uncert_squared = adjust_small_negative(uncert_squared)
         uncert = np.sqrt(uncert_squared)
