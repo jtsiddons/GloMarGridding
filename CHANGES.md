@@ -2,7 +2,11 @@
 
 ## 1.2.0 (Unreleased)
 
-Contributors to this version: Joseph Siddons (@jtsiddons).
+Contributors to this version: Joseph Siddons (@jtsiddons), Steven Chan (@SCChan21).
+
+### New features and enhancements
+
+* Added option to return full uncertainty matrix from `Kriging` classes (#101).
 
 ### Internal changes
 
