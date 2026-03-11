@@ -248,7 +248,7 @@ def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
         err_cov[*i] = val
 
     OKrige = OrdinaryKriging(
-        covariance=covariance.values,
+        covariance=covariance.values.copy(),
         idx=grid_idx,
         obs=obs_vals,
         error_cov=err_cov,
@@ -256,6 +256,8 @@ def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
     k = OKrige.solve()
     u = OKrige.get_uncertainty()
     a = OKrige.constraint_mask()
+
+    assert np.all(OKrige.covariance == covariance.values)
 
     assert k.shape == a.shape == u.shape
 
