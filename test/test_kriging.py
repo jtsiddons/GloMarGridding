@@ -296,8 +296,10 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
     for i, val in zip(idx, err_cov_vals.flatten()):
         err_cov[*i] = val
 
+    assert not np.all(np.isnan(err_cov))
+
     SKrige = SimpleKriging(
-        covariance=covariance.values,
+        covariance=covariance.values.copy(),
         idx=grid_idx,
         obs=obs_vals,
         error_cov=err_cov,
@@ -307,6 +309,7 @@ def test_simple_kriging_class_methods() -> None:  # noqa: D103
     a = SKrige.constraint_mask()
 
     assert k.shape == a.shape == u.shape
+    assert np.all(SKrige.covariance == covariance.values)
 
     S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov_vals
     SS = covariance.values[grid_idx, :]
