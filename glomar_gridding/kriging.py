@@ -339,7 +339,9 @@ class SimpleKriging(Kriging):
 
         Sets the `kriging_weights` attribute.
         """
-        obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
+        obs_obs_cov = self.covariance[
+            self.idx[:, None], self.idx[None, :]
+        ].copy()
         obs_grid_cov = self.covariance[self.idx, :]
 
         # Add error covariance
@@ -582,7 +584,9 @@ class OrdinaryKriging(Kriging):
         N = len(self.idx)
         M = self.covariance.shape[0]
 
-        obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
+        obs_obs_cov = self.covariance[
+            self.idx[:, None], self.idx[None, :]
+        ].copy()
         obs_grid_cov = self.covariance[self.idx, :]
 
         # Add error covariance
@@ -711,7 +715,7 @@ class OrdinaryKriging(Kriging):
             raise KeyError("Please compute Kriging Weights first")
 
         M = self.covariance.shape[0]
-        obs_grid_cov = self.covariance[self.idx, :]
+        obs_grid_cov = self.covariance[self.idx, :].copy()
         ones_m = np.ones((1, M), dtype=self.covariance.dtype)
         obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
 
