@@ -786,7 +786,9 @@ class OrdinaryKriging(Kriging):
         [Morice_2021]_: https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2019JD032361
         """
         if simple_kriging_weights is None:
-            obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
+            obs_obs_cov = self.covariance[
+                self.idx[:, None], self.idx[None, :]
+            ].copy()
             obs_grid_cov = self.covariance[self.idx, :]
 
             # Add error covariance
