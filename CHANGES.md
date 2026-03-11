@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons).
+
+### Bug Fixes
+
+* `kriging.Kriging.get_kriging_weights` methods now create a copy when subsetting from the
+  covariance matrix for safety to ensure no changes are made to the covariance (#103).
+
 ## 1.1.0 (2026-01-12)
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd), Steven Chan (@SCChan21), Richard
