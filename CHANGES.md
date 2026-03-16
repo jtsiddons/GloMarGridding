@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons).
+
+### Bug fixes
+
+* Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
+  `grid.map_to_grid`, dynamically set the name using the `grid_prefix` argument (#105).
+
 ## 1.1.0 (2026-01-12)
 
 Contributors to this version: Joseph Siddons (@jtsiddons, @josidd), Steven Chan (@SCChan21), Richard
@@ -33,7 +42,7 @@ Cornes (@rcornes)
   absolute tolerance in input covariance symmetry; if slightly asymmetric, use `(cov + cov.T) / 2`
   (#73)
 
-### Bug Fixes
+### Bug fixes
 
 * Fixed typo in `kriging.Kriging.constraint_mask` docstrings (#63)
 * Return vector in `stochastic.scipy_mv_normal_draw` when back-up approach
