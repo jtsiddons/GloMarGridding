@@ -254,10 +254,9 @@ def dist_weight(
         rows of weights are in a sorted order of the gridbox. Should this be
         incorrect, one should re-arrange the rows after calling this function.
     """
-    # QUESTION: Do we want to sort the unique grid-cell values?
-    #           Ensures consistency between runs if the frame ordering gets
-    #           shuffled in some way.
-    # QUESTION: Maybe sort by "flattened_idx", then no need to sort obs?
+    # NOTE: Sorting the unique grid-cell values ensures consistency between runs
+    #       if the frame ordering gets shuffled in some way.
+    # NOTE: Alternatively sort by "flattened_idx"
     gridboxes = sorted(df[grid_idx].unique())
     _n_gridboxes = len(gridboxes)
     _n_obs = df.height

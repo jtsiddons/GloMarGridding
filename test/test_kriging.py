@@ -441,6 +441,7 @@ def test_filter_bad_error_cov_values() -> None:
             error_cov=err_cov,
         )
 
+    assert OKrige.error_cov is not None
     assert (OKrige.idx == grid_idx[:2]).all()
     assert (OKrige.obs == obs_vals[:2]).all()
     assert OKrige.error_cov.shape == (2, 2)
@@ -486,6 +487,7 @@ def test_filter_bad_error_cov_values_stochastic() -> None:
             error_cov=err_cov,
         )
 
+    assert OKrige.error_cov is not None
     assert (OKrige.idx == grid_idx[:2]).all()
     assert (OKrige.obs == obs_vals[:2]).all()
     assert OKrige.error_cov.shape == (2, 2)

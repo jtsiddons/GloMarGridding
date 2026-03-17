@@ -138,7 +138,7 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
         "default_bounds": [
             (0.5, 50.0),
             (0.5, 30.0),
-            (-2.0 * np.pi, 2.0 * np.pi),
+            (-0.5 * np.pi, 0.5 * np.pi),
         ],
     },
     "anisotropic_rotated_pd": {
@@ -147,7 +147,7 @@ FFORM_PARAMETERS: dict[str, dict[str, Any]] = {
         "default_bounds": [
             (deg_to_km(0.5), deg_to_km(50.0)),
             (deg_to_km(0.5), deg_to_km(30.0)),
-            (-2.0 * maths.pi, 2.0 * maths.pi),
+            (-0.5 * maths.pi, 0.5 * maths.pi),
         ],
     },
 }
@@ -324,14 +324,14 @@ class EllipseModel:
         y_LL = self.cov_ij(X, **kwargs)
 
         if arctanh_transform:
-            # Warning against arctanh(abs(y) > 1); (TODO: Add correction later)
+            # Warning against arctanh(abs(y) > 1);
             arctanh_threshold = 0.999999
             # arctanh_threshold = 1.0
             max_abs_y = np.max(np.abs(y))
             max_abs_yLL = np.max(np.abs(y_LL))
             if max_abs_y >= arctanh_threshold:
                 warn_msg = f"abs(y) >= {arctanh_threshold} detected; "
-                warn_msg += f"fudged to threshold; max(abs(y)) = {max_abs_y}"
+                warn_msg += f"adjusted to threshold; max(abs(y)) = {max_abs_y}"
                 warnings.warn(warn_msg, RuntimeWarning)
                 y[np.abs(y) > arctanh_threshold] = (
                     np.sign(y[np.abs(y) > arctanh_threshold])
@@ -352,7 +352,9 @@ class EllipseModel:
             if max_abs_yLL >= 1:
                 warn_msg = f"abs(y_LL) >= {arctanh_threshold} detected; "
 
-                warn_msg += f"fudged to threshold; max(abs(y_LL))={max_abs_yLL}"
+                warn_msg += (
+                    f"adjusted to threshold; max(abs(y_LL))={max_abs_yLL}"
+                )
                 warnings.warn(warn_msg, RuntimeWarning)
                 y_LL[np.abs(y_LL) > arctanh_threshold] = (
                     np.sign(y_LL[np.abs(y_LL) > arctanh_threshold])

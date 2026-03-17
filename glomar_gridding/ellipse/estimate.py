@@ -201,37 +201,30 @@ class EllipseBuilder:
         physical_distance_selection: bool = True,
     ) -> dict[str, Any] | None:
         """
-        Fit ellipses/covariance models using adhoc local covariances
+        Fit ellipses/covariance models using local covariances.
 
-        the form of the covariance model depends on the "fform" attribute of the
-        Ellipse model:
+        The form of the covariance model depends on the 'anistropic' and
+        'rotated' attributes of the ellipse model:
 
-            isotropic (radial distance only)
-            anistropic (x and y are different, but not rotated)
-            anistropic_rotated (rotated)
+        - anisotropic=False (radial distance only)
+        - anistropic=True and rotated=False (x and y are different, but not
+          rotated)
+        - anistropic=True and rotated=True (x and y are different, ellipse can
+          be rotated)
 
-        If the "fform" attribute ends with _pd then physical distances are used
-        instead of degrees
-
-        range is defined max_distance (either in km and degrees)
-        default is in degrees, but needs to be km if fform is from _pd series
-        <--- likely to be wrong: max_distance should only be in degrees
-
-        there is also a min_distance in which values,
-        matern function is not defined at the origin, so the 0.0 needs to
-        removed
-
-        v = matern covariance function shape parameter
+        The ellipse model attribute v = matern covariance function shape
+        parameter.
         Karspeck et al. [Karspeck]_ and Paciorek & Schervish
         [PaciorekSchervish]_
         use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits:
-            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-              (in radians)
-            - "Modified_Met_Office": uses the average zonal dist at different
-              lat
+        delta_x_method: only meaningful for physical_distance ellipses:
+
+        - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+          (in radians)
+        - "Modified_Met_Office": uses the average zonal dist at different
+          lat
 
         Parameters
         ----------
@@ -241,12 +234,14 @@ class EllipseBuilder:
         max_distance : float
             Maximum separation in distance unit that data will be fed
             into parameter fitting
-            Units depend on fform (it is usually either degrees or km)
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
 
         min_distance: float
             Minimum separation in distance unit that data
             will be fed into parameter fitting
-            Units depend on fform (it is usually either degrees or km)
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
             Note: Due to the way we compute the Matern function,
             it is undefined at dist == 0 even if the limit -> zero is obvious.
 
@@ -409,7 +404,8 @@ class EllipseBuilder:
         # Handle Ly > Lx
         if ellipse.anisotropic and model_params[1] > model_params[0]:
             model_params[0], model_params[1] = model_params[1], model_params[0]
-            model_params[2] += np.pi / 2
+            if ellipse.rotated:
+                model_params[2] += np.pi / 2
 
         # Ensure theta is between -pi, pi
         if not ellipse.rotated:
@@ -529,39 +525,31 @@ class EllipseBuilder:
         physical_distance_selection: bool = True,
     ) -> xr.Dataset:
         """
-        Fit ellipses/covariance models using adhoc local covariances to all
-        unmasked grid points
+        Fit ellipses/covariance models using local covariances to all unmasked
+        grid points.
 
-        The form of the covariance model depends on the "fform" attribute of the
-        Ellipse model:
+        The form of the covariance model depends on the 'anistropic' and
+        'rotated' attributes of the ellipse model:
 
-            - isotropic (radial distance only)
-            - anistropic (x and y are different, but not rotated)
-            - anistropic_rotated (rotated)
+        - anisotropic=False (radial distance only)
+        - anistropic=True and rotated=False (x and y are different, but not
+          rotated)
+        - anistropic=True and rotated=True (x and y are different, ellipse can
+          be rotated)
 
-        If the "fform" attribute ends with _pd then physical distances are used
-        instead of degrees
-
-        range is defined max_distance (either in km and degrees)
-        default is in degrees, but needs to be km if fform is from _pd series
-        <--- likely to be wrong: max_distance should only be in degrees
-
-        there is also a min_distance in which values,
-        matern function is not defined at the origin, so the 0.0 needs to
-        removed
-
-        v = matern covariance function shape parameter
+        The ellipse model attribute v = matern covariance function shape
+        parameter.
         Karspeck et al. [Karspeck]_ and Paciorek & Schervish
         [PaciorekSchervish]_
-        but 0.5 and 1.5 are popular 0.5 gives an exponential decay
+        use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
         lim v-->inf, Gaussian shape
 
-        delta_x_method: only meaningful for _pd fits:
+        delta_x_method: only meaningful for physical_distance ellipses:
 
-            - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
-              (in radians)
-            - "Modified_Met_Office": uses the average zonal dist at different
-              lat
+        - "Met_Office": Cylindrical Earth delta_x = 6400km x delta_lon
+          (in radians)
+        - "Modified_Met_Office": uses the average zonal dist at different
+          lat
 
         Parameters
         ----------
@@ -579,12 +567,14 @@ class EllipseBuilder:
         max_distance : float
             Maximum separation in distance unit that data will be fed
             into parameter fitting
-            Units depend on fform (it is usually either degrees or km)
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
 
         min_distance: float
             Minimum separation in distance unit that data
             will be fed into parameter fitting
-            Units depend on fform (it is usually either degrees or km)
+            Units depend on physical_distance attribute (km if True, otherwise
+            degrees).
             Note: Due to the way we compute the Matern function,
             it is undefined at dist == 0 even if the limit -> zero is obvious.
 

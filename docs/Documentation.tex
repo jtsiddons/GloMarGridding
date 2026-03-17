@@ -7,6 +7,7 @@
 \ifdefined\pdfimageresolution
     \pdfimageresolution= \numexpr \dimexpr1in\relax/\sphinxpxdimen\relax
 \fi
+\newdimen\sphinxremdimen\sphinxremdimen = 10pt
 %% let collapsible pdf bookmarks panel have high depth per default
 \PassOptionsToPackage{bookmarksdepth=5}{hyperref}
 
@@ -64,8 +65,8 @@
 
 
 \title{GloMarGridding}
-\date{Dec 16, 2025}
-\release{1.0.1}
+\date{Mar 17, 2026}
+\release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -554,7 +555,7 @@ xarray.DataArray:
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{grid\_to\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -922,12 +923,6 @@ Karspeck:
 Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
 Note: Note the 2 is outside the square root for middle and right
 e\sphinxhyphen{}folding distance is now at d/SQRT(2) for \(\nu=0.5\)
-\subsubsection*{References}
-
-\sphinxAtStartPar
-see chapter 4.2 of Rasmussen, C. E., \& Williams, C. K. I. (2005).
-Gaussian Processes for Machine Learning. The MIT Press.
-\sphinxurl{https://doi.org/10.7551/mitpress/3206.001.0001}
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
@@ -980,6 +975,12 @@ karspeck: \sphinxurl{https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900}
 \end{itemize}
 
 \end{description}\end{quote}
+\subsubsection*{References}
+
+\sphinxAtStartPar
+see chapter 4.2 of Rasmussen, C. E., \& Williams, C. K. I. (2005).
+Gaussian Processes for Machine Learning. The MIT Press.
+\sphinxurl{https://doi.org/10.7551/mitpress/3206.001.0001}
 \index{fit() (glomar\_gridding.variogram.MaternVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.MaternVariogram method}}
 
 \begin{fulllineitems}
@@ -1457,50 +1458,39 @@ Calculate covariance and correlation matrices.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Fit ellipses/covariance models using adhoc local covariances to all
-unmasked grid points
+Fit ellipses/covariance models using local covariances to all unmasked
+grid points.
 
 \sphinxAtStartPar
-The form of the covariance model depends on the “fform” attribute of the
-Ellipse model:
+The form of the covariance model depends on the ‘anistropic’ and
+‘rotated’ attributes of the ellipse model:
 \begin{itemize}
 \item {}
 \sphinxAtStartPar
-isotropic (radial distance only)
+anisotropic=False (radial distance only)
 
 \item {}
 \sphinxAtStartPar
-anistropic (x and y are different, but not rotated)
+anistropic=True and rotated=False (x and y are different, but not
+rotated)
 
 \item {}
 \sphinxAtStartPar
-anistropic\_rotated (rotated)
+anistropic=True and rotated=True (x and y are different, ellipse can
+be rotated)
 
 \end{itemize}
 
 \sphinxAtStartPar
-If the “fform” attribute ends with \_pd then physical distances are used
-instead of degrees
-
-\sphinxAtStartPar
-range is defined max\_distance (either in km and degrees)
-default is in degrees, but needs to be km if fform is from \_pd series
-\textless{}— likely to be wrong: max\_distance should only be in degrees
-
-\sphinxAtStartPar
-there is also a min\_distance in which values,
-matern function is not defined at the origin, so the 0.0 needs to
-removed
-
-\sphinxAtStartPar
-v = matern covariance function shape parameter
+The ellipse model attribute v = matern covariance function shape
+parameter.
 Karspeck et al. \sphinxcite{index:karspeck} and Paciorek \& Schervish
 \sphinxcite{index:paciorekschervish}
-but 0.5 and 1.5 are popular 0.5 gives an exponential decay
+use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
 lim v\textendash{}\textgreater{}inf, Gaussian shape
 
 \sphinxAtStartPar
-delta\_x\_method: only meaningful for \_pd fits:
+delta\_x\_method: only meaningful for physical\_distance ellipses:
 \begin{itemize}
 \item {}
 \sphinxAtStartPar
@@ -1532,13 +1522,15 @@ of the \sphinxtitleref{EllipseModel}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Maximum separation in distance unit that data will be fed
 into parameter fitting
-Units depend on fform (it is usually either degrees or km)
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees).
 
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Minimum separation in distance unit that data
 will be fed into parameter fitting
-Units depend on fform (it is usually either degrees or km)
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees).
 Note: Due to the way we compute the Matern function,
 it is undefined at dist == 0 even if the limit \sphinxhyphen{}\textgreater{} zero is obvious.
 
@@ -1706,41 +1698,39 @@ that corresponds to a specific lat lon
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Fit ellipses/covariance models using adhoc local covariances
+Fit ellipses/covariance models using local covariances.
 
 \sphinxAtStartPar
-the form of the covariance model depends on the “fform” attribute of the
-Ellipse model:
-\begin{quote}
+The form of the covariance model depends on the ‘anistropic’ and
+‘rotated’ attributes of the ellipse model:
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+anisotropic=False (radial distance only)
+
+\item {}
+\sphinxAtStartPar
+anistropic=True and rotated=False (x and y are different, but not
+rotated)
+
+\item {}
+\sphinxAtStartPar
+anistropic=True and rotated=True (x and y are different, ellipse can
+be rotated)
+
+\end{itemize}
 
 \sphinxAtStartPar
-isotropic (radial distance only)
-anistropic (x and y are different, but not rotated)
-anistropic\_rotated (rotated)
-\end{quote}
-
-\sphinxAtStartPar
-If the “fform” attribute ends with \_pd then physical distances are used
-instead of degrees
-
-\sphinxAtStartPar
-range is defined max\_distance (either in km and degrees)
-default is in degrees, but needs to be km if fform is from \_pd series
-\textless{}— likely to be wrong: max\_distance should only be in degrees
-
-\sphinxAtStartPar
-there is also a min\_distance in which values,
-matern function is not defined at the origin, so the 0.0 needs to
-removed
-
-\sphinxAtStartPar
-v = matern covariance function shape parameter
+The ellipse model attribute v = matern covariance function shape
+parameter.
 Karspeck et al. \sphinxcite{index:karspeck} and Paciorek \& Schervish
 \sphinxcite{index:paciorekschervish}
 use 3 and 4 but 0.5 and 1.5 are popular. 0.5 gives an exponential decay:
 lim v\textendash{}\textgreater{}inf, Gaussian shape
-\begin{description}
-\sphinxlineitem{delta\_x\_method: only meaningful for \_pd fits:}\begin{itemize}
+
+\sphinxAtStartPar
+delta\_x\_method: only meaningful for physical\_distance ellipses:
+\begin{itemize}
 \item {}
 \sphinxAtStartPar
 “Met\_Office”: Cylindrical Earth delta\_x = 6400km x delta\_lon
@@ -1752,8 +1742,6 @@ lim v\textendash{}\textgreater{}inf, Gaussian shape
 lat
 
 \end{itemize}
-
-\end{description}
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
@@ -1764,13 +1752,15 @@ lat
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Maximum separation in distance unit that data will be fed
 into parameter fitting
-Units depend on fform (it is usually either degrees or km)
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees).
 
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Minimum separation in distance unit that data
 will be fed into parameter fitting
-Units depend on fform (it is usually either degrees or km)
+Units depend on physical\_distance attribute (km if True, otherwise
+degrees).
 Note: Due to the way we compute the Matern function,
 it is undefined at dist == 0 even if the limit \sphinxhyphen{}\textgreater{} zero is obvious.
 
@@ -1893,7 +1883,7 @@ dict
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{EllipseCovarianceBuilder}}}
-{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method=\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist=None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision=\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method=\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size=None}}}
+{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision}\DUrole{o}{=}\DUrole{default_value}{\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -1903,9 +1893,10 @@ Compute covariance from Ellipse parameters and positions.
 v = Matern covariance shape parameter
 
 \sphinxAtStartPar
-Lx \sphinxhyphen{} an numpy array of horizontal length scales (
-Ly \sphinxhyphen{} an numpy array of meridonal length scales
-theta \sphinxhyphen{} an numpy array of rotation angles (RADIANS ONLY)
+Lx \sphinxhyphen{} an numpy array of horizontal length scales
+Ly \sphinxhyphen{} an numpy array of meridonal length scales or None for circles.
+theta \sphinxhyphen{} an numpy array of rotation angles (RADIANS ONLY) or None for
+unrotated ellipses.
 
 \sphinxAtStartPar
 sdev \sphinxhyphen{} standard deviation \textendash{} right now it just takes a numeric array
@@ -1914,7 +1905,7 @@ different sources), you need to put them into one array
 
 \sphinxAtStartPar
 Rules:
-Valid (ocean) point:
+Valid point:
 1) cov\_ns and cor\_ns are computed out to max\_dist; out of range = 0.0
 2) Masked points are ignored
 
@@ -1925,27 +1916,30 @@ Invalid (masked) points:
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Lx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays with non\sphinxhyphen{}stationary parameters
+\sphinxstyleliteralstrong{\sphinxupquote{Lx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Long length scales of the ellipses (length of semi\sphinxhyphen{}major axis) or radius
+of circles.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Ly}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays with non\sphinxhyphen{}stationary parameters
+\sphinxstyleliteralstrong{\sphinxupquote{Ly}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Short length scales of the ellipses (length of semi\sphinxhyphen{}minor axis). If set
+to None then the ellipses are isotropic and they are circles.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{theta}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays with non\sphinxhyphen{}stationary parameters
+\sphinxstyleliteralstrong{\sphinxupquote{theta}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Rotation angles of the ellipses in radians. If set to None then the
+ellipses are unrotated.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays with non\sphinxhyphen{}stationary parameters
+\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Standard deviations of the ellipses.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays containing the latitude and longitude values
+\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Array containing the latitude values
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Arrays containing the latitude and longitude values
+\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Array containing the longitude values
 
 \item {}
 \sphinxAtStartPar
@@ -1976,11 +1970,13 @@ Set the covariance method used:
 \sphinxAtStartPar
 array (default): faster but uses significantly more memory as
 more pre\sphinxhyphen{}computation is performed. Values are computed in a
-vectorised method.
+vectorised method. If the number of points is \textgreater{}= 10\_000 then it will
+use the ‘low\_memory’ method.
 
 \item {}
 \sphinxAtStartPar
-loop: slower iterative process, computes each value individually
+low\_memory: slower iterative process, computes each value
+individually.
 
 \item {}
 \sphinxAtStartPar
@@ -1990,7 +1986,7 @@ batched: combines the above approaches.
 
 \sphinxAtStartPar
 If the number of grid\sphinxhyphen{}points exceeds 10\_000 and “array” method is used,
-the method will be overwritten to “loop”.
+the method will be overwritten to “low\_memory”.
 
 
 \item {}
@@ -2046,6 +2042,71 @@ displacements must be ordered in the same way.
 \sphinxAtStartPar
 \sphinxstylestrong{c\_ij} \textendash{} A vector containing the covariance values between each pair of
 ellipses. This will return the components of the upper triangle of
+the covariance matrix as a vector (excluding the diagonal).
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+\subsubsection*{References}
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {}
+\sphinxAtStartPar
+Paciorek and Schevrish 2006 \sphinxcite{index:paciorekschervish} Equation 8
+
+\item {}
+\sphinxAtStartPar
+Karspeck et al. 2012 \sphinxcite{index:karspeck} Equation 17
+
+\end{enumerate}
+
+\end{fulllineitems}
+
+\index{c\_ij\_isotropic\_array() (glomar\_gridding.ellipse.EllipseCovarianceBuilder method)@\spxentry{c\_ij\_isotropic\_array()}\spxextra{glomar\_gridding.ellipse.EllipseCovarianceBuilder method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{ellipse:glomar_gridding.ellipse.EllipseCovarianceBuilder.c_ij_isotropic_array}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{c\_ij\_isotropic\_array}}}
+{\sphinxparam{\DUrole{n}{i\_s}}\sphinxparamcomma \sphinxparam{\DUrole{n}{j\_s}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the covariances between pairs of circle, at distance.
+
+\sphinxAtStartPar
+Each circle is defined by values from Lxs, with standard deviation in
+stdevs.
+
+\sphinxAtStartPar
+The distances between each pair of circles is the haversine distance.
+
+\sphinxAtStartPar
+\sphinxtitleref{itertools.combinations} is used to handle ordering, so the
+displacements must be ordered in the same way.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{i\_s}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The row indices for the covariance matrix.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{j\_s}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The column indices for the covariance matrix.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{dist}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The Haversine distance between each coordinate.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{c\_ij} \textendash{} A vector containing the covariance values between each pair of
+circles. This will return the components of the upper triangle of
 the covariance matrix as a vector (excluding the diagonal).
 
 \sphinxlineitem{Return type}
@@ -3156,16 +3217,20 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -3580,16 +3645,20 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -3980,16 +4049,20 @@ Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -4175,23 +4248,19 @@ numpy.ndarray
 
 \end{fulllineitems}
 
-\index{scipy\_mv\_normal\_draw() (in module glomar\_gridding.stochastic)@\spxentry{scipy\_mv\_normal\_draw()}\spxextra{in module glomar\_gridding.stochastic}}
+\index{draw\_from\_cov() (in module glomar\_gridding.stochastic)@\spxentry{draw\_from\_cov()}\spxextra{in module glomar\_gridding.stochastic}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.scipy_mv_normal_draw}}
+\phantomsection\label{\detokenize{kriging:glomar_gridding.stochastic.draw_from_cov}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.}}\sphinxbfcode{\sphinxupquote{scipy\_mv\_normal\_draw}}}
-{\sphinxparam{\DUrole{n}{loc}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ndraws}\DUrole{o}{=}\DUrole{default_value}{1}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_rtol}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_fudge}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}08}}}
+{\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.}}\sphinxbfcode{\sphinxupquote{draw\_from\_cov}}}
+{\sphinxparam{\DUrole{n}{loc}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ndraws}\DUrole{o}{=}\DUrole{default_value}{1}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sym\_atol}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}05}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_rtol}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}\sphinxparamcomma \sphinxparam{\DUrole{n}{eigen\_thresh}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}08}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Do a random multivariate normal draw using
-scipy.stats.multivariate\_normal.rvs
-
-\sphinxAtStartPar
-numpy.random.multivariate\_normal can also,
-but fixing seeds are more difficult using numpy
+Do a random multivariate normal draw using numpy, with a fallback to
+scipy.stats.multivariate\_normal.rvs if that fails.
 
 \sphinxAtStartPar
 This function has similar API as GP\_draw with less kwargs.
@@ -4221,11 +4290,15 @@ format and not netCDF files
 
 \item {}
 \sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sym\_atol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} absolute tolerance to check symmetry of cov
+
+\item {}
+\sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{eigen\_rtol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} relative tolerance to negative eigenvalues
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{eigen\_fudge}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} forced minimum value of eigenvalues if negative values are detected
+\sphinxstyleliteralstrong{\sphinxupquote{eigen\_thresh}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} forced minimum value of eigenvalues if negative values are detected
 
 \end{itemize}
 
@@ -4247,7 +4320,7 @@ np.ndarray
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{A} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{random}\PYG{o}{.}\PYG{n}{rand}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{,} \PYG{l+m+mi}{5}\PYG{p}{)}
 \PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{cov} \PYG{o}{=} \PYG{n}{np}\PYG{o}{.}\PYG{n}{dot}\PYG{p}{(}\PYG{n}{A}\PYG{p}{,} \PYG{n}{A}\PYG{o}{.}\PYG{n}{T}\PYG{p}{)}
-\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{scipy\PYGZus{}mv\PYGZus{}normal\PYGZus{}draw}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{zeros}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{,} \PYG{n}{cov}\PYG{p}{,} \PYG{n}{ndraws}\PYG{o}{=}\PYG{l+m+mi}{5}\PYG{p}{)}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{draw\PYGZus{}from\PYGZus{}cov}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{zeros}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{,} \PYG{n}{cov}\PYG{p}{,} \PYG{n}{ndraws}\PYG{o}{=}\PYG{l+m+mi}{5}\PYG{p}{)}
 \PYG{g+go}{array([[\PYGZhy{}0.35972806, \PYGZhy{}0.51289612,  0.85307028, \PYGZhy{}0.11580307,  0.6677707 ],}
 \PYG{g+go}{       [\PYGZhy{}1.38214628, \PYGZhy{}1.29331638, \PYGZhy{}0.4879436 , \PYGZhy{}1.42310831, \PYGZhy{}0.19369562],}
 \PYG{g+go}{       [\PYGZhy{}1.04502143, \PYGZhy{}1.97686163, \PYGZhy{}2.058605  , \PYGZhy{}1.97202206, \PYGZhy{}2.90116796],}
@@ -4761,7 +4834,7 @@ be set to an instance of the equivalent class from
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -5810,7 +5883,7 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.distances.}}\sphinxbfcode{\sphinxupquote{calculate\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -6344,7 +6417,7 @@ When estimating covariance matrices, using ellipse\sphinxhyphen{}based methods f
 the results may not be positive\sphinxhyphen{}definite. This can be problematic, for instance
 the Kriging equations may not be solvable as the inverse matrix cannot be
 computed, or simulated states cannot be constructed using
-{\hyperref[\detokenize{kriging:glomar_gridding.stochastic.scipy_mv_normal_draw}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.scipy\_mv\_normal\_draw()}}}}}. To account for this,
+\sphinxcode{\sphinxupquote{glomar\_gridding.stochastic.scipy\_mv\_normal\_draw()}}. To account for this,
 \sphinxtitleref{glomar\_gridding} includes a few tools for \sphinxstyleemphasis{fixing} these covariance matrices.
 In general, these methods attempt to coerce the input matrix to be
 positive\sphinxhyphen{}definite by updating the eigenvalues and re\sphinxhyphen{}computing the matrix from
@@ -6757,7 +6830,7 @@ experience with 5x5 monthly data indicates even at 95\%, you are
 only retaining 200\sphinxhyphen{}400 eigenvalues out of 36 x 72 = 2592 possible
 eigenvalues (if data is global). There are only \textasciitilde{}10\sphinxhyphen{}20 negative eigenvalues
 plus the 2000\sphinxhyphen{}ish eigenvalues that sits out of 95\% threshold. The magitude
-of the negative values are 2\sphinxhyphen{}plus order of mangitude smaller than the
+of the negative values are 2\sphinxhyphen{}plus order of magnitude smaller than the
 largest positive eigenvalues.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
@@ -6782,6 +6855,16 @@ Adjusted covariance matrix.
 numpy.ndarray
 
 \end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
 \subsubsection*{References}
 \begin{itemize}
 \item {}
@@ -6797,16 +6880,6 @@ numpy.ndarray
 \sphinxcite{index:wilks}
 
 \end{itemize}
-
-
-\begin{sphinxseealso}{See also:}
-
-\sphinxAtStartPar
-{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
-
-
-\end{sphinxseealso}
-
 
 \end{fulllineitems}
 
@@ -6913,6 +6986,16 @@ Adjusted covariance matrix.
 numpy.ndarray
 
 \end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
 \subsubsection*{References}
 \begin{itemize}
 \item {}
@@ -6924,16 +7007,6 @@ numpy.ndarray
 \sphinxcite{index:bun}
 
 \end{itemize}
-
-
-\begin{sphinxseealso}{See also:}
-
-\sphinxAtStartPar
-{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
-
-
-\end{sphinxseealso}
-
 
 \end{fulllineitems}
 
@@ -7115,6 +7188,46 @@ Other methods:
 \sphinxurl{https://academic.oup.com/imajna/article/22/3/329/708688}
 
 \end{itemize}
+
+\end{fulllineitems}
+
+\index{validate\_covariance() (in module glomar\_gridding.covariance\_tools)@\spxentry{validate\_covariance()}\spxextra{in module glomar\_gridding.covariance\_tools}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.covariance_tools.validate_covariance}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.}}\sphinxbfcode{\sphinxupquote{validate\_covariance}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sym\_atol}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}05}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Validate that a covariance is square and symmetric.
+
+\sphinxAtStartPar
+If the input is symmetric return itself. If it is close to symmetric (within
+‘sym\_atol’) then return (cov + cov.T) / 2. Otherwise raise an error.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Covariance Matrix
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sym\_atol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} absolute tolerance to check symmetry of cov
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{cov} \textendash{} Symmetric square covariance matrix
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
 
 \end{fulllineitems}
 

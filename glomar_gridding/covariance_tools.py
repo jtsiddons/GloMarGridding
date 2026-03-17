@@ -600,14 +600,14 @@ def laloux_clip(
     numpy.ndarray
         Adjusted covariance matrix.
 
+    See Also
+    --------
+    :py:func:`glomar_gridding.covariance_tools.explained_variance_clip`
+
     References
     ----------
     - [Laloux]_
     - [Bun]_
-
-    See Also
-    --------
-    :py:func:`glomar_gridding.covariance_tools.explained_variance_clip`
     """
     num_grid_pts = num_grid_pts or cov.shape[0]
     vars = np.diag(cov)
@@ -683,7 +683,7 @@ def explained_variance_clip(
     only retaining 200-400 eigenvalues out of 36 x 72 = 2592 possible
     eigenvalues (if data is global). There are only ~10-20 negative eigenvalues
     plus the 2000-ish eigenvalues that sits out of 95% threshold. The magitude
-    of the negative values are 2-plus order of mangitude smaller than the
+    of the negative values are 2-plus order of magnitude smaller than the
     largest positive eigenvalues.
 
     Parameters
@@ -701,15 +701,15 @@ def explained_variance_clip(
     numpy.ndarray
         Adjusted covariance matrix.
 
+    See Also
+    --------
+    :py:func:`glomar_gridding.covariance_tools.laloux_clip`
+
     References
     ----------
     - [Laloux]_
     - [Jolliffe]_
     - [Wilks]_
-
-    See Also
-    --------
-    :py:func:`glomar_gridding.covariance_tools.laloux_clip`
     """
     if not 0.0 < target_variance_fraction <= 1.0:
         raise ValueError("'target_variance_fraction' must be (0, 1.0]")
@@ -845,3 +845,44 @@ def eigenvalue_clip(
             return laloux_clip(cov, **kwargs)
         case _:
             raise ValueError("Unknown clipping method")
+
+
+def validate_covariance(
+    cov: np.ndarray,
+    sym_atol: float = 1e-5,
+) -> np.ndarray:
+    """
+    Validate that a covariance is square and symmetric.
+
+    If the input is symmetric return itself. If it is close to symmetric (within
+    'sym_atol') then return (cov + cov.T) / 2. Otherwise raise an error.
+
+    Parameters
+    ----------
+    cov : numpy.ndarray
+        Covariance Matrix
+    sym_atol : float
+        absolute tolerance to check symmetry of cov
+
+    Returns
+    -------
+    cov : numpy.ndarray
+        Symmetric square covariance matrix
+    """
+    cov_shape = cov.shape
+    if len(cov_shape) != 2:
+        raise ValueError("cov should be 2D.")
+    if cov_shape[0] != cov_shape[1]:
+        raise ValueError("cov is not a square matrix")
+
+    if not sp.linalg.issymmetric(cov):
+        if sp.linalg.issymmetric(cov, atol=sym_atol):
+            warn(
+                "cov is nearly symmetric but not exactly so, "
+                + "using (cov + cov.T) / 2 instead."
+            )
+            return (cov + cov.T) / 2
+        else:
+            raise ValueError("cov is not symmetric.")
+
+    return cov

@@ -125,7 +125,8 @@ def map_to_grid(
         order="C",  # row-major
     )
 
-    obs = obs.with_columns(pl.Series(grid_prefix + "idx", flattened_idx))
+    grid_idx_col = grid_prefix + "idx"
+    obs = obs.with_columns(pl.Series(grid_idx_col, flattened_idx))
     if add_grid_pts:
         obs = obs.with_columns(
             [
@@ -135,7 +136,7 @@ def map_to_grid(
         )
 
     if sort:
-        obs = obs.sort("grid_idx", descending=False)
+        obs = obs.sort(grid_idx_col, descending=False)
 
     return obs
 
@@ -710,7 +711,8 @@ class Grid:
             order="C",  # row-major
         )
 
-        obs = obs.with_columns(pl.Series(grid_prefix + "idx", flattened_idx))
+        grid_idx_col = grid_prefix + "idx"
+        obs = obs.with_columns(pl.Series(grid_idx_col, flattened_idx))
         if add_grid_pts:
             obs = obs.with_columns(
                 [
@@ -720,7 +722,7 @@ class Grid:
             )
 
         if sort:
-            obs = obs.sort("grid_idx", descending=False)
+            obs = obs.sort(grid_idx_col, descending=False)
 
         if apply_mask and self.is_masked:
             # Map to the masked indices (this will drop observations at masked
@@ -728,16 +730,17 @@ class Grid:
             obs = (
                 obs.join(
                     self.index_map,
-                    on="grid_idx",
+                    left_on=grid_idx_col,
+                    right_on="grid_idx",
                     how="inner",
                     coalesce=True,
                 )
-                .drop("grid_idx")
-                .rename({"mask_idx": "grid_idx"})
+                .drop(grid_idx_col)
+                .rename({"mask_idx": grid_idx_col})
             )
 
         self.obs = obs.get_column(obs_col).to_numpy()
-        self.idx = obs.get_column("grid_idx").to_numpy()
+        self.idx = obs.get_column(grid_idx_col).to_numpy()
 
         return obs
 

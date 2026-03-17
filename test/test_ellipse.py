@@ -35,14 +35,14 @@ def correlation_distance(cov1: np.ndarray, cov2: np.ndarray) -> float:
 
 def initialise_const_arrays(
     Lx: float,
-    Ly: float,
-    theta: float,
+    Ly: float | None,
+    theta: float | None,
     stdev: float,
     size: tuple[int, int],
-) -> tuple[np.ndarray, ...]:
+) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None, np.ndarray]:
     Lx_arr = np.full(size, Lx)
-    Ly_arr = np.full(size, Ly)
-    theta_arr = np.full(size, theta)
+    Ly_arr = np.full(size, Ly) if Ly is not None else None
+    theta_arr = np.full(size, theta) if theta is not None else None
     stdev_arr = np.full(size, stdev)
     return Lx_arr, Ly_arr, theta_arr, stdev_arr
 
@@ -85,17 +85,35 @@ def get_test_data(
 
 
 @pytest.mark.parametrize(
-    "v, params, size",
+    "name, v, params, size",
     [
         (
+            "ellipse",
             1.5,
             {"Lx": 1500, "Ly": 800, "theta": np.pi / 3, "stdev": 0.6},
             (10, 6),
         ),
-        (1.5, {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 1.2}, (8, 8)),
+        (
+            "rotated ellipses",
+            1.5,
+            {"Lx": 3600, "Ly": 1700, "theta": 0.2, "stdev": 1.2},
+            (8, 8),
+        ),
+        (
+            "unrotated ellipses",
+            1.5,
+            {"Lx": 3600, "Ly": 1700, "theta": None, "stdev": 1.2},
+            (8, 8),
+        ),
+        (
+            "circles",
+            1.5,
+            {"Lx": 1200, "Ly": None, "theta": None, "stdev": 1.2},
+            (8, 8),
+        ),
     ],
 )
-def test_const_Ellipse(v, params, size):
+def test_const_Ellipse(name, v, params, size):
     # TEST: That ellipse stuff is self-consistent
     #       If one generates data from a covariance derived from known
     #       ellipse parameters, test that you get the same covariance out
@@ -118,8 +136,8 @@ def test_const_Ellipse(v, params, size):
 
     # Define Ellipse Model
     ellipse = EllipseModel(
-        anisotropic=True,
-        rotated=True,
+        anisotropic=params["Ly"] is not None,
+        rotated=params["theta"] is not None,
         physical_distance=True,
         v=v,
         unit_sigma=True,
@@ -130,27 +148,33 @@ def test_const_Ellipse(v, params, size):
     v = ellipse.v
     nparams = ellipse.supercategory_n_params
     default_values = [0.0 for _ in range(nparams)]
-    init_values = [300.0, 300.0, 0.0]
-    fit_bounds = [
-        (300.0, 30000.0),
-        (300.0, 30000.0),
-        (-2.0 * np.pi, 2.0 * np.pi),
-    ]
+    # init_values = [300.0, 300.0, 0.0]
+    # fit_bounds = [
+    #     (300.0, 30000.0),
+    #     (300.0, 30000.0),
+    #     (-0.5 * np.pi, 0.5 * np.pi),
+    # ]
     fit_max_distance = 10_000.0
 
     # Estimate Ellipse Parameters
     ellipse_params = ellipse_builder.compute_params(
         default_value=default_values,
         matern_ellipse=ellipse,
-        bounds=fit_bounds,
-        guesses=init_values,
+        # bounds=fit_bounds,
+        # guesses=init_values,
         max_distance=fit_max_distance,
         delta_x_method="Modified_Met_Office",
     )
 
-    Lx = ellipse_params["Lx"].values
-    Ly = ellipse_params["Ly"].values
-    theta = ellipse_params["theta"].values
+    Lx = (
+        ellipse_params["Lx"].values
+        if params["Ly"] is not None
+        else ellipse_params["R"].values
+    )
+    Ly = ellipse_params["Ly"].values if params["Ly"] is not None else None
+    theta = (
+        ellipse_params["theta"].values if params["theta"] is not None else None
+    )
     stdev = ellipse_params["standard_deviation"].values
 
     ellipse_cov = EllipseCovarianceBuilder(

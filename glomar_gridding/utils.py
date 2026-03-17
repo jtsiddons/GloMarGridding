@@ -688,7 +688,7 @@ def mask_array(arr: np.ndarray) -> np.ma.MaskedArray:
     if isinstance(arr, np.ma.MaskedArray):
         return arr
     if isinstance(arr, np.ndarray):
-        logging.info("Ad hoc conversion to np.ma.MaskedArray")
+        logging.info("Converting to np.ma.MaskedArray")
         arr = np.ma.MaskedArray(arr)
         return arr
     raise TypeError("Input is not a numpy array.")

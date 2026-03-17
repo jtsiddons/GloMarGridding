@@ -8,7 +8,9 @@ from glomar_gridding.covariance_tools import (
     laloux_clip,
     perturb_cov_to_positive_definite,
     simple_clipping,
+    validate_covariance,
 )
+from glomar_gridding.stochastic import draw_from_cov, _fallback_draw_from_cov
 
 
 def test_eigenvalue_clip() -> None:
@@ -226,3 +228,69 @@ def test_laloux_clip():
     assert (np.linalg.eigvalsh(out) > 0).all()
 
     assert True
+
+
+def test_cov_validaton():
+    n = 15
+    A = np.random.rand(n, n)
+    # Symmetric
+    S = np.dot(A, A.T)
+
+    assert np.all(S == validate_covariance(S))
+
+    S[1, 3] += 1e-6
+
+    res = validate_covariance(S)
+    assert not np.all(S == res)
+    assert np.array_equal(res, res.T)
+
+    S[1, 3] += 1e-3
+
+    try:
+        validate_covariance(S)
+    except ValueError as e:
+        assert e.args[0] == "cov is not symmetric."
+    except Exception as e:
+        raise e
+
+    try:
+        validate_covariance(np.array([1, 2, 3]))
+    except ValueError as e:
+        assert e.args[0] == "cov should be 2D."
+    except Exception as e:
+        raise e
+
+    try:
+        validate_covariance(np.array([[1, 2, 3], [4, 5, 6]]))
+    except ValueError as e:
+        assert e.args[0] == "cov is not a square matrix"
+    except Exception as e:
+        raise e
+
+
+def test_draw_from_cov():
+    n = 15
+    A = np.random.rand(n, n)
+    S = np.dot(A, A.T)
+    loc = np.random.rand(n)
+
+    ndraws = 6
+    draws = draw_from_cov(loc, S, ndraws=ndraws)
+    assert draws.shape == (ndraws, n)
+
+    draw = draw_from_cov(loc, S, ndraws=1)
+    assert draw.shape == (n,)
+
+
+def test_draw_from_cov_fallback():
+    n = 15
+    A = np.random.rand(n, n)
+    S = np.dot(A, A.T)
+    loc = np.random.rand(n)
+
+    ndraws = 6
+    draws = _fallback_draw_from_cov(loc, S, ndraws=ndraws)
+    assert draws.shape == (ndraws, n)
+
+    draw = _fallback_draw_from_cov(loc, S, ndraws=1)
+    assert draw.shape == (n,)

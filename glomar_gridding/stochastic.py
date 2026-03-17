@@ -18,15 +18,17 @@ approach. Plus function for drawing from a covariance matrix.
 """
 
 import logging
+from warnings import warn
 
 import numpy as np
-from scipy import stats
+import scipy as sp
 
 from glomar_gridding.kriging import (
     Kriging,
     _extended_inverse,
     adjust_small_negative,
 )
+from glomar_gridding.covariance_tools import validate_covariance
 
 
 class StochasticKriging(Kriging):
@@ -217,15 +219,20 @@ class StochasticKriging(Kriging):
 
         return None
 
-    def get_uncertainty(self) -> np.ndarray:
+    def get_uncertainty(self, full_covariance: bool = False) -> np.ndarray:
         """
         Compute the kriging uncertainty. This requires the attribute
         `kriging_weights` to be computed.
 
+        Parameters
+        ----------
+        full_covariance : bool
+            Return the full Kriging covariance if True. Defaults to False.
+
         Returns
         -------
         uncert : numpy.ndarray
-            The Kriging uncertainty.
+            The Kriging uncertainty or the full Kriging covariance.
         """
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
@@ -237,6 +244,10 @@ class StochasticKriging(Kriging):
 
         alpha = self.kriging_weights[:, -1]
         kriging_weights = self.kriging_weights @ obs_grid_cov
+
+        if full_covariance:
+            return self.covariance - kriging_weights - np.diag(alpha)
+
         uncert_squared = np.diag(self.covariance - kriging_weights) - alpha
         uncert_squared = adjust_small_negative(uncert_squared)
         uncert = np.sqrt(uncert_squared)
@@ -369,14 +380,14 @@ class StochasticKriging(Kriging):
 
         # Simulate a state from the covariance matrix
         if simulated_state is None:
-            simulated_state = scipy_mv_normal_draw(
+            simulated_state = draw_from_cov(
                 loc=np.zeros(self.covariance.shape[0]),
                 cov=self.covariance,
                 ndraws=1,
             ).astype(self.covariance.dtype)
 
         # Simulate observations
-        self.simulated_obs = simulated_state[self.idx] + scipy_mv_normal_draw(
+        self.simulated_obs = simulated_state[self.idx] + draw_from_cov(
             loc=np.zeros(self.error_cov.shape[0]),
             cov=self.error_cov,
             ndraws=1,
@@ -392,19 +403,17 @@ class StochasticKriging(Kriging):
         return self.gridded_field + self.epsilon
 
 
-def scipy_mv_normal_draw(  # noqa: C901
+def draw_from_cov(
     loc: np.ndarray,
     cov: np.ndarray,
     ndraws: int = 1,
+    sym_atol: float = 1e-5,
     eigen_rtol: float = 1e-6,
-    eigen_fudge: float = 1e-8,
+    eigen_thresh: float = 1e-8,
 ) -> np.ndarray:
     """
-    Do a random multivariate normal draw using
-    scipy.stats.multivariate_normal.rvs
-
-    numpy.random.multivariate_normal can also,
-    but fixing seeds are more difficult using numpy
+    Do a random multivariate normal draw using numpy, with a fallback to
+    scipy.stats.multivariate_normal.rvs if that fails.
 
     This function has similar API as GP_draw with less kwargs.
 
@@ -422,9 +431,11 @@ def scipy_mv_normal_draw(  # noqa: C901
     n_draws : int
         number of simulations, this is usually set to 1 except during
     unit testing
+    sym_atol : float
+        absolute tolerance to check symmetry of cov
     eigen_rtol : float
         relative tolerance to negative eigenvalues
-    eigen_fudge : float
+    eigen_thresh : float
         forced minimum value of eigenvalues if negative values are detected
 
     Returns
@@ -440,29 +451,45 @@ def scipy_mv_normal_draw(  # noqa: C901
     --------
     >>> A = np.random.rand(5, 5)
     >>> cov = np.dot(A, A.T)
-    >>> scipy_mv_normal_draw(np.zeros(5), cov, ndraws=5)
+    >>> draw_from_cov(np.zeros(5), cov, ndraws=5)
     array([[-0.35972806, -0.51289612,  0.85307028, -0.11580307,  0.6677707 ],
            [-1.38214628, -1.29331638, -0.4879436 , -1.42310831, -0.19369562],
            [-1.04502143, -1.97686163, -2.058605  , -1.97202206, -2.90116796],
            [-1.97981119, -2.72330373,  0.0088662 , -2.53521893, -0.03670664],
            [ 0.49948228,  0.54695988,  0.33864294,  0.53730282,  0.14743019]])
     """
+    cov = validate_covariance(cov, sym_atol=sym_atol)
 
-    def any_complex(arr: np.ndarray) -> bool:
-        return bool(np.any(np.iscomplex(arr)))
-
-    cov_shape = cov.shape
-    if len(cov_shape) != 2:
-        raise ValueError("cov should be 2D.")
-    if cov_shape[0] != cov_shape[1]:
-        raise ValueError("cov is not a square matrix")
     try:
         draw = np.random.multivariate_normal(loc, cov, size=ndraws)
         return draw[0] if ndraws == 1 else draw
     except np.linalg.LinAlgError:
+        warn(
+            "Drawing from cov using numpy failed, "
+            + " attempting fallback using scipy"
+        )
+        return _fallback_draw_from_cov(
+            loc,
+            cov,
+            ndraws=ndraws,
+            eigen_rtol=eigen_rtol,
+            eigen_thresh=eigen_thresh,
+        )
         pass
     except Exception as e:
         raise e
+
+
+def _fallback_draw_from_cov(
+    loc: np.ndarray,
+    cov: np.ndarray,
+    ndraws: int = 1,
+    sym_atol: float = 1e-5,
+    eigen_rtol: float = 1e-6,
+    eigen_thresh: float = 1e-8,
+) -> np.ndarray:
+    def any_complex(arr: np.ndarray) -> bool:
+        return bool(np.any(np.iscomplex(arr)))
 
     # Try to use eigen decomposition to generate a new covariance matrix that
     # would be positive-definite
@@ -484,9 +511,9 @@ def scipy_mv_normal_draw(  # noqa: C901
         )
         if rtol_check >= eigen_rtol:
             raise ValueError("Negative eigenvalues are unexpectedly large.")
-        w[w < eigen_fudge] = eigen_fudge
+        w[w < eigen_thresh] = eigen_thresh
 
-    cov2 = stats.Covariance.from_eigendecomposition((w, v))
+    cov2 = sp.stats.Covariance.from_eigendecomposition((w, v))
 
     # WARN: Weird/inconsistent behavior warning
     # if size==1 and cov is an instance of stats.Covariance
@@ -495,8 +522,8 @@ def scipy_mv_normal_draw(  # noqa: C901
     # but is INCONSISTENT with behavior when cov is a
     # valid numpy array ---> shape is (len(loc2),)
 
-    draw = stats.multivariate_normal.rvs(
+    draw = sp.stats.multivariate_normal.rvs(
         mean=loc, cov=cov2.covariance, size=ndraws
     )
     # draw = np.random.multivariate_normal(loc, cov2.covariance, size=ndraws)
-    return draw[0] if ndraws == 1 else draw
+    return draw

@@ -64,7 +64,7 @@ sequence of simulated states as part of ensemble processing, for example.
 .. autoclass:: glomar_gridding.stochastic.StochasticKriging
    :members:
 
-.. autofunction:: glomar_gridding.stochastic.scipy_mv_normal_draw
+.. autofunction:: glomar_gridding.stochastic.draw_from_cov
 
 Outputs
 =======
