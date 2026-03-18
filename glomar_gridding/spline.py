@@ -338,7 +338,8 @@ class SphericalThinPlateSpline(Spline):
     def trend_basis(self, positions: np.ndarray) -> np.ndarray:
         """Linear trend basis for universal kriging: [1, x, y, ...]"""
         n_pts = positions.shape[0]
-        return np.hstack((np.ones((n_pts, 1)), positions))
+        # return np.hstack((np.ones((n_pts, 1)), positions))
+        return np.ones((n_pts, 1))
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spherical Thin Plate Spline RBF kernel"""
@@ -350,6 +351,8 @@ class SphericalThinPlateSpline(Spline):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             q = np.where(distances == 0, 0.5, _q2(distances))
+
+        q[np.isnan(q)] = 0.5
 
         return frac * (m2_1 * q - 1)
 
