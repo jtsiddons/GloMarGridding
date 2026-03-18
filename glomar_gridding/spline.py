@@ -158,7 +158,7 @@ class Spline(ABC):
         c: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         """Solve"""
-        # "^" is XOR (Exclusive OR)
+        # "^" is XOR (Exclusive OR - True if EXACTLY one condition is True)
         if (w is None) ^ (c is None):
             raise ValueError()
 
@@ -167,7 +167,7 @@ class Spline(ABC):
 
         if w is None:
             if not hasattr(self, "w") or lam != self.lam:
-                w, c = self.fit(lam=lam, set_results=True)  # type: ignore
+                w, c = self.fit(lam=lam, set_results=True)
             else:
                 w = self.w
                 c = self.c
@@ -182,11 +182,13 @@ class Spline(ABC):
         """Get variance"""
         residual = self.y - y_fit
 
-        tmp = np.linalg.inv(self.K_reg)
+        inv_K_reg = np.linalg.inv(self.K_reg)
+        K_inv_K_reg = self.K @ inv_K_reg
+        del inv_K_reg
 
-        df: float = self.n_pts - np.trace(self.K_reg @ tmp)
+        df: float = self.n_pts - np.trace(K_inv_K_reg)
         sigma2: float = np.sum(residual**2) / df
-        H_diag: np.ndarray = np.sum(self.K_reg * tmp, axis=1)
+        H_diag: np.ndarray = np.sum(K_inv_K_reg @ self.K.T, axis=1)
 
         var_y_fit: np.ndarray = sigma2 * H_diag
 
@@ -234,10 +236,10 @@ class Spline(ABC):
 
         Parameters
         ----------
-        lambda_bounds : tuple[float, float]
-            Bounds on the optimisation for lambda.
         set_result : bool
             Store the result as the 'lam' attribute.
+        **kwargs
+            Keyword arguments to pass to minimize_scalar.
 
         Returns
         -------

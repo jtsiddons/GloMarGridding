@@ -91,7 +91,10 @@ def test_var() -> None:
     )
 
     tps = ThinPlateSpline(X=X, y=y)
-    _ = tps.estimate_lambda_gcv()
+    lam = 0.025
+    # tps.lam = lam
+    lam = tps.estimate_lambda_gcv()
+    print(f"{lam = }")
     tps.fit()
     y_pred = tps.solve()
     sigma, var = tps.fit_variance(y_pred)
@@ -101,3 +104,21 @@ def test_var() -> None:
 
     assert isinstance(var, np.ndarray)
     assert np.all(var > 0)
+
+
+# def test_gcv_loss() -> None:
+#     np.random.seed(314159)
+#     n_samps = 50
+#
+#     X = 1 - 2 * np.random.rand(n_samps, 2)
+#     X[:, 0] *= np.pi / 2
+#     X[:, 1] *= np.pi
+#     y = 0.5 - (
+#         np.sin(2 * X[:, 0])
+#         + np.cos(2 * X[:, 1])
+#         + 0.1 * np.random.randn(n_samps)
+#     )
+#
+#     tps = ThinPlateSpline(X=X, y=y)
+#     lam = tps.estimate_lambda_gcv(method="bounded", bounds=(1e-6, 1e2))
+#     print(f"{lam = }")
