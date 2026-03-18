@@ -204,7 +204,7 @@ class Spline(ABC):
     ) -> np.ndarray:
         """Predict for new positions"""
         if (w is None) ^ (c is None):
-            raise ValueError()
+            raise ValueError("Must set either both 'w' and 'c', or neither")
 
         if lam is None:
             lam = getattr(self, "lam", 0.0)
@@ -367,6 +367,6 @@ def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
 
 
 def _q2(distances: np.ndarray) -> np.ndarray:
-    """R with q2 from Wabha"""
+    """R with q2 from [Wahba_Sphere]_"""
     _, W, C, A = _zwca(distances)
     return (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2
