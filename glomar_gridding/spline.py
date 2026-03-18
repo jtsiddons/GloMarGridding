@@ -225,8 +225,8 @@ class Spline(ABC):
 
     def estimate_lambda_gcv(
         self,
-        lambda_bounds: tuple[float, float] = (1e-6, 1e2),
         set_result: bool = True,
+        **kwargs,
     ) -> float:
         """
         Use Generalised Cross-Validation to estimate an optimal smoothing
@@ -258,9 +258,8 @@ class Spline(ABC):
                 self.n_pts - tr_H, 2
             )
 
-        result = minimize_scalar(
-            gcv_loss, bounds=lambda_bounds, method="bounded"
-        )
+        result = minimize_scalar(gcv_loss, **kwargs)
+
         if not isinstance(result, OptimizeResult):
             raise TypeError(
                 "result of estimation is not an instance of "
