@@ -19,15 +19,13 @@ def test_tps_spline() -> None:
         + 0.1 * np.random.randn(n_samps)
     )
 
-    tps = ThinPlateSpline(X=X, y=y)
-    tps.fit(lam=0.0, set_results=True)
-    y_0 = tps.solve()
+    tps = ThinPlateSpline(X, y)
+    y_0 = tps.fit(lam=0.0).y_fit
 
     assert np.allclose(y_0, y)
 
-    stps = SphericalThinPlateSpline(X=X, y=y)
-    stps.fit(lam=0.0, set_results=True)
-    y_0 = stps.solve()
+    stps = SphericalThinPlateSpline(X, y)
+    y_0 = stps.fit(lam=0.0).y_fit
 
     assert np.allclose(y_0, y)
     return None
@@ -46,7 +44,7 @@ def test_gcv() -> None:
         + 0.1 * np.random.randn(n_samps)
     )
 
-    tps = ThinPlateSpline(X=X, y=y)
+    tps = ThinPlateSpline(X, y)
     lam = tps.estimate_lambda_gcv()
     assert lam is not None
     assert lam > 0
@@ -69,9 +67,9 @@ def test_predict() -> None:
     X_test = X_grid.reshape(2, -1).T
     X_test *= np.pi
 
-    tps = ThinPlateSpline(X=X, y=y)
+    tps = ThinPlateSpline(X, y)
     tps.fit(lam=0, set_results=True)
-    y_pred = tps.predict(X_test)
+    y_pred, _ = tps.predict(X_test)
     assert y_pred.shape == (X_test.shape[0],)
 
     return None
@@ -90,19 +88,11 @@ def test_var() -> None:
         + 0.1 * np.random.randn(n_samps)
     )
 
-    tps = ThinPlateSpline(X=X, y=y)
-    lam = 0.025
-    # tps.lam = lam
-    lam = tps.estimate_lambda_gcv()
-    print(f"{lam = }")
-    tps.fit()
-    y_pred = tps.solve()
-    sigma, var = tps.fit_variance(y_pred)
+    tps = ThinPlateSpline(X, y)
+    result = tps.fit()
+    var = result.var
 
-    assert isinstance(sigma, np.ndarray)
-    assert np.all(sigma > 0)
-
-    assert isinstance(var, np.ndarray)
+    assert isinstance(var, float)
     assert np.all(var > 0)
 
 
