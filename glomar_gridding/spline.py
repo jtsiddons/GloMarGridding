@@ -42,8 +42,8 @@ class SplineResult:
             raise TypeError("parent must be a Spline")
 
         self.lam = lam
-        self.w = weights
-        self.c = trend_coefs
+        self.weights = weights
+        self.trend_coefs = trend_coefs
         self.M_inv = M_inv
         self.y_fit = y_fit
         self.parent = parent
@@ -282,7 +282,7 @@ class Spline(ABC):
             raise ValueError()
 
         result = self._compute_result(
-            covariance, self.result.w, P, self.result.c
+            covariance, self.result.weights, P, self.result.trend_coefs
         )
 
         se_pred = None

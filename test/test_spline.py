@@ -1,6 +1,8 @@
 import pytest  # noqa: F401
+from pathlib import Path
 
 import numpy as np
+import polars as pl
 
 from glomar_gridding.spline import ThinPlateSpline, SphericalThinPlateSpline
 
@@ -96,19 +98,56 @@ def test_var() -> None:
     assert np.all(var > 0)
 
 
-# def test_gcv_loss() -> None:
-#     np.random.seed(314159)
-#     n_samps = 50
-#
-#     X = 1 - 2 * np.random.rand(n_samps, 2)
-#     X[:, 0] *= np.pi / 2
-#     X[:, 1] *= np.pi
-#     y = 0.5 - (
-#         np.sin(2 * X[:, 0])
-#         + np.cos(2 * X[:, 1])
-#         + 0.1 * np.random.randn(n_samps)
-#     )
-#
-#     tps = ThinPlateSpline(X=X, y=y)
-#     lam = tps.estimate_lambda_gcv(method="bounded", bounds=(1e-6, 1e2))
-#     print(f"{lam = }")
+def test_se():
+    # TEST: against a result using R. Original data generated using
+    #
+    # np.random.seed(101)
+    # n = 150
+    # X = np.random.uniform(-5, 5, (n, 2))
+    # y = (
+    #     0.5 * X[:, 0]
+    #     + np.exp(-(X[:, 0] ** 2 + X[:, 1] ** 2) / 2)
+    #     + np.random.normal(0, 0.1, n)
+    # )
+    #
+    # With grid defined:
+    # grid_pts = np.linspace(-5, 5, 30)
+    # gx, gy = np.meshgrid(grid_pts, grid_pts)
+    # g_coords = np.column_stack([gx.ravel(), gy.ravel()])
+    #
+    # This data was run through R fields Tps(X, y, scale.type = "unscaled")
+
+    data_path = Path(__file__).parent / "data" / "spline"
+    data = pl.read_csv(data_path / "shared_data.csv")
+    grid = pl.read_csv(data_path / "grid_coords.csv")
+    r_res = pl.read_csv(data_path / "r_results.csv")
+
+    X = data.select("x1", "x2").to_numpy()
+    y = data.get_column("y").to_numpy()
+
+    tps = ThinPlateSpline(X, y)
+    tps.fit()
+    py_gcv = tps.result.gcv
+
+    # Sum of weights should be 0
+    assert np.sum(tps.result.weights) < 1e-9
+
+    g_coords = grid.to_numpy()
+
+    # Python prediction
+    py_preds, py_se = tps.predict(g_coords, compute_se=True)
+    assert py_se is not None
+
+    # Load R Results
+    r_preds = r_res.get_column("grid_preds").to_numpy()
+    r_se = r_res.get_column("grid_se").to_numpy()
+    r_gcv = r_res.get_column("gcv").first()
+
+    # Metrics
+    pred_mse = np.mean((py_preds - r_preds) ** 2)
+    se_mse = np.mean((py_se - r_se) ** 2)
+    gcv_diff = abs(r_gcv - py_gcv)
+
+    assert se_mse < 5e-4
+    assert pred_mse < 5e-4
+    assert gcv_diff < 1e-4
