@@ -38,11 +38,15 @@ class Autoregressive1Forecast:
             Shape should be same as independent_var_t
         climatology_variance: numpy.ndarray
             Climatological variance,
-            Shape should be same as independent_var_t
+            If n is the number of elements of independent_var_t,
+            the shape of this should either be n x n (like ellipse covariance)
+            or n (vector of variance at each grid point)
         climatology_variance_is_sdev: bool
             Flag indicating if climatology_variance is
-            variance or standard deviation.
-            Default False, climatology_variance is variance (like SST**2)
+            variance or standard deviation. This only applies if vectored form
+            (n x 1 shape) of climatology_variance
+            Default False, climatology_variance is variance (like SST**2) or
+            full covariance matrix.
             True if standard deviation
         """
         #
@@ -51,6 +55,11 @@ class Autoregressive1Forecast:
         self.lag_1_autocor = lag_1_autocor
         self.climatology_mean = climatology_mean
         if climatology_variance_is_sdev:
+            if len(climatology_variance.shape) > 1:
+                err_msg = "climatology_variance_is_sdev is True, but "
+                err_msg += "climatology_variance is not a vector; "
+                err_msg += f"{climatology_variance.shape = }."
+                raise ValueError(err_msg)
             self.climatology_variance = np.square(climatology_variance)
         else:
             self.climatology_variance = climatology_variance
@@ -71,8 +80,8 @@ class Autoregressive1Forecast:
             raise ValueError("lag_1_autocor_for_t_plus_1 should be 1D")
         if len(self.climatology_mean.shape) != 1:
             raise ValueError("climatology_mean should be 1D")
-        if len(self.climatology_variance.shape) != 1:
-            raise ValueError("climatology_variance should be 1D")
+        if len(self.climatology_variance.shape) > 2:
+            raise ValueError("climatology_variance should be 1 or 2D")
         #
         if (
             self.independent_var_t.shape[0]
@@ -119,23 +128,42 @@ class Autoregressive1Forecast:
         errcov: numpy.ndarray
             The error covariance for the forecast
         """
-        #
-        lag_1_autocor_squared = self.lag_1_autocor * self.lag_1_autocor
-        #
         print("Computing forecast")
         diff_with_climatology = self.independent_var_t - self.climatology_mean
         self.forecast = (self.lag_1_autocor * diff_with_climatology.T).T
         self.forecast += self.climatology_mean
         #
         print("Computing uncertainties")
-        climvar_mult = (
-            np.ones_like(lag_1_autocor_squared) - lag_1_autocor_squared
-        )
-        errcov_clim = np.diag((climvar_mult * self.climatology_variance.T).T)
+        lag_1_autocor_squared = self.lag_1_autocor * self.lag_1_autocor
+        # Compute error covariances associated with AR1 epsilon
+        # that are associated with climatological variance
+        if len(self.climatology_variance.shape) == 1:
+            # climatology_variance is a vector of variances
+            # No off-diagonal/correlated terms
+            # Not a usually useful method
+            # (1-PHI*PHI) * CLIM_VAR
+            climvar_mult = (
+                np.ones_like(lag_1_autocor_squared) - lag_1_autocor_squared
+            )
+            errcov_clim = np.diag(
+                (climvar_mult * self.climatology_variance.T).T
+            )
+        else:
+            # climatology_variance is a covariance matrix
+            # Off-diagonals/correlated terms included
+            # For covariance functions determined using
+            # variogram analyses
+            # DIAG(SQRT(1-PHI*PHI)) @ CLIM_VAR @ DIAG(SQRT(1-PHI*PHI))
+            climvar_mult = np.sqrt(
+                np.ones_like(lag_1_autocor_squared) - lag_1_autocor_squared
+            )
+            errcov_clim = (climvar_mult * self.climatology_variance).T
+            errcov_clim = errcov_clim * climvar_mult
+        # Compute error covariance associated uncertaintes of the inputs
+        # DIAG(PHI) @ OBS_UNCERT @ DIAG(PHI)
         errcov_uncert_ind_var = (
-            np.sqrt(self.lag_1_autocor) * self.errcov_independent_var_t.T
+            self.lag_1_autocor * self.errcov_independent_var_t
         ).T
-        errcov_uncert_ind_var = (
-            errcov_uncert_ind_var * np.sqrt(self.lag_1_autocor).T
-        ).T
+        errcov_uncert_ind_var = errcov_uncert_ind_var * self.lag_1_autocor
+        #
         self.errcov = errcov_clim + errcov_uncert_ind_var
