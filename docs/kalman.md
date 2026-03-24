@@ -22,13 +22,13 @@ $$
 
 This is often referred as the AR1 model. More sophisticated approach can be used like multi-lag or autoregressive moving average (ARMA). The AR1 model produces its own uncertainty and input uncertainties can also be incorporated (i.e. epsilon). This is essential as uncertainty lie in the heart of Kalman Filter.
 
-Let say Phi and sigma(climatology) are diagonal matrices with local lag-1 correlation and climatological variance (standard deviation squared), Sigma t is the uncertainty for the current observations, the uncertainty to epsilon is,:
+The uncertainty of the autoregression forecast is the sum of the uncertainties related to the input observation and climatological variance. Let say Phi is diagonal matrix with local lag-1 correlation, Sigma(climatology) is the climatological covariance, Sigma t is the error covariance for the current observations, the uncertainty to epsilon can estimated as:
 
 $$
-\Sigma_{\text{AR1}} \sim MVN(0, \sqrt{\Phi}\Sigma_{t}\sqrt{\Phi} + \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)} )
+\Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi + \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})
 $$
 
-For the purpose of this exercise, uncertainty for the current observations is the full output Kriging covariance, using only present observations.
+For the purpose of this exercise, uncertainty for the current observations is the full output (ordinary) Kriging covariance. The climatological covariance is the prior spatial covariance estimated from `ellipse`.
 
 # Uncertainty weighted average (Kalman Filter)
 
@@ -135,10 +135,10 @@ Kalman filtering if observations and forecast are on the same grid. This class a
 
 ### KalmanOutUncorrCorrSplit
 
-For most part, this works the same way as KalmanOut, but it is possible to specify which bit one wants to use `ez_covariances` mode in which bit one does not. In the past, GlomarGridding Kriging classes have often been used to produce global outputs including into terrain that needed to be treated differently (sea -> sea ice/land, land -> sea). This can be used to filter such results.
+For most part, this works the same way as KalmanOut, but it is possible to specify which bit one wants to use `ez_covariances` mode in which bit one does not. In the past, GlomarGridding Kriging classes are generally used to produce global outputs including estimates into terrain that needed to be treated differently (marine temperatures onto sea ice or land vice versa). This can be used to filter such results automatically.
 
-The only addition kwarg is:
+The only addition `arg` is:
 
-- `arr_2_decide_if_points_are_isolated`: this works with the type of covariances produced by ellipse classes which allows expanding covariances globally. If one passes the global spatial covariance into this, methods within `KalmanOutUncorrCorrSplit` auto-detects which rows/columns are filled in, and conducts Kalman-Filtering separately using the `ez_covariances` mode.
+- `arr_2_decide_if_points_are_isolated`: this works with the type of covariances produced by ellipse classes which allows expanding covariances globally. If one passes the post-expanded global spatial covariance into this, methods within `KalmanOutUncorrCorrSplit` auto-detects which rows/columns are filled in by looking for diagonal rows, and conducts Kalman-Filtering separately using the `ez_covariances` mode.
 
 .. autoclass:: glomar_gridding.autoregressive_kalman.inv_sigma_wgts.KalmanOutUncorrCorrSplit
