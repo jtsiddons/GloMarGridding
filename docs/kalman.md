@@ -14,21 +14,25 @@ A popular way to do so is via Kalman Filter -- a recursive method that blends a 
 
 This lead to the question how would one produce a forecast priors. The priors/first guesses are often based on outputs of dynamical models like in numerical weather prediction and reanalysis; even in satnav or autopilot, simple dynamics are included (dead-reckoning along roads). Such dynamics are often not part of the development of the gridded observations; GlomarGridding is a package for statistical modelling only.
 
-A simple statistical approach is implemented here to produce such forecast, basing on the simple idea is that current condition (described by the variable `a` below) will generally tend toward climatology (`E(a)`). The simplest way to model that behavior is the local 1st order autoregressive model, in which the expected value for `a(t)` is a linear function of the observed lag-1 correlation Phi and its pervious observed value (`a(t-1)`) , resulting in exponential relaxation toward `E(a)`, plus a normally distributed uncertainty epsilon:
+A simple statistical approach is implemented here to produce such forecast, basing on the simple idea is that current condition (described by the variable `a` below) will generally tend toward climatology (`E(a)`). The simplest way to model that behavior is the local 1st order autoregressive model, in which the expected value for `a(t)` is a linear function of the observed lag-1 correlation and its last observed value (`a(t-1)`), resulting in exponential relaxation toward `E(a)`, plus a normal-distributed uncertainty epsilon:
 
 $$
 a_{t} = \Phi (a_{t-1} - E(a)) + \epsilon
 $$
 
-This is often referred as the AR1 model. More sophisticated approach can be used like multi-lag or autoregressive moving average (ARMA). The AR1 model produces its own uncertainty and input uncertainties can also be incorporated (i.e. epsilon). This is essential as uncertainty lie in the heart of Kalman Filter.
+This is often referred as the (non-vectored) [AR1 model](https://en.wikipedia.org/wiki/Autoregressive_model). More sophisticated approach can be used like full vectorised form (requires full lagged autocovariance matrix), multi-lag, or autoregressive moving average (ARMA).
 
-The uncertainty of the autoregression forecast is the sum of the uncertainties related to the input observation and climatological variance. Let say Phi is diagonal matrix with local lag-1 correlation, Sigma(climatology) is the climatological covariance, Sigma t is the error covariance for the current observations, the uncertainty to epsilon can estimated as:
+The AR1 model produces its own uncertainty. Input uncertainties can be incorporated following standard propagation of error rules. This is essential as uncertainty lie in the heart of Kalman Filter. Let say Phi is a diagonal matrix with local lag-1 correlation, Sigma(climatology) is the diagonal matrix with climatological variance (no off-diagonal contribution; this requires full vectorised AR1), Sigma t is a diagonal matrix of the diagonal of error covariance for the current observations, the full uncertainty can be estimated as:
 
 $$
 \Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi + \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})
 $$
 
-For the purpose of this exercise, uncertainty for the current observations is the full output (ordinary) Kriging covariance. The climatological covariance is the prior spatial covariance estimated from `ellipse`.
+Work in progress: Ideally, this should be done in vectorised form. 
+
+[Wikipedia intro](https://en.wikipedia.org/wiki/Vector_autoregression)
+
+This requires a modeled or computed lagged autocovariance and contemporary covariance; the latter can use the `ellipse` covariance (part of `GlomarGridding`... former not yet!). The predicted value for a point would now depends on values of other points. This also require computation of a weight matrix that is similar to Kriging with full error covariance that is contains off-diagonal values.
 
 # Uncertainty weighted average (Kalman Filter)
 
@@ -103,16 +107,18 @@ For the all the main classes, the computation uses a method that is called `comp
 
 This does the local 1st-order linear autoregressive forecast.
 
-There is only one class in the code. All the processing (methods) needed are within the class.
+There is only one class in the code. All the processing (methods) needed are within the class. Only the local AR1 is implemented for now.
 
 ### Autoregressive1Forecast
 
-- `independent_var_t`: Kriging outputs that serves as inputs to this class
-- `errcov_independent_var_t`: The (full) output Kriging covariance. Class methods in `kriging.py` and `stochastic` have been updated to make that possible.
-- `lag_1_autocor`: A 1D vector that has same shape as `independent_var_t` that gives lag-1 correlation for the same location.
-- `climatology_mean`: The climatological mean for `independent_var_t`; while `independent_var_t` is usually already been turned to anomalies (0-mean relative to some arbitrary common baseline), this allows you specify a new mean that is the current quasi-stationary one (i.e. global warming makes the arbitrary common baseline for variables like temperature or specific humidity inaccurate).
-- `climatology_variance`: The climatological variance
-- `climatology_variance_is_sdev`: `climatology_variance` is actually standard deviation. This defaults to False. Default behavior expect sigma-squared as this is consistent with the behavior of `errcov_independent_var_t`.
+- `obs`: Kriging outputs that serves as inputs to this class
+- `errcov_obs`: Uncertainty to `obs`. Can be matrix or vector depending on usage. Current version will force it 1D vector as vector AR1 is not yet implemented.
+- `lag_1_autocov`: A 1D vector of lag-1 correlation (or 2D full autocovariance matrix... when that is implemented; class will force it to 1D for now)
+- `clim_mean`: The climatological mean for `obs`; while `obs` is usually already in anomalies (0-mean relative to some arbitrary baseline), this allows one to redefine that to a current quasi-stationary timeslice)
+- `clim_covar`: The climatological covariance. Can be 1 or 2D depending on usage. Current version will force it to 1D vector as vector AR1 is not yet implemented.
+- `errcov_obs_is_sdev`: `climatology_variance` is standard deviation. This defaults to False. Only works for 1D. The class will square the values for you. This is here to make sure you check your variable's units; did you use squared or non-squared values!?
+- `clim_covar_is_sdev`: `clim_covar` is standard deviation. This defaults to False. Only works for 1D. The class will square the values for you.
+- `predict_local`: Forces local AR1 forecasts. This is only implemented method for now. Like it or not, it will be forced to True (!) for now.
 
 .. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1Forecast
 
