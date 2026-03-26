@@ -28,7 +28,7 @@ $$
 \Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi + \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})
 $$
 
-Work in progress: Ideally, this should be done in vectorised form. 
+Work in progress: Ideally, this should be done in vectorised form.
 
 [Wikipedia intro](https://en.wikipedia.org/wiki/Vector_autoregression)
 

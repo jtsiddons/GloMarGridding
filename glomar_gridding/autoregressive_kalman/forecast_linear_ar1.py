@@ -221,4 +221,4 @@ class Autoregressive1Forecast:
 
     def compute_forecast_vector(self):
         """WIP"""
-        raise NotImplementedError('Not finished yet.')
+        raise NotImplementedError("Not finished yet.")
