@@ -156,7 +156,7 @@ class Autoregressive1Forecast:
         return check1 and check2
 
     def compute_forecast(self):
-        """Call default compute_forecast based on setted attributes"""
+        """Call default compute_forecast based on set attributes"""
         if self.predict_local:
             self.compute_forecast_local()
         else:
@@ -169,7 +169,8 @@ class Autoregressive1Forecast:
         Speed:
         https://stackoverflow.com/questions/44388358/python-numpy-matrix-multiplication-with-one-diagonal-matrix
 
-        This version uses *, less np.diag, and should be faster.
+        This version uses scalar multiplication, less use of np.diag, and should
+        be faster.
 
         Parameters
         ----------
@@ -204,7 +205,7 @@ class Autoregressive1Forecast:
         #
         # This only works 1D/local prediction
         # clim_covar is a vector of climatological variances
-        # and errcov_obs is a vector of local uncertainities
+        # and errcov_obs is a vector of local uncertainties
         # No off-diagonal/correlated terms
         # Works fast but is crude, and don't use all possible info
         #
