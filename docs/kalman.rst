@@ -36,9 +36,9 @@ statistical modelling only.
 
 A simple statistical approach is implemented here to produce such forecast, basing on the simple
 idea is that current condition (described by the variable `a` below) will generally tend toward
-climatology (`E(a)`). The simplest way to model that behavior is the local 1st order autoregressive
-model, in which the expected value for `a(t)` is a linear function of the observed lag-1 correlation
-and its last observed value (`a(t-1)`), resulting in exponential relaxation toward `E(a)`, plus a
+climatology (:math:`E(a)`). The simplest way to model that behavior is the local 1st order autoregressive
+model, in which the expected value for :math:`a(t)` is a linear function of the observed lag-1 correlation
+and its last observed value (:math:`a(t-1)`), resulting in exponential relaxation toward :math:`E(a)`, plus a
 normal-distributed uncertainty epsilon:
 
 .. math::
@@ -51,14 +51,25 @@ moving average (ARMA).
 
 The AR1 model produces its own uncertainty. Input uncertainties can be incorporated following
 standard propagation of error rules. This is essential as uncertainty lie in the heart of Kalman
-Filter. Let say Phi is a diagonal matrix with local lag-1 correlation, Sigma(climatology) is the
-diagonal matrix with climatological variance (no off-diagonal contribution; this requires full
-vectorised AR1), Sigma t is a diagonal matrix of the diagonal of error covariance for the current
+Filter. Let say :math:`\Phi` is a diagonal matrix with local lag-1 correlation, :math:`\Sigma_\text{climatology}`
+is the diagonal matrix with climatological variance (no off-diagonal contribution; this requires full
+vectorised AR1), :math:`\Sigma_{t}` is a diagonal matrix of the diagonal of error covariance for the current
 observations, the full uncertainty can be estimated as:
 
 .. math::
-    \Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi +
-    \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})
+    \epsilon_{\text{AR1}} \sim \text{MVN}(0, \Phi\Sigma_{t}\Phi^T +
+    \Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)
+
+The above equation is correct even :math:`\Phi` has off-diagonal terms. In that case, :math:`\Phi` is no longer a
+diagonal autocorrelation matrix but the weights for fully vectorised multi-variate model, noting that 
+:math:`\Phi = \Phi^T` for the diagonal case but not for the multi-variate case.
+
+In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
+find in Chapter 8 of [Wilks]:
+
+.. math::
+    \epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
+    (1-\phi^2)\sigma^2_\text{climatology})
 
 Work in progress: Ideally, this should be done in vectorised form.
 
@@ -108,7 +119,7 @@ in which K is solution to the following linear equation, this is how it is solve
 .. math::
     (\Sigma_{\text{forecast}} + \sigma_{\text{obs}}) K^{T} = \Sigma_{\text{forecast}}
 
-noting that Sigma is symmetrical but K is not (similar to Kriging weights).
+noting that Sigma is symmetrical but :math:`K` is not (similar to Kriging weights).
 
 Once the weights are known, the posterior analysis is a weighted average of forecast and observations
 
@@ -126,9 +137,9 @@ needed; that leads the usual form one will see in text books or Wikipedia.
 
 The workflow here will be:
 
-1. Produce an initial t=0 analysis
+1. Produce an initial :math:`t=0` analysis
 2. Do a t+1 forecast
-3. Krige the observations for t+1
+3. Krige the observations for :math:`t+1`
 4. Blend the forecast with Kriging result using Kalman filter
 5. Go back to step 2 using the posterior analysis and error covariance
 
@@ -155,7 +166,7 @@ For the all the main classes, the computation uses a method that is called `comp
 `autoregressive_kalman.inv_sigma_wgts`
 ======================================
 
-For Kalman Filtering, using inverse error covariance weighting (`sigma`) weights.
+For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) weights.
 
 .. autoclass:: glomar_gridding.autoregressive_kalman.inv_sigma_wgts.KalmanOut
    :members:

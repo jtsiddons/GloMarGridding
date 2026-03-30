@@ -25,7 +25,20 @@ This is often referred as the (non-vectored) [AR1 model](https://en.wikipedia.or
 The AR1 model produces its own uncertainty. Input uncertainties can be incorporated following standard propagation of error rules. This is essential as uncertainty lie in the heart of Kalman Filter. Let say Phi is a diagonal matrix with local lag-1 correlation, Sigma(climatology) is the diagonal matrix with climatological variance (no off-diagonal contribution; this requires full vectorised AR1), Sigma t is a diagonal matrix of the diagonal of error covariance for the current observations, the full uncertainty can be estimated as:
 
 $$
-\Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi + \sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})
+    \epsilon_{\text{AR1}} \sim \text{MVN}(0, \Phi\Sigma_{t}\Phi^T +
+    \Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)
+$$
+
+The above equation is correct even $\Phi$ has off-diagonal terms. In that case, $\Phi$ is no longer a
+diagonal autocorrelation matrix but the weights for fully vectorized multi-variate model, noting that 
+$\Phi = \Phi^T$ for the diagonal case but not for the multi-variate case.
+
+In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
+find in Chapter 8 of Wilks:
+
+$$
+    \epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
+    (1-\phi^2)\sigma^2_\text{climatology})
 $$
 
 Work in progress: Ideally, this should be done in vectorised form.
