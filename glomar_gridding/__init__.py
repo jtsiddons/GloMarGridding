@@ -45,3 +45,9 @@ __all__ = [
 ]
 
 __version__ = "1.1.0"
+
+__citation__ = """
+Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python
+Toolkit for Flexible Spatial Interpolation in Climate Applications.” Geoscience
+Data Journal13, no. 2: e70064. https://doi.org/10.1002/gdj3.70064.
+"""

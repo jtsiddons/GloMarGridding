@@ -56,10 +56,9 @@ An example workflow can be found in the documentation PDF, or in the notebooks d
 
 ## Citation
 
-Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
-Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square
-[https://doi.org/10.21203/rs.3.rs-7427869/v1](https://doi.org/10.21203/rs.3.rs-7427869/v1)
+Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python Toolkit for Flexible
+Spatial Interpolation in Climate Applications.” Geoscience Data Journal13, no. 2: e70064.
+[https://doi.org/10.1002/gdj3.70064](https://doi.org/10.1002/gdj3.70064).
 
 ## Acknowledgements
 
