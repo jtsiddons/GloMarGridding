@@ -79,6 +79,16 @@ class Kriging(ABC):
                 "Do not use the generic class directly, "
                 + "use SimpleKriging or OrdinaryKriging"
             )
+
+        # Must have at most 1 observation at each grid-idx
+        self.n_obs = len(idx)
+        if len(np.unique(idx)) != self.n_obs:
+            raise ValueError(
+                "Have repeated positions in `idx`. "
+                + "Combine observations and re-run map_observations method."
+            )
+
+        self.n_grid_pts = covariance.shape[0]
         self.covariance = covariance
         self.idx = idx
         self.obs = obs
@@ -92,7 +102,7 @@ class Kriging(ABC):
         zeros on the diagonal.
         """
         if self.error_cov is not None:
-            if self.error_cov.shape[0] != len(self.idx):
+            if self.error_cov.shape[0] != self.n_obs:
                 self.error_cov = self.error_cov[
                     self.idx[:, None], self.idx[None, :]
                 ]
@@ -116,6 +126,7 @@ class Kriging(ABC):
                 self.error_cov = self.error_cov[
                     idx_keep[:, None], idx_keep[None, :]
                 ]
+                self.n_obs = len(self.idx)
             # Fill remaining NaNs with 0.0
             self.error_cov[np.isnan(self.error_cov)] = 0.0
         return None
@@ -377,7 +388,7 @@ class SimpleKriging(Kriging):
             The pre-computed inverse of the covariance between grid-points with
             observations. :math:`(C_{obs} + E)^{-1}`
         """
-        if len(self.idx) != inv.shape[0]:
+        if self.n_obs != inv.shape[0]:
             raise ValueError("inv must be square with side length == len(idx)")
         obs_grid_cov = self.covariance[self.idx, :]
         self.kriging_weights = (inv @ obs_grid_cov).T
@@ -579,9 +590,6 @@ class OrdinaryKriging(Kriging):
 
         Sets the `kriging_weights` attribute.
         """
-        N = len(self.idx)
-        M = self.covariance.shape[0]
-
         obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
         obs_grid_cov = self.covariance[self.idx, :]
 
@@ -590,8 +598,8 @@ class OrdinaryKriging(Kriging):
             obs_obs_cov += self.error_cov
 
         # Add Lagrange multiplier
-        ones_n = np.ones((1, N), dtype=self.covariance.dtype)
-        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        ones_n = np.ones((1, self.n_obs), dtype=self.covariance.dtype)
+        ones_m = np.ones((1, self.n_grid_pts), dtype=self.covariance.dtype)
         zero = np.zeros((1, 1), dtype=self.covariance.dtype)
         obs_obs_cov = np.block([[obs_obs_cov, ones_n.T], [ones_n, zero]])
         obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
@@ -637,13 +645,12 @@ class OrdinaryKriging(Kriging):
             The pre-computed inverse of the covariance between grid-points with
             observations. :math:`(C_{obs} + E)^{-1}`
         """
-        if len(self.idx) != inv.shape[0] - 1:
+        if self.n_obs != inv.shape[0] - 1:
             raise ValueError("inv must be square with side length == len(idx)")
         obs_grid_cov = self.covariance[self.idx, :]
 
         # Add Lagrange multiplier
-        M = self.covariance.shape[0]
-        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        ones_m = np.ones((1, self.n_grid_pts), dtype=self.covariance.dtype)
         obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
         self.kriging_weights = ((inv @ obs_grid_cov).T).astype(
             self.covariance.dtype
@@ -710,9 +717,8 @@ class OrdinaryKriging(Kriging):
         if not hasattr(self, "kriging_weights"):
             raise KeyError("Please compute Kriging Weights first")
 
-        M = self.covariance.shape[0]
         obs_grid_cov = self.covariance[self.idx, :]
-        ones_m = np.ones((1, M), dtype=self.covariance.dtype)
+        ones_m = np.ones((1, self.n_grid_pts), dtype=self.covariance.dtype)
         obs_grid_cov = np.concatenate((obs_grid_cov, ones_m), axis=0)
 
         alpha = self.kriging_weights[:, -1]
