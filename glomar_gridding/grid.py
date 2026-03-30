@@ -627,13 +627,14 @@ class Grid:
     def map_observations(
         self,
         obs: pl.DataFrame,
-        obs_col: str,
         obs_coords: list[str] = ["lat", "lon"],
         sort: bool = True,
         bounds: list[tuple[float, float]] | None = None,
         add_grid_pts: bool = True,
         grid_prefix: str = "grid_",
         apply_mask: bool = True,
+        obs_col: str | None = None,
+        set_vals: bool = True,
     ) -> pl.DataFrame:
         """
         Align an observation dataframe to the Grid.
@@ -739,8 +740,9 @@ class Grid:
                 .rename({"mask_idx": grid_idx_col})
             )
 
-        self.obs = obs.get_column(obs_col).to_numpy()
-        self.idx = obs.get_column(grid_idx_col).to_numpy()
+        if set_vals and obs_col is not None:
+            self.obs = obs.get_column(obs_col).to_numpy()
+            self.idx = obs.get_column(grid_idx_col).to_numpy()
 
         return obs
 
@@ -1129,6 +1131,12 @@ class Grid:
             Optional error covariance matrix. This will apply a smoothing
             effect to the observation points (as well as over the infilling).
         """
+        # Check we have data to use!
+        if not hasattr(self, "obs") or not hasattr(self, "idx"):
+            raise AttributeError(
+                "Missing observational data, use `map_observations` method."
+            )
+
         # Handle Error Covariance shape
         if error_cov is not None and error_cov.shape[0] == self.size:
             error_cov = self.prep_covariance(error_cov)
