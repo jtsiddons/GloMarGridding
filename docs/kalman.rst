@@ -61,7 +61,7 @@ observations, the full uncertainty can be estimated as:
     \Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)
 
 The above equation is correct even :math:`\Phi` has off-diagonal terms. In that case, :math:`\Phi` is no longer a
-diagonal autocorrelation matrix but the weights for fully vectorised multi-variate model, noting that 
+diagonal autocorrelation matrix but the weights for fully vectorised multi-variate model, noting that
 :math:`\Phi = \Phi^T` for the diagonal case but not for the multi-variate case.
 
 In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can

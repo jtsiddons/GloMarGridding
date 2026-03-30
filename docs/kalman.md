@@ -30,7 +30,7 @@ $$
 $$
 
 The above equation is correct even $\Phi$ has off-diagonal terms. In that case, $\Phi$ is no longer a
-diagonal autocorrelation matrix but the weights for fully vectorized multi-variate model, noting that 
+diagonal autocorrelation matrix but the weights for fully vectorized multi-variate model, noting that
 $\Phi = \Phi^T$ for the diagonal case but not for the multi-variate case.
 
 In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
