@@ -49,5 +49,22 @@ __version__ = "1.1.0"
 __citation__ = """
 Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python
 Toolkit for Flexible Spatial Interpolation in Climate Applications.” Geoscience
-Data Journal13, no. 2: e70064. https://doi.org/10.1002/gdj3.70064.
+Data Journal, 13 (2): e70064. https://doi.org/10.1002/gdj3.70064.
 """
+
+__bibtex__ = """
+@article{https://doi.org/10.1002/gdj3.70064,
+author = {Cornes, Richard C. and Chan, Steven C. and Cable, Archie and Chan, Duo and Faulkner, Agnieszka and Kent, Elizabeth C. and Siddons, Joseph T.},
+title = {GloMarGridding: A Python Toolkit for Flexible Spatial Interpolation in Climate Applications},
+journal = {Geoscience Data Journal},
+volume = {13},
+number = {2},
+pages = {e70064},
+doi = {https://doi.org/10.1002/gdj3.70064},
+url = {https://rmets.onlinelibrary.wiley.com/doi/abs/10.1002/gdj3.70064},
+eprint = {https://rmets.onlinelibrary.wiley.com/doi/pdf/10.1002/gdj3.70064},
+note = {e70064 GDJ-2025-08-0064},
+abstract = {ABSTRACT Global surface temperature datasets are constructed through processing chains that inherently introduce structural uncertainty, arising from choices made both in the processing of input observations and in the spatial interpolation methods employed. Because these steps are often tightly integrated, it is difficult to isolate their individual contributions to uncertainty. Here, we introduce GloMarGridding, a Python package designed to support the evaluation of the component of structural uncertainty arising specifically from spatial interpolation. It provides tools to apply Gaussian Process Regression Modelling (GPRM), widely used in the production of global temperature datasets, enabling the generation of spatially complete temperature fields from grid-box average and point observations, along with estimation of uncertainty in those fields. GloMarGridding currently supports three spatial covariance parametrizations: fixed isotropic variograms, ellipse-based anisotropic, and empirically derived covariance matrices. It also allows for uncertainty propagation via error covariance matrices and conditional simulation from input ensembles. By decoupling spatial interpolation from earlier stages of dataset development—such as homogenization, quality control, and aggregation—this framework enables independent assessment of upstream processing choices and their impacts on gridded outputs.},
+year = {2026}
+}
+"""  # noqa: E501

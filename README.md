@@ -57,7 +57,7 @@ An example workflow can be found in the documentation PDF, or in the notebooks d
 ## Citation
 
 Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python Toolkit for Flexible
-Spatial Interpolation in Climate Applications.” Geoscience Data Journal13, no. 2: e70064.
+Spatial Interpolation in Climate Applications.” Geoscience Data Journal, 13 (2): e70064.
 [https://doi.org/10.1002/gdj3.70064](https://doi.org/10.1002/gdj3.70064).
 
 ## Acknowledgements
