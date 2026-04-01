@@ -4,6 +4,8 @@ output new uncertainties
 """
 
 import numpy as np
+import scipy as sp
+import warnings
 
 
 class Autoregressive1Forecast:
@@ -103,10 +105,17 @@ class Autoregressive1Forecast:
                 self.clim_covar = np.diag(self.clim_covar)
             if len(self.errcov_obs.shape) == 2:
                 self.errcov_obs = np.diag(self.errcov_obs)
+            if len(self.lag_1_autocov.shape) == 2:
+                self.lag_1_autocov = np.diag(self.lag_1_autocov)
         else:
-            raise NotImplementedError("Vector autoregression is WIP")
+            # raise NotImplementedError("Vector autoregression is WIP")
+            self.compute_forecast = self.compute_forecast_vector
+            print(f"{self.clim_covar.shape = }")
+            print(f"{self.errcov_obs.shape = }")
+            print(f"{self.lag_1_autocov.shape = }")
         #
         self._check_args()
+        self.bad_model = None
 
     def _check_args(self):  # noqa: C901
         """Check attributes set on init"""
@@ -174,20 +183,20 @@ class Autoregressive1Forecast:
 
         Parameters
         ----------
-        independent_var_t: numpy.ndarray
+        obs: numpy.ndarray
             1D vector of independent variables for t
-        errcov_independent_var_t: numpy.ndarray
-            2D errcov for independent_var_t
-        lag_1_autocor: numpy.ndarray
+        errcov_obs: numpy.ndarray
+            2D errcov for obs
+        lag_1_autocov: numpy.ndarray
             1D vector of lag correlation
-        climatology_mean: numpy.ndarray
-            1D climatological mean for independent_var
-        climatology_variance: numpy.ndarray
-            climatology_variance: 1D climatological variance for independent_var
+        clim_mean: numpy.ndarray
+            1D climatological mean for obs
+        clim_covar: numpy.ndarray
+            climatology_variance: 1D (local) climatological variance for obs
 
         Returns
         -------
-        forecast_t_plus_1_anomaly: numpy.ndarray
+        forecast: numpy.ndarray
             AR1 forecast
         errcov: numpy.ndarray
             The error covariance for the forecast
@@ -195,6 +204,7 @@ class Autoregressive1Forecast:
         print("Computing forecast")
         #
         # The simple local case:
+        self.weights = np.diag(self.lag_1_autocov)
         diff_with_clim_mean = self.obs - self.clim_mean
         self.forecast = self.lag_1_autocov * diff_with_clim_mean
         self.forecast += self.clim_mean
@@ -217,9 +227,127 @@ class Autoregressive1Forecast:
         sigma_sq_eps = climvar_mult * self.clim_covar
         sigma_sq_obs = autocorr_sq * self.errcov_obs
         self.errcov = sigma_sq_eps + sigma_sq_obs
+        self.bad_model = False
         if full_errcov_out:
             self.errcov = np.diag(self.errcov)
 
-    def compute_forecast_vector(self):
-        """WIP"""
-        raise NotImplementedError("Not finished yet.")
+    def compute_forecast_vector(
+            self,
+            check_wgt_stability: bool = True,
+            full_errcov_out: bool = True,
+            stability_perturbation: float = 0.05 ** 2):
+        """
+        Parameters
+        ----------
+        obs: numpy.ndarray
+            1D vector of independent variables for t
+        errcov_obs: numpy.ndarray
+            2D errcov for obs
+        lag_1_autocov: numpy.ndarray
+            2D matrix of autocovariance
+        clim_mean: numpy.ndarray
+            1D climatological mean for obs
+        clim_covar: numpy.ndarray
+            climatology_variance: 2D climatological covariance for obs
+        check_wgt_stability: bool
+            Check weights (in extension for the auto and climatological
+            covariances) are stable; see var_stability_check
+        full_errcov_out: bool
+            Return full error covariance if True
+        stability_perturbation: float
+            In some cases, prediction is possible even with weights being
+            unstable, but a perturbation may be needed to ensure sensible
+            results are obtainable.
+
+        Returns
+        -------
+        forecast: numpy.ndarray
+            AR1 forecast
+        errcov: numpy.ndarray
+            The error covariance for the forecast
+        """
+        # raise NotImplementedError("Not finished yet.")
+        print("Computing weights")
+        # W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
+        # W @ <x(t), x(t)> = <x(t), x(t-1)>
+        # <x(t), x(t)> @ W.T = <x(t), x(t-1)>
+        # (note: <x(t), x(t-1)> and <x(t), x(t)> are symmetric)
+        ccp = stability_perturbation + self.clim_covar
+        self.weights = np.linalg.solve(
+            ccp,
+            self.lag_1_autocov,
+        ).T
+        print(f"{self.weights = }")
+        if check_wgt_stability:
+            self.var_stability_check()
+        else:
+            warn_msg = "check_wgt_stability is disabled; "
+            warn_msg += "check is recommended as VAR is often unstable. "
+            warn_msg += "As precaution, self.bad_model defaults to True."
+            warnings.warn(warn_msg, UserWarning)
+            self.bad_model = True
+        #
+        print("Computing forecast")
+        diff_with_clim_mean = self.obs - self.clim_mean
+        self.forecast = self.weights @ diff_with_clim_mean
+        self.forecast += self.clim_mean
+        #
+        # https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression
+        # I didn't cheat
+        # I got same equation independently using good ole pen and paper!
+        #
+        # If weights fail stability check, you will get wrong uncertainty
+        # estimates, like off diagonal term being (considerably) larger than
+        # diagonal terms; that's an invalid (error) covariance matrix, saying
+        # correlation > 1 which is impossible!
+        print("Computing uncertainties")
+        left = ccp
+        right = self.weights @ ccp @ self.weights.T
+        print(f"{left = }")
+        print(f"{right = }")
+        sigma_sq_eps = left - right
+        #
+        # Add input uncertainty
+        sigma_sq_obs = self.weights @ self.errcov_obs @ self.weights.T
+        self.errcov = sigma_sq_eps + sigma_sq_obs
+        if not full_errcov_out:
+            self.errcov = np.diag(self.errcov)
+
+    def var_stability_check(self, warn_instead: bool = True):
+        """
+        A multivariate AR model is only stable if and only all eigvals
+        of the weights have absolute values less than 1.0
+        https://kevinkotze.github.io/ts-7-slide/#10
+        which is from
+        https://www.jstor.org/stable/j.ctv14jx6sm
+        Chapter 10 Proposition 10.1
+        """
+        print("Checking weight stability")
+        smallest_eigval = sp.linalg.eigh(
+            self.weights,
+            subset_by_index=(0, 0),
+            eigvals_only=True,
+        )[0]
+        largest_eigval = sp.linalg.eigh(
+            self.weights,
+            subset_by_index=(
+                self.weights.shape[0] - 1,
+                self.weights.shape[0] - 1
+            ),
+            eigvals_only=True,
+        )[0]
+        print(f"{smallest_eigval = }")
+        print(f"{largest_eigval = }")
+        self.bad_model = np.logical_or(
+            smallest_eigval < -1.0,
+            largest_eigval > 1.0,
+        )
+        if self.bad_model:
+            errmsg = "Eigenvalues of estimated weights have values > 1; "
+            errmsg += "autocovariance and contempory "
+            errmsg += "covariance do not satisfy stationarity requirements, "
+            errmsg == "and error covariances are incorrect."
+            if warn_instead:
+                warnings.warn(errmsg, UserWarning)
+            else:
+                raise ValueError(errmsg)
