@@ -283,8 +283,13 @@ class Spline(ABC):
         X_test: np.ndarray,
         covariance: np.ndarray | None = None,
         compute_se: bool = True,
+        result: SplineResult | NoneType = None,
     ) -> tuple[np.ndarray, np.ndarray | None]:
         """Predict for new positions"""
+        if result is not None:
+            self.result = result
+            self.fitted = True
+
         if not self.fitted:
             raise ValueError("Must first fit")
 
@@ -303,9 +308,11 @@ class Spline(ABC):
             covariance = self.kernel(D)
             del D
         elif covariance.shape != (n_pts, self.n_pts):
-            raise ValueError()
+            raise ValueError(
+                f"Incorrect covariance shape, must be {(n_pts, self.n_pts)}"
+            )
 
-        result = self._compute_result(
+        prediction = self._compute_result(
             covariance, self.result.weights, P, self.result.trend_coefs
         )
 
@@ -316,7 +323,7 @@ class Spline(ABC):
             Usolved = np.abs(np.sum((U @ self.result.M_inv) * U, axis=1))
             se_pred = np.sqrt(Usolved * self.result.var)
 
-        return result, se_pred
+        return prediction, se_pred
 
     def estimate_lambda_gcv(
         self,
