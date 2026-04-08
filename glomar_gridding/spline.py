@@ -545,11 +545,18 @@ class VariogramKriging(Spline):
         error_cov: np.ndarray | NoneType = None,
         kriging_method: Literal["ordinary", "universal"] = "ordinary",
         distance_method: Literal["haversine", "euclidean"] = "haversine",
+        distance_scale: float = 1.0,
     ) -> NoneType:
         self.variogram = variogram
         self.kriging_method = kriging_method
         self.distance_method = distance_method
+        self.distance_scale = distance_scale
         super().__init__(X, y, None, error_cov)
+
+    @property
+    def default_error_cov(self) -> np.ndarray:
+        """Default error covariance"""
+        return np.zeros((self.n_pts, self.n_pts))
 
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
         """Trend basis for kriging"""
@@ -562,7 +569,7 @@ class VariogramKriging(Spline):
             case _:
                 raise ValueError(
                     f"Unexpected 'kriging_method'. Got {self.kriging_method}"
-                    + "Expected one of 'ordinary' or 'universal'"
+                    + "Expected one of 'ordinary' or 'universal'."
                 )
 
     def dist_func(
@@ -570,20 +577,21 @@ class VariogramKriging(Spline):
         positions: np.ndarray,
         X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
-        """Pairwise Haversine distances between positions"""
-        if positions.shape[1] != 2:
-            raise ValueError(
-                "Coordinates must be 2 dimensional lat and lon in radians."
-            )
+        """Pairwise distances between positions"""
         match self.distance_method:
             case "haversine":
-                return (
+                if positions.shape[1] != 2:
+                    raise ValueError(
+                        "Coordinates must be 2 dimensional lat and lon in "
+                        + "radians for haversine distances."
+                    )
+                return self.distance_scale * (
                     haversine_distances(positions, X2)
                     if X2 is not None
                     else haversine_distances(positions)
                 )
             case "euclidean":
-                return (
+                return self.distance_scale * (
                     cdist(positions, X2)
                     if X2 is not None
                     else cdist(positions, positions)
@@ -591,7 +599,7 @@ class VariogramKriging(Spline):
             case _:
                 raise ValueError(
                     f"Unexpected 'distance_method'. Got {self.distance_method}"
-                    + "Expected one of 'haversine' or 'euclidean'"
+                    + "Expected one of 'haversine' or 'euclidean'."
                 )
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
@@ -605,4 +613,4 @@ class VariogramKriging(Spline):
 
         vario_mat = self.variogram.fit(distances)
 
-        return np.asarray(variogram_to_covariance(vario_mat, psill))
+        return variogram_to_covariance(vario_mat, psill)  # type: ignore (array)
