@@ -341,7 +341,7 @@ class Spline(ABC):
             Standard error of the fit if `compute_se` is True, otherwise None.
         """
         if result is None:
-            if not self.fitted or hasattr(self, "result"):
+            if not self.fitted or not hasattr(self, "result"):
                 raise ValueError(
                     "Must first fit the model if not providing a result."
                 )
