@@ -26,7 +26,23 @@ from sklearn.metrics.pairwise import haversine_distances
 
 
 class SplineResult:
-    """DOCUMENTATION"""
+    """
+    Result class for a Spline, holds result attributes from the spline fitting.
+
+    Parameters
+    ----------
+    lam : float
+        The lambda value used in fitting, controls the smoothing.
+    weights : numpy.ndarray
+    trend_coefs : numpy.ndarray
+    M_inv : numpy.ndarray
+    y_fit : numpy.ndarray
+        The fitted result of the Spline interpolation at the input coordinates.
+    parent : Spline
+        The Spline instance used to generate the result.
+    compute_stats : bool
+        Compute fitting statistics
+    """
 
     def __init__(
         self,
@@ -54,7 +70,7 @@ class SplineResult:
         return None
 
     def fit_stats(self) -> NoneType:
-        """Get variance"""
+        """Get statistics from the fit"""
         n_pts = len(self.y_fit)
         residual = self.parent.y - self.y_fit
         sumsq = np.sum(np.power(residual, 2))
