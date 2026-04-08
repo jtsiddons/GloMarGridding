@@ -37,14 +37,17 @@ class SplineResult:
     lam : float
         The lambda value used in fitting, controls the smoothing.
     weights : numpy.ndarray
+        The weights from fitting a Spline.
     trend_coefs : numpy.ndarray
+        The trend coefficients from fitting a Spline.
     M_inv : numpy.ndarray
+        The inverse of the fitting matrix, used to compute some statistics.
     y_fit : numpy.ndarray
         The fitted result of the Spline interpolation at the input coordinates.
     parent : Spline
         The Spline instance used to generate the result.
     compute_stats : bool
-        Compute fitting statistics
+        Compute fitting statistics.
     """
 
     def __init__(
@@ -83,17 +86,11 @@ class SplineResult:
             @ self.M_inv[:, :n_pts]
         )
 
-        signal = np.trace(H)
-        error = n_pts - signal
-        gcv = (sumsq * n_pts) / (error**2)
-        msr = sumsq / n_pts
-        var = sumsq / error
-
-        self.signal = signal
-        self.error = error
-        self.gcv = gcv
-        self.msr = msr
-        self.var = var
+        self.signal = np.trace(H)
+        self.error = n_pts - self.signal
+        self.gcv = (sumsq * n_pts) / (self.error**2)
+        self.msr = sumsq / n_pts
+        self.var = sumsq / self.error
 
         return None
 
@@ -188,30 +185,30 @@ class Spline(ABC):
         positions: np.ndarray,
         X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
-        """Distances between each pair of points"""
+        """Distances between each pair of points."""
         raise NotImplementedError(
-            "Not implemented for the generic Spline class"
+            "Not implemented for the generic Spline class."
         )
 
     @abstractmethod
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
         """Trend Basis"""
         raise NotImplementedError(
-            "Not implemented for the generic Spline class"
+            "Not implemented for the generic Spline class."
         )
 
     @abstractmethod
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Spline Kernel"""
         raise NotImplementedError(
-            "Not implemented for the generic Spline class"
+            "Not implemented for the generic Spline class."
         )
 
     def _get_weights(
         self,
         lam: float,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Fit a spline model with an optional smoothing parameter"""
+        """Fit a spline model with an optional smoothing parameter."""
         if not hasattr(self, "trend_basis"):
             self.trend_basis, self.n_t = self.get_trend_basis(self.X)
         if not hasattr(self, "covariance"):
@@ -232,6 +229,7 @@ class Spline(ABC):
                     [self.trend_basis.T, np.zeros((self.n_t, self.n_t))],
                 ]
             )
+        # NOTE: require inverse for other calculations
         M_inv = sp.linalg.inv(M, assume_a="sym")
 
         if self.n_t == 0:
@@ -241,11 +239,11 @@ class Spline(ABC):
 
         sol = M_inv @ b
         # Weights
-        w = sol[: self.n_pts]
+        weights = sol[: self.n_pts]
         # Trend Coefficients
-        c = sol[self.n_pts :]
+        trend_coefs = sol[self.n_pts :]
 
-        return w, c, M_inv
+        return weights, trend_coefs, M_inv
 
     def fit(
         self,
@@ -254,7 +252,31 @@ class Spline(ABC):
         compute_stats: bool = True,
         **kwargs,
     ) -> SplineResult:
-        """Solve"""
+        """
+        Fit the Spline.
+
+        Parameters
+        ----------
+        lam : float | None
+            Optional smoothing parameter. If set to 0 the interpolation will be
+            an **exact** interpolator. If unset, the value will be estimated
+            using a GCV method.
+        set_results : bool
+            Assign the results to the `result` attribute and set the `fitted`
+            attribute to True. This is generally advised.
+        compute_stats : bool
+            Add the statistics to the results attribute.
+        **kwargs
+            Keyword parameters to pass to minimize_scalar if estimating the
+            smoothing parameter using the GCV approach.
+
+        Returns
+        -------
+        result : SplineResult
+            The result of fitting the Spline class using the training data used
+            to initialise the Spline instance. This value is also set to the
+            'result' attribute if `set_results` is True.
+        """
         if lam is None:
             print("Estimating Lambda Using GCV")
             lam = self.estimate_lambda_gcv(**kwargs)
@@ -288,18 +310,36 @@ class Spline(ABC):
         compute_se: bool = True,
         result: SplineResult | NoneType = None,
     ) -> tuple[np.ndarray, np.ndarray | None]:
-        """Predict for new positions"""
-        if result is not None:
-            self.result = result
-            self.fitted = True
+        """
+        Predict for new positions.
 
-        if not self.fitted:
-            raise ValueError("Must first fit")
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
 
-        if not hasattr(self, "result"):
-            raise ValueError(
-                "self.fitted is True, but 'result' attribute is missing"
-            )
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult.
+        covariance : numpy.ndarray | None
+            Optional covariance matrix used to define spatial structure. If not
+            set then the kernel and distance function will be used to define
+            spatial structure. The shape of the covariance matrix is expected to
+            be `(len(X_test), len(X))` where `X` is the training data. This
+            represents the covariance between the testing and training data.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the fit if `compute_se` is True, otherwise None.
+        """
         if result is None:
             if not self.fitted or hasattr(self, "result"):
                 raise ValueError(
@@ -374,13 +414,31 @@ class Spline(ABC):
 
 
 class ThinPlateSpline(Spline):
-    """Thin Plate Spline Interpolation and Smoothing"""
+    """
+    Thin Plate Spline Interpolation and Smoothing
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    covariance : numpy.ndarray | None
+        Optional covariance matrix, covariance between observations positions.
+        If not supplied then the Spline's kernel will be used (if Implemented)
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - in most cases this will be the identity matrix.
+    """
 
     method: str = "thin_plate_spline"
 
     @property
     def default_error_cov(self) -> np.ndarray:
-        """Default Error Covariance"""
+        """
+        Default Error Covariance, for thin plate spline this is the identity
+        matrix.
+        """
         return np.eye(self.n_pts)
 
     def dist_func(
@@ -388,7 +446,7 @@ class ThinPlateSpline(Spline):
         positions: np.ndarray,
         X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
-        """Pairwise Euclidean distances between positions"""
+        """Pairwise Euclidean distances between positions."""
         return (
             cdist(positions, X2)
             if X2 is not None
@@ -396,7 +454,7 @@ class ThinPlateSpline(Spline):
         )
 
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
-        """Linear trend basis for universal kriging: [1, x, y, ...]"""
+        """Linear trend basis for universal kriging: [1, x, y, ...]."""
         n_pts = positions.shape[0]
         return np.hstack((np.ones((n_pts, 1)), positions)), 3
 
@@ -412,13 +470,31 @@ class SphericalThinPlateSpline(Spline):
     """
     Spherical form of Thin Plate Spline Interpolation and Smoothing.
     Adapted from [Wahba_Sphere]_.
+
+    This approach is specifically designed to operate using spherical geometry,
+    such as the earth. The results will be continuous over the full domain
+    (including at boundaries such as 0, 2pi).
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions, expected to be lat, lon in radians.
+    y : numpy.ndarray
+        The training data values.
+    covariance : numpy.ndarray | None
+        Optional covariance matrix, covariance between observations positions.
+        If not supplied then the Spline's kernel will be used (if Implemented)
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - in this case n * identity matrix, where n is the number
+        of positions in `X`.
     """
 
     method: str = "spherical_thin_plate_spline"
 
     @property
     def default_error_cov(self) -> np.ndarray:
-        """Default Error Covariance"""
+        """Default Error Covariance, n times identity matrix."""
         return self.n_pts * np.eye(self.n_pts)
 
     def dist_func(
@@ -426,7 +502,7 @@ class SphericalThinPlateSpline(Spline):
         positions: np.ndarray,
         X2: np.ndarray | NoneType = None,
     ) -> np.ndarray:
-        """Pairwise Haversine distances between positions"""
+        """Pairwise Haversine distances between positions."""
         if positions.shape[1] != 2:
             raise ValueError(
                 "Coordinates must be 2 dimensional lat and lon in radians."
@@ -438,12 +514,19 @@ class SphericalThinPlateSpline(Spline):
         )
 
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
-        """Linear trend basis for ordinary kriging: [1]"""
+        """
+        Trend basis for ordinary kriging: [1]. Note that this does not include
+        the position components, since this could break continuity of the result
+        over the sphere (e.g. at 0, 2pi radians boundary).
+        """
         n_pts = positions.shape[0]
         return np.ones((n_pts, 1)), 1
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
-        """Spherical Thin Plate Spline RBF kernel"""
+        """
+        Spherical Thin Plate Spline RBF kernel, this is q[2] from
+        [Wahba_Sphere]_.
+        """
         m = 2
         m2_1 = 2 * m - 1
         fac_m2_1 = factorial(m2_1)
@@ -456,6 +539,46 @@ class SphericalThinPlateSpline(Spline):
         q[np.isnan(q)] = 0.5
 
         return frac * (m2_1 * q - 1)
+
+    def predict(
+        self,
+        X_test: np.ndarray,
+        covariance: np.ndarray | None = None,
+        compute_se: bool = True,
+        result: SplineResult | NoneType = None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """
+        Predict for new positions.
+
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult. These positions
+            are expected to be lat, lon and in radians.
+        covariance : numpy.ndarray | None
+            Optional covariance matrix used to define spatial structure. If not
+            set then the kernel and distance function will be used to define
+            spatial structure. The shape of the covariance matrix is expected to
+            be `(len(X_test), len(X))` where `X` is the training data. This
+            represents the covariance between the testing and training data.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the fit if `compute_se` is True, otherwise None.
+        """
+        return super().predict(X_test, covariance, compute_se, result)
 
 
 def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
@@ -475,7 +598,22 @@ def _q2(distances: np.ndarray) -> np.ndarray:
 
 
 class Kriging(Spline):
-    """Kriging using the Spline approach"""
+    """
+    Kriging using the Spline approach.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    covariance : numpy.ndarray
+        Covariance matrix, covariance between observations positions. This is a
+        required input for Kriging methods.
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - in most cases this will be the identity matrix.
+    """
 
     def __init__(
         self,
@@ -502,7 +640,35 @@ class Kriging(Spline):
         compute_se: bool = True,
         result: SplineResult | NoneType = None,
     ) -> tuple[np.ndarray, np.ndarray | None]:
-        """Predict"""
+        """
+        Predict for new positions.
+
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult.
+        covariance : numpy.ndarray
+            Covariance matrix used to define spatial structure. The shape of the
+            covariance matrix is expected to be `(len(X_test), len(X))` where
+            `X` is the training data. This represents the covariance between the
+            testing and training data.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the fit if `compute_se` is True, otherwise None.
+        """
         if covariance is None:
             raise NotImplementedError(
                 "'covariance' must be set for Kriging methods"
@@ -511,7 +677,22 @@ class Kriging(Spline):
 
 
 class OrdinaryKriging(Kriging):
-    """Ordinary Kriging using the Spline method"""
+    """
+    Ordinary Kriging using the Spline method.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    covariance : numpy.ndarray
+        Covariance matrix, covariance between observations positions. This is a
+        required input for Kriging methods.
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - in most cases this will be the identity matrix.
+    """
 
     method = "ordinary_kriging"
 
@@ -522,7 +703,22 @@ class OrdinaryKriging(Kriging):
 
 
 class UniversalKriging(Kriging):
-    """Universal Kriging using the Spline method"""
+    """
+    Universal Kriging using the Spline approach.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    covariance : numpy.ndarray
+        Covariance matrix, covariance between observations positions. This is a
+        required input for Kriging methods.
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - for Kriging classes this will be a zero matrix.
+    """
 
     method = "universal_kriging"
 
@@ -533,7 +729,31 @@ class UniversalKriging(Kriging):
 
 
 class VariogramKriging(Spline):
-    """Use a variogram"""
+    """
+    Perform Kriging using a Variogram to describe the spatial structure.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The training data positions.
+    y : numpy.ndarray
+        The training data values.
+    variogram : Variogram
+        Variogram used to describe the spatial structure. Should be initialised
+        with the variogram parameters and must have the 'psill' attribute.
+    error_cov : numpy.ndarray | None
+        An optional error covariance. If unset then the default error covariance
+        matrix is used - for Kriging classes this will be a zero matrix.
+    kriging_method : str
+        Kriging method to use, one of "ordinary" or "universal".
+    distance_method : str
+        Method to use for distance calculation, one of "haversine" or
+        "euclidean". If the distance method is "haversine" then the input
+        positions are expected to be lat, lon in radians.
+    distance_scale : float
+        Value to scale the distance (distance_scale * distance). E.g. to convert
+        haversine distance (unit sphere) to earth scale.
+    """
 
     method = "variogram_kriging"
 
@@ -603,7 +823,7 @@ class VariogramKriging(Spline):
                 )
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
-        """Use Variogram"""
+        """Use Variogram to define the spatial structure."""
         if not hasattr(self, "variogram"):
             raise KeyError("Variogram is not set")
 
