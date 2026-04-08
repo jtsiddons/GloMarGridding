@@ -17,12 +17,15 @@
 from abc import ABC, abstractmethod
 from math import exp, factorial
 from types import NoneType
+from typing import Literal
 
 import numpy as np
 import scipy as sp
 from scipy.optimize import OptimizeResult, minimize_scalar
 from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import haversine_distances
+
+from glomar_gridding.variogram import Variogram, variogram_to_covariance
 
 
 class SplineResult:
@@ -429,7 +432,6 @@ class SphericalThinPlateSpline(Spline):
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
         """Linear trend basis for ordinary kriging: [1]"""
         n_pts = positions.shape[0]
-        # return np.hstack((np.ones((n_pts, 1)), positions))
         return np.ones((n_pts, 1)), 1
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
@@ -449,6 +451,7 @@ class SphericalThinPlateSpline(Spline):
 
 
 def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
+    """Get the z, W, C, and A components for q2"""
     z = np.cos(distances)
     W = (1 - z) / 2
     sqrtW = np.sqrt(W)
@@ -461,3 +464,137 @@ def _q2(distances: np.ndarray) -> np.ndarray:
     """R with q2 from [Wahba_Sphere]_"""
     _, W, C, A = _zwca(distances)
     return (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2
+
+
+class Kriging(Spline):
+    """Kriging using the Spline approach"""
+
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        covariance: np.ndarray,
+        error_cov: np.ndarray | NoneType = None,
+    ) -> NoneType:
+        if covariance is None:
+            raise NotImplementedError(
+                "'covariance' must be set for Kriging methods"
+            )
+        super().__init__(X, y, covariance, error_cov)
+
+    @property
+    def default_error_cov(self) -> np.ndarray:
+        """Default error covariance"""
+        return np.zeros((self.n_pts, self.n_pts))
+
+    def predict(
+        self,
+        X_test: np.ndarray,
+        covariance: np.ndarray | None = None,
+        compute_se: bool = True,
+        result: SplineResult | NoneType = None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """Predict"""
+        if covariance is None:
+            raise NotImplementedError(
+                "'covariance' must be set for Kriging methods"
+            )
+        return super().predict(X_test, covariance, compute_se, result)
+
+
+class OrdinaryKriging(Kriging):
+    """Ordinary Kriging using the Spline method"""
+
+    method = "ordinary_kriging"
+
+    def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
+        """Linear trend basis for ordinary kriging: [1]"""
+        n_pts = positions.shape[0]
+        return np.ones((n_pts, 1)), 1
+
+
+class UniversalKriging(Kriging):
+    """Universal Kriging using the Spline method"""
+
+    method = "universal_kriging"
+
+    def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
+        """Linear trend basis for universal kriging: [1, x, y, ...]"""
+        n_pts = positions.shape[0]
+        return np.hstack((np.ones((n_pts, 1)), positions)), 3
+
+
+class VariogramKriging(Spline):
+    """Use a variogram"""
+
+    method = "variogram_kriging"
+
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        variogram: Variogram,
+        error_cov: np.ndarray | NoneType = None,
+        kriging_method: Literal["ordinary", "universal"] = "ordinary",
+        distance_method: Literal["haversine", "euclidean"] = "haversine",
+    ) -> NoneType:
+        self.variogram = variogram
+        self.kriging_method = kriging_method
+        self.distance_method = distance_method
+        super().__init__(X, y, None, error_cov)
+
+    def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
+        """Trend basis for kriging"""
+        n_pts = positions.shape[0]
+        match self.kriging_method:
+            case "ordinary":
+                return np.ones((n_pts, 1)), 1
+            case "universal":
+                return np.hstack((np.ones((n_pts, 1)), positions)), 3
+            case _:
+                raise ValueError(
+                    f"Unexpected 'kriging_method'. Got {self.kriging_method}"
+                    + "Expected one of 'ordinary' or 'universal'"
+                )
+
+    def dist_func(
+        self,
+        positions: np.ndarray,
+        X2: np.ndarray | NoneType = None,
+    ) -> np.ndarray:
+        """Pairwise Haversine distances between positions"""
+        if positions.shape[1] != 2:
+            raise ValueError(
+                "Coordinates must be 2 dimensional lat and lon in radians."
+            )
+        match self.distance_method:
+            case "haversine":
+                return (
+                    haversine_distances(positions, X2)
+                    if X2 is not None
+                    else haversine_distances(positions)
+                )
+            case "euclidean":
+                return (
+                    cdist(positions, X2)
+                    if X2 is not None
+                    else cdist(positions, positions)
+                )
+            case _:
+                raise ValueError(
+                    f"Unexpected 'distance_method'. Got {self.distance_method}"
+                    + "Expected one of 'haversine' or 'euclidean'"
+                )
+
+    def kernel(self, distances: np.ndarray) -> np.ndarray:
+        """Use Variogram"""
+        if not hasattr(self, "variogram"):
+            raise KeyError("Variogram is not set")
+
+        psill = getattr(self.variogram, "psill", None)
+        if psill is None:
+            raise KeyError("Variogram is missing 'psill'")
+
+        vario_mat = self.variogram.fit(distances)
+
+        return np.asarray(variogram_to_covariance(vario_mat, psill))
