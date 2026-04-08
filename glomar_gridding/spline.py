@@ -22,8 +22,9 @@ from typing import Literal
 import numpy as np
 import scipy as sp
 from scipy.optimize import OptimizeResult, minimize_scalar
-from scipy.spatial.distance import cdist
-from sklearn.metrics.pairwise import haversine_distances
+
+# from scipy.spatial.distance import cdist
+from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 
 from glomar_gridding.variogram import Variogram, variogram_to_covariance
 
@@ -448,9 +449,9 @@ class ThinPlateSpline(Spline):
     ) -> np.ndarray:
         """Pairwise Euclidean distances between positions."""
         return (
-            cdist(positions, X2)
+            euclidean_distances(positions, X2)
             if X2 is not None
-            else cdist(positions, positions)
+            else euclidean_distances(positions)
         )
 
     def get_trend_basis(self, positions: np.ndarray) -> tuple[np.ndarray, int]:
@@ -812,9 +813,9 @@ class VariogramKriging(Spline):
                 )
             case "euclidean":
                 return self.distance_scale * (
-                    cdist(positions, X2)
+                    euclidean_distances(positions, X2)
                     if X2 is not None
-                    else cdist(positions, positions)
+                    else euclidean_distances(positions)
                 )
             case _:
                 raise ValueError(
