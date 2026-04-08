@@ -4,7 +4,6 @@ output new uncertainties
 """
 
 import numpy as np
-import scipy as sp
 import warnings
 
 
@@ -235,7 +234,7 @@ class Autoregressive1Forecast:
             self,
             check_wgt_stability: bool = True,
             full_errcov_out: bool = True,
-            stability_perturbation: float = 0.05 ** 2):
+            stability_perturbation: float | None = None):
         """
         Parameters
         ----------
@@ -272,7 +271,10 @@ class Autoregressive1Forecast:
         # W @ <x(t), x(t)> = <x(t), x(t-1)>
         # <x(t), x(t)> @ W.T = <x(t), x(t-1)>
         # (note: <x(t), x(t-1)> and <x(t), x(t)> are symmetric)
-        ccp = stability_perturbation + self.clim_covar
+        if stability_perturbation is not None:
+            ccp = stability_perturbation + self.clim_covar
+        else:
+            ccp = self.clim_covar
         self.weights = np.linalg.solve(
             ccp,
             self.lag_1_autocov,
@@ -296,7 +298,9 @@ class Autoregressive1Forecast:
         # I didn't cheat
         # I got same equation independently using good ole pen and paper!
         #
-        # If weights fail stability check, you will get wrong uncertainty
+        # If weights fail stability check, it implies expected value
+        # of anomalies can grow in time.
+        # Testing shows, one also gets wrong uncertainty
         # estimates, like off diagonal term being (considerably) larger than
         # diagonal terms; that's an invalid (error) covariance matrix, saying
         # correlation > 1 which is impossible!
@@ -315,27 +319,19 @@ class Autoregressive1Forecast:
 
     def var_stability_check(self, warn_instead: bool = True):
         """
-        A multivariate AR model is only stable if and only all eigvals
-        of the weights have absolute values less than 1.0
+        A multivariate stationary AR model is only stable if and only
+        if all eigvals of the weights have absolute values less than 1
         https://kevinkotze.github.io/ts-7-slide/#10
         which is from
         https://www.jstor.org/stable/j.ctv14jx6sm
         Chapter 10 Proposition 10.1
         """
         print("Checking weight stability")
-        smallest_eigval = sp.linalg.eigh(
-            self.weights,
-            subset_by_index=(0, 0),
-            eigvals_only=True,
-        )[0]
-        largest_eigval = sp.linalg.eigh(
-            self.weights,
-            subset_by_index=(
-                self.weights.shape[0] - 1,
-                self.weights.shape[0] - 1
-            ),
-            eigvals_only=True,
-        )[0]
+        # Don't use sp.linalg.eigh or np.linalg.eigvalsh,
+        # weights are not a symmetric matrix!
+        eigvals = np.linalg.eigvals(self.weights)
+        smallest_eigval = np.min(np.real(eigvals))
+        largest_eigval = np.max(np.real(eigvals))
         print(f"{smallest_eigval = }")
         print(f"{largest_eigval = }")
         self.bad_model = np.logical_or(
@@ -344,7 +340,7 @@ class Autoregressive1Forecast:
         )
         if self.bad_model:
             errmsg = "Eigenvalues of estimated weights have values > 1; "
-            errmsg += "autocovariance and contempory "
+            errmsg += "autocovariance "
             errmsg += "covariance do not satisfy stationarity requirements, "
             errmsg == "and error covariances are incorrect."
             if warn_instead:
