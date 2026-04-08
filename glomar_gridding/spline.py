@@ -300,9 +300,17 @@ class Spline(ABC):
             raise ValueError(
                 "self.fitted is True, but 'result' attribute is missing"
             )
+        if result is None:
+            if not self.fitted or hasattr(self, "result"):
+                raise ValueError(
+                    "Must first fit the model if not providing a result."
+                )
 
-        if not hasattr(self.result, "var"):
-            self.result.fit_stats()
+            result = self.result
+
+        if not hasattr(result, "var"):
+            print("Computing variance of the fit.")
+            result.fit_stats()
 
         P, n_t = self.get_trend_basis(X_test)
         n_pts = len(X_test)
@@ -312,21 +320,21 @@ class Spline(ABC):
             del D
         elif covariance.shape != (n_pts, self.n_pts):
             raise ValueError(
-                f"Incorrect covariance shape, must be {(n_pts, self.n_pts)}"
+                f"Incorrect covariance shape, must be {(n_pts, self.n_pts)}."
             )
 
         prediction = self._compute_result(
-            covariance, self.result.weights, P, self.result.trend_coefs
+            covariance, result.weights, P, result.trend_coefs
         )
 
-        se_pred = None
+        if not compute_se:
+            return prediction, None
 
-        if compute_se:
-            U = np.hstack([covariance, P]) if n_t > 0 else covariance
-            Usolved = np.abs(np.sum((U @ self.result.M_inv) * U, axis=1))
-            se_pred = np.sqrt(Usolved * self.result.var)
+        U = np.hstack([covariance, P]) if n_t > 0 else covariance
+        Usolved = np.abs(np.sum((U @ result.M_inv) * U, axis=1))
+        standard_error = np.sqrt(Usolved * result.var)
 
-        return prediction, se_pred
+        return prediction, standard_error
 
     def estimate_lambda_gcv(
         self,
