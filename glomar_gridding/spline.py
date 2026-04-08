@@ -216,17 +216,25 @@ class Spline(ABC):
             self.covariance = self.kernel(distances)
             del distances
 
-        K_reg = self.covariance + lam * self.error_cov
+        K_reg = np.copy(self.covariance)
+        if lam > 0:
+            K_reg += lam * self.error_cov
 
-        M = np.block(
-            [
-                [K_reg, self.trend_basis],
-                [self.trend_basis.T, np.zeros((self.n_t, self.n_t))],
-            ]
-        )
+        if self.n_t == 0:
+            M = K_reg
+        else:
+            M = np.block(
+                [
+                    [K_reg, self.trend_basis],
+                    [self.trend_basis.T, np.zeros((self.n_t, self.n_t))],
+                ]
+            )
         M_inv = sp.linalg.inv(M, assume_a="sym")
 
-        b = np.concatenate([self.y, np.zeros(self.n_t)])
+        if self.n_t == 0:
+            b = self.y
+        else:
+            b = np.concatenate([self.y, np.zeros(self.n_t)])
 
         sol = M_inv @ b
         # Weights
