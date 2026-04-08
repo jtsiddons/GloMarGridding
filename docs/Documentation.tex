@@ -65,7 +65,7 @@
 
 
 \title{GloMarGridding}
-\date{Mar 17, 2026}
+\date{Apr 08, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -117,9 +117,9 @@ choices.
 \chapter{Citation}
 \label{\detokenize{introduction:citation}}
 \sphinxAtStartPar
-Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
-Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square: \sphinxurl{https://doi.org/10.21203/rs.3.rs-7427869/v1}.
+Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python Toolkit for Flexible
+Spatial Interpolation in Climate Applications.” Geoscience Data Journal, 13 (2): e70064.
+\sphinxurl{https://doi.org/10.1002/gdj3.70064}.
 
 \sphinxstepscope
 
@@ -476,25 +476,25 @@ allowing for finer resolution in some direction.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{resolution}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Resolution of the grid. Can be a single resolution value that will be
+\sphinxstyleliteralstrong{\sphinxupquote{resolution}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{float}}{]}}) \textendash{} Resolution of the grid. Can be a single resolution value that will be
 applied to all coordinates, or a list of values mapping a resolution
 value to each of the coordinates.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}{]}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
 the bounding box of the returned grid. For a grid between \sphinxhyphen{}180 and 180
 degrees in Longitude, one would set the bounds in this dimension to
 \sphinxtitleref{(\sphinxhyphen{}180, 180)} (if using “left” for the ‘definition’ argument).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} List of coordinate names in the same order as the bounds and
+\sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{str}}{]}}) \textendash{} List of coordinate names in the same order as the bounds and
 resolution(s).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ (}}\sphinxstyleliteralemphasis{\sphinxupquote{"left"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"center"}}\sphinxstyleliteralemphasis{\sphinxupquote{)}}) \textendash{}
+\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}center\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}left\textquotesingle{}}}{]}}) \textendash{}
 \sphinxAtStartPar
 Each grid box is defined by the centre of the box in each coordinate.
 This argument defines whether the lower bound in each coordinate
@@ -522,7 +522,7 @@ grid\sphinxhyphen{}box. The grid\sphinxhyphen{}box value will be the center in e
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-xarray.DataArray:
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -565,12 +565,12 @@ latitude and longitude will be maintained in the returned distance matrix.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} A 2\sphinxhyphen{}d grid containing latitude and longitude indexes specified in
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} A 2\sphinxhyphen{}d grid containing latitude and longitude indexes specified in
 decimal degrees.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{dist\_func}} (\sphinxstyleliteralemphasis{\sphinxupquote{Callable}}) \textendash{} Distance function to use to compute pairwise distances. See
+\sphinxstyleliteralstrong{\sphinxupquote{dist\_func}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Callable}}}) \textendash{} Distance function to use to compute pairwise distances. See
 glomar\_gridding.distances.calculate\_distance\_matrix for more
 information.
 
@@ -592,7 +592,7 @@ respectively).
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -650,21 +650,21 @@ Exponential Model
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
+\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
 will not exceed psill + nugget. This value is the variance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} The value of the independent variable at distance 0
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The value of the independent variable at distance 0
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
 exceeded. This is not the range parameter, which is defined as r/3.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
+\sphinxstyleliteralstrong{\sphinxupquote{range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
 range is not set, it will be computed from effective\_range.
 
 \end{itemize}
@@ -685,7 +685,7 @@ Fit the ExponentialVariogram model to a distance matrix
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The distance matrix indicating the distance between each pair of
 points in the grid.
 
 \sphinxlineitem{Returns}
@@ -694,7 +694,7 @@ A matrix containing the variogram values at each distance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -724,22 +724,22 @@ Spherical Model
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
+\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
 will not exceed psill + nugget. This value is the variance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} The value of the independent variable at distance 0
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The value of the independent variable at distance 0
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
 exceeded. This is not the range parameter, which is equal to the
 effective range in the SphericalVariogram case.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
+\sphinxstyleliteralstrong{\sphinxupquote{range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
 range is not set, it will be computed from effective\_range.
 
 \end{itemize}
@@ -760,7 +760,7 @@ Fit the SphericalVariogram model to a distance matrix
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The distance matrix indicating the distance between each pair of
 points in the grid.
 
 \sphinxlineitem{Returns}
@@ -769,7 +769,7 @@ A matrix containing the variogram values at each distance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -799,21 +799,21 @@ Gaussian Model
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
+\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
 will not exceed psill + nugget. This value is the variance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} The value of the independent variable at distance 0
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The value of the independent variable at distance 0
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Effective Range, this is the distance where 95\% of the sill are
 exceeded. This is not the range parameter, which is defined as r/2.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
+\sphinxstyleliteralstrong{\sphinxupquote{range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
 range is not set, it will be computed from effective\_range.
 
 \end{itemize}
@@ -834,7 +834,7 @@ Fit the GaussianVariogram model to a distance matrix
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The distance matrix indicating the distance between each pair of
 points in the grid.
 
 \sphinxlineitem{Returns}
@@ -843,7 +843,7 @@ A matrix containing the variogram values at each distance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -927,33 +927,33 @@ e\sphinxhyphen{}folding distance is now at d/SQRT(2) for \(\nu=0.5\)
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
+\sphinxstyleliteralstrong{\sphinxupquote{psill}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Sill of the variogram where it will flatten out. Values in the variogram
 will not exceed psill + nugget. This value is the variance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} The value of the independent variable at distance 0
+\sphinxstyleliteralstrong{\sphinxupquote{nugget}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The value of the independent variable at distance 0
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Effective Range, this is the lag where 95\% of the sill are exceeded.
+\sphinxstyleliteralstrong{\sphinxupquote{effective\_range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Effective Range, this is the lag where 95\% of the sill are exceeded.
 This is not the range parameter, which is defined as r/3 if nu \textless{} 0.5 or
 nu \textgreater{} 10, otherwise r/2 (where r is the effective range). One of
 effective\_range and range must be set.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{range}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
+\sphinxstyleliteralstrong{\sphinxupquote{range}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The range parameter. One of range and effective\_range must be set. If
 range is not set, it will be computed from effective\_range.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{nu}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} \(\nu\), smoothing parameter, shapes to a smooth or rough variogram
+\sphinxstyleliteralstrong{\sphinxupquote{nu}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} \(\nu\), smoothing parameter, shapes to a smooth or rough variogram
 function
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{method}} (\sphinxstyleliteralemphasis{\sphinxupquote{MaternModel}}) \textendash{}
+\sphinxstyleliteralstrong{\sphinxupquote{method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}sklearn\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}gstat\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}karspeck\textquotesingle{}}}{]}}) \textendash{}
 \sphinxAtStartPar
 One of “sklearn”, “gstat”, or “karspeck”:
 \begin{itemize}
@@ -996,7 +996,7 @@ Fit the MaternVariogram model to a distance matrix.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix indicating the distance between each pair of
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The distance matrix indicating the distance between each pair of
 points in the grid.
 
 \sphinxlineitem{Returns}
@@ -1005,7 +1005,7 @@ A matrix containing the variogram values at each distance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -1043,11 +1043,11 @@ covariance = variance \sphinxhyphen{} variogram
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The variogram matrix, output of Variogram.fit.
+\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The variogram matrix, output of Variogram.fit.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{variance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} The variance
+\sphinxstyleliteralstrong{\sphinxupquote{variance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{float}}}) \textendash{} The variance
 
 \end{itemize}
 
@@ -1057,7 +1057,7 @@ covariance = variance \sphinxhyphen{} variogram
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray | xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 
@@ -1086,13 +1086,13 @@ string to format with keyword arguments.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{path}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Full filename (including path), or filename with replacements using
+\sphinxstyleliteralstrong{\sphinxupquote{path}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Full filename (including path), or filename with replacements using
 str.format with named replacements. For example:
 /path/to/global\_covariance\_\{month:02d\}.nc
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{cov\_var\_name}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Name of the variable for the covariance matrix
+\sphinxstyleliteralstrong{\sphinxupquote{cov\_var\_name}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Name of the variable for the covariance matrix
 
 \item {}
 \sphinxAtStartPar
@@ -1107,7 +1107,7 @@ file determined by the input arguments.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -2896,42 +2896,42 @@ DataArray is then used as the output grid of the Gridding process.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observational DataFrame containing positional data with latitude,
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataFrame}}}) \textendash{} The observational DataFrame containing positional data with latitude,
 longitude values within the \sphinxtitleref{obs\_latname} and \sphinxtitleref{obs\_lonname} columns
 respectively. Observations are mapped to the nearest grid\sphinxhyphen{}point in the
 grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} Contains the grid coordinates to map observations to.
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} Contains the grid coordinates to map observations to.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the column containing positional values in the input
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{str}}{]}}) \textendash{} Names of the column containing positional values in the input
 observational DataFrame.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the coordinates in the input grid DataArray used to define the
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_coords}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{str}}{]}}) \textendash{} Names of the coordinates in the input grid DataArray used to define the
 grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Sort the observational DataFrame by the grid index
+\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Sort the observational DataFrame by the grid index
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial bounds.
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}{]} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial bounds.
 This list must have the same size and ordering as \sphinxtitleref{obs\_coords} and
 \sphinxtitleref{grid\_coords} arguments.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add the grid positional information to the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Add the grid positional information to the observational DataFrame.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Prefix to use for the new grid columns in the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Prefix to use for the new grid columns in the observational DataFrame.
 
 \end{itemize}
 
@@ -2944,7 +2944,7 @@ respectively. The DataFrame is also sorted (ascendingly) by the
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-pandas.DataFrame
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataFrame}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -2982,24 +2982,24 @@ grid box to a single averaged observation using a weighted average.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Indices of all un\sphinxhyphen{}masked points for chosen date.
+\sphinxstyleliteralstrong{\sphinxupquote{unmask\_idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Indices of all un\sphinxhyphen{}masked points for chosen date.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Unique indices of all measurement points for a chosen date,
+\sphinxstyleliteralstrong{\sphinxupquote{unique\_obs\_idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Unique indices of all measurement points for a chosen date,
 representative of the indices of gridboxes, which have =\textgreater{} 1 measurement.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Weight matrix (inverse of counts of observations).
+\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Weight matrix (inverse of counts of observations).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} All point observations/measurements for the chosen date.
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} All point observations/measurements for the chosen date.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{}
+\sphinxstyleliteralstrong{\sphinxupquote{remove\_obs\_mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{}
 \sphinxAtStartPar
 Should the mean or median from obs be removed and added back onto obs?
 \begin{itemize}
@@ -3027,7 +3027,7 @@ Note that the mean will need to be reapplied to the Kriging result.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_bias}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Bias of all measurement points for a chosen date (corresponds to x\_obs).
 
 \end{itemize}
 
@@ -3080,13 +3080,13 @@ Where \(\mu\) is a constant known mean, typically this is 0.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The 1d indices of observation grid points. These values should be
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The 1d indices of observation grid points. These values should be
 between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
 and latitudes respectively. Note that these values should also be
 computed using “C” ordering in numpy reshaping. They can be
@@ -3096,13 +3096,13 @@ observation should be averaged
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} The observation values. If there are multiple observations in any
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The observation values. If there are multiple observations in any
 grid box then these values need to be averaged into one value per
 grid box.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Optionally add error covariance values to the covariance between
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optionally add error covariance values to the covariance between
 observation grid points.
 
 \end{itemize}
@@ -3162,7 +3162,7 @@ Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{References}
@@ -3226,7 +3226,7 @@ Compute the kriging uncertainty. This requires the attribute
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3234,7 +3234,7 @@ Compute the kriging uncertainty. This requires the attribute
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -3272,7 +3272,7 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
+\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
 
 \sphinxlineitem{Return type}
@@ -3309,7 +3309,7 @@ grid\sphinxhyphen{}points), and \(y\) are the observation values.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Constant, known, mean value of the system. Defaults to 0.0.
+\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{float}}}) \textendash{} Constant, known, mean value of the system. Defaults to 0.0.
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3318,7 +3318,7 @@ need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}process
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -3353,28 +3353,28 @@ removed in version 1.0.0.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance between all measured grid points plus the
 covariance due to measurements (i.e. measurement noise, bias noise, and
 sampling noise). Can include error covariance terms.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
 Does not contain error covarance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
 gridboxes).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} interpolation covariance of all output grid points (each point in time
+\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} interpolation covariance of all output grid points (each point in time
 and all points against each other).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} The constant mean of the output field.
+\sphinxstyleliteralstrong{\sphinxupquote{mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The constant mean of the output field.
 
 \end{itemize}
 
@@ -3440,13 +3440,13 @@ at the end of the vector.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The 1d indices of observation grid points. These values should be
 between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
 and latitudes respectively. Note that these values should also be
 computed using “C” ordering in numpy reshaping. They can be
@@ -3456,13 +3456,13 @@ observation should be averaged. Used to compute the Kriging weights.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The observation values. If there are multiple observations in any
 grid box then these values need to be averaged into one value per
 grid box.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}) \textendash{} Optionally add error covariance values to the covariance between
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optionally add error covariance values to the covariance between
 observation grid points.
 
 \end{itemize}
@@ -3518,7 +3518,7 @@ not provided as an input, then they are calculated.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{NoneType}}\sphinxstyleliteralemphasis{\sphinxupquote{,}}) \textendash{} The Kriging weights for the equivalent simple Kriging system.
+\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The Kriging weights for the equivalent simple Kriging system.
 error covariance.
 
 \sphinxlineitem{Returns}
@@ -3528,7 +3528,7 @@ Morice et al. (2021). This is a vector of length \sphinxtitleref{k\_obs.size{[}0
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{References}
@@ -3574,7 +3574,7 @@ This approach follows Guttman 1946 10.1214/aoms/1177730946
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{simple\_inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.matrix}}) \textendash{} Inverse of the covariance between observation grid\sphinxhyphen{}points
+\sphinxstyleliteralstrong{\sphinxupquote{simple\_inv}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Inverse of the covariance between observation grid\sphinxhyphen{}points
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3583,7 +3583,7 @@ grid\sphinxhyphen{}points including the Lagrange multiplier factors.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.matrix
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -3654,7 +3654,7 @@ Compute the kriging uncertainty. This requires the attribute
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -3662,7 +3662,7 @@ Compute the kriging uncertainty. This requires the attribute
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -3710,7 +3710,7 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
+\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
 
 \sphinxlineitem{Return type}
@@ -3763,7 +3763,7 @@ need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}process
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -3798,23 +3798,23 @@ removed in version 1.0.0.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between all measured grid points plus the covariance due to
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_obs\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance between all measured grid points plus the covariance due to
 measurements (i.e. measurement noise, bias noise, and sampling noise).
 Can include error covariance terms, if these are being used.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_grid\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance between the all (predicted) grid points and measured points.
 Does not contain error covarance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Gridded measurements (all measurement points averaged onto the output
 gridboxes).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Interpolation covariance of all output grid points (each point in time
+\sphinxstyleliteralstrong{\sphinxupquote{interp\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Interpolation covariance of all output grid points (each point in time
 and all points against each other).
 
 \end{itemize}
@@ -3900,13 +3900,13 @@ vector.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The spatial covariance matrix. This can be a pre\sphinxhyphen{}computed matrix loaded
 into the environment, or computed from a Variogram class or using
 Ellipse methods.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d indices of observation grid points. These values should be
+\sphinxstyleliteralstrong{\sphinxupquote{idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The 1d indices of observation grid points. These values should be
 between 0 and (N * M) \sphinxhyphen{} 1 where N, M are the number of longitudes
 and latitudes respectively. Note that these values should also be
 computed using “C” ordering in numpy reshaping. They can be
@@ -3916,13 +3916,13 @@ observation should be averaged. Used to compute the Kriging weights.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The observation values. If there are multiple observations in any
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The observation values. If there are multiple observations in any
 grid box then these values need to be averaged into one value per
 grid box.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Error covariance values to the covariance between observation grid
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Error covariance values to the covariance between observation grid
 points.
 
 \end{itemize}
@@ -3982,7 +3982,7 @@ This requires the Kriging weights from simple Kriging, set as the
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{References}
@@ -4058,7 +4058,7 @@ Compute the kriging uncertainty. This requires the attribute
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
 
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
@@ -4066,7 +4066,7 @@ Compute the kriging uncertainty. This requires the attribute
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -4114,7 +4114,7 @@ Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
+\sphinxstyleliteralstrong{\sphinxupquote{inv}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The pre\sphinxhyphen{}computed inverse of the covariance between grid\sphinxhyphen{}points with
 observations. \((C_{obs} + E)^{-1}\)
 
 \sphinxlineitem{Return type}
@@ -4144,7 +4144,7 @@ Sets the \sphinxtitleref{simple\_kriging\_weights} attribute.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The pre\sphinxhyphen{}computed simple\_kriging\_weights to use.
+\sphinxstyleliteralstrong{\sphinxupquote{simple\_kriging\_weights}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The pre\sphinxhyphen{}computed simple\_kriging\_weights to use.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -4220,7 +4220,7 @@ This additionally sets the following attributes:
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{simulated\_state}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Flattened simulated state, used as the location basis for the
+\sphinxstyleliteralstrong{\sphinxupquote{simulated\_state}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Flattened simulated state, used as the location basis for the
 simulated observation draw. If this is not provided it will be
 calculated. Often it is better to pre\sphinxhyphen{}compute a series of states in
 advance, since this can be a time consuming step (drawing a single
@@ -4233,7 +4233,7 @@ may need to be re\sphinxhyphen{}shaped appropriately as a post\sphinxhyphen{}pro
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -4273,11 +4273,11 @@ function. The above behavior applies to scipy v1.14.0
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{loc}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} the location for the normal dry
+\sphinxstyleliteralstrong{\sphinxupquote{loc}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} the location for the normal dry
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} not a xarray/iris cube! Some of our covariances are saved in numpy
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} not a xarray/iris cube! Some of our covariances are saved in numpy
 format and not netCDF files
 
 \item {}
@@ -4290,15 +4290,15 @@ format and not netCDF files
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{sym\_atol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} absolute tolerance to check symmetry of cov
+\sphinxstyleliteralstrong{\sphinxupquote{sym\_atol}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} absolute tolerance to check symmetry of cov
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{eigen\_rtol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} relative tolerance to negative eigenvalues
+\sphinxstyleliteralstrong{\sphinxupquote{eigen\_rtol}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} relative tolerance to negative eigenvalues
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{eigen\_thresh}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} forced minimum value of eigenvalues if negative values are detected
+\sphinxstyleliteralstrong{\sphinxupquote{eigen\_thresh}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} forced minimum value of eigenvalues if negative values are detected
 
 \end{itemize}
 
@@ -4312,7 +4312,7 @@ positive\sphinxhyphen{}definite.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-np.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -4356,19 +4356,19 @@ Assign a vector of values to a grid, using a list of grid index values.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The values to map onto the output grid.
+\sphinxstyleliteralstrong{\sphinxupquote{values}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The values to map onto the output grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each value.
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each value.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The grid used to define the output grid.
+\sphinxstyleliteralstrong{\sphinxupquote{grid}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The grid used to define the output grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The value to fill unassigned grid boxes. Must be a valid value of the
+\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}) \textendash{} The value to fill unassigned grid boxes. Must be a valid value of the
 input \sphinxtitleref{values} data type.
 
 \end{itemize}
@@ -4379,7 +4379,7 @@ input \sphinxtitleref{values} data type.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 
@@ -4397,11 +4397,34 @@ xarray.DataArray
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{ThinPlateSpline}}}
-{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Thin Plate Spline Interpolation and Smoothing
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional covariance matrix, covariance between observations positions.
+If not supplied then the Spline’s kernel will be used (if Implemented)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} in most cases this will be the identity matrix.
+
+\end{itemize}
+
+\end{description}\end{quote}
 \index{default\_error\_cov (glomar\_gridding.spline.ThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.ThinPlateSpline property}}
 
 \begin{fulllineitems}
@@ -4411,26 +4434,48 @@ Thin Plate Spline Interpolation and Smoothing
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
 \pysigstopsignatures
 \sphinxAtStartPar
-Default Error Covariance
+Default Error Covariance, for thin plate spline this is the identity
+matrix.
 
 \end{fulllineitems}
 
-\index{distances() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{distances()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
+\index{dist\_func() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{dist\_func()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.distances}}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.dist_func}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{distances}}}
+{\sphinxbfcode{\sphinxupquote{dist\_func}}}
 {\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Pairwise Euclidean distances between positions
+Pairwise Euclidean distances between positions.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 \DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_trend\_basis() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Linear trend basis for universal kriging: {[}1, x, y, …{]}.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{int}}{]}}
 
 \end{description}\end{quote}
 
@@ -4457,27 +4502,6 @@ Thin Plate Spline RBF kernel
 
 \end{fulllineitems}
 
-\index{trend\_basis() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{trend\_basis()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.trend_basis}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{trend\_basis}}}
-{\sphinxparam{\DUrole{n}{positions}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Linear trend basis for universal kriging: {[}1, x, y, …{]}
-\begin{quote}\begin{description}
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
 
 \end{fulllineitems}
 
@@ -4491,12 +4515,41 @@ Linear trend basis for universal kriging: {[}1, x, y, …{]}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{SphericalThinPlateSpline}}}
-{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Spherical form of Thin Plate Spline Interpolation and Smoothing.
 Adapted from \sphinxcite{index:wahba-sphere}.
+
+\sphinxAtStartPar
+This approach is specifically designed to operate using spherical geometry,
+such as the earth. The results will be continuous over the full domain
+(including at boundaries such as 0, 2pi).
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions, expected to be lat, lon in radians.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional covariance matrix, covariance between observations positions.
+If not supplied then the Spline’s kernel will be used (if Implemented)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} in this case n * identity matrix, where n is the number
+of positions in \sphinxtitleref{X}.
+
+\end{itemize}
+
+\end{description}\end{quote}
 \index{default\_error\_cov (glomar\_gridding.spline.SphericalThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline property}}
 
 \begin{fulllineitems}
@@ -4506,26 +4559,49 @@ Adapted from \sphinxcite{index:wahba-sphere}.
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
 \pysigstopsignatures
 \sphinxAtStartPar
-Default Error Covariance
+Default Error Covariance, n times identity matrix.
 
 \end{fulllineitems}
 
-\index{distances() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{distances()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+\index{dist\_func() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{dist\_func()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.distances}}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.dist_func}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{distances}}}
+{\sphinxbfcode{\sphinxupquote{dist\_func}}}
 {\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Pairwise Haversine distances between positions
+Pairwise Haversine distances between positions.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
 \DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_trend\_basis() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Trend basis for ordinary kriging: {[}1{]}. Note that this does not include
+the position components, since this could break continuity of the result
+over the sphere (e.g. at 0, 2pi radians boundary).
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{int}}{]}}
 
 \end{description}\end{quote}
 
@@ -4542,7 +4618,8 @@ Pairwise Haversine distances between positions
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Spherical Thin Plate Spline RBF kernel
+Spherical Thin Plate Spline RBF kernel, this is q{[}2{]} from
+\sphinxcite{index:wahba-sphere}.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -4552,22 +4629,66 @@ Spherical Thin Plate Spline RBF kernel
 
 \end{fulllineitems}
 
-\index{trend\_basis() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{trend\_basis()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+\index{predict() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{predict()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.trend_basis}}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.predict}}
 \pysigstartsignatures
 \pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{trend\_basis}}}
-{\sphinxparam{\DUrole{n}{positions}}}
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{\sphinxparam{\DUrole{n}{X\_test}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{compute\_se}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{result}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Linear trend basis for universal kriging: {[}1, x, y, …{]}
+Predict for new positions.
+
+\sphinxAtStartPar
+Predicts using the weights and trend coefficients from the set \sphinxtitleref{result}
+attribute, or from a provided SplineResult instance.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X\_test}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} New positions use to predict using the SplineResult. These positions
+are expected to be lat, lon and in radians.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional covariance matrix used to define spatial structure. If not
+set then the kernel and distance function will be used to define
+spatial structure. The shape of the covariance matrix is expected to
+be \sphinxtitleref{(len(X\_test), len(X))} where \sphinxtitleref{X} is the training data. This
+represents the covariance between the testing and training data.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{compute\_se}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Optionally compute standard error of the prediction.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{result}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{SplineResult}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional SplineResult instance to use for prediction (instead of the
+set \sphinxtitleref{result} attribute). If not set, the \sphinxtitleref{result} attribute must be
+set and the \sphinxtitleref{fitted} attribute must be True.
+
+\end{itemize}
+
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{prediction} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} The predicted values at the test positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{standard\_error} (\sphinxstyleemphasis{numpy.ndarray | None}) \textendash{} Standard error of the fit if \sphinxtitleref{compute\_se} is True, otherwise None.
+
+\end{itemize}
+
 
 \end{description}\end{quote}
 
