@@ -806,22 +806,17 @@ class VariogramKriging(Spline):
                         "Coordinates must be 2 dimensional lat and lon in "
                         + "radians for haversine distances."
                     )
-                return self.distance_scale * (
-                    haversine_distances(positions, X2)
-                    if X2 is not None
-                    else haversine_distances(positions)
-                )
+                func = haversine_distances
             case "euclidean":
-                return self.distance_scale * (
-                    euclidean_distances(positions, X2)
-                    if X2 is not None
-                    else euclidean_distances(positions)
-                )
+                func = euclidean_distances
             case _:
                 raise ValueError(
                     f"Unexpected 'distance_method'. Got {self.distance_method}"
                     + "Expected one of 'haversine' or 'euclidean'."
                 )
+        return self.distance_scale * (
+            func(positions, X2) if X2 is not None else func(positions)
+        )
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         """Use Variogram to define the spatial structure."""
