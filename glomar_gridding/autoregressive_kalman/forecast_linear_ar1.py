@@ -289,6 +289,18 @@ class Autoregressive1Forecast:
             warnings.warn(warn_msg, UserWarning)
             self.bad_model = True
         #
+        # It can be shown that the below produces the same
+        # result as if applying spatiotemporal Kriging for t+1
+        # The weight for spatiotemporal Kriging is:
+        # W_Krige(t, t-1) = C(t, t-1) D.T @ INV(C(t, t) + E)
+        # That is the same as weights for AR1 multiplying on top of
+        # Kriging (t,t):
+        # W_AR = C(t, t-1) @ INV(C(t, t))
+        # W_Krige(t,t) = C @ D.T @ INV(C(t, t) + E)
+        # W_AR @ W_Krige(t,t)
+        # = C(t, t-1) @ INV(C) @ C @ D.T @ INV(C(t, t) + E)
+        # = C(t, t-1) @ D.T @ INV(C(t, t) + E)
+        # = W_Krige(t, t-1)
         print("Computing forecast")
         diff_with_clim_mean = self.obs - self.clim_mean
         self.forecast = self.weights @ diff_with_clim_mean
@@ -312,6 +324,8 @@ class Autoregressive1Forecast:
         sigma_sq_eps = left - right
         #
         # Add input uncertainty
+        # It can be shown that if errcov_obs are Kriging covariance that
+        # sigma_sq_eps + sigma_sq_obs == spatiotemporal Kriging for t+1
         sigma_sq_obs = self.weights @ self.errcov_obs @ self.weights.T
         self.errcov = sigma_sq_eps + sigma_sq_obs
         if not full_errcov_out:
