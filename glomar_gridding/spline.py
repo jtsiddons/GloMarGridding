@@ -579,7 +579,12 @@ class SphericalThinPlateSpline(Spline):
         standard_error : numpy.ndarray | None
             Standard error of the fit if `compute_se` is True, otherwise None.
         """
-        return super().predict(X_test, covariance, compute_se, result)
+        return super().predict(
+            X_test,
+            covariance=covariance,
+            compute_se=compute_se,
+            result=result,
+        )
 
 
 def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
@@ -627,7 +632,7 @@ class Kriging(Spline):
             raise NotImplementedError(
                 "'covariance' must be set for Kriging methods"
             )
-        super().__init__(X, y, covariance, error_cov)
+        super().__init__(X, y, covariance=covariance, error_cov=error_cov)
 
     @property
     def default_error_cov(self) -> np.ndarray:
@@ -674,7 +679,12 @@ class Kriging(Spline):
             raise NotImplementedError(
                 "'covariance' must be set for Kriging methods"
             )
-        return super().predict(X_test, covariance, compute_se, result)
+        return super().predict(
+            X_test,
+            covariance=covariance,
+            compute_se=compute_se,
+            result=result,
+        )
 
 
 class OrdinaryKriging(Kriging):
@@ -777,7 +787,7 @@ class VariogramKriging(Spline):
         self.kriging_method = kriging_method
         self.distance_method = distance_method
         self.distance_scale = distance_scale
-        super().__init__(X, y, None, error_cov)
+        super().__init__(X, y, covariance=None, error_cov=error_cov)
 
     @property
     def default_error_cov(self) -> np.ndarray:
@@ -865,4 +875,9 @@ class VariogramKriging(Spline):
             raise NotImplementedError(
                 "Covariance cannot be set for VariogramKriging."
             )
-        return super().predict(X_test, None, compute_se, result)
+        return super().predict(
+            X_test,
+            covariance=None,
+            compute_se=compute_se,
+            result=result,
+        )
