@@ -15,6 +15,7 @@
 """Spline Methods"""
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from math import exp, factorial
 from types import NoneType
 from typing import Literal
@@ -23,10 +24,9 @@ import numpy as np
 import scipy as sp
 from scipy.optimize import OptimizeResult, minimize_scalar
 
-# from scipy.spatial.distance import cdist
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 
-from glomar_gridding.variogram import Variogram, variogram_to_covariance
+from glomar_gridding.variogram import Variogram
 
 
 class SplineResult:
@@ -409,7 +409,7 @@ class Spline(ABC):
         if not isinstance(result, OptimizeResult):
             raise TypeError(
                 "result of estimation is not an instance of "
-                + "'scipy.optimize.OptimizeResult'"
+                + "'scipy.optimize.OptimizeResult'."
             )
         return np.exp(result.x)
 
@@ -741,7 +741,8 @@ class VariogramKriging(Spline):
         The training data values.
     variogram : Variogram
         Variogram used to describe the spatial structure. Should be initialised
-        with the variogram parameters and must have the 'psill' attribute.
+        with the variogram parameters and must have the 'fit' method which takes
+        a distance matrix and returns a variogram matrix.
     error_cov : numpy.ndarray | None
         An optional error covariance. If unset then the default error covariance
         matrix is used - for Kriging classes this will be a zero matrix.
@@ -768,6 +769,10 @@ class VariogramKriging(Spline):
         distance_method: Literal["haversine", "euclidean"] = "haversine",
         distance_scale: float = 1.0,
     ) -> NoneType:
+        if not hasattr(variogram, "fit"):
+            raise KeyError("Variogram is missing 'fit' attribute.")
+        if not isinstance(variogram.fit, Callable):
+            raise TypeError("Variogram fit attribute is not callable.")
         self.variogram = variogram
         self.kriging_method = kriging_method
         self.distance_method = distance_method
@@ -823,10 +828,41 @@ class VariogramKriging(Spline):
         if not hasattr(self, "variogram"):
             raise KeyError("Variogram is not set")
 
-        psill = getattr(self.variogram, "psill", None)
-        if psill is None:
-            raise KeyError("Variogram is missing 'psill'")
+        return np.asarray(self.variogram.fit(distances))
 
-        vario_mat = self.variogram.fit(distances)
+    def predict(
+        self,
+        X_test: np.ndarray,
+        covariance: np.ndarray | None = None,
+        compute_se: bool = True,
+        result: SplineResult | NoneType = None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """
+        Predict for new positions.
 
-        return variogram_to_covariance(vario_mat, psill)  # type: ignore (array)
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the fit if `compute_se` is True, otherwise None.
+        """
+        if covariance is not None:
+            raise NotImplementedError(
+                "Covariance cannot be set for VariogramKriging."
+            )
+        return super().predict(X_test, None, compute_se, result)
