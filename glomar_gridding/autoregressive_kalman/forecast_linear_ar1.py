@@ -231,10 +231,11 @@ class Autoregressive1Forecast:
             self.errcov = np.diag(self.errcov)
 
     def compute_forecast_vector(
-            self,
-            check_wgt_stability: bool = True,
-            full_errcov_out: bool = True,
-            stability_perturbation: float | None = None):
+        self,
+        check_wgt_stability: bool = True,
+        full_errcov_out: bool = True,
+        stability_perturbation: float | None = None,
+    ):
         """
         Parameters
         ----------
