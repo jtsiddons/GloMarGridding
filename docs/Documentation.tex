@@ -65,7 +65,7 @@
 
 
 \title{GloMarGridding}
-\date{Mar 30, 2026}
+\date{Apr 13, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -117,9 +117,9 @@ choices.
 \chapter{Citation}
 \label{\detokenize{introduction:citation}}
 \sphinxAtStartPar
-Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
-Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square: \sphinxurl{https://doi.org/10.21203/rs.3.rs-7427869/v1}.
+Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python Toolkit for Flexible
+Spatial Interpolation in Climate Applications.” Geoscience Data Journal, 13 (2): e70064.
+\sphinxurl{https://doi.org/10.1002/gdj3.70064}.
 
 \sphinxstepscope
 
@@ -5187,9 +5187,9 @@ statistical modelling only.
 \sphinxAtStartPar
 A simple statistical approach is implemented here to produce such forecast, basing on the simple
 idea is that current condition (described by the variable \sphinxtitleref{a} below) will generally tend toward
-climatology (\sphinxtitleref{E(a)}). The simplest way to model that behavior is the local 1st order autoregressive
-model, in which the expected value for \sphinxtitleref{a(t)} is a linear function of the observed lag\sphinxhyphen{}1 correlation
-and its last observed value (\sphinxtitleref{a(t\sphinxhyphen{}1)}), resulting in exponential relaxation toward \sphinxtitleref{E(a)}, plus a
+climatology (\(E(a)\)). The simplest way to model that behavior is the local 1st order autoregressive
+model, in which the expected value for \(a(t)\) is a linear function of the observed lag\sphinxhyphen{}1 correlation
+and its last observed value (\(a(t-1)\)), resulting in exponential relaxation toward \(E(a)\), plus a
 normal\sphinxhyphen{}distributed uncertainty epsilon:
 \begin{equation*}
 \begin{split}a_{t} = \Phi (a_{t-1} - E(a)) + \epsilon\end{split}
@@ -5202,13 +5202,25 @@ moving average (ARMA).
 \sphinxAtStartPar
 The AR1 model produces its own uncertainty. Input uncertainties can be incorporated following
 standard propagation of error rules. This is essential as uncertainty lie in the heart of Kalman
-Filter. Let say Phi is a diagonal matrix with local lag\sphinxhyphen{}1 correlation, Sigma(climatology) is the
-diagonal matrix with climatological variance (no off\sphinxhyphen{}diagonal contribution; this requires full
-vectorised AR1), Sigma t is a diagonal matrix of the diagonal of error covariance for the current
+Filter. Let say \(\Phi\) is a diagonal matrix with local lag\sphinxhyphen{}1 correlation, \(\Sigma_\text{climatology}\)
+is the diagonal matrix with climatological variance (no off\sphinxhyphen{}diagonal contribution; this requires full
+vectorised AR1), \(\Sigma_{t}\) is a diagonal matrix of the diagonal of error covariance for the current
 observations, the full uncertainty can be estimated as:
 \begin{equation*}
-\begin{split}\Sigma_{\text{AR1}} \sim MVN(0, \Phi\Sigma_{t}\Phi +
-\sqrt{(\textbf{1}-\Phi\Phi)}\Sigma_\text{climatology}\sqrt{(\textbf{1}-\Phi\Phi)})\end{split}
+\begin{split}\epsilon_{\text{AR1}} \sim \text{MVN}(0, \Phi\Sigma_{t}\Phi^T +
+\Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)\end{split}
+\end{equation*}
+\sphinxAtStartPar
+The above equation is correct even \(\Phi\) has off\sphinxhyphen{}diagonal terms. In that case, \(\Phi\) is no longer a
+diagonal autocorrelation matrix but the weights for fully vectorised multi\sphinxhyphen{}variate model, noting that
+\(\Phi = \Phi^T\) for the diagonal case but not for the multi\sphinxhyphen{}variate case.
+
+\sphinxAtStartPar
+In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
+find in Chapter 8 of {[}Wilks{]}:
+\begin{equation*}
+\begin{split}\epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
+(1-\phi^2)\sigma^2_\text{climatology})\end{split}
 \end{equation*}
 \sphinxAtStartPar
 Work in progress: Ideally, this should be done in vectorised form.
@@ -5263,7 +5275,7 @@ in which K is solution to the following linear equation, this is how it is solve
 \begin{split}(\Sigma_{\text{forecast}} + \sigma_{\text{obs}}) K^{T} = \Sigma_{\text{forecast}}\end{split}
 \end{equation*}
 \sphinxAtStartPar
-noting that Sigma is symmetrical but K is not (similar to Kriging weights).
+noting that Sigma is symmetrical but \(K\) is not (similar to Kriging weights).
 
 \sphinxAtStartPar
 Once the weights are known, the posterior analysis is a weighted average of forecast and observations
@@ -5286,7 +5298,7 @@ The workflow here will be:
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {}
 \sphinxAtStartPar
-Produce an initial t=0 analysis
+Produce an initial \(t=0\) analysis
 
 \item {}
 \sphinxAtStartPar
@@ -5294,7 +5306,7 @@ Do a t+1 forecast
 
 \item {}
 \sphinxAtStartPar
-Krige the observations for t+1
+Krige the observations for \(t+1\)
 
 \item {}
 \sphinxAtStartPar
@@ -5391,23 +5403,23 @@ be faster.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{independent\_var\_t}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D vector of independent variables for t
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D vector of independent variables for t
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{errcov\_independent\_var\_t}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 2D errcov for independent\_var\_t
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 2D errcov for obs
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lag\_1\_autocor}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D vector of lag correlation
+\sphinxstyleliteralstrong{\sphinxupquote{lag\_1\_autocov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D vector of lag correlation
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{climatology\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D climatological mean for independent\_var
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D climatological mean for obs
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{climatology\_variance}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} climatology\_variance: 1D climatological variance for independent\_var
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} climatology\_variance: 1D (local) climatological variance for obs
 
 \end{itemize}
 
@@ -5416,7 +5428,7 @@ be faster.
 \begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstylestrong{forecast\_t\_plus\_1\_anomaly} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} AR1 forecast
+\sphinxstylestrong{forecast} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} AR1 forecast
 
 \item {}
 \sphinxAtStartPar
@@ -5436,11 +5448,82 @@ be faster.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{compute\_forecast\_vector}}}
+{\sphinxparam{\DUrole{n}{check\_wgt\_stability}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{full\_errcov\_out}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stability\_perturbation}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
+\pysigstopsignatures\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D vector of independent variables for t
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 2D errcov for obs
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag\_1\_autocov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 2D matrix of autocovariance
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_mean}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} 1D climatological mean for obs
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} climatology\_variance: 2D climatological covariance for obs
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{check\_wgt\_stability}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Check weights (in extension for the auto and climatological
+covariances) are stable; see var\_stability\_check
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_errcov\_out}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Return full error covariance if True
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{stability\_perturbation}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} In some cases, prediction is possible even with weights being
+unstable, but a perturbation may be needed to ensure sensible
+results are obtainable.
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{forecast} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} AR1 forecast
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{errcov} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} The error covariance for the forecast
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{var\_stability\_check() (glomar\_gridding.autoregressive\_kalman.forecast\_linear\_ar1.Autoregressive1Forecast method)@\spxentry{var\_stability\_check()}\spxextra{glomar\_gridding.autoregressive\_kalman.forecast\_linear\_ar1.Autoregressive1Forecast method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1Forecast.var_stability_check}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{var\_stability\_check}}}
+{\sphinxparam{\DUrole{n}{warn\_instead}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-WIP
+A multivariate stationary AR model is only stable if and only
+if all eigvals of the weights have absolute values less than 1
+\sphinxurl{https://kevinkotze.github.io/ts-7-slide/\#10}
+which is from
+\sphinxurl{https://www.jstor.org/stable/j.ctv14jx6sm}
+Chapter 10 Proposition 10.1
 
 \end{fulllineitems}
 
@@ -5452,7 +5535,7 @@ WIP
 \section{\sphinxtitleref{autoregressive\_kalman.inv\_sigma\_wgts}}
 \label{\detokenize{kalman:autoregressive-kalman-inv-sigma-wgts}}
 \sphinxAtStartPar
-For Kalman Filtering, using inverse error covariance weighting (\sphinxtitleref{sigma}) weights.
+For Kalman Filtering, using inverse error covariance weighting (\(sigma\)) weights.
 \index{KalmanOut (class in glomar\_gridding.autoregressive\_kalman.inv\_sigma\_wgts)@\spxentry{KalmanOut}\spxextra{class in glomar\_gridding.autoregressive\_kalman.inv\_sigma\_wgts}}
 
 \begin{fulllineitems}
