@@ -126,7 +126,7 @@ xarray = "xr"
 netCDF4 = "nc"
 
 [project.urls]
-Repository = "https://git.noc.ac.uk/nocsurfaceprocesses/glomar_gridding.git"
+Repository = "https://github.com/NOCSurfaceProcesses/GloMarGridding"
 
 [dependency-groups]
 dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1"]

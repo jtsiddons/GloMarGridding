@@ -27,7 +27,7 @@ from collections.abc import Callable
 from math import cos, sin
 from typing import get_args
 
-import geopandas as gpd
+import geopandas
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -309,7 +309,7 @@ def _latlon2ne(
         latlons2 = latlons.copy()
     df0 = pd.DataFrame({"lat": latlons2[:, 0], "lon": latlons2[:, 1]})
     df0["geometry"] = df0.apply(lambda row: Point([row.lon, row.lat]), axis=1)
-    df0 = gpd.GeoDataFrame(df0, geometry="geometry", crs="EPSG:4326")
+    df0 = geopandas.GeoDataFrame(df0, geometry="geometry", crs="EPSG:4326")
     #
     # Transverse Mercator projection
     # Recommended to be centered on the central point
@@ -319,10 +319,10 @@ def _latlon2ne(
     proj4 = "+proj=tmerc +lat_0=" + str(latlon0[0])
     proj4 += " +lon_0=" + str(latlon0[1])
     proj4 += " +k=0.9996 +x_0=0 +y_0=0 +units=km"
-    df1: gpd.GeoDataFrame = gpd.GeoDataFrame(
+    df1: geopandas.GeoDataFrame = geopandas.GeoDataFrame(
         df0,
         crs="EPSG:4326",
-        geometry=gpd.points_from_xy(df0["lon"], df0["lat"]),
+        geometry=geopandas.points_from_xy(df0["lon"], df0["lat"]),
     )
     df1.to_crs(proj4, inplace=True)
     df1["easting"] = df1.geometry.x

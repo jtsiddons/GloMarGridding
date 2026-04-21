@@ -243,6 +243,26 @@ def test_clim():
     assert "sst_anomaly" in df.columns
 
 
+def test_grid_map_obs():
+    # TEST: grid prefix applies correctly
+    grid = Grid.from_resolution(
+        resolution=5,
+        bounds=[(-87.5, 90), (-177.5, 180)],
+        coord_names=["latitude", "longitude"],
+    )
+    new_obs = new_dataframe(50)
+
+    mapped = grid.map_observations(
+        new_obs,
+        obs_col="var",
+        grid_prefix="bob_",
+        obs_coords=["latitude", "longitude"],
+    )
+
+    assert "grid_idx" not in mapped.columns
+    assert "bob_idx" in mapped.columns
+
+
 def test_mask_from():
     arr = load_array(
         os.path.join(os.path.dirname(__file__), "data", "HadSST2_Jan_Clim.nc"),

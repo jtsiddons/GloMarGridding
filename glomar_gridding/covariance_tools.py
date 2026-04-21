@@ -600,14 +600,14 @@ def laloux_clip(
     numpy.ndarray
         Adjusted covariance matrix.
 
+    See Also
+    --------
+    :py:func:`glomar_gridding.covariance_tools.explained_variance_clip`
+
     References
     ----------
     - [Laloux]_
     - [Bun]_
-
-    See Also
-    --------
-    :py:func:`glomar_gridding.covariance_tools.explained_variance_clip`
     """
     num_grid_pts = num_grid_pts or cov.shape[0]
     vars = np.diag(cov)
@@ -683,7 +683,7 @@ def explained_variance_clip(
     only retaining 200-400 eigenvalues out of 36 x 72 = 2592 possible
     eigenvalues (if data is global). There are only ~10-20 negative eigenvalues
     plus the 2000-ish eigenvalues that sits out of 95% threshold. The magitude
-    of the negative values are 2-plus order of mangitude smaller than the
+    of the negative values are 2-plus order of magnitude smaller than the
     largest positive eigenvalues.
 
     Parameters
@@ -701,15 +701,15 @@ def explained_variance_clip(
     numpy.ndarray
         Adjusted covariance matrix.
 
+    See Also
+    --------
+    :py:func:`glomar_gridding.covariance_tools.laloux_clip`
+
     References
     ----------
     - [Laloux]_
     - [Jolliffe]_
     - [Wilks]_
-
-    See Also
-    --------
-    :py:func:`glomar_gridding.covariance_tools.laloux_clip`
     """
     if not 0.0 < target_variance_fraction <= 1.0:
         raise ValueError("'target_variance_fraction' must be (0, 1.0]")
