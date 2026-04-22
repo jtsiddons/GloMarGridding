@@ -7,6 +7,7 @@
 \ifdefined\pdfimageresolution
     \pdfimageresolution= \numexpr \dimexpr1in\relax/\sphinxpxdimen\relax
 \fi
+\newdimen\sphinxremdimen\sphinxremdimen = 10pt
 %% let collapsible pdf bookmarks panel have high depth per default
 \PassOptionsToPackage{bookmarksdepth=5}{hyperref}
 
@@ -64,7 +65,7 @@
 
 
 \title{GloMarGridding}
-\date{Jan 12, 2026}
+\date{Mar 30, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -116,9 +117,9 @@ choices.
 \chapter{Citation}
 \label{\detokenize{introduction:citation}}
 \sphinxAtStartPar
-Richard C. Cornes, Steven. C. Chan, Archie Cable et al. GloMarGridding: A Python Package for Spatial
-Interpolation to Support Structural Uncertainty Assessment of Climate Datasets, 22 August 2025,
-PREPRINT (Version 1) available at Research Square: \sphinxurl{https://doi.org/10.21203/rs.3.rs-7427869/v1}.
+Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python Toolkit for Flexible
+Spatial Interpolation in Climate Applications.” Geoscience Data Journal, 13 (2): e70064.
+\sphinxurl{https://doi.org/10.1002/gdj3.70064}.
 
 \sphinxstepscope
 
@@ -554,7 +555,7 @@ xarray.DataArray:
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.grid.}}\sphinxbfcode{\sphinxupquote{grid\_to\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{grid}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -922,12 +923,6 @@ Karspeck:
 Similar to Sklearn MaternVariogram model but uses the form in Karspeck paper
 Note: Note the 2 is outside the square root for middle and right
 e\sphinxhyphen{}folding distance is now at d/SQRT(2) for \(\nu=0.5\)
-\subsubsection*{References}
-
-\sphinxAtStartPar
-see chapter 4.2 of Rasmussen, C. E., \& Williams, C. K. I. (2005).
-Gaussian Processes for Machine Learning. The MIT Press.
-\sphinxurl{https://doi.org/10.7551/mitpress/3206.001.0001}
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
@@ -980,6 +975,12 @@ karspeck: \sphinxurl{https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.900}
 \end{itemize}
 
 \end{description}\end{quote}
+\subsubsection*{References}
+
+\sphinxAtStartPar
+see chapter 4.2 of Rasmussen, C. E., \& Williams, C. K. I. (2005).
+Gaussian Processes for Machine Learning. The MIT Press.
+\sphinxurl{https://doi.org/10.7551/mitpress/3206.001.0001}
 \index{fit() (glomar\_gridding.variogram.MaternVariogram method)@\spxentry{fit()}\spxextra{glomar\_gridding.variogram.MaternVariogram method}}
 
 \begin{fulllineitems}
@@ -1882,7 +1883,7 @@ dict
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.ellipse.}}\sphinxbfcode{\sphinxupquote{EllipseCovarianceBuilder}}}
-{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method=\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist=None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision=\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method=\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size=None}}}
+{\sphinxparam{\DUrole{n}{Lx}}\sphinxparamcomma \sphinxparam{\DUrole{n}{Ly}}\sphinxparamcomma \sphinxparam{\DUrole{n}{theta}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stdev}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{v}}\sphinxparamcomma \sphinxparam{\DUrole{n}{delta\_x\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{max\_dist}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{precision}\DUrole{o}{=}\DUrole{default_value}{\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}array\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{batch\_size}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -3216,16 +3217,20 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -3640,16 +3645,20 @@ Sets the \sphinxtitleref{kriging\_weights} attribute.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -4040,16 +4049,20 @@ Sets the \sphinxtitleref{kriging\_weights} and \sphinxtitleref{simple\_kriging\_
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{get\_uncertainty}}}
-{}
+{\sphinxparam{\DUrole{n}{full\_covariance}\DUrole{o}{=}\DUrole{default_value}{False}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
 Compute the kriging uncertainty. This requires the attribute
 \sphinxtitleref{kriging\_weights} to be computed.
 \begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_covariance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Return the full Kriging covariance if True. Defaults to False.
+
 \sphinxlineitem{Returns}
 \sphinxAtStartPar
-\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty.
+\sphinxstylestrong{uncert} \textendash{} The Kriging uncertainty or the full Kriging covariance.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -4630,7 +4643,7 @@ be set to an instance of the equivalent class from
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -5679,7 +5692,7 @@ Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxcode{\sphinxupquote{glomar\_gridding.distances.}}\sphinxbfcode{\sphinxupquote{calculate\_distance\_matrix}}}
-{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func=\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
+{\sphinxparam{\DUrole{n}{df}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dist\_func}\DUrole{o}{=}\DUrole{default_value}{\textless{}function haversine\_distance\_from\_frame\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{**dist\_kwargs}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -6626,7 +6639,7 @@ experience with 5x5 monthly data indicates even at 95\%, you are
 only retaining 200\sphinxhyphen{}400 eigenvalues out of 36 x 72 = 2592 possible
 eigenvalues (if data is global). There are only \textasciitilde{}10\sphinxhyphen{}20 negative eigenvalues
 plus the 2000\sphinxhyphen{}ish eigenvalues that sits out of 95\% threshold. The magitude
-of the negative values are 2\sphinxhyphen{}plus order of mangitude smaller than the
+of the negative values are 2\sphinxhyphen{}plus order of magnitude smaller than the
 largest positive eigenvalues.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
@@ -6651,6 +6664,16 @@ Adjusted covariance matrix.
 numpy.ndarray
 
 \end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
 \subsubsection*{References}
 \begin{itemize}
 \item {}
@@ -6666,16 +6689,6 @@ numpy.ndarray
 \sphinxcite{index:wilks}
 
 \end{itemize}
-
-
-\begin{sphinxseealso}{See also:}
-
-\sphinxAtStartPar
-{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.laloux_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.laloux\_clip()}}}}}
-
-
-\end{sphinxseealso}
-
 
 \end{fulllineitems}
 
@@ -6782,6 +6795,16 @@ Adjusted covariance matrix.
 numpy.ndarray
 
 \end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
+
+
+\end{sphinxseealso}
+
 \subsubsection*{References}
 \begin{itemize}
 \item {}
@@ -6793,16 +6816,6 @@ numpy.ndarray
 \sphinxcite{index:bun}
 
 \end{itemize}
-
-
-\begin{sphinxseealso}{See also:}
-
-\sphinxAtStartPar
-{\hyperref[\detokenize{misc:glomar_gridding.covariance_tools.explained_variance_clip}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.covariance\_tools.explained\_variance\_clip()}}}}}
-
-
-\end{sphinxseealso}
-
 
 \end{fulllineitems}
 
