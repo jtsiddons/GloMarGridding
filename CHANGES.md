@@ -2,12 +2,16 @@
 
 ## 1.2.0 (Unreleased)
 
-Contributors to this version: Joseph Siddons (@jtsiddons).
+Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes).
 
 ### Bug fixes
 
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
   `grid.map_to_grid`, dynamically set the name using the `grid_prefix` argument (#105).
+
+### Documentation
+
+* Update citation details, add `__bibtex__` for convenience (#118).
 
 ## 1.1.0 (2026-01-12)
 
