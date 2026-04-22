@@ -508,72 +508,104 @@ def _find_index_explained_variance(
 ) -> int:
     """
     Find the index of the eigenvalue for which the normalised cumulative sum
-    exceeds a target variance.
-
-    Parameters
-    ----------
-    eigvals : numpy.ndarray
-        The eigenvalues
-    target : float
-        The target
-
-    Returns
-    -------
-    i2goal : int
-        The resulting index.
-    """
-    total_variance = np.sum(eigvals)
-    target_explained_variance = target * total_variance
-    print(f"{total_variance = }")
-    print(f"{target_explained_variance = }")
-    csum, i2goal = csum_up_to_val(eigvals, target_explained_variance)
-    if csum <= target_explained_variance:
-        raise ValueError("Target Explained Variance not exceeded")
-    return i2goal
-
-
-def _find_index_aspect_ratio(
-    eigvals: np.ndarray,
-    num_grid_pts: int = 180 * 360,
-    num_times: int = 41 * 6,
-) -> int:
-    """
-    Defaults are based on:
-        41 years ESA data
-        6 pentads per month
-        and 37000ish 1x1 deg grid points
-    Resulting in q ~ 150, threshold ~ 175
-
-    For 5x5 data and 40-ish year of observations
-    Observations are monthly:
-        q ~ 65, threshold ~ 82
-
-    These parameters do not work in general must be determined from input data.
-
-    Eigenvalue threshold: threshold = (1.0 + SQRT(q))**2
+    exceeds a target variance. This represents the first eigenvalue to retain
+    for clipping.
 
     Parameters
     ----------
     eigvals : numpy.ndarray
         The eigenvalues.
-    num_grid_pts : int
+    target : float
+        The target proportion of the total variance. Expected to be between 0
+        and 1.
+
+    Returns
+    -------
+    index : int
+        The resulting index. The index of the first eigenvalue to keep.
+    """
+    if target < 0 or target > 1:
+        raise ValueError(
+            f"Input 'target' must be between 0, and 1, got {target = }"
+        )
+    total_variance = np.sum(eigvals)
+    target_explained_variance = target * total_variance
+    print(f"{total_variance = }")
+    print(f"{target_explained_variance = }")
+    csum, index = csum_up_to_val(eigvals, target_explained_variance)
+    if csum <= target_explained_variance:
+        raise ValueError("Target Explained Variance not exceeded")
+    return index
+
+
+def _find_index_aspect_ratio(
+    eigvals: np.ndarray,
+    num_grid_points: int,
+    num_time_points: int,
+) -> int:
+    r"""
+    Find the index of the first eigenvalue to retain for clipping using from
+    the _aspect ratio_ of the data.
+
+    This method is used to determine the eigenvalues to retain for Laloux
+    clipping: :py:func:`glomar_gridding.covariance_tools.laloux_clip`.
+
+    The range of possible eigenvalues for a observed covariance matrix estimated
+    from random (uncorrelated) data is a function of the ratio between the
+    number of independent variable (features) and number of observation per
+    independent variable/feature.
+
+    This can can be considered to be an _aspect ratio_ (between width and the
+    height of the data), which determines the upper (as well as lower) possible
+    value that the eigenvalue that will arise just by chance.
+
+    The threshold is defined as:
+
+    .. math::
+        \text{threshold} = (1.0 + \sqrt{\text{aspect ratio}})^2
+
+    Note: the aspect ratio is defined so that it always >= 1, so the ratio is
+    inverted if it is < 1.
+
+    An example set of parameters:
+
+    - "num_time_points": (41 * 6): 41 years ESA data, 6 pentads per month.
+    - "num_grid_points": (360 * 180): Number of grid-points in a global 1-degree
+    resolution map.
+
+    Which results in an aspect ratio of approximately 150, threshold
+    approximately 175.
+
+    For 5x5 data and 40 years of monthly observations: the aspect ratio is
+    approximately 65, and threshold is approximately 82.
+
+    Parameters
+    ----------
+    eigvals : numpy.ndarray
+        The eigenvalues.
+    num_grid_points : int
         Number of grid points in the system.
-    num_times : int
+    num_time_points : int
         Number of time-points in the system.
 
     Returns
     -------
-    int
-        The index of the eigenvalues.
+    index : int
+        The index of the first eigenvalue to retain, based on the shape of the
+        data.
+
+    See Also
+    --------
+    :py:func:`glomar_gridding.covariance_tools.laloux_clip`.
 
     References
     ----------
-    See 7.2.2 in [Bun]_
+    See 7.2.2 in [Bun]_, Equation 0.3 in [Laloux_2000]_
     """
-    q = num_grid_pts / num_times
-    if q < 1.0:
-        q = 1.0 / q
-    threshold = (1.0 + np.sqrt(q)) ** 2.0
+    aspect_ratio = num_grid_points / num_time_points
+    if aspect_ratio < 1.0:
+        aspect_ratio = 1.0 / aspect_ratio
+    threshold = (1.0 + np.sqrt(aspect_ratio)) ** 2.0
     return -int(np.sum(eigvals > threshold))
 
 
@@ -585,7 +617,7 @@ def laloux_clip(
     r"""
     Estimate the largest eigenvalue that one will get from covariance or
     correlation matrices that are generated by random uncorrelated matrices
-    aka the ``noise`` level of the eigenvalues.
+    aka the _noise_ level of the eigenvalues.
 
     Eq 0.3 in [Laloux]_ says eigenvalues of covariances generated by
     uncorrelated random vectors with constant variance have a max of:
@@ -593,7 +625,7 @@ def laloux_clip(
     .. math::
         \lambda_{max} = \sigma^2 (1 + Q + 2 \sqrt{Q})
 
-    in which:
+    where:
 
     .. math::
         Q = \frac{\text{num of features}}{\text{length of each feature}}
@@ -678,8 +710,8 @@ def laloux_clip(
 
     keep_i = _find_index_aspect_ratio(
         eigvals,
-        num_grid_pts=num_grid_pts,
-        num_times=num_time_pts,
+        num_grid_points=num_grid_pts,
+        num_time_points=num_time_pts,
     )
 
     clipped_cor = _eigenvalue_clip(
