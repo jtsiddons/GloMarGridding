@@ -17,8 +17,8 @@ Functions for calculating distances or distance-based covariance components.
 
 Some functions can be used for computing pairwise-distances, for example via
 squareform. Some functions can be used as a distance function for
-glomar_gridding.error_covariance.dist_weights, accounting for the distance
-component to an error covariance matrix.
+:py:func:`glomar_gridding.error_covariance.dist_weights`, accounting for the
+Variogram distance component to an error covariance matrix.
 
 Functions for computing covariance using Matern Tau by Steven Chan (@stchan).
 """
@@ -81,7 +81,6 @@ def inv_2d(mat: np.ndarray) -> np.ndarray:
     return inv / det_denom
 
 
-# NOTE: This is a Variogram result
 def haversine_gaussian(
     df: pl.DataFrame,
     R: float = 6371.0,
@@ -89,7 +88,11 @@ def haversine_gaussian(
     s: float = 0.6,
 ) -> np.ndarray:
     """
-    Gaussian Haversine Model
+    Gaussian Haversine Model. Compute the Gaussian variogram of the haversine
+    distances from positions in a DataFrame.
+
+    Can be used as an input function for
+    :py:func:`glomar_gridding.error_covariance.dist_weight`.
 
     Parameters
     ----------
@@ -472,16 +475,20 @@ def _compute_tau_wrapper(dyx: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     return compute_tau_vectorised(DE, DN)
 
 
-def tau_dist_from_frame(df: pl.DataFrame) -> np.ndarray:
+def tau_variogram_from_frame(df: pl.DataFrame) -> np.ndarray:
     """
-    Compute the Normalised Mahalanobis distances for all records within a
-    gridbox provided as a DataFrame. The DataFrame must contain the positions
-    and ellipse parameters for a single gridbox.
+    Compute the Exponential variogram of the Normalised Mahalanobis distances
+    for all records within a gridbox provided as a DataFrame. The DataFrame must
+    contain the positions and ellipse parameters for a single gridbox.
 
-    Can be used as an input function for observations.dist_weight.
+    Can be used as an input function for
+    :py:func:`glomar_gridding.error_covariance.dist_weight`.
 
-    Note: this returns the exponential of the negative Normalised Mahalanobis
-    distance.
+    Note: this returns is an Exponential Variogram result, so the exponential of
+    the negative Normalised Mahalanobis distance.
+
+    .. math::
+        res = e^{-dist}
 
     By Steven Chan - @stchan.
 
