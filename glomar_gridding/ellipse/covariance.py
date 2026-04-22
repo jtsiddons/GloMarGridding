@@ -492,10 +492,10 @@ class EllipseCovarianceBuilder:
         2. Karspeck et al. 2012 [Karspeck]_ Equation 17
         """
         dy, dx = self.disp_fn(
-            self.lat_grid_compressed_rad[i_s],
-            self.lon_grid_compressed_rad[i_s],
-            self.lat_grid_compressed_rad[j_s],
-            self.lon_grid_compressed_rad[j_s],
+            self.lat_grid_compressed_rad[i_s],  # type: ignore
+            self.lon_grid_compressed_rad[i_s],  # type: ignore
+            self.lat_grid_compressed_rad[j_s],  # type: ignore
+            self.lon_grid_compressed_rad[j_s],  # type: ignore
         )
         c_ij = (
             self.stdev_compressed[i_s] * self.stdev_compressed[j_s]
@@ -822,7 +822,6 @@ def _mo_disp_single(
     """
     Met Office displacements between two points. Displacements
     are computed using a cylindrical approximation.
-
 
     Parameters
     ----------
