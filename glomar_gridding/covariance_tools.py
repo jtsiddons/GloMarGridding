@@ -683,7 +683,7 @@ def explained_variance_clip(
     only retaining 200-400 eigenvalues out of 36 x 72 = 2592 possible
     eigenvalues (if data is global). There are only ~10-20 negative eigenvalues
     plus the 2000-ish eigenvalues that sits out of 95% threshold. The magitude
-    of the negative values are 2-plus order of mangitude smaller than the
+    of the negative values are 2-plus order of magnitude smaller than the
     largest positive eigenvalues.
 
     Parameters
