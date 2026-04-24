@@ -129,20 +129,20 @@ class Autoregressive1Forecast:
             self.lag_1_autocov_is_wgts = lag_1_autocov_is_wgts
             print(f"{self.lag_1_autocov_is_wgts = }")
             if lag_1_autocov_is_wgts:
-                wgt_advisory = 'lag_1_autocov will be treated as weights.'
+                wgt_advisory = "lag_1_autocov will be treated as weights."
                 check_if_wgts_are_sp_sparse = isinstance(
                     self.lag_1_autocov,
                     sp.sparse.sparray,
                 )
                 print(f"{check_if_wgts_are_sp_sparse = }")
                 if not check_if_wgts_are_sp_sparse:
-                    wgt_advisory += '\nlag_1_autocov is not a scipy sparse '
-                    wgt_advisory += 'matrix; computation will slow and memory '
-                    wgt_advisory += 'intensive; Lasso weights are sparse.'
+                    wgt_advisory += "\nlag_1_autocov is not a scipy sparse "
+                    wgt_advisory += "matrix; computation will slow and memory "
+                    wgt_advisory += "intensive; Lasso weights are sparse."
             else:
-                wgt_advisory = 'Weights will be solved from lag_1_autocov '
-                wgt_advisory += 'and clim_covar; this is often unstable '
-                wgt_advisory += 'and is not recommended.'
+                wgt_advisory = "Weights will be solved from lag_1_autocov "
+                wgt_advisory += "and clim_covar; this is often unstable "
+                wgt_advisory += "and is not recommended."
             print(wgt_advisory)
             self.compute_forecast = self.compute_forecast_vector
             print(f"{self.clim_covar.shape = }")
@@ -385,25 +385,20 @@ class Autoregressive1Forecast:
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh,
         # weights are not a symmetric matrix!
         if isinstance(self.weights, sp.sparse.sparray):
+
             def eigval_solver(arr):
                 """Compute largest and smallest real eigval for sparse arr"""
                 largest = sp.sparse.linalg.eigs(
-                    arr,
-                    k=1,
-                    which='LR',
-                    return_eigenvectors=False
+                    arr, k=1, which="LR", return_eigenvectors=False
                 )[0]
                 smallest = sp.sparse.linalg.eigs(
-                    arr,
-                    k=1,
-                    which='SR',
-                    return_eigenvectors=False
+                    arr, k=1, which="SR", return_eigenvectors=False
                 )[0]
                 return np.array([largest, smallest])
         elif isinstance(self.weights, np.ndarray):
             eigval_solver = np.linalg.eigvals
         else:
-            err_msg = f'Unknown type self.weights: {type(self.weights)}'
+            err_msg = f"Unknown type self.weights: {type(self.weights)}"
             raise ValueError(err_msg)
         eigvals = eigval_solver(self.weights)
         smallest_eigval = np.min(np.real(eigvals))
