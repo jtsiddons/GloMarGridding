@@ -4,6 +4,7 @@ output new uncertainties
 """
 
 import numpy as np
+import scipy as sp
 import warnings
 
 
@@ -18,13 +19,14 @@ class Autoregressive1Forecast:
     Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
     """
 
-    def __init__(
+    def __init__(  # noqa: C901
         self,
         obs: np.ndarray,
         errcov_obs: np.ndarray,
         lag_1_autocov: np.ndarray,
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
+        lag_1_autocov_is_wgts: bool = False,
         errcov_obs_is_sdev: bool = False,
         clim_covar_is_sdev: bool = False,
         predict_local: bool = True,
@@ -51,6 +53,21 @@ class Autoregressive1Forecast:
             Can be 1D or 2D,
             The shape of this should either be n x n (like ellipse covariance)
             or n (vector of variance at each grid point)
+        lag_1_autocov_is_wgts: bool
+            Default False
+            Bool for lag_1_autocov_is_wgts is the multivariate/VAR weight.
+            If True, lag_1_autocov will be used as weights directly, but
+            bool predict_local takes prescendence if that is set True.
+            Nevertheless, for diagonal lag_1_autocov (autocorrelation /
+            predict_local == True case), the autocorrelations ARE the weights.
+            For the general multivariate/VAR case, such prescribed weights are
+            usually estimated seperately using regression analysis. Such
+            estimate is preferred approach because there are ways to make the
+            weights stable and they are storable in sparse format reducing
+            memory footprint. Any attempt to solve the weights on the fly using
+            some two covariances are more expensive and are possibly unstable
+            because there is no prior way to ensure the weights statisfy the
+            requirements that the spectral radius of the weights must be < 1.
         errcov_obs_is_sdev: bool
             Flag indicating if errcov_obs is
             variance or standard deviation.
@@ -98,7 +115,9 @@ class Autoregressive1Forecast:
         print(f"{predict_local = }")
         if predict_local or len(lag_1_autocov.shape) == 1:
             print("Local autoregressive predictions only.")
+            print("lag_1_autocov_is_wgts is ignored.")
             self.predict_local = True
+            self.lag_1_autocov_is_wgts = False
             self.compute_forecast = self.compute_forecast_local
             if len(self.clim_covar.shape) == 2:
                 self.clim_covar = np.diag(self.clim_covar)
@@ -107,7 +126,24 @@ class Autoregressive1Forecast:
             if len(self.lag_1_autocov.shape) == 2:
                 self.lag_1_autocov = np.diag(self.lag_1_autocov)
         else:
-            # raise NotImplementedError("Vector autoregression is WIP")
+            self.lag_1_autocov_is_wgts = lag_1_autocov_is_wgts
+            print(f"{self.lag_1_autocov_is_wgts = }")
+            if lag_1_autocov_is_wgts:
+                wgt_advisory = 'lag_1_autocov will be treated as weights.'
+                check_if_wgts_are_sp_sparse = isinstance(
+                    self.lag_1_autocov,
+                    sp.sparse.sparray,
+                )
+                print(f"{check_if_wgts_are_sp_sparse = }")
+                if not check_if_wgts_are_sp_sparse:
+                    wgt_advisory += '\nlag_1_autocov is not a scipy sparse '
+                    wgt_advisory += 'matrix; computation will slow and memory '
+                    wgt_advisory += 'intensive; Lasso weights are sparse.'
+            else:
+                wgt_advisory = 'Weights will be solved from lag_1_autocov '
+                wgt_advisory += 'and clim_covar; this is often unstable '
+                wgt_advisory += 'and is not recommended.'
+            print(wgt_advisory)
             self.compute_forecast = self.compute_forecast_vector
             print(f"{self.clim_covar.shape = }")
             print(f"{self.errcov_obs.shape = }")
@@ -128,21 +164,18 @@ class Autoregressive1Forecast:
         #
         # 1 or 2D variable check
         if len(self.lag_1_autocov.shape) == 1:
-            advisory = "lag_1_autocov is a vector; "
-            advisory += "make sure this is autocorrelation, "
-            advisory += "otherwise it would not work!"
+            advisory = "lag_1_autocov is vector; "
+            advisory += "check is autocorr, otherwise wont work!"
             print(advisory)
         else:
             if not self._check_sq_matrix(self.lag_1_autocov):
-                err_msg = f"Bad shape lag_1_autocov {self.lag_1_autocov.shape}."
-                raise ValueError(err_msg)
+                raise ValueError(f"Bad shp {self.lag_1_autocov.shape = }.")
         #
         if len(self.clim_covar.shape) == 1:
             print("clim_covar is 1D.")
         else:
             if not self._check_sq_matrix(self.clim_covar):
-                err_msg = f"Bad shape clim_covar {self.clim_covar.shape}."
-                raise ValueError(err_msg)
+                raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
         #
         if len(self.errcov_obs.shape) == 1:
             print("errcov_obs is 1D.")
@@ -237,6 +270,9 @@ class Autoregressive1Forecast:
         stability_perturbation: float | None = None,
     ):
         """
+        Compute VAR forecast using weights or covariances
+        that are part of class.
+
         Parameters
         ----------
         obs: numpy.ndarray
@@ -266,20 +302,24 @@ class Autoregressive1Forecast:
         errcov: numpy.ndarray
             The error covariance for the forecast
         """
-        # raise NotImplementedError("Not finished yet.")
-        print("Computing weights")
-        # W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
-        # W @ <x(t), x(t)> = <x(t), x(t-1)>
-        # <x(t), x(t)> @ W.T = <x(t), x(t-1)>
-        # (note: <x(t), x(t-1)> and <x(t), x(t)> are symmetric)
         if stability_perturbation is not None:
             ccp = stability_perturbation + self.clim_covar
         else:
             ccp = self.clim_covar
-        self.weights = np.linalg.solve(
-            ccp,
-            self.lag_1_autocov,
-        ).T
+        #
+        if self.lag_1_autocov_is_wgts:
+            print("Using lag_1_autocov as weights")
+            self.weights = self.lag_1_autocov
+        else:
+            print("Computing weights")
+            # W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
+            # W @ <x(t), x(t)> = <x(t), x(t-1)>
+            # <x(t), x(t)> @ W.T = <x(t), x(t-1)>
+            # (note: <x(t), x(t-1)> and <x(t), x(t)> are symmetric)
+            self.weights = np.linalg.solve(
+                ccp,
+                self.lag_1_autocov,
+            ).T
         print(f"{self.weights = }")
         if check_wgt_stability:
             self.var_stability_check()
@@ -344,7 +384,28 @@ class Autoregressive1Forecast:
         print("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh,
         # weights are not a symmetric matrix!
-        eigvals = np.linalg.eigvals(self.weights)
+        if isinstance(self.weights, sp.sparse.sparray):
+            def eigval_solver(arr):
+                """Compute largest and smallest real eigval for sparse arr"""
+                largest = sp.sparse.linalg.eigs(
+                    arr,
+                    k=1,
+                    which='LR',
+                    return_eigenvectors=False
+                )[0]
+                smallest = sp.sparse.linalg.eigs(
+                    arr,
+                    k=1,
+                    which='SR',
+                    return_eigenvectors=False
+                )[0]
+                return np.array([largest, smallest])
+        elif isinstance(self.weights, np.ndarray):
+            eigval_solver = np.linalg.eigvals
+        else:
+            err_msg = f'Unknown type self.weights: {type(self.weights)}'
+            raise ValueError(err_msg)
+        eigvals = eigval_solver(self.weights)
         smallest_eigval = np.min(np.real(eigvals))
         largest_eigval = np.max(np.real(eigvals))
         print(f"{smallest_eigval = }")
