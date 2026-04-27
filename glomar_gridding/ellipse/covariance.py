@@ -669,7 +669,7 @@ def _det_22_single(
 
     Returns
     -------
-    numpy.ndarray
+    float
         The determinant of a single matrix
     """
     return mat[0] * mat[3] - mat[1] * mat[2]
