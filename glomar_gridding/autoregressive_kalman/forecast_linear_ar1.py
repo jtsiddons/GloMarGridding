@@ -163,7 +163,7 @@ class Autoregressive1ForecastUncorr:
         print(f"{self.errcov_analysis.shape = }")
         if self.clim_covar.shape != self.errcov_analysis.shape:
             raise ValueError("Inconsistent shape detected!")
-        if self.errcov_analysis.shape != self.lag_1_autocov.shape:
+        if self.errcov_analysis.shape != self.lag_1_autocor.shape:
             raise ValueError("Inconsistent shape detected!")
 
     def _check_sq_matrix(self, arr: np.ndarray):
