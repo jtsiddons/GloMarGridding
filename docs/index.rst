@@ -41,6 +41,8 @@ Welcome to GloMarGridding's documentation!
 
 .. [Huang] Huang, B., Yin, X., Menne, M. J., Vose, R., and Zhang, H.-M.: Improvements to the Land Surface Air Temperature Reconstruction in NOAAGlobalTemp: An Artificial Neural Network Approach, Artificial Intelligence for the Earth Systems, 1, e220 032, https://doi.org/10.1175/AIES-D-22-0032.1, 2022.
 
+.. [Hutchinson] Hutchinson, M. F., and  Gessler, P. E.: Splines - more than just a smooth interpolator, Geoderma, 62(1-3), 45-67, https://doi.org/10.1016/0016-7061(94)90027-2, 1994.
+
 .. [IPCC] Intergovernmental Panel On Climate Change: Climate Change 2021 – The Physical Science Basis: Working Group I Contribution to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change, Cambridge University Press, 1 edn., ISBN 978-1-00-915789-6, https://doi.org/10.1017/9781009157896, 2021.
 
 .. [Jolliffe] Jolliffe, I. T., Principal Component Analysis, pp 487, Springer, 2002
