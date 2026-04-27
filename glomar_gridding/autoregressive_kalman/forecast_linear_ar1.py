@@ -8,7 +8,235 @@ import scipy as sp
 import warnings
 
 
-class Autoregressive1Forecast:
+class Autoregressive1ForecastUncorr:
+    """
+    Class to compute AR1 forecast
+
+    Local/uncorrelated only.
+
+    Lag-1 correlations are the weights.
+
+    Use Autoregressive1Forecast for full vector case.
+
+    All predictions are based on local autocorrelation only
+
+    Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
+    """
+
+    def __init__(
+        self,
+        analysis: np.ndarray,
+        errcov_analysis: np.ndarray,
+        lag_1_autocor: np.ndarray,
+        clim_mean: np.ndarray,
+        clim_covar: np.ndarray,
+        errcov_analysis_is_sdev: bool = False,
+        clim_covar_is_sdev: bool = False,
+    ):
+        """
+        __init__ for Autoregressive1Forecast class
+
+        Parameters
+        ----------
+        analysis: numpy.ndarray
+            1D vector of analysis
+            (such as Kriging and Kalman filter outputs)
+            for t=t
+
+        errcov_analysis: numpy.ndarray
+            1D error variance or
+            2D error covariance for analysis
+            if latter, it will only use the diagonal
+
+        lag_1_autocor: numpy.ndarray
+            1D vector of lag-1 autocorrelation
+            Shape should be same as analysis
+
+        clim_mean: numpy.ndarray
+            1D vector of climatological mean
+            Shape should be same as analysis
+
+        clim_covar: numpy.ndarray
+            Climatological covariance,
+            Can be 1D or 2D,
+            The shape of this should either be n x n (like ellipse covariance)
+            or n (vector of variance at each grid point)
+            If a 2D matrix is provided, it will take the diagonal
+
+        errcov_analysis_is_sdev: bool
+            Flag indicating if errcov_analysis is
+            variance or standard deviation.
+            This only applies to vectored form (n x 1 shape) of errcov_analysis
+            Default False, errcov_analysis is variance (like SST**2) or
+            full covariance matrix.
+            True if standard deviation
+
+        clim_covar_is_sdev: bool
+            Flag indicating if clim_covar is
+            variance or standard deviation.
+            This only applies to vectored form (n x 1 shape) of clim_covar
+            Default False, clim_covar is variance (like SST**2) or
+            full covariance matrix.
+            True if standard deviation
+        """
+        #
+        # analysis
+        self.analysis = analysis
+        #
+        # (diagonal) analysis error covariance
+        print(f"{errcov_analysis_is_sdev = }")
+        if errcov_analysis_is_sdev:
+            if len(errcov_analysis.shape) > 1:
+                err_msg = "errcov_analysis_is_sdev is True, but "
+                err_msg += "errcov_analysis is not a vector; "
+                err_msg += f"{errcov_analysis.shape = }."
+                raise ValueError(err_msg)
+            self.errcov_analysis = np.square(errcov_analysis)
+        else:
+            self.errcov_analysis = errcov_analysis
+        #
+        # lag-1 autocorrelation
+        self.lag_1_autocor = lag_1_autocor
+        #
+        # climatological mean
+        self.clim_mean = clim_mean
+        #
+        # (diagonal) climatological variance
+        print(f"{clim_covar_is_sdev = }")
+        if clim_covar_is_sdev:
+            if len(clim_covar.shape) > 1:
+                err_msg = "clim_covar_is_sdev is True, but "
+                err_msg += "clim_covar is not a vector; "
+                err_msg += f"{clim_covar.shape = }."
+                raise ValueError(err_msg)
+            self.clim_covar = np.square(clim_covar)
+        else:
+            self.clim_covar = clim_covar
+        #
+        # Names of methods to compute prrediction
+        self.compute_forecast = self.compute_forecast_local
+        self.predict = self.compute_forecast_local  # sklearn standard
+        #
+        # Use only diagonal if 2D matrices are provided for
+        # clim_covar and errcov_analysis
+        if len(self.clim_covar.shape) == 2:
+            if not self._check_sq_matrix(self.clim_covar):
+                raise ValueError(f"Not square {self.clim_covar.shape = }.")
+            self.clim_covar = np.diag(self.clim_covar)
+        if len(self.errcov_analysis.shape) == 2:
+            if not self._check_sq_matrix(self.errcov_analysis):
+                raise ValueError(f"Not square {self.errcov_analysis.shape = }.")
+            self.errcov_analysis = np.diag(self.errcov_analysis)
+        #
+        self._check_args()
+
+    def _check_args(self):
+        """Check attributes set on init"""
+        # 1D variable check
+        if len(self.analysis.shape) != 1:
+            raise ValueError("analysis should be 1D")
+        if len(self.clim_mean.shape) != 1:
+            raise ValueError("clim_mean should be 1D")
+        if self.analysis.shape[0] != self.clim_mean.shape[0]:
+            raise ValueError("analysis shape inconsistent with clim_mean")
+        #
+        print(f"{self.lag_1_autocor.shape = }")
+        if len(self.lag_1_autocor.shape) != 1:
+            err_msg = "lag_1_autocor is not a vector. "
+            err_msg += "This class only accepts autocorrelations."
+            raise ValueError(err_msg)
+        self.bad_model = np.any(np.abs(self.lag_1_autocor) >= 1)
+        if self.bad_model:
+            print('Large abs values (>= 1, <= -1) detected in lag_1_autocor')
+            print('They are set to 0.99')
+            self.lag_1_autocor[self.lag_1_autocor >= 1.0] = 0.99
+            self.lag_1_autocor[self.lag_1_autocor <= -1.0] = -0.99
+        #
+        if len(self.clim_covar.shape) >= 3:
+            raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
+        #
+        if len(self.errcov_analysis.shape) >= 3:
+            err_msg = "Bad shape errcov_analysis; "
+            err_msg += f"{self.errcov_analysis.shape = }"
+            raise ValueError(err_msg)
+        print(f"{self.clim_covar.shape = }")
+        print(f"{self.errcov_analysis.shape = }")
+        if self.clim_covar.shape != self.errcov_analysis.shape:
+            raise ValueError("Inconsistent shape detected!")
+        if self.errcov_analysis.shape != self.lag_1_autocov.shape:
+            raise ValueError("Inconsistent shape detected!")
+
+    def _check_sq_matrix(self, arr: np.ndarray):
+        check1 = arr.shape[0] == arr.shape[1]
+        check2 = len(arr.shape) == 2
+        return check1 and check2
+
+    def compute_forecast_local(self, full_errcov_out: bool = True):
+        """
+        Compute AR1 forecast and estimate uncertainties
+
+        Speed:
+        https://stackoverflow.com/questions/44388358/python-numpy-matrix-multiplication-with-one-diagonal-matrix
+
+        This version uses scalar multiplication, less use of np.diag, and should
+        be faster.
+
+        Parameters
+        ----------
+        analysis: numpy.ndarray
+            1D vector of independent variables for t
+        errcov_analysis: numpy.ndarray
+            2D errcov for analysis
+        lag_1_autocov: numpy.ndarray
+            1D vector of lag correlation
+        clim_mean: numpy.ndarray
+            1D climatological mean for analysis
+        clim_covar: numpy.ndarray
+            climatology_variance: 1D (local) climatological variance
+            for analysis
+
+        Returns
+        -------
+        forecast: numpy.ndarray
+            AR1 forecast
+        errcov: numpy.ndarray
+            The error covariance for the forecast
+        """
+        print("Computing forecast")
+        #
+        # The simple local case:
+        self.weights = np.diag(self.lag_1_autocor)
+        diff_with_clim_mean = self.analysis - self.clim_mean
+        self.forecast = self.lag_1_autocor * diff_with_clim_mean
+        self.forecast += self.clim_mean
+        #
+        print("Computing uncertainties")
+        # Compute error covariances associated with AR1 epsilon
+        # that are associated with climatological variance
+        #
+        # This only works 1D/local prediction
+        # clim_covar is a vector of climatological variances
+        # and errcov_analysis is a vector of local uncertainties
+        # No off-diagonal/correlated terms
+        # Works fast but is crude, and don't use all possible info
+        #
+        # Equation:
+        # sigma_sq_eps = (1 - PHI * PHI) * clim_covar
+        # sigma_sq_analysis = PHI * PHI * errcov_analysis
+        autocorr_sq = np.square(self.lag_1_autocor)
+        climvar_mult = np.ones_like(autocorr_sq) - autocorr_sq
+        sigma_sq_eps = climvar_mult * self.clim_covar
+        sigma_sq_analysis = autocorr_sq * self.errcov_analysis
+        self.errcov = sigma_sq_eps + sigma_sq_analysis
+        self.bad_model = False
+        if full_errcov_out:
+            self.errcov = np.diag(self.errcov)
+
+
+# Autoregressive1Forecast = Autoregressive1ForecastUncorr
+
+
+class Autoregressive1ForecastVector:
     """
     Class to compute AR1 forecast
 
