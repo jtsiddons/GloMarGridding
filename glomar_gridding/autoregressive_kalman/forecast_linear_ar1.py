@@ -233,21 +233,35 @@ class Autoregressive1ForecastUncorr:
             self.errcov = np.diag(self.errcov)
 
 
-# Autoregressive1Forecast = Autoregressive1ForecastUncorr
-
-
 class Autoregressive1ForecastVector:
     """
     Class to compute AR1 forecast
 
-    Local AR only for now, the full vector AR model is not ready yet.
-    All predictions are based on local autocorrelation only
-    To work with vector form, full autocovariance is needed.
+    The full vector AR model is not ready yet.
+
+    Weights can be provided or computed if lag-0, lag-1 covariances are
+    provided.
+
+    Latter is possibly unstable; typical spatial lag-0 covariances
+    are computed using variogram techniques, and those don't methods may not
+    work with lag-1 and there is no sure way to ensure
+    <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable.
+
+    Weights are only stable if its spectral radius is less than 1. Otherwise
+    weights violate weak temporal stationarity assumption.
+
+    Instead usually weights are estimated seperately using regression taking
+    advantage of seemingly (un)related regression (SUR) method with additional
+    use of regularisation to deal with weight stability, multicollinearity, and
+    insufficient sample sizes/too many covariates.
+
+    Regardless, this method is much more expensive. It is in theory more
+    complete and deals with spatially correlated component of the analysis.
 
     Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
     """
 
-    def __init__(  # noqa: C901
+    def __init__(
         self,
         analysis: np.ndarray,
         errcov_analysis: np.ndarray,
@@ -255,9 +269,6 @@ class Autoregressive1ForecastVector:
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
         lag_1_autocov_is_wgts: bool = False,
-        errcov_analysis_is_sdev: bool = False,
-        clim_covar_is_sdev: bool = False,
-        predict_local: bool = True,
     ):
         """
         __init__ for Autoregressive1Forecast class
@@ -298,87 +309,41 @@ class Autoregressive1ForecastVector:
             some two covariances are more expensive and are possibly unstable
             because there is no prior way to ensure the weights statisfy the
             requirements that the spectral radius of the weights must be < 1.
-        errcov_analysis_is_sdev: bool
-            Flag indicating if errcov_analysis is
-            variance or standard deviation.
-            This only applies to vectored form (n x 1 shape) of errcov_analysis
-            Default False, errcov_analysis is variance (like SST**2) or
-            full covariance matrix.
-            True if standard deviation
-        clim_covar_is_sdev: bool
-            Flag indicating if clim_covar is
-            variance or standard deviation.
-            This only applies to vectored form (n x 1 shape) of clim_covar
-            Default False, clim_covar is variance (like SST**2) or
-            full covariance matrix.
-            True if standard deviation
-        predict_local: bool
-            True forces local prediction
-            It is always True if clim_covar is 1D.
-            Not vector autoregression
         """
         #
         self.analysis = analysis
-        print(f"{errcov_analysis_is_sdev = }")
-        if errcov_analysis_is_sdev:
-            if len(errcov_analysis.shape) > 1:
-                err_msg = "errcov_analysis_is_sdev is True, but "
-                err_msg += "errcov_analysis is not a vector; "
-                err_msg += f"{errcov_analysis.shape = }."
-                raise ValueError(err_msg)
-            self.errcov_analysis = np.square(errcov_analysis)
-        else:
-            self.errcov_analysis = errcov_analysis
+        self.errcov_analysis = errcov_analysis
         self.lag_1_autocov = lag_1_autocov
         self.clim_mean = clim_mean
-        print(f"{clim_covar_is_sdev = }")
-        if clim_covar_is_sdev:
-            if len(clim_covar.shape) > 1:
-                err_msg = "clim_covar_is_sdev is True, but "
-                err_msg += "clim_covar is not a vector; "
-                err_msg += f"{clim_covar.shape = }."
-                raise ValueError(err_msg)
-            self.clim_covar = np.square(clim_covar)
-        else:
-            self.clim_covar = clim_covar
+        self.clim_covar = clim_covar
         #
-        print(f"{predict_local = }")
-        if predict_local or len(lag_1_autocov.shape) == 1:
-            print("Local autoregressive predictions only.")
-            print("lag_1_autocov_is_wgts is ignored.")
-            self.predict_local = True
-            self.lag_1_autocov_is_wgts = False
-            self.compute_forecast = self.compute_forecast_local
-            if len(self.clim_covar.shape) == 2:
-                self.clim_covar = np.diag(self.clim_covar)
-            if len(self.errcov_analysis.shape) == 2:
-                self.errcov_analysis = np.diag(self.errcov_analysis)
-            if len(self.lag_1_autocov.shape) == 2:
-                self.lag_1_autocov = np.diag(self.lag_1_autocov)
-        else:
-            self.lag_1_autocov_is_wgts = lag_1_autocov_is_wgts
-            print(f"{self.lag_1_autocov_is_wgts = }")
-            if lag_1_autocov_is_wgts:
-                wgt_advisory = "lag_1_autocov will be treated as weights."
-                check_if_wgts_are_sp_sparse = isinstance(
-                    self.lag_1_autocov,
-                    sp.sparse.sparray,
-                )
-                print(f"{check_if_wgts_are_sp_sparse = }")
-                if not check_if_wgts_are_sp_sparse:
-                    wgt_advisory += "\nlag_1_autocov is not a scipy sparse "
-                    wgt_advisory += "matrix; computation will slow and memory "
-                    wgt_advisory += "intensive; Lasso weights are sparse."
-            else:
-                wgt_advisory = "Weights will be solved from lag_1_autocov "
-                wgt_advisory += "and clim_covar; this is often unstable "
-                wgt_advisory += "and is not recommended."
-            print(wgt_advisory)
-            self.compute_forecast = self.compute_forecast_vector
-            print(f"{self.clim_covar.shape = }")
-            print(f"{self.errcov_analysis.shape = }")
-            print(f"{self.lag_1_autocov.shape = }")
+        # Names of methods to compute prrediction
+        self.compute_forecast = self.compute_forecast_vector
+        self.predict = self.compute_forecast_vector  # sklearn standard
         #
+        self.lag_1_autocov_is_wgts = lag_1_autocov_is_wgts
+        print(f"{self.lag_1_autocov_is_wgts = }")
+        if lag_1_autocov_is_wgts:
+            wgt_advisory = "lag_1_autocov will be treated as weights."
+            check_if_wgts_are_sp_sparse = isinstance(
+                self.lag_1_autocov,
+                sp.sparse.sparray,
+            )
+            print(f"{check_if_wgts_are_sp_sparse = }")
+            if not check_if_wgts_are_sp_sparse:
+                wgt_advisory += "\nlag_1_autocov is not a scipy sparse "
+                wgt_advisory += "matrix; computation will slow and memory "
+                wgt_advisory += "intensive; Lasso weights are sparse, but "
+                wgt_advisory += "OLS (unstable) and Ridge weights are dense."
+        else:
+            wgt_advisory = "Weights will be solved from lag_1_autocov "
+            wgt_advisory += "and clim_covar; this is often unstable "
+            wgt_advisory += "and is not recommended."
+        print(wgt_advisory)
+        print(f"{self.clim_covar.shape = }")
+        print(f"{self.errcov_analysis.shape = }")
+        print(f"{self.lag_1_autocov.shape = }")
+    #
         self._check_args()
         self.bad_model = None
 
@@ -392,28 +357,16 @@ class Autoregressive1ForecastVector:
         if self.analysis.shape[0] != self.clim_mean.shape[0]:
             raise ValueError("analysis shape inconsistent with clim_mean")
         #
-        # 1 or 2D variable check
-        if len(self.lag_1_autocov.shape) == 1:
-            advisory = "lag_1_autocov is vector; "
-            advisory += "check is autocorr, otherwise wont work!"
-            print(advisory)
-        else:
-            if not self._check_sq_matrix(self.lag_1_autocov):
-                raise ValueError(f"Bad shp {self.lag_1_autocov.shape = }.")
+        if not self._check_sq_matrix(self.lag_1_autocov):
+            raise ValueError(f"Bad shp {self.lag_1_autocov.shape = }.")
         #
-        if len(self.clim_covar.shape) == 1:
-            print("clim_covar is 1D.")
-        else:
-            if not self._check_sq_matrix(self.clim_covar):
-                raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
+        if not self._check_sq_matrix(self.clim_covar):
+            raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
         #
-        if len(self.errcov_analysis.shape) == 1:
-            print("errcov_analysis is 1D.")
-        else:
-            if not self._check_sq_matrix(self.errcov_analysis):
-                err_msg = "Bad shape errcov_analysis "
-                err_msg += f"{self.errcov_analysis.shape}."
-                raise ValueError(err_msg)
+        if not self._check_sq_matrix(self.errcov_analysis):
+            err_msg = "Bad shape errcov_analysis "
+            err_msg += f"{self.errcov_analysis.shape}."
+            raise ValueError(err_msg)
         print(f"{self.clim_covar.shape = }")
         print(f"{self.errcov_analysis.shape = }")
         print(f"{self.lag_1_autocov.shape = }")
@@ -426,74 +379,6 @@ class Autoregressive1ForecastVector:
         check1 = arr.shape[0] == arr.shape[1]
         check2 = len(arr.shape) == 2
         return check1 and check2
-
-    def compute_forecast(self):
-        """Call default compute_forecast based on set attributes"""
-        if self.predict_local:
-            self.compute_forecast_local()
-        else:
-            self.compute_forecast_vector()
-
-    def compute_forecast_local(self, full_errcov_out: bool = True):
-        """
-        Compute AR1 forecast and estimate uncertainties
-
-        Speed:
-        https://stackoverflow.com/questions/44388358/python-numpy-matrix-multiplication-with-one-diagonal-matrix
-
-        This version uses scalar multiplication, less use of np.diag, and should
-        be faster.
-
-        Parameters
-        ----------
-        analysis: numpy.ndarray
-            1D vector of independent variables for t
-        errcov_analysis: numpy.ndarray
-            2D errcov for analysis
-        lag_1_autocov: numpy.ndarray
-            1D vector of lag correlation
-        clim_mean: numpy.ndarray
-            1D climatological mean for analysis
-        clim_covar: numpy.ndarray
-            climatology_variance: 1D (local) climatological variance
-            for analysis
-
-        Returns
-        -------
-        forecast: numpy.ndarray
-            AR1 forecast
-        errcov: numpy.ndarray
-            The error covariance for the forecast
-        """
-        print("Computing forecast")
-        #
-        # The simple local case:
-        self.weights = np.diag(self.lag_1_autocov)
-        diff_with_clim_mean = self.analysis - self.clim_mean
-        self.forecast = self.lag_1_autocov * diff_with_clim_mean
-        self.forecast += self.clim_mean
-        #
-        print("Computing uncertainties")
-        # Compute error covariances associated with AR1 epsilon
-        # that are associated with climatological variance
-        #
-        # This only works 1D/local prediction
-        # clim_covar is a vector of climatological variances
-        # and errcov_analysis is a vector of local uncertainties
-        # No off-diagonal/correlated terms
-        # Works fast but is crude, and don't use all possible info
-        #
-        # Equation:
-        # sigma_sq_eps = (1 - PHI * PHI) * clim_covar
-        # sigma_sq_analysis = PHI * PHI * errcov_analysis
-        autocorr_sq = np.square(self.lag_1_autocov)
-        climvar_mult = np.ones_like(autocorr_sq) - autocorr_sq
-        sigma_sq_eps = climvar_mult * self.clim_covar
-        sigma_sq_analysis = autocorr_sq * self.errcov_analysis
-        self.errcov = sigma_sq_eps + sigma_sq_analysis
-        self.bad_model = False
-        if full_errcov_out:
-            self.errcov = np.diag(self.errcov)
 
     def compute_forecast_vector(
         self,
@@ -614,7 +499,7 @@ class Autoregressive1ForecastVector:
         Chapter 10 Proposition 10.1
         """
         print("Checking weight stability")
-        # Don't use sp.linalg.eigh or np.linalg.eigvalsh,
+        # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
         # weights are not a symmetric matrix!
         if isinstance(self.weights, sp.sparse.sparray):
 
