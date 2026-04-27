@@ -21,13 +21,13 @@ class Autoregressive1Forecast:
 
     def __init__(  # noqa: C901
         self,
-        obs: np.ndarray,
-        errcov_obs: np.ndarray,
+        analysis: np.ndarray,
+        errcov_analysis: np.ndarray,
         lag_1_autocov: np.ndarray,
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
         lag_1_autocov_is_wgts: bool = False,
-        errcov_obs_is_sdev: bool = False,
+        errcov_analysis_is_sdev: bool = False,
         clim_covar_is_sdev: bool = False,
         predict_local: bool = True,
     ):
@@ -36,18 +36,20 @@ class Autoregressive1Forecast:
 
         Parameters
         ----------
-        obs: numpy.ndarray
-            1D vector of data for t=t
-        errcov_obs: numpy.ndarray
+        analysis: numpy.ndarray
+            1D vector of analysis
+            (such as Kriging and Kalman filter outputs)
+            for t=t
+        errcov_analysis: numpy.ndarray
             1D error variance or
-            2D error covariance for obs
+            2D error covariance for analysis
         lag_1_autocov: numpy.ndarray
             1D vector of lag-1 autocorrelation or
             2D full lag-1 autocovariance
             Note: 1D case should be autocorrelation (standardised)!
         clim_mean: numpy.ndarray
             1D vector of climatological mean
-            Shape should be same as obs
+            Shape should be same as analysis
         clim_covar: numpy.ndarray
             Climatological covariance,
             Can be 1D or 2D,
@@ -68,11 +70,11 @@ class Autoregressive1Forecast:
             some two covariances are more expensive and are possibly unstable
             because there is no prior way to ensure the weights statisfy the
             requirements that the spectral radius of the weights must be < 1.
-        errcov_obs_is_sdev: bool
-            Flag indicating if errcov_obs is
+        errcov_analysis_is_sdev: bool
+            Flag indicating if errcov_analysis is
             variance or standard deviation.
-            This only applies to vectored form (n x 1 shape) of errcov_obs
-            Default False, errcov_obs is variance (like SST**2) or
+            This only applies to vectored form (n x 1 shape) of errcov_analysis
+            Default False, errcov_analysis is variance (like SST**2) or
             full covariance matrix.
             True if standard deviation
         clim_covar_is_sdev: bool
@@ -88,17 +90,17 @@ class Autoregressive1Forecast:
             Not vector autoregression
         """
         #
-        self.obs = obs
-        print(f"{errcov_obs_is_sdev = }")
-        if errcov_obs_is_sdev:
-            if len(errcov_obs.shape) > 1:
-                err_msg = "errcov_obs_is_sdev is True, but "
-                err_msg += "errcov_obs is not a vector; "
-                err_msg += f"{errcov_obs.shape = }."
+        self.analysis = analysis
+        print(f"{errcov_analysis_is_sdev = }")
+        if errcov_analysis_is_sdev:
+            if len(errcov_analysis.shape) > 1:
+                err_msg = "errcov_analysis_is_sdev is True, but "
+                err_msg += "errcov_analysis is not a vector; "
+                err_msg += f"{errcov_analysis.shape = }."
                 raise ValueError(err_msg)
-            self.errcov_obs = np.square(errcov_obs)
+            self.errcov_analysis = np.square(errcov_analysis)
         else:
-            self.errcov_obs = errcov_obs
+            self.errcov_analysis = errcov_analysis
         self.lag_1_autocov = lag_1_autocov
         self.clim_mean = clim_mean
         print(f"{clim_covar_is_sdev = }")
@@ -121,8 +123,8 @@ class Autoregressive1Forecast:
             self.compute_forecast = self.compute_forecast_local
             if len(self.clim_covar.shape) == 2:
                 self.clim_covar = np.diag(self.clim_covar)
-            if len(self.errcov_obs.shape) == 2:
-                self.errcov_obs = np.diag(self.errcov_obs)
+            if len(self.errcov_analysis.shape) == 2:
+                self.errcov_analysis = np.diag(self.errcov_analysis)
             if len(self.lag_1_autocov.shape) == 2:
                 self.lag_1_autocov = np.diag(self.lag_1_autocov)
         else:
@@ -146,7 +148,7 @@ class Autoregressive1Forecast:
             print(wgt_advisory)
             self.compute_forecast = self.compute_forecast_vector
             print(f"{self.clim_covar.shape = }")
-            print(f"{self.errcov_obs.shape = }")
+            print(f"{self.errcov_analysis.shape = }")
             print(f"{self.lag_1_autocov.shape = }")
         #
         self._check_args()
@@ -155,12 +157,12 @@ class Autoregressive1Forecast:
     def _check_args(self):  # noqa: C901
         """Check attributes set on init"""
         # 1D variable check
-        if len(self.obs.shape) != 1:
+        if len(self.analysis.shape) != 1:
             raise ValueError("independent_var_t should be 1D")
         if len(self.clim_mean.shape) != 1:
             raise ValueError("climatology_mean should be 1D")
-        if self.obs.shape[0] != self.clim_mean.shape[0]:
-            raise ValueError("obs shape inconsistent with clim_mean")
+        if self.analysis.shape[0] != self.clim_mean.shape[0]:
+            raise ValueError("analysis shape inconsistent with clim_mean")
         #
         # 1 or 2D variable check
         if len(self.lag_1_autocov.shape) == 1:
@@ -177,18 +179,19 @@ class Autoregressive1Forecast:
             if not self._check_sq_matrix(self.clim_covar):
                 raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
         #
-        if len(self.errcov_obs.shape) == 1:
-            print("errcov_obs is 1D.")
+        if len(self.errcov_analysis.shape) == 1:
+            print("errcov_analysis is 1D.")
         else:
-            if not self._check_sq_matrix(self.errcov_obs):
-                err_msg = f"Bad shape errcov_obs {self.errcov_obs.shape}."
+            if not self._check_sq_matrix(self.errcov_analysis):
+                err_msg = "Bad shape errcov_analysis "
+                err_msg += f"{self.errcov_analysis.shape}."
                 raise ValueError(err_msg)
         print(f"{self.clim_covar.shape = }")
-        print(f"{self.errcov_obs.shape = }")
+        print(f"{self.errcov_analysis.shape = }")
         print(f"{self.lag_1_autocov.shape = }")
-        if self.clim_covar.shape != self.errcov_obs.shape:
+        if self.clim_covar.shape != self.errcov_analysis.shape:
             raise ValueError("Inconsistent shape detected!")
-        if self.errcov_obs.shape != self.lag_1_autocov.shape:
+        if self.errcov_analysis.shape != self.lag_1_autocov.shape:
             raise ValueError("Inconsistent shape detected!")
 
     def _check_sq_matrix(self, arr: np.ndarray):
@@ -215,16 +218,17 @@ class Autoregressive1Forecast:
 
         Parameters
         ----------
-        obs: numpy.ndarray
+        analysis: numpy.ndarray
             1D vector of independent variables for t
-        errcov_obs: numpy.ndarray
-            2D errcov for obs
+        errcov_analysis: numpy.ndarray
+            2D errcov for analysis
         lag_1_autocov: numpy.ndarray
             1D vector of lag correlation
         clim_mean: numpy.ndarray
-            1D climatological mean for obs
+            1D climatological mean for analysis
         clim_covar: numpy.ndarray
-            climatology_variance: 1D (local) climatological variance for obs
+            climatology_variance: 1D (local) climatological variance
+            for analysis
 
         Returns
         -------
@@ -237,7 +241,7 @@ class Autoregressive1Forecast:
         #
         # The simple local case:
         self.weights = np.diag(self.lag_1_autocov)
-        diff_with_clim_mean = self.obs - self.clim_mean
+        diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.lag_1_autocov * diff_with_clim_mean
         self.forecast += self.clim_mean
         #
@@ -247,18 +251,18 @@ class Autoregressive1Forecast:
         #
         # This only works 1D/local prediction
         # clim_covar is a vector of climatological variances
-        # and errcov_obs is a vector of local uncertainties
+        # and errcov_analysis is a vector of local uncertainties
         # No off-diagonal/correlated terms
         # Works fast but is crude, and don't use all possible info
         #
         # Equation:
         # sigma_sq_eps = (1 - PHI * PHI) * clim_covar
-        # sigma_sq_obs = PHI * PHI * errcov_obs
+        # sigma_sq_analysis = PHI * PHI * errcov_analysis
         autocorr_sq = np.square(self.lag_1_autocov)
         climvar_mult = np.ones_like(autocorr_sq) - autocorr_sq
         sigma_sq_eps = climvar_mult * self.clim_covar
-        sigma_sq_obs = autocorr_sq * self.errcov_obs
-        self.errcov = sigma_sq_eps + sigma_sq_obs
+        sigma_sq_analysis = autocorr_sq * self.errcov_analysis
+        self.errcov = sigma_sq_eps + sigma_sq_analysis
         self.bad_model = False
         if full_errcov_out:
             self.errcov = np.diag(self.errcov)
@@ -275,16 +279,16 @@ class Autoregressive1Forecast:
 
         Parameters
         ----------
-        obs: numpy.ndarray
+        analysis: numpy.ndarray
             1D vector of independent variables for t
-        errcov_obs: numpy.ndarray
-            2D errcov for obs
+        errcov_analysis: numpy.ndarray
+            2D errcov for analysis
         lag_1_autocov: numpy.ndarray
             2D matrix of autocovariance
         clim_mean: numpy.ndarray
-            1D climatological mean for obs
+            1D climatological mean for analysis
         clim_covar: numpy.ndarray
-            climatology_variance: 2D climatological covariance for obs
+            climatology_variance: 2D climatological covariance for analysis
         check_wgt_stability: bool
             Check weights (in extension for the auto and climatological
             covariances) are stable; see var_stability_check
@@ -343,7 +347,7 @@ class Autoregressive1Forecast:
         # = C(t, t-1) @ D.T @ INV(C(t, t) + E)
         # = W_Krige(t, t-1)
         print("Computing forecast")
-        diff_with_clim_mean = self.obs - self.clim_mean
+        diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.weights @ diff_with_clim_mean
         self.forecast += self.clim_mean
         #
@@ -365,10 +369,10 @@ class Autoregressive1Forecast:
         sigma_sq_eps = left - right
         #
         # Add input uncertainty
-        # It can be shown that if errcov_obs are Kriging covariance that
-        # sigma_sq_eps + sigma_sq_obs == spatiotemporal Kriging for t+1
-        sigma_sq_obs = self.weights @ self.errcov_obs @ self.weights.T
-        self.errcov = sigma_sq_eps + sigma_sq_obs
+        # It can be shown that if errcov_analysis are Kriging covariance that
+        # sigma_sq_eps + sigma_sq_analysis == spatiotemporal Kriging for t+1
+        sigma_sq_analysis = self.weights @ self.errcov_analysis @ self.weights.T
+        self.errcov = sigma_sq_eps + sigma_sq_analysis
         if not full_errcov_out:
             self.errcov = np.diag(self.errcov)
 
