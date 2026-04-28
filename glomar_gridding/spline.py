@@ -867,8 +867,33 @@ class OrdinaryKriging(Kriging):
 
 
 class UniversalKriging(Kriging):
-    """
-    Universal Kriging using the Spline approach.
+    r"""
+    Universal kriging using the Spline approach. Universal kriging is also known
+    as _Regression_ kriging.
+
+    The equation for Universal Kriging is:
+
+    .. math::
+        (C_{obs} + E)^{-1} \times C_{cross} \times y + \mu(\mathbf{p})
+
+    Universal kriging is kriging with a polynomial trend model - the
+    deterministic component of the interpolation (the mean of the random field,
+    :math:`\mu(\mathbf{p})`) is a linear combination of smooth functions
+    (typically polynomial) of some components - typically the coordinate basis.
+    For example:
+
+    .. math::
+        \mu(\mathbf{p}) = \sum_{k=1}^{N_p} \beta_k f_k(\mathbf{p}).
+
+    For a 2-d system with coordinates :math:`(x_1, x_2)`:
+
+    .. math::
+        \mu(x_1, x_2) = \beta_0 1 + \beta_1 x_1 + \beta_2 x_2 + \dots.
+
+    This class utilises a linear trend model of the coordinates:
+
+    .. math::
+        \mu(x_1, x_2) = \beta_0 1 + \beta_1 x_1 + \beta_2 x_2
 
     Parameters
     ----------
