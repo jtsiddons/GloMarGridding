@@ -65,7 +65,7 @@
 
 
 \title{GloMarGridding}
-\date{Apr 08, 2026}
+\date{Apr 28, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -4389,8 +4389,11 @@ input \sphinxtitleref{values} data type.
 \sphinxstepscope
 
 
-\chapter{Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
-\label{\detokenize{splines:thin-plate-splines}}\label{\detokenize{splines::doc}}\index{ThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{ThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
+\chapter{Spline Interpolation}
+\label{\detokenize{splines:spline-interpolation}}\label{\detokenize{splines::doc}}
+
+\section{Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
+\label{\detokenize{splines:thin-plate-splines}}\index{ThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{ThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline}}
@@ -4401,16 +4404,37 @@ input \sphinxtitleref{values} data type.
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
-Thin Plate Spline Interpolation and Smoothing
+Thin Plate Spline Interpolation and Smoothing. This uses the standard kernel
+for thin\sphinxhyphen{}plate\sphinxhyphen{}spline interpolation:
+\begin{equation*}
+\begin{split}r^2 \times log(r).\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where r is the Euclidean distance between a pair of positions. Note that
+this is undefined for 0 distance. The kernel is instead defined to be 0 at 0
+distance, which is the limit.
+
+\sphinxAtStartPar
+The methodology use the Euclidean distance metric, applied directly to the
+input position values.
+
+\sphinxAtStartPar
+The trend basis for this method is the positions and intercept. Used as
+additional predictors for the interpolation. Note, this method may not be
+appropriate on spherical geometry.
+
+\sphinxAtStartPar
+The methodology follows \sphinxcite{index:hutchinson}.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions.
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions. Expected shape \sphinxtitleref{{[}num points, num coords{]}}.
+Must be unique positions.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values.
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values. Expected to have the same \sphinxtitleref{num points} values.
 
 \item {}
 \sphinxAtStartPar
@@ -4425,6 +4449,10 @@ matrix is used \sphinxhyphen{} in most cases this will be the identity matrix.
 \end{itemize}
 
 \end{description}\end{quote}
+\subsubsection*{References}
+
+\sphinxAtStartPar
+\sphinxcite{index:hutchinson}
 \index{default\_error\_cov (glomar\_gridding.spline.ThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.ThinPlateSpline property}}
 
 \begin{fulllineitems}
@@ -4446,7 +4474,7 @@ matrix.
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{dist\_func}}}
-{\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{\sphinxparam{\DUrole{n}{positions}\DUrole{o}{=}\DUrole{default_value}{None}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
@@ -4475,7 +4503,7 @@ Linear trend basis for universal kriging: {[}1, x, y, …{]}.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{int}}{]}}
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 
@@ -4502,137 +4530,10 @@ Thin Plate Spline RBF kernel
 
 \end{fulllineitems}
 
-
-\end{fulllineitems}
-
-
-
-\chapter{Spherical Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
-\label{\detokenize{splines:spherical-thin-plate-splines}}\index{SphericalThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{SphericalThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
+\index{predict() (glomar\_gridding.spline.ThinPlateSpline method)@\spxentry{predict()}\spxextra{glomar\_gridding.spline.ThinPlateSpline method}}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{SphericalThinPlateSpline}}}
-{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Spherical form of Thin Plate Spline Interpolation and Smoothing.
-Adapted from \sphinxcite{index:wahba-sphere}.
-
-\sphinxAtStartPar
-This approach is specifically designed to operate using spherical geometry,
-such as the earth. The results will be continuous over the full domain
-(including at boundaries such as 0, 2pi).
-\begin{quote}\begin{description}
-\sphinxlineitem{Parameters}\begin{itemize}
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions, expected to be lat, lon in radians.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values.
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional covariance matrix, covariance between observations positions.
-If not supplied then the Spline’s kernel will be used (if Implemented)
-
-\item {}
-\sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
-matrix is used \sphinxhyphen{} in this case n * identity matrix, where n is the number
-of positions in \sphinxtitleref{X}.
-
-\end{itemize}
-
-\end{description}\end{quote}
-\index{default\_error\_cov (glomar\_gridding.spline.SphericalThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline property}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.default_error_cov}}
-\pysigstartsignatures
-\pysigline
-{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
-\pysigstopsignatures
-\sphinxAtStartPar
-Default Error Covariance, n times identity matrix.
-
-\end{fulllineitems}
-
-\index{dist\_func() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{dist\_func()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.dist_func}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{dist\_func}}}
-{\sphinxparam{\DUrole{n}{positions}}\sphinxparamcomma \sphinxparam{\DUrole{n}{X2}\DUrole{o}{=}\DUrole{default_value}{None}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Pairwise Haversine distances between positions.
-\begin{quote}\begin{description}
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{get\_trend\_basis() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.get_trend_basis}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
-{\sphinxparam{\DUrole{n}{positions}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Trend basis for ordinary kriging: {[}1{]}. Note that this does not include
-the position components, since this could break continuity of the result
-over the sphere (e.g. at 0, 2pi radians boundary).
-\begin{quote}\begin{description}
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{int}}{]}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{kernel() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{kernel()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.kernel}}
-\pysigstartsignatures
-\pysiglinewithargsret
-{\sphinxbfcode{\sphinxupquote{kernel}}}
-{\sphinxparam{\DUrole{n}{distances}}}
-{}
-\pysigstopsignatures
-\sphinxAtStartPar
-Spherical Thin Plate Spline RBF kernel, this is q{[}2{]} from
-\sphinxcite{index:wahba-sphere}.
-\begin{quote}\begin{description}
-\sphinxlineitem{Return type}
-\sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
-
-\end{description}\end{quote}
-
-\end{fulllineitems}
-
-\index{predict() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{predict()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
-
-\begin{fulllineitems}
-\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.predict}}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.ThinPlateSpline.predict}}
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{predict}}}
@@ -4649,8 +4550,8 @@ attribute, or from a provided SplineResult instance.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{X\_test}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} New positions use to predict using the SplineResult. These positions
-are expected to be lat, lon and in radians.
+\sphinxstyleliteralstrong{\sphinxupquote{X\_test}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} New positions use to predict using the SplineResult. Must be unique
+positions.
 
 \item {}
 \sphinxAtStartPar
@@ -4691,6 +4592,592 @@ set and the \sphinxtitleref{fitted} attribute must be True.
 
 
 \end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\section{Spherical Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
+\label{\detokenize{splines:spherical-thin-plate-splines}}\index{SphericalThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{SphericalThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{SphericalThinPlateSpline}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spherical form of Thin Plate Spline Interpolation and Smoothing.
+Adapted from \sphinxcite{index:wahba-sphere}.
+
+\sphinxAtStartPar
+This approach is specifically designed to operate using spherical geometry,
+such as the earth. The results will be continuous over the full domain
+(including at boundaries such as 0, 2pi).
+
+\sphinxAtStartPar
+The Kernel used in this Spline interpolation is the solution to equation 3.3
+and table 1 from \sphinxcite{index:wahba-sphere} for \(m=2\) (\(q_2\)).
+\begin{equation*}
+\begin{split}q_m(z) = \int_0^1 (1-h)^m (1-2hz+h^2)^{-1/2} dh.\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Where \(z\) is the cosine of the Haversine distance between two points.
+
+\sphinxAtStartPar
+To guarantee continuity of the result on spherical geometry the Haversine
+distance is used, and the trend basis is a vector of ones. This means that
+the positions are not used (directly) as predictors in this method (unlike
+the traditional thin\sphinxhyphen{}plate spline method). Consequently, this method is
+closer to ordinary kriging.
+
+\sphinxAtStartPar
+The use of the Kernel can be overridden by specifying an input covariance
+matrix.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions, expected to be lat, lon in radians. The
+input positions must be unique. Expected shape \sphinxtitleref{{[}num points, 2{]}}.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values. Expected to have the same \sphinxtitleref{num points} values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional covariance matrix, covariance between observations positions.
+If not supplied then the Spline’s kernel will be used (if implemented)
+If provided it is expected to be \sphinxtitleref{{[}num points, num points{]}}. This will
+override use of the method’s kernel, spherical continuity is not
+guaranteed in this case.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} in this case n * identity matrix, where n is the number
+of positions in \sphinxtitleref{X}.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\subsubsection*{References}
+
+\sphinxAtStartPar
+\sphinxcite{index:wahba-sphere}
+\index{default\_error\_cov (glomar\_gridding.spline.SphericalThinPlateSpline property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.default_error_cov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Default Error Covariance, n times identity matrix.
+
+\end{fulllineitems}
+
+\index{dist\_func() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{dist\_func()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.dist_func}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{dist\_func}}}
+{\sphinxparam{\DUrole{n}{positions}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Pairwise Haversine distances between positions.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_trend\_basis() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Trend basis for ordinary kriging: {[}1{]}. Note that this does not include
+the position components, since this could break continuity of the result
+over the sphere (e.g. at 0, 2pi radians boundary).
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kernel() (glomar\_gridding.spline.SphericalThinPlateSpline method)@\spxentry{kernel()}\spxextra{glomar\_gridding.spline.SphericalThinPlateSpline method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.SphericalThinPlateSpline.kernel}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kernel}}}
+{\sphinxparam{\DUrole{n}{distances}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spherical Thin Plate Spline RBF kernel, this is q{[}2{]} from
+\sphinxcite{index:wahba-sphere}.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\section{Spline Based Kriging}
+\label{\detokenize{splines:spline-based-kriging}}
+
+\subsection{Ordinary Kriging}
+\label{\detokenize{splines:ordinary-kriging}}\index{OrdinaryKriging (class in glomar\_gridding.spline)@\spxentry{OrdinaryKriging}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.OrdinaryKriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{OrdinaryKriging}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Ordinary Kriging using the Spline method. Unlike the equivalent class in the
+‘kriging’ module, this class does not require the training data to be
+located on the same grid as the test (or prediction) data. However, the
+positions must be unique.
+
+\sphinxAtStartPar
+The equation for ordinary Kriging is:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y\end{split}
+\end{equation*}
+\sphinxAtStartPar
+with a constant but unknown mean.
+
+\sphinxAtStartPar
+In this case, the \(C_{obs}\), \(C_{cross}\) and \(y\) values
+are extended with a Lagrange multiplier term, ensuring that the Kriging
+weights are constrained to sum to 1.
+
+\sphinxAtStartPar
+The matrix \(C_{obs}\) is extended by one row and one column, each
+containing the value 1, except at the diagonal point, which is 0. The
+\(C_{cross}\) matrix is extended by an extra row containing values of 1.
+Finally, the grid observations \(y\) is extended by a single value of 0
+at the end of the vector.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions. Expected shape \sphinxtitleref{{[}num points, num coords{]}}.
+Must be unique positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values. Expected to have the same \sphinxtitleref{num points} values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance matrix, covariance between observations positions. This is a
+required input for Kriging methods.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} in most cases this will be the identity matrix.
+
+\end{itemize}
+
+\end{description}\end{quote}
+
+
+\begin{sphinxseealso}{See also:}
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.OrdinaryKriging}}}}}
+
+
+\end{sphinxseealso}
+
+\index{get\_trend\_basis() (glomar\_gridding.spline.OrdinaryKriging method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.OrdinaryKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.OrdinaryKriging.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Linear trend basis for ordinary kriging: {[}1{]}
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\subsection{Universal Kriging}
+\label{\detokenize{splines:universal-kriging}}\index{UniversalKriging (class in glomar\_gridding.spline)@\spxentry{UniversalKriging}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.UniversalKriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{UniversalKriging}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{covariance}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Universal kriging using the Spline approach. Universal kriging is also known
+as \_Regression\_ kriging.
+
+\sphinxAtStartPar
+The equation for Universal Kriging is:
+\begin{equation*}
+\begin{split}(C_{obs} + E)^{-1} \times C_{cross} \times y + \mu(\mathbf{p})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Universal kriging is kriging with a polynomial trend model \sphinxhyphen{} the
+deterministic component of the interpolation (the mean of the random field,
+\(\mu(\mathbf{p})\)) is a linear combination of smooth functions
+(typically polynomial) of some components \sphinxhyphen{} typically the coordinate basis.
+For example:
+\begin{equation*}
+\begin{split}\mu(\mathbf{p}) = \sum_{k=1}^{N_p} \beta_k f_k(\mathbf{p}).\end{split}
+\end{equation*}
+\sphinxAtStartPar
+For a 2\sphinxhyphen{}d system with coordinates \((x_1, x_2)\):
+\begin{equation*}
+\begin{split}\mu(x_1, x_2) = \beta_0 1 + \beta_1 x_1 + \beta_2 x_2 + \dots.\end{split}
+\end{equation*}
+\sphinxAtStartPar
+This class utilises a linear trend model of the coordinates:
+\begin{equation*}
+\begin{split}\mu(x_1, x_2) = \beta_0 1 + \beta_1 x_1 + \beta_2 x_2\end{split}
+\end{equation*}\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions. Expected shape \sphinxtitleref{{[}num points, num coords{]}}.
+Must be unique positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values. Expected to have the same \sphinxtitleref{num points} values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{covariance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance matrix, covariance between observations positions. This is a
+required input for Kriging methods.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} for Kriging classes this will be a zero matrix.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{get\_trend\_basis() (glomar\_gridding.spline.UniversalKriging method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.UniversalKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.UniversalKriging.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Linear trend basis for universal kriging: {[}1, x, y, …{]}
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\subsection{Variogram Kriging}
+\label{\detokenize{splines:variogram-kriging}}\index{VariogramKriging (class in glomar\_gridding.spline)@\spxentry{VariogramKriging}\spxextra{class in glomar\_gridding.spline}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.spline.}}\sphinxbfcode{\sphinxupquote{VariogramKriging}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{y}}\sphinxparamcomma \sphinxparam{\DUrole{n}{variogram}}\sphinxparamcomma \sphinxparam{\DUrole{n}{error\_cov}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{kriging\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}ordinary\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{distance\_method}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}haversine\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{distance\_scale}\DUrole{o}{=}\DUrole{default_value}{1.0}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Perform Kriging using a Variogram to describe the spatial structure.
+
+\sphinxAtStartPar
+In this method, the spatial structure will not be defined by a covariance
+matrix, instead the ‘covariance’ attribute is equivalent to
+\begin{equation*}
+\begin{split}\text{variance} - \text{covariance}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+The use of this spatial structure rather than covariance does not affect the
+kriging result.
+
+\sphinxAtStartPar
+This class does not accept an input covariance as the spatial structure is
+calculated internally to the class using the variogram.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data positions. Expected shape \sphinxtitleref{{[}num points, num coords{]}}.
+Positions must be unique. If the ‘distance\_method’ is “haversine” then
+the number of coordinates must be 2, ‘latitude’ and ‘longitude’ provided
+in radians.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The training data values. Expected to have the same \sphinxtitleref{num points} values.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Variogram}}}) \textendash{} Variogram used to describe the spatial structure. Should be initialised
+with the variogram parameters and must have the ‘fit’ method which takes
+a distance matrix and returns a variogram matrix. It is recommended to
+use a ‘Variogram’ class from the ‘glomar\_gridding.variogram’ module,
+however a custom variogram model may be used. The variogram must have
+a ‘fit’ method that takes a distance matrix (numpy.ndarray) to a matrix
+representing spatial structure (such as a variogram matrix or
+covariance).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
+matrix is used \sphinxhyphen{} for Kriging classes this will be a zero matrix.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{kriging\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}ordinary\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}universal\textquotesingle{}}}{]}}) \textendash{} Kriging method to use, one of “ordinary” or “universal”. This tunes the
+trend basis of the Kriging. If set to “ordinary” then the trend basis is
+a vector of ‘ones’, and is equivalent to
+{\hyperref[\detokenize{kriging:glomar_gridding.kriging.OrdinaryKriging}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{glomar\_gridding.kriging.OrdinaryKriging}}}}}. If set to
+“universal” then the trend basis will also include the positions, e.g.
+for coordinate system \((x, y)\) the trend basis will be
+\((1, x, y)\) (incorporating an intercept). Note, “universal”
+kriging may not be appropriate for spherical geometry as the use of
+position does not guarantee continuity at \((-\pi, \pi)\) radians.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}haversine\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}euclidean\textquotesingle{}}}{]}}) \textendash{} Method to use for distance calculation, one of “haversine” or
+“euclidean”. If the distance method is “haversine” then the input
+positions are expected to be lat, lon in radians.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_scale}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Value to scale the distance (distance\_scale * distance). E.g. to convert
+haversine distance (unit sphere) to earth scale.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{default\_error\_cov (glomar\_gridding.spline.VariogramKriging property)@\spxentry{default\_error\_cov}\spxextra{glomar\_gridding.spline.VariogramKriging property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.default_error_cov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{default\_error\_cov}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Default error covariance
+
+\end{fulllineitems}
+
+\index{dist\_func() (glomar\_gridding.spline.VariogramKriging method)@\spxentry{dist\_func()}\spxextra{glomar\_gridding.spline.VariogramKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.dist_func}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{dist\_func}}}
+{\sphinxparam{\DUrole{n}{positions}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Pairwise distances between positions. Method used is one of Euclidean
+or Haversine distances, which is determined by the ‘distance\_method’
+attribute, set when the VariogramKriging instance was initialised. A
+scale is applied to the distance, for example to scale Haversine
+distances from the unit sphere to Earth scale. This is also set at
+initialisation with the ‘distance\_scale’ attribute.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_trend\_basis() (glomar\_gridding.spline.VariogramKriging method)@\spxentry{get\_trend\_basis()}\spxextra{glomar\_gridding.spline.VariogramKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.get_trend_basis}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{get\_trend\_basis}}}
+{\sphinxparam{\DUrole{n}{positions}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Trend basis for kriging
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kernel() (glomar\_gridding.spline.VariogramKriging method)@\spxentry{kernel()}\spxextra{glomar\_gridding.spline.VariogramKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.kernel}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{kernel}}}
+{\sphinxparam{\DUrole{n}{distances}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Use Variogram to define the spatial structure. Calls the ‘fit’ method
+from the ‘variogram’ attribite set at initialisation.
+
+\sphinxAtStartPar
+An error is raised if the ‘variogram’ attribute is missing the ‘fit’
+method.
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{predict() (glomar\_gridding.spline.VariogramKriging method)@\spxentry{predict()}\spxextra{glomar\_gridding.spline.VariogramKriging method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.predict}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{\sphinxparam{\DUrole{n}{X\_test}}\sphinxparamcomma \sphinxparam{\DUrole{n}{compute\_se}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{result}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Predict for new positions, using the instance’s ‘variogram’ attribute to
+determine spatial structure.
+
+\sphinxAtStartPar
+Predicts using the weights and trend coefficients from the set \sphinxtitleref{result}
+attribute, or from a provided SplineResult instance.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X\_test}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} New positions use to predict using the SplineResult. Must be unique
+positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{compute\_se}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Optionally compute standard error of the prediction.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{result}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{SplineResult}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional SplineResult instance to use for prediction (instead of the
+set \sphinxtitleref{result} attribute). If not set, the \sphinxtitleref{result} attribute must be
+set and the \sphinxtitleref{fitted} attribute must be True.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{prediction} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} The predicted values at the test positions.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{standard\_error} (\sphinxstyleemphasis{numpy.ndarray | None}) \textendash{} Standard error of the fit if \sphinxtitleref{compute\_se} is True, otherwise None.
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{variogram (glomar\_gridding.spline.VariogramKriging property)@\spxentry{variogram}\spxextra{glomar\_gridding.spline.VariogramKriging property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{splines:glomar_gridding.spline.VariogramKriging.variogram}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{variogram}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }Variogram}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Variogram model
 
 \end{fulllineitems}
 
@@ -8508,6 +8995,9 @@ Higham, N. J., Strabi´c, N., and Šego, V.: Restoring Definiteness via Shrinkin
 \bibitem[Huang]{index:huang}
 \sphinxAtStartPar
 Huang, B., Yin, X., Menne, M. J., Vose, R., and Zhang, H.\sphinxhyphen{}M.: Improvements to the Land Surface Air Temperature Reconstruction in NOAAGlobalTemp: An Artificial Neural Network Approach, Artificial Intelligence for the Earth Systems, 1, e220 032, \sphinxurl{https://doi.org/10.1175/AIES-D-22-0032.1}, 2022.
+\bibitem[Hutchinson]{index:hutchinson}
+\sphinxAtStartPar
+Hutchinson, M. F., and  Gessler, P. E.: Splines \sphinxhyphen{} more than just a smooth interpolator, Geoderma, 62(1\sphinxhyphen{}3), 45\sphinxhyphen{}67, \sphinxurl{https://doi.org/10.1016/0016-7061(94)90027-2}, 1994.
 \bibitem[IPCC]{index:ipcc}
 \sphinxAtStartPar
 Intergovernmental Panel On Climate Change: Climate Change 2021 \textendash{} The Physical Science Basis: Working Group I Contribution to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change, Cambridge University Press, 1 edn., ISBN 978\sphinxhyphen{}1\sphinxhyphen{}00\sphinxhyphen{}915789\sphinxhyphen{}6, \sphinxurl{https://doi.org/10.1017/9781009157896}, 2021.
