@@ -4391,6 +4391,21 @@ input \sphinxtitleref{values} data type.
 
 \chapter{Spline Interpolation}
 \label{\detokenize{splines:spline-interpolation}}\label{\detokenize{splines::doc}}
+\sphinxAtStartPar
+The \sphinxtitleref{spline} module brings an alternative approach to interpolation using thin\sphinxhyphen{}plate\sphinxhyphen{}spline
+methodology to perform interpolation. We provide a standard thin\sphinxhyphen{}plate\sphinxhyphen{}spline interpolator using
+the traditional kernel:
+\begin{equation*}
+\begin{split}r^2 * log(r)\end{split}
+\end{equation*}
+\sphinxAtStartPar
+where \(r\) is the distance, as well as a spline method that applies to spherical geometry
+following the approach of \sphinxcite{index:wahba-sphere}.
+
+\sphinxAtStartPar
+Further, spline\sphinxhyphen{}based approaches to Kriging are available. This allows for use of position as input
+to the interpolation, removing the need to align observations to a grid.
+
 
 \section{Thin\sphinxhyphen{}Plate\sphinxhyphen{}Splines}
 \label{\detokenize{splines:thin-plate-splines}}\index{ThinPlateSpline (class in glomar\_gridding.spline)@\spxentry{ThinPlateSpline}\spxextra{class in glomar\_gridding.spline}}
