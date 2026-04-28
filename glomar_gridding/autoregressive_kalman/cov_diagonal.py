@@ -180,16 +180,16 @@ def diag_and_nondiag_rows_subsampler(
     if n_validrows < 1:
         raise ValueError(f"{n_validrows} must be at >= 1")
     #
-    d_diagonal_only = np.zeros((n_diag_only, cov.shape[0]), dtype=bool)
-    d_off_diagonal = np.zeros((n_validrows, cov.shape[0]), dtype=bool)
+    d_diagonal_only = np.zeros((n_diag_only, cov.shape[0]), dtype=np.uint8)
+    d_off_diagonal = np.zeros((n_validrows, cov.shape[0]), dtype=np.uint8)
     row_count_off_diagonal = 0
     row_count_diagonal_only = 0
     for i in range(n_rows):
         if has_off_diagonal_elements[i] == 0:
-            d_diagonal_only[row_count_diagonal_only, i] = True
+            d_diagonal_only[row_count_diagonal_only, i] = 1
             row_count_diagonal_only += 1
         else:
-            d_off_diagonal[row_count_off_diagonal, i] = True
+            d_off_diagonal[row_count_off_diagonal, i] = 1
             row_count_off_diagonal += 1
     d_diagonal_only = sp.sparse.csr_matrix(d_diagonal_only)
     d_off_diagonal = sp.sparse.csr_matrix(d_off_diagonal)
