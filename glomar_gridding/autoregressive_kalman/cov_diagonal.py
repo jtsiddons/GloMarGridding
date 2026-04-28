@@ -44,7 +44,6 @@ def remove_diag_only_rows(
     """
     n_rows = cov.shape[0]
     print(f"{cov.shape = }")
-    n_validrows = 0
     if not np.all(np.diag(cov) > zero_threshold):
         err_msg = f'There are elements below {zero_threshold = }'
         err_msg += ' (negatives included) on the diagonal.'
@@ -60,7 +59,9 @@ def remove_diag_only_rows(
     )
     print(f"{D.shape = }")
     #
-    new_cov_arr = D @ cov @ D.T
+    new_cov_arr = (
+        cov[has_off_diagonal_elements, :][:, has_off_diagonal_elements]
+    )
     print(f"{new_cov_arr.shape = }")
     #
     return new_cov_arr, D
@@ -156,7 +157,6 @@ def diag_and_nondiag_rows_subsampler(
     """
     n_rows = cov.shape[0]
     print(f"{cov.shape = }")
-    n_validrows = 0
     #
     # This returns True for rows that have off diagonal elements
     if not np.all(np.diag(cov) > zero_threshold):
@@ -180,11 +180,14 @@ def diag_and_nondiag_rows_subsampler(
     print(f"{d_off_diagonal.shape = }")
     print(f"{d_diagonal_only.shape = }")
     #
-    diag_cov = np.diag(cov)
-    diag_cov = np.array(diag_cov)
+    # Some versions of numpy (newer ones) return a view instead of array
+    # Old versions of numpy will return an array
+    diag_cov = np.array(np.diag(cov))
     if return_subsampled_arr:
-        isolated_diag_vals = d_diagonal_only @ diag_cov
-        the_denser_parts = d_off_diagonal @ cov @ d_off_diagonal.T
+        isolated_diag_vals = diag_cov[~has_off_diagonal_elements]
+        the_denser_parts = (
+            cov[has_off_diagonal_elements, :][:, has_off_diagonal_elements]
+        )
     else:
         isolated_diag_vals = None
         the_denser_parts = None
