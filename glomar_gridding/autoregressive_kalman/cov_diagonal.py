@@ -55,21 +55,12 @@ def remove_diag_only_rows(
     if n_validrows < 1:
         raise ValueError(f"{n_validrows} must be at >= 1")
     #
-    D = np.zeros((n_validrows, cov.shape[0]), dtype=np.uint8)
-    row_count = 0
-    for i in range(n_rows):
-        if has_off_diagonal_elements[i] == 0:
-            continue
-        print(f"{row_count} {i}")
-        D[row_count, i] = 1
-        row_count += 1
-    print(D)
+    D = sp.sparse.csr_matrix(
+        np.eye(n_rows, dtype=np.uint8)[has_off_diagonal_elements, :]
+    )
     print(f"{D.shape = }")
     #
-    new_cov_arr = np.matmul(D, cov)
-    print(f"Progress update: {new_cov_arr.shape = }")
-    new_cov_arr = np.matmul(new_cov_arr, D.T)
-    print(new_cov_arr)
+    new_cov_arr = D @ cov @ D.T
     print(f"{new_cov_arr.shape = }")
     #
     return new_cov_arr, D
@@ -180,22 +171,13 @@ def diag_and_nondiag_rows_subsampler(
     if n_validrows < 1:
         raise ValueError(f"{n_validrows} must be at >= 1")
     #
-    d_diagonal_only = np.zeros((n_diag_only, cov.shape[0]), dtype=np.uint8)
-    d_off_diagonal = np.zeros((n_validrows, cov.shape[0]), dtype=np.uint8)
-    row_count_off_diagonal = 0
-    row_count_diagonal_only = 0
-    for i in range(n_rows):
-        if has_off_diagonal_elements[i] == 0:
-            d_diagonal_only[row_count_diagonal_only, i] = 1
-            row_count_diagonal_only += 1
-        else:
-            d_off_diagonal[row_count_off_diagonal, i] = 1
-            row_count_off_diagonal += 1
-    d_diagonal_only = sp.sparse.csr_matrix(d_diagonal_only)
-    d_off_diagonal = sp.sparse.csr_matrix(d_off_diagonal)
-    print(f"{type(d_off_diagonal) = }")
+    d_off_diagonal = sp.sparse.csr_matrix(
+        np.eye(n_rows, dtype=np.uint8)[has_off_diagonal_elements, :]
+    )
+    d_diagonal_only = sp.sparse.csr_matrix(
+        np.eye(n_rows, dtype=np.uint8)[~has_off_diagonal_elements, :]
+    )
     print(f"{d_off_diagonal.shape = }")
-    print(f"{type(d_diagonal_only) = }")
     print(f"{d_diagonal_only.shape = }")
     #
     diag_cov = np.diag(cov)
