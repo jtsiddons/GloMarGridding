@@ -211,14 +211,6 @@ def diag_and_nondiag_rows_subsampler(
     diag_cov = np.diag(cov)
     diag_cov = np.array(diag_cov)
     if return_subsampled_arr:
-        # isolated_diag_vals = np.matmul(
-        #     d_diagonal_only.toarray(),
-        #     diag_cov,
-        # )
-        # the_denser_parts = np.matmul(
-        #     np.matmul(d_off_diagonal.toarray(), cov),
-        #     d_off_diagonal.toarray().T,
-        # )
         isolated_diag_vals = d_diagonal_only @ diag_cov
         the_denser_parts = d_off_diagonal @ cov @ d_off_diagonal.T
     else:
