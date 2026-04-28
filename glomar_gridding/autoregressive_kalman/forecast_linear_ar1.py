@@ -97,6 +97,7 @@ class Autoregressive1ForecastUncorr:
         #
         # lag-1 autocorrelation
         self.lag_1_autocor = lag_1_autocor
+        self.weights = sp.sparse.csc_array(np.diag(self.lag_1_autocor))
         #
         # climatological mean
         self.clim_mean = clim_mean
@@ -187,7 +188,7 @@ class Autoregressive1ForecastUncorr:
             1D vector of independent variables for t
         errcov_analysis: numpy.ndarray
             2D errcov for analysis
-        lag_1_autocov: numpy.ndarray
+        lag_1_autocor: numpy.ndarray
             1D vector of lag correlation
         clim_mean: numpy.ndarray
             1D climatological mean for analysis
@@ -205,7 +206,6 @@ class Autoregressive1ForecastUncorr:
         print("Computing forecast")
         #
         # The simple local case:
-        self.weights = np.diag(self.lag_1_autocor)
         diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.lag_1_autocor * diff_with_clim_mean
         self.forecast += self.clim_mean
@@ -235,41 +235,69 @@ class Autoregressive1ForecastUncorr:
 
 class Autoregressive1ForecastVector:
     """
-    Class to compute AR1 forecast
+    Class to compute AR1 forecast in full vectorized form
 
-    The full vector AR model is not ready yet.
+    Weights can be provided. It can be computed from non-lagged and
+    lag-1 covariances, using classmethod `from_autocov`.
 
-    Weights can be provided or computed if lag-0, lag-1 covariances are
-    provided.
-
-    Latter is possibly unstable; typical spatial lag-0 covariances
-    are computed using variogram techniques, and those don't methods may not
+    Latter is possibly unstable. Typical spatial unlagged covariances
+    are computed using variogram techniques, and they may not
     work with lag-1 and there is no sure way to ensure
-    <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable.
+    <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable. GlomarGridding has no
+    functionality to compute lagged autocovariances.
+
+    Autoregressive1ForecastUncorr is a special case of this class with
+    the weights being the lag-1 autocorrelation.
 
     Weights are only stable if its spectral radius is less than 1. Otherwise
     weights violate weak temporal stationarity assumption.
 
     Instead usually weights are estimated seperately using regression taking
     advantage of seemingly (un)related regression (SUR) method with additional
-    use of regularisation to deal with weight stability, multicollinearity, and
-    insufficient sample sizes/too many covariates.
+    use of regularization (like Lasso) to deal with weight stability,
+    multicollinearity, and insufficient sample sizes/too many covariates.
+    Weights estimated this way often meets spectral radius < 1 requirement.
 
     Regardless, this method is much more expensive. It is in theory more
     complete and deals with spatially correlated component of the analysis.
 
     Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
+
+    Other notes:
+
+    (1) If `analysis` is a Kriging analysis, results here produces the same
+    result as if applying spatiotemporal Kriging for t+1
+
+    The weight for spatiotemporal Kriging is:
+    W_Krige(t, t-1) = C(t, t-1) D.T @ INV(C(t, t) + E)
+
+    That is the same as weights for AR1 multiplying on top of Kriging (t,t):
+    W_AR = C(t, t-1) @ INV(C(t, t))
+    W_Krige(t,t) = C @ D.T @ INV(C(t, t) + E)
+
+    W_AR @ W_Krige(t,t)
+    = C(t, t-1) @ INV(C) @ C @ D.T @ INV(C(t, t) + E)
+    = C(t, t-1) @ D.T @ INV(C(t, t) + E)
+    = W_Krige(t, t-1)
+
+    Uncertainty: It can be shown that if errcov_analysis are Kriging covariance
+    that
+    sigma_sq_eps + sigma_sq_analysis == spatiotemporal Kriging for t+1
+
+    In pracitice, `analysis` will be computed recursively using Kalman filter.
+
+    (2) Uncertainity of multivariate autoregression:
+    https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression
     """
 
     def __init__(
         self,
         analysis: np.ndarray,
         errcov_analysis: np.ndarray,
-        lag_1_autocov: np.ndarray | sp.sparse.sparray,
+        weights: np.ndarray | sp.sparse.sparray,
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
-        lag_1_autocov_is_wgts: bool = False,
-    ):
+        ):
         """
         __init__ for Autoregressive1Forecast class
 
@@ -283,8 +311,8 @@ class Autoregressive1ForecastVector:
         errcov_analysis: numpy.ndarray
             2D error covariance for analysis
             dtype `float`, shape `(N, N)`
-        lag_1_autocov: numpy.ndarray | scipy.sparse.sparray
-            2D full lag-1 autocovariance or weights
+        weights: numpy.ndarray | scipy.sparse.sparray
+            2D weights
             dtype `float`, shape `(N, N)`
         clim_mean: numpy.ndarray
             1D vector of climatological mean
@@ -296,26 +324,11 @@ class Autoregressive1ForecastVector:
             The shape of this should either be n x n (like ellipse covariance)
             or n (vector of variance at each grid point)
             dtype `float`, shape `(N, N)`
-        lag_1_autocov_is_wgts: bool
-            Default False
-            Bool for lag_1_autocov_is_wgts is the multivariate/VAR weight.
-            If True, lag_1_autocov will be used as weights directly, but
-            bool predict_local takes prescendence if that is set True.
-            Nevertheless, for diagonal lag_1_autocov (autocorrelation /
-            predict_local == True case), the autocorrelations ARE the weights.
-            For the general multivariate/VAR case, such prescribed weights are
-            usually estimated seperately using regression analysis. Such
-            estimate is preferred approach because there are ways to make the
-            weights stable and they are storable in sparse format reducing
-            memory footprint. Any attempt to solve the weights on the fly using
-            some two covariances are more expensive and are possibly unstable
-            because there is no prior way to ensure the weights statisfy the
-            requirements that the spectral radius of the weights must be < 1.
         """
         #
         self.analysis = analysis
         self.errcov_analysis = errcov_analysis
-        self.lag_1_autocov = lag_1_autocov
+        self.weights = weights
         self.clim_mean = clim_mean
         self.clim_covar = clim_covar
         #
@@ -323,33 +336,103 @@ class Autoregressive1ForecastVector:
         self.compute_forecast = self.compute_forecast_vector
         self.predict = self.compute_forecast_vector  # sklearn standard
         #
-        self.lag_1_autocov_is_wgts = lag_1_autocov_is_wgts
-        print(f"{self.lag_1_autocov_is_wgts = }")
-        if lag_1_autocov_is_wgts:
-            wgt_advisory = "lag_1_autocov will be treated as weights."
-            check_if_wgts_are_sp_sparse = isinstance(
-                self.lag_1_autocov,
-                sp.sparse.sparray,
-            )
-            print(f"{check_if_wgts_are_sp_sparse = }")
-            if not check_if_wgts_are_sp_sparse:
-                wgt_advisory += "\nlag_1_autocov is not a scipy sparse "
-                wgt_advisory += "matrix; computation will slow and memory "
-                wgt_advisory += "intensive; Lasso weights are sparse, but "
-                wgt_advisory += "OLS (unstable) and Ridge weights are dense."
-        else:
-            wgt_advisory = "Weights will be solved from lag_1_autocov "
-            wgt_advisory += "and clim_covar; this is often unstable "
-            wgt_advisory += "and is not recommended."
-        print(wgt_advisory)
+        check_if_wgts_are_sp_sparse = isinstance(
+            self.weights,
+            sp.sparse.sparray,
+        )
+        print(f"{check_if_wgts_are_sp_sparse = }")
+        if not check_if_wgts_are_sp_sparse:
+            wgt_advisory = "weight is not a scipy sparse "
+            wgt_advisory += "matrix; computation will slow and memory "
+            wgt_advisory += "intensive; Lasso weights and lag1 autocorrelation "
+            wgt_advisory += "are sparse, but OLS (unstable) and Ridge weights "
+            wgt_advisory += "are dense."
+            print(wgt_advisory)
         print(f"{self.clim_covar.shape = }")
         print(f"{self.errcov_analysis.shape = }")
-        print(f"{self.lag_1_autocov.shape = }")
-    #
+        print(f"{self.weights.shape = }")
+        #
         self._check_args()
         self.bad_model = None
 
-    def _check_args(self):  # noqa: C901
+    @classmethod
+    def from_autocov(
+        cls,
+        analysis: np.ndarray,
+        errcov_analysis: np.ndarray,
+        lag_1_autocov: np.ndarray,
+        clim_mean: np.ndarray,
+        clim_covar: np.ndarray,
+        stability_perturbation: float | None = None,
+    ):
+        """
+        With provided lag_1_autocov (lag-1 autocovariance),
+        estimate weights using W = lag1_autocov @ inv(clim_covar)
+
+        W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
+        W @ <x(t), x(t)> = <x(t), x(t-1)>
+        <x(t), x(t)> @ W.T = <x(t), x(t-1)>  <<< computed using np.linalg.solve
+
+        Both <x(t), x(t)> and <x(t), x(t-1)> are symmetric
+
+        This approach is often unstable as lag1_autocov and clim_covar
+        are estimated seperately, and there is no gurantee that the computed
+        weights statisfy weak stationary requirement that the spectral radius
+        of weights have to be less than 1.
+
+        Parameters
+        ----------
+        analysis: numpy.ndarray
+            1D vector of analysis
+            (such as Kriging and Kalman filter outputs)
+            for t=t
+            dtype `float`, shape `(N, )`
+        errcov_analysis: numpy.ndarray
+            2D error covariance for analysis
+            dtype `float`, shape `(N, N)`
+        lag_1_autocov: numpy.ndarray
+            2D lag-1 autocovariance
+            dtype `float`, shape `(N, N)`
+        clim_mean: numpy.ndarray
+            1D vector of climatological mean
+            Shape should be same as analysis
+            dtype `float`, shape `(N, )`
+        clim_covar: numpy.ndarray
+            Climatological covariance,
+            Can be 1D or 2D,
+            The shape of this should either be n x n (like ellipse covariance)
+            or n (vector of variance at each grid point)
+            dtype `float`, shape `(N, N)`
+        stability_perturbation: float | None
+            A diagonal perturbation to be added clim_covar for
+            the purpose of computing the weights. This may avoid
+            problems that clim_covar being (close to) invertible.
+        """
+        wgt_advisory = "Weights will be solved from lag1_autocov "
+        wgt_advisory += "and clim_covar; this is often unstable "
+        wgt_advisory += "and is not recommended."
+        print(wgt_advisory)
+        #
+        if stability_perturbation is not None:
+            new_diag = np.diag(clim_covar) + stability_perturbation
+            ccp = clim_covar.copy()
+            np.fill_diagonal(ccp, new_diag)
+        else:
+            ccp = clim_covar
+        print("Computing weights")
+        weights = np.linalg.solve(
+            ccp,
+            lag_1_autocov,
+        ).T
+        return cls(
+            analysis,
+            errcov_analysis,
+            weights,
+            clim_mean,
+            clim_covar,
+        )
+
+    def _check_args(self):
         """Check attributes set on init"""
         # 1D variable check
         if len(self.analysis.shape) != 1:
@@ -359,8 +442,8 @@ class Autoregressive1ForecastVector:
         if self.analysis.shape[0] != self.clim_mean.shape[0]:
             raise ValueError("analysis shape inconsistent with clim_mean")
         #
-        if not self._check_sq_matrix(self.lag_1_autocov):
-            raise ValueError(f"Bad shp {self.lag_1_autocov.shape = }.")
+        if not self._check_sq_matrix(self.weights):
+            raise ValueError(f"Bad shp {self.weights.shape = }.")
         #
         if not self._check_sq_matrix(self.clim_covar):
             raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
@@ -369,12 +452,9 @@ class Autoregressive1ForecastVector:
             err_msg = "Bad shape errcov_analysis "
             err_msg += f"{self.errcov_analysis.shape}."
             raise ValueError(err_msg)
-        print(f"{self.clim_covar.shape = }")
-        print(f"{self.errcov_analysis.shape = }")
-        print(f"{self.lag_1_autocov.shape = }")
         if self.clim_covar.shape != self.errcov_analysis.shape:
             raise ValueError("Inconsistent shape detected!")
-        if self.errcov_analysis.shape != self.lag_1_autocov.shape:
+        if self.errcov_analysis.shape != self.weights.shape:
             raise ValueError("Inconsistent shape detected!")
 
     def _check_sq_matrix(self, arr: np.ndarray):
@@ -386,7 +466,6 @@ class Autoregressive1ForecastVector:
         self,
         check_wgt_stability: bool = True,
         full_errcov_out: bool = True,
-        stability_perturbation: float | None = None,
     ):
         """
         Compute VAR forecast using weights or covariances
@@ -409,10 +488,7 @@ class Autoregressive1ForecastVector:
             covariances) are stable; see var_stability_check
         full_errcov_out: bool
             Return full error covariance if True
-        stability_perturbation: float
-            In some cases, prediction is possible even with weights being
-            unstable, but a perturbation may be needed to ensure sensible
-            results are obtainable.
+            Defaults to True
 
         Returns
         -------
@@ -421,71 +497,29 @@ class Autoregressive1ForecastVector:
         errcov: numpy.ndarray
             The error covariance for the forecast
         """
-        if stability_perturbation is not None:
-            ccp = stability_perturbation + self.clim_covar
-        else:
-            ccp = self.clim_covar
-        #
-        if self.lag_1_autocov_is_wgts:
-            print("Using lag_1_autocov as weights")
-            self.weights = self.lag_1_autocov
-        else:
-            print("Computing weights")
-            # W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
-            # W @ <x(t), x(t)> = <x(t), x(t-1)>
-            # <x(t), x(t)> @ W.T = <x(t), x(t-1)>
-            # (note: <x(t), x(t-1)> and <x(t), x(t)> are symmetric)
-            self.weights = np.linalg.solve(
-                ccp,
-                self.lag_1_autocov,
-            ).T
         print(f"{self.weights = }")
         if check_wgt_stability:
             self.var_stability_check()
         else:
             warn_msg = "check_wgt_stability is disabled; "
-            warn_msg += "check is recommended as VAR is often unstable. "
+            warn_msg += "check is recommended as VAR may be unstable. "
             warn_msg += "As precaution, self.bad_model defaults to True."
             warnings.warn(warn_msg, UserWarning)
             self.bad_model = True
         #
-        # It can be shown that the below produces the same
-        # result as if applying spatiotemporal Kriging for t+1
-        # The weight for spatiotemporal Kriging is:
-        # W_Krige(t, t-1) = C(t, t-1) D.T @ INV(C(t, t) + E)
-        # That is the same as weights for AR1 multiplying on top of
-        # Kriging (t,t):
-        # W_AR = C(t, t-1) @ INV(C(t, t))
-        # W_Krige(t,t) = C @ D.T @ INV(C(t, t) + E)
-        # W_AR @ W_Krige(t,t)
-        # = C(t, t-1) @ INV(C) @ C @ D.T @ INV(C(t, t) + E)
-        # = C(t, t-1) @ D.T @ INV(C(t, t) + E)
-        # = W_Krige(t, t-1)
         print("Computing forecast")
         diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.weights @ diff_with_clim_mean
         self.forecast += self.clim_mean
         #
-        # https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression
-        # I didn't cheat
-        # I got same equation independently using good ole pen and paper!
-        #
-        # If weights fail stability check, it implies expected value
-        # of anomalies can grow in time.
-        # Testing shows, one also gets wrong uncertainty
-        # estimates, like off diagonal term being (considerably) larger than
-        # diagonal terms; that's an invalid (error) covariance matrix, saying
-        # correlation > 1 which is impossible!
         print("Computing uncertainties")
-        left = ccp
-        right = self.weights @ ccp @ self.weights.T
-        print(f"{left = }")
-        print(f"{right = }")
-        sigma_sq_eps = left - right
+        sigma_sq_eps = (
+            self.clim_covar -
+            self.weights @ self.clim_covar @ self.weights.T
+        )
         #
-        # Add input uncertainty
-        # It can be shown that if errcov_analysis are Kriging covariance that
-        # sigma_sq_eps + sigma_sq_analysis == spatiotemporal Kriging for t+1
+        # Warning:
+        # Error covariances may not be (semi-)positive definite
         sigma_sq_analysis = self.weights @ self.errcov_analysis @ self.weights.T
         self.errcov = sigma_sq_eps + sigma_sq_analysis
         if not full_errcov_out:
@@ -499,6 +533,13 @@ class Autoregressive1ForecastVector:
         which is from
         https://www.jstor.org/stable/j.ctv14jx6sm
         Chapter 10 Proposition 10.1
+
+        If weights fail stability check, it implies expected value
+        of anomalies can grow in time.
+        Testing shows, one also gets wrong uncertainty
+        estimates, like off diagonal term being (considerably) larger than
+        diagonal terms; that's an invalid (error) covariance matrix, saying
+        correlation > 1 which is impossible!
         """
         print("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
