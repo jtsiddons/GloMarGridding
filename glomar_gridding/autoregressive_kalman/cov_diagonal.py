@@ -52,14 +52,11 @@ def remove_diag_only_rows(
     n_rows = cov.shape[0]
     print(f"{cov.shape = }")
     n_validrows = 0
-    has_off_diagonal_elements = np.apply_along_axis(
-        lambda row: _more_than_one_element(
-            row,
-            zero_threshold=zero_threshold,
-        ),
-        0,
-        cov,
-    )
+    if not np.all(np.diag(cov) > zero_threshold):
+        err_msg = f'There are elements below {zero_threshold = }'
+        err_msg += ' (negatives included) on the diagonal.'
+        raise ValueError(err_msg)
+    has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
     print(f"{n_validrows = }")
     if n_validrows < 1:
