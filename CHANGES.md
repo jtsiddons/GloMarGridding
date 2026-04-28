@@ -4,6 +4,11 @@
 
 Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes).
 
+### New features and enhancements
+
+* Add `spline` module for Spline-based interpolation, e.g. `glomar_gridding.spline.ThinPlateSpline`
+  and alternative `Kriging` approaches with `glomar_gridding.spline.OrdinaryKriging` (#40).
+
 ### Bug fixes
 
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
