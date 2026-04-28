@@ -1,6 +1,9 @@
 """
 Conduct local AR1 forecast of uncertain data
 output new uncertainties
+
+for the purpose of docstring
+N: number of analysis points, covariates/features
 """
 
 import numpy as np
@@ -12,13 +15,11 @@ class Autoregressive1ForecastUncorr:
     """
     Class to compute AR1 forecast
 
-    Local/uncorrelated only.
-
-    Lag-1 correlations are the weights.
+    Local/uncorrelated only: Lag-1 correlations are the
+    weights and are in 1-D vector. All predictions are based on
+    local autocorrelation only
 
     Use Autoregressive1Forecast for full vector case.
-
-    All predictions are based on local autocorrelation only
 
     Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
     """
@@ -42,27 +43,27 @@ class Autoregressive1ForecastUncorr:
             1D vector of analysis
             (such as Kriging and Kalman filter outputs)
             for t=t
-
+            dtype `float`, shape `(N, )`
         errcov_analysis: numpy.ndarray
             1D error variance or
             2D error covariance for analysis
             if latter, it will only use the diagonal
-
+            dtype `float`, shape `(N, )` | `(N, N)`
         lag_1_autocor: numpy.ndarray
             1D vector of lag-1 autocorrelation
             Shape should be same as analysis
-
+            dtype `float`, shape `(N, )`
         clim_mean: numpy.ndarray
             1D vector of climatological mean
             Shape should be same as analysis
-
+            dtype `float`, shape `(N, )`
         clim_covar: numpy.ndarray
             Climatological covariance,
             Can be 1D or 2D,
             The shape of this should either be n x n (like ellipse covariance)
             or n (vector of variance at each grid point)
             If a 2D matrix is provided, it will take the diagonal
-
+            dtype `float`, shape `(N, )` | `(N, N)`
         errcov_analysis_is_sdev: bool
             Flag indicating if errcov_analysis is
             variance or standard deviation.
@@ -70,7 +71,6 @@ class Autoregressive1ForecastUncorr:
             Default False, errcov_analysis is variance (like SST**2) or
             full covariance matrix.
             True if standard deviation
-
         clim_covar_is_sdev: bool
             Flag indicating if clim_covar is
             variance or standard deviation.
@@ -265,7 +265,7 @@ class Autoregressive1ForecastVector:
         self,
         analysis: np.ndarray,
         errcov_analysis: np.ndarray,
-        lag_1_autocov: np.ndarray,
+        lag_1_autocov: np.ndarray | sp.sparse.sparray,
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
         lag_1_autocov_is_wgts: bool = False,
@@ -279,21 +279,23 @@ class Autoregressive1ForecastVector:
             1D vector of analysis
             (such as Kriging and Kalman filter outputs)
             for t=t
+            dtype `float`, shape `(N, )`
         errcov_analysis: numpy.ndarray
-            1D error variance or
             2D error covariance for analysis
-        lag_1_autocov: numpy.ndarray
-            1D vector of lag-1 autocorrelation or
-            2D full lag-1 autocovariance
-            Note: 1D case should be autocorrelation (standardised)!
+            dtype `float`, shape `(N, N)`
+        lag_1_autocov: numpy.ndarray | scipy.sparse.sparray
+            2D full lag-1 autocovariance or weights
+            dtype `float`, shape `(N, N)`
         clim_mean: numpy.ndarray
             1D vector of climatological mean
             Shape should be same as analysis
+            dtype `float`, shape `(N, )`
         clim_covar: numpy.ndarray
             Climatological covariance,
             Can be 1D or 2D,
             The shape of this should either be n x n (like ellipse covariance)
             or n (vector of variance at each grid point)
+            dtype `float`, shape `(N, N)`
         lag_1_autocov_is_wgts: bool
             Default False
             Bool for lag_1_autocov_is_wgts is the multivariate/VAR weight.
