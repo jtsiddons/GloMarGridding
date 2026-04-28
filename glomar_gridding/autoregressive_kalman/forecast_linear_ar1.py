@@ -10,6 +10,8 @@ import numpy as np
 import scipy as sp
 import warnings
 
+from glomar_gridding.covariance_tools import explained_variance_clip
+
 
 class Autoregressive1ForecastUncorr:
     """
@@ -466,6 +468,8 @@ class Autoregressive1ForecastVector:
         self,
         check_wgt_stability: bool = True,
         full_errcov_out: bool = True,
+        check_errcov_psd: bool = True,
+        kwargs4clip: dict | None = None,
     ):
         """
         Compute VAR forecast using weights or covariances
@@ -473,22 +477,16 @@ class Autoregressive1ForecastVector:
 
         Parameters
         ----------
-        analysis: numpy.ndarray
-            1D vector of independent variables for t
-        errcov_analysis: numpy.ndarray
-            2D errcov for analysis
-        lag_1_autocov: numpy.ndarray
-            2D matrix of autocovariance
-        clim_mean: numpy.ndarray
-            1D climatological mean for analysis
-        clim_covar: numpy.ndarray
-            climatology_variance: 2D climatological covariance for analysis
         check_wgt_stability: bool
             Check weights (in extension for the auto and climatological
             covariances) are stable; see var_stability_check
         full_errcov_out: bool
             Return full error covariance if True
             Defaults to True
+        check_errcov_psd: bool
+            Check if error covariance is positive semi-definite, fix if needed
+        kwargs4clip: dict | None
+            kwargs for check_and_fix_psd_errcov_by_clipping
 
         Returns
         -------
@@ -522,6 +520,12 @@ class Autoregressive1ForecastVector:
         # Error covariances may not be (semi-)positive definite
         sigma_sq_analysis = self.weights @ self.errcov_analysis @ self.weights.T
         self.errcov = sigma_sq_eps + sigma_sq_analysis
+        #
+        if check_errcov_psd:
+            if kwargs4clip is None:
+                kwargs4clip = {}
+            self.check_and_fix_psd_errcov_by_clipping(**kwargs4clip)
+        #
         if not full_errcov_out:
             self.errcov = np.diag(self.errcov)
 
@@ -578,3 +582,19 @@ class Autoregressive1ForecastVector:
                 warnings.warn(errmsg, UserWarning)
             else:
                 raise ValueError(errmsg)
+
+    def check_and_fix_psd_errcov_by_clipping(
+            self,
+            target_variance_fraction=0.95,
+        ):
+        """
+        Check if self.errcov positive semi-definite
+        If not, use explained_variance_clip to patch it.
+        """
+        if not hasattr(self, "errcov"):
+            raise ValueError("errcov has not been estimated yet!")
+        print('Checking validity of error covariance')
+        self.errcov = explained_variance_clip(
+            self.errcov,
+            target_variance_fraction=target_variance_fraction,
+        )
