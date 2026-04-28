@@ -19,13 +19,6 @@ import scipy as sp
 EFFECTIVELY_ZERO_DEFAULT: float = 1e-6
 
 
-def _more_than_one_element(
-    row: np.ndarray, zero_threshold: float = EFFECTIVELY_ZERO_DEFAULT
-):
-    """Check if 1D vector more than one non-zero element"""
-    return np.sum(np.abs(row) > zero_threshold) > 1
-
-
 def remove_diag_only_rows(
     cov: np.ndarray,
     zero_threshold: float = EFFECTIVELY_ZERO_DEFAULT,
@@ -175,14 +168,11 @@ def diag_and_nondiag_rows_subsampler(
     n_validrows = 0
     #
     # This returns True for rows that have off diagonal elements
-    has_off_diagonal_elements = np.apply_along_axis(
-        lambda row: _more_than_one_element(
-            row,
-            zero_threshold=zero_threshold,
-        ),
-        0,
-        cov,
-    )
+    if not np.all(np.diag(cov) > zero_threshold):
+        err_msg = f'There are elements below {zero_threshold = }'
+        err_msg += ' (negatives included) on the diagonal.'
+        raise ValueError(err_msg)
+    has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
     n_diag_only = cov.shape[0] - n_validrows
     print(f"{n_validrows = }")
