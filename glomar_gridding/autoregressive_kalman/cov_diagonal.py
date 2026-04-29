@@ -71,7 +71,6 @@ def restore_diag_only_rows(
     trimmed_cov_arr: np.ndarray,
     D: np.ndarray,
     diag_fillvalue: float = 1.2,
-    atol: float = 1e-6,
 ) -> np.ndarray:
     """
     Re-expanding subsampled covariance matrix prior to
@@ -85,33 +84,42 @@ def restore_diag_only_rows(
     D: numpy.ndarray
         The subsampling array that did the original purge
         (see remove_diag_only_rows)
+        There should only be a single 1 or True per row (axis=0)
     diag_fillvalue: float
         The diagonal fillvalue for restored rows and columns
     atol: float
-        Instead of checking for exact 0s,
-        this is the threshold to decide diag_fillvalue replacement will occur
+        Instead of checking for exact 0s, this is the threshold
+        to decide diag_fillvalue replacement will occur
 
     Returns
     -------
     new_cov_arr: numpy.ndarray
         A larger (restored) covariance array
     """
+    if isinstance(D, np.ndarray):
+        has_off_diag = np.any(D, axis=0)
+    elif sp.sparse.issparse(D):
+        has_off_diag = np.any(D.toarray(), axis=0)
+    else:
+        err_msg = 'D must be an instance numpy array or scipy sparse array'
+        raise ValueError(err_msg)
+    #
     print(f"{trimmed_cov_arr.shape = }")
     print(f"{D.shape = }")
+    n = len(has_off_diag)
+    if np.sum(has_off_diag) != trimmed_cov_arr.shape[0]:
+        err_msg = 'D shape is inconsistent with shape of trimmed_cov_arr.'
+        raise ValueError(err_msg)   
+    new_cov_arr = np.eye(n) * diag_fillvalue
+    fill_inds = np.logical_and.outer(has_off_diag, has_off_diag)
+    np.place(new_cov_arr, fill_inds, trimmed_cov_arr)
     #
-    new_cov_arr = np.matmul(D.T, trimmed_cov_arr)
-    print(f"Progress update: {new_cov_arr.shape = }")
-    new_cov_arr = np.matmul(new_cov_arr, D)
-    print(f"{new_cov_arr.shape = }")
-    #
-    diag_vals = np.array(np.diag(new_cov_arr))
-    old_diag_vals = diag_vals.copy()
-    diag_vals[diag_vals <= atol] = diag_fillvalue
-    np.fill_diagonal(new_cov_arr, diag_vals)
+    old_diag_vals = np.diag(trimmed_cov_arr)
+    diag_vals = np.diag(new_cov_arr)
     #
     print(new_cov_arr)
-    print(f"{np.sum(diag_vals) = }")
-    print(f"{np.sum(old_diag_vals) = }")
+    print(f"post-restore trace: {np.sum(diag_vals) = }")
+    print(f"pre-restore trace: {np.sum(old_diag_vals) = }")
     return new_cov_arr
 
 
