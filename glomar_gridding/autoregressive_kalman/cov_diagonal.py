@@ -109,7 +109,7 @@ def restore_diag_only_rows(
     n = len(has_off_diag)
     if np.sum(has_off_diag) != trimmed_cov_arr.shape[0]:
         err_msg = 'D shape is inconsistent with shape of trimmed_cov_arr.'
-        raise ValueError(err_msg)   
+        raise ValueError(err_msg)
     new_cov_arr = np.eye(n) * diag_fillvalue
     fill_inds = np.logical_and.outer(has_off_diag, has_off_diag)
     np.place(new_cov_arr, fill_inds, trimmed_cov_arr)
