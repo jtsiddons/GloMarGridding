@@ -7,7 +7,6 @@ import scipy as sp
 from glomar_gridding.autoregressive_kalman import cov_diagonal as cd
 # from . import cov_diagonal as cd
 
-# EFFECTIVELY_ZERO_VAR_DEFAULT = 0.1 ** 2
 EFFECTIVELY_ZERO_VAR_DEFAULT = 1e-6
 
 
@@ -189,6 +188,19 @@ class KalmanOut:
         https://en.wikipedia.org/wiki/Kalman_filter
         Probably everyone hate matrix inverses... (for good reason)
 
+        1D vector form of Kalman gain:
+        gain = forecast_err / (forecast_err + obs_err)
+
+        Matrix form of Kalman gain:
+        gain = forecast_err @ inv(forecast_err + obs_err)
+        gain @ (forecast_err + obs_err) = forecast_err
+        (gain @ (forecast_err + obs_err)).T = forecast_err.T
+        (forecast_err + obs_err)).T @ gain.T = forecast_err.T
+
+        but forecast_err and obs_err are symmetric
+        Hence solve set of linear equations that:
+        (forecast_err + obs_err) @ gain.T = forecast_err
+
         Parameters
         ----------
         forecast_vector: numpy.ndarray
@@ -240,21 +252,13 @@ class KalmanOut:
         # Weights and error covariance if obs and forecast are uncorrelated
         print("Computing kalman_gain")
         if self.ez_covariances:
-            # Working with 1D vectors
-            # gain = forecast_err / (forecast_err + obs_err)
+            # Vector form
             self.kalman_gain_from_new_obs = self.multiply_operator(
                 self.errcov_forecast,
                 np.reciprocal(self.errcov_forecast + self.errcov_obs),
             )
         else:
             # Matrix form
-            # gain = forecast_err @ inv(forecast_err + obs_err)
-            # gain @ (forecast_err + obs_err) = forecast_err
-            # (gain @ (forecast_err + obs_err)).T = forecast_err.T
-            # (forecast_err + obs_err)).T @ gain.T = forecast_err.T
-            # but forecast_err and obs_err are symmetric
-            # Hence solve set of linear equations that:
-            # (forecast_err + obs_err) @ gain.T = forecast_err
             self.kalman_gain_from_new_obs = linalg.solve(
                 self.errcov_forecast + self.errcov_obs,
                 self.errcov_forecast,
