@@ -3,6 +3,9 @@ Direct estimation of weights used in vectorized autoregressive model
 using gridpoint-by-gridpoint fitting of Lasso regression
 (aka seemingly (un)related regression)
 
+Outputs can be organised to be used for class `Autoregressive1ForecastVector`
+in `forecast_linear_ar1`
+
 Uses sklearn
 
 Default lasso_lambda_hyperparm is estimated by tuning 1 deg x 1 deg ERA5 MAT

@@ -4,6 +4,10 @@ Docstring for lagged_correlation
 Estimation of lag-1 autocorrelation and other metrics
 for a single time series
 
+Outputs can be organised to be used `Autoregressive1ForecastUncorr`
+in `forecast_linear_ar1`. It is not the most sophsticated and fancy
+computation (in a matter of fact very elementary).
+
 Uses numpy.vectorize to extend the computation to multiple time series,
 but each time series are treated seperately (i.e. no correlation
 between time series). Function applied along each row.
