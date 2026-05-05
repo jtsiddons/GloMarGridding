@@ -13,6 +13,8 @@ import numpy as np
 import scipy as sp
 import xarray as xr
 
+import cov_diagonal
+
 
 class LassoWeights():
     """
@@ -78,6 +80,10 @@ class LassoWeights():
         if self.expanded:
             print("W is already expanded by D; no action taken.")
             return
+        #
+        # Note:
+        # D and W are sp.sparse.spmatrix, and behaves and performs differently
+        # than functions in cov_diagonal; (error) covariance is much more denser
         print('Expanding W into full matrix')
         self.W = self.D.T @ self.W @ self.D
         if fillvalue is not None:
@@ -268,12 +274,23 @@ class LassoError():
         if self.expanded:
             print("R is already expanded by D; no action taken.")
             return
-        self.R = self.D.T @ self.R @ self.D
-        if fillvalue is not None:
-            print(f'Filling diagonals of fully empty rows with {fillvalue}')
-            diag_R = np.array(np.diag(self.R))
-            diag_R[diag_R == 0] = fillvalue
-            np.fill_diagonal(self.R, diag_R)
+        if fillvalue is None:
+            fillvalue = 0.36
+        #
+        print(f'Expanding R, filling 0 diagonals with {fillvalue}.')
+        self.R = (
+            cov_diagonal.restore_diag_only_rows(
+                self.R,
+                self.D,
+                diag_fillvalue=fillvalue,
+            )
+        )
+        # self.R = self.D.T @ self.R @ self.D
+        # if fillvalue is not None:
+        #     print(f'Filling diagonals of fully empty rows with {fillvalue}')
+        #     diag_R = np.array(np.diag(self.R))
+        #     diag_R[diag_R == 0] = fillvalue
+        #     np.fill_diagonal(self.R, diag_R)
         self.expanded = True
 
     def to_xarray_da(
