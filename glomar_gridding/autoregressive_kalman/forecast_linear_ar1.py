@@ -299,6 +299,7 @@ class Autoregressive1ForecastVector:
         weights: np.ndarray | sp.sparse.sparray,
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
+        estimated_ar1_errcov: np.ndarray | None = None,
         ):
         """
         __init__ for Autoregressive1Forecast class
@@ -326,6 +327,10 @@ class Autoregressive1ForecastVector:
             The shape of this should either be n x n (like ellipse covariance)
             or n (vector of variance at each grid point)
             dtype `float`, shape `(N, N)`
+        estimated_ar1_errcov: numpy.ndarray | None
+            A precomputed estimate for :math:`C - W C W^{T}`
+            Defaults to None in which that is computed from
+            `weights` and `clim_covar`
         """
         #
         self.analysis = analysis
@@ -333,6 +338,14 @@ class Autoregressive1ForecastVector:
         self.weights = weights
         self.clim_mean = clim_mean
         self.clim_covar = clim_covar
+        if not (
+            isinstance(estimated_ar1_errcov, np.ndarray) or
+            (estimated_ar1_errcov is None)
+        ):
+            err_msg = 'Unknown type/value for estimated_ar1_errcov; '
+            err_msg += f"{estimated_ar1_errcov = }."
+            raise ValueError(err_msg)
+        self.estimated_ar1_errcov = estimated_ar1_errcov
         #
         # Names of methods to compute prrediction
         self.compute_forecast = self.compute_forecast_vector
@@ -366,6 +379,7 @@ class Autoregressive1ForecastVector:
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
         stability_perturbation: float | None = None,
+        estimated_ar1_errcov: np.ndarray | None = None,
     ):
         """
         With provided lag_1_autocov (lag-1 autocovariance),
@@ -432,6 +446,7 @@ class Autoregressive1ForecastVector:
             weights,
             clim_mean,
             clim_covar,
+            estimated_ar1_errcov=estimated_ar1_errcov,
         )
 
     def _check_args(self):
@@ -511,14 +526,22 @@ class Autoregressive1ForecastVector:
         self.forecast += self.clim_mean
         #
         print("Computing uncertainties")
-        sigma_sq_eps = (
-            self.clim_covar -
-            self.weights @ self.clim_covar @ self.weights.T
-        )
+        if self.estimated_ar1_errcov is None:
+            print('Computing C - W C W.T')
+            sigma_sq_eps = (
+                self.clim_covar -
+                self.weights @ self.clim_covar @ self.weights.T
+            )
+        else:
+            print('Using pre-computed C - W C W.T')
+            print(f"{self.estimated_ar1_errcov = }")
+            sigma_sq_eps = self.estimated_ar1_errcov
         #
         # Warning:
         # Error covariances may not be (semi-)positive definite
         sigma_sq_analysis = self.weights @ self.errcov_analysis @ self.weights.T
+        print(f"{sigma_sq_eps = }")
+        print(f"{sigma_sq_analysis = }")
         self.errcov = sigma_sq_eps + sigma_sq_analysis
         #
         if check_errcov_psd:
@@ -594,7 +617,11 @@ class Autoregressive1ForecastVector:
         if not hasattr(self, "errcov"):
             raise ValueError("errcov has not been estimated yet!")
         print('Checking validity of error covariance')
-        self.errcov = explained_variance_clip(
-            self.errcov,
-            target_variance_fraction=target_variance_fraction,
-        )
+        errcov_eigvals = np.linalg.eigvalsh(self.errcov)
+        if np.min(errcov_eigvals) < 0:
+            self.errcov = explained_variance_clip(
+                self.errcov,
+                target_variance_fraction=target_variance_fraction,
+            )
+        else:
+            print('Error covariance clipping is unneccessary.')
