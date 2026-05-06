@@ -69,7 +69,7 @@ def remove_diag_only_rows(
 
 def restore_diag_only_rows(
     trimmed_cov_arr: np.ndarray,
-    D: np.ndarray,
+    D: np.ndarray | sp.sparse.sparray,
     diag_fillvalue: float = 1.2,
 ) -> np.ndarray:
     """
