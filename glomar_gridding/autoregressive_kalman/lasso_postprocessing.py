@@ -82,8 +82,9 @@ class LassoWeights():
             return
         #
         # Note:
-        # D and W are sp.sparse.spmatrix, and behaves and performs differently
-        # than functions in cov_diagonal; (error) covariance is much more denser
+        # Both D and W are sp.sparse.spmatrix, and behaves and performs
+        # differently than functions in cov_diagonal; (error) covariance
+        # is, in contrast, a dense matrix.
         print('Expanding W into full matrix')
         self.W = self.D.T @ self.W @ self.D
         if fillvalue is not None:
