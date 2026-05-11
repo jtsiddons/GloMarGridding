@@ -346,8 +346,23 @@ class Autoregressive1ForecastVector:
             err_msg += f"{estimated_ar1_errcov = }."
             raise ValueError(err_msg)
         self.estimated_ar1_errcov = estimated_ar1_errcov
+        if self.estimated_ar1_errcov is None:
+            err_msg = "estimated_ar1_errcov is None; module can estimate "
+            err_msg += "VAR errcov on the fly, but it is possibly unstable "
+            err_msg += "due to (1) insufficient number of obs from "
+            err_msg += "sample clim_covar or (2) inconsistencies between "
+            err_msg += "variogram-estimated clim_cov and regularised "
+            err_msg += "regression weights. Estimated errcov may not be P(S)D "
+            err_msg += "(needs clipping). Stability is much higher with errcov "
+            err_msg += "being P(S)D if estimated_ar1_errcov is pre-estimated "
+            err_msg += "using regression residues or out-of-sample forecast "
+            err_msg += "errors."
+            warnings.warn(
+                err_msg,
+                UserWarning,
+            )
         #
-        # Names of methods to compute prrediction
+        # Names of methods to compute prediction
         self.compute_forecast = self.compute_forecast_vector
         self.predict = self.compute_forecast_vector  # sklearn standard
         #
