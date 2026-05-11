@@ -63,7 +63,7 @@ class LassoWeights():
             raise ValueError(f'Unknown object {type(W)}.')
         if sp.sparse.issparse(D):
             self.D = D
-        elif isinstance(W, np.ndarray):
+        elif isinstance(D, np.ndarray):
             self.D: sp.sparse.sparray = sp.sparse.csc_array(D, dtype=np.uint8)
         else:
             raise ValueError(f'Unknown object {type(D)}.')
