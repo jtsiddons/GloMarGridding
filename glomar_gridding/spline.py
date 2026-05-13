@@ -29,6 +29,12 @@ from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
 from glomar_gridding.variogram import Variogram
 
 
+def _haversine_degrees(X1: np.ndarray, X2: np.ndarray | None = None):
+    if X2 is None:
+        return haversine_distances(np.radians(X1))
+    return haversine_distances(np.radians(X1), np.radians(X2))
+
+
 class _Interpolator(Protocol):
     """
     Protocol for Spline-based interpolators. Defines the structure required for
@@ -641,7 +647,7 @@ class SphericalThinPlateSpline(ThinPlateSpline):
     Parameters
     ----------
     X : numpy.ndarray
-        The training data positions, expected to be lat, lon in radians. The
+        The training data positions, expected to be lat, lon in degrees. The
         input positions must be unique. Expected shape `[num points, 2]`.
     y : numpy.ndarray
         The training data values. Expected to have the same `num points` values.
@@ -675,18 +681,18 @@ class SphericalThinPlateSpline(ThinPlateSpline):
     ) -> np.ndarray:
         """Pairwise Haversine distances between positions."""
         if positions is None:
-            return haversine_distances(self.X)
+            return _haversine_degrees(self.X)
         if positions.shape[1] != 2:
             raise ValueError(
-                "Coordinates must be 2 dimensional lat and lon in radians."
+                "Coordinates must be 2 dimensional lat and lon in degrees."
             )
-        return haversine_distances(positions, self.X)
+        return _haversine_degrees(positions, self.X)
 
     def get_trend_basis(self, positions: np.ndarray) -> np.ndarray:
         """
         Trend basis for ordinary kriging: [1]. Note that this does not include
         the position components, since this could break continuity of the result
-        over the sphere (e.g. at 0, 2pi radians boundary).
+        over the sphere (e.g. at 0, 360 degrees boundary).
         """
         n_pts = positions.shape[0]
         return np.ones((n_pts, 1))
@@ -941,7 +947,7 @@ class VariogramKriging(Spline):
         The training data positions. Expected shape `[num points, num coords]`.
         Positions must be unique. If the 'distance_method' is "haversine" then
         the number of coordinates must be 2, 'latitude' and 'longitude' provided
-        in radians.
+        in degrees.
     y : numpy.ndarray
         The training data values. Expected to have the same `num points` values.
     variogram : Variogram
@@ -965,11 +971,11 @@ class VariogramKriging(Spline):
         for coordinate system :math:`(x, y)` the trend basis will be
         :math:`(1, x, y)` (incorporating an intercept). Note, "universal"
         kriging may not be appropriate for spherical geometry as the use of
-        position does not guarantee continuity at :math:`(-\pi, \pi)` radians.
+        position does not guarantee continuity at :math:`(-180, 180)` degrees.
     distance_method : str
         Method to use for distance calculation, one of "haversine" or
         "euclidean". If the distance method is "haversine" then the input
-        positions are expected to be lat, lon in radians.
+        positions are expected to be lat, lon in degrees.
     distance_scale : float
         Value to scale the distance (distance_scale * distance). E.g. to convert
         haversine distance (unit sphere) to earth scale.
@@ -1043,9 +1049,9 @@ class VariogramKriging(Spline):
                 if positions is not None and positions.shape[1] != 2:
                     raise ValueError(
                         "Coordinates must be 2 dimensional lat and lon in "
-                        + "radians for haversine distances."
+                        + "degrees for haversine distances."
                     )
-                func = haversine_distances
+                func = _haversine_degrees
             case "euclidean":
                 func = euclidean_distances
             case _:
