@@ -60,9 +60,12 @@ observations, the full uncertainty can be estimated as:
     \epsilon_{\text{AR1}} \sim \text{MVN}(0, \Phi\Sigma_{t}\Phi^T +
     \Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)
 
-The above equation is correct even :math:`\Phi` has off-diagonal terms. In that case, :math:`\Phi` is no longer a
-diagonal autocorrelation matrix but the weights for fully vectorised multi-variate model, noting that
-:math:`\Phi = \Phi^T` for the diagonal case but not for the multi-variate case.
+The above form is correct even for weights that has off-diagonal terms. In that case, :math:`\Phi` is no longer a
+diagonal autocorrelation matrix but the weights for fully vectorised multi-variate model :math:`\mathbf{W}`;
+:math:`\mathbf{W} = \Phi` is a merely a special case.
+
+.. math::
+    a_{t} = \mathbf{W} (a_{t-1} - E(a)) + \epsilon
 
 In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
 find in Chapter 8 of [Wilks]:
@@ -71,14 +74,28 @@ find in Chapter 8 of [Wilks]:
     \epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
     (1-\phi^2)\sigma^2_\text{climatology})
 
-Work in progress: Ideally, this should be done in vectorised form.
+.. Work in progress: Ideally, this should be done in vectorised form.
 
 `Wikipedia intro <https://en.wikipedia.org/wiki/Vector_autoregression>`__
 
-This requires a modeled or computed lagged autocovariance and contemporary covariance; the latter
-can use the `ellipse` covariance (part of `GlomarGridding`... former not yet!). The predicted value
-for a point would now depends on values of other points. This also require computation of a weight
-matrix that is similar to Kriging with full error covariance that is contains off-diagonal values.
+`Wikipedia intro <https://en.wikipedia.org/wiki/Lasso_(statistics)>`__
+
+For the diagonal :math:`\Phi` case, the lagged autocorrelation is easy to compute from observations; its application
+to statistical forecasting is highly stable and quick. The weights for the multi-variate correlated case are
+much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of 
+the seemingly unrelated regression of vector autoregression. For high resolution
+datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using
+regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via ``scikit-learn``; 
+LASSO generally leads to sparse :math:`\mathbf{W}`, makes them easier to handle memory and computational cost via
+sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the 
+the least squares cost function that is proportional to the sum of the absolute values of all regression coefficients. The
+sum is scaled by a tunable hyperparameter; it is usually called :math:`\lambda` in statistics literature (including the Wikipedia
+article) but is called :math:`\alpha` instead in ``scikit-learn`` documentation.
+
+.. This requires a modeled or computed lagged autocovariance and contemporary covariance; the latter
+.. can use the `ellipse` covariance (part of `GlomarGridding`... former not yet!). The predicted value
+.. for a point would now depends on values of other points. This also require computation of a weight
+.. matrix that is similar to Kriging with full error covariance that is contains off-diagonal values.
 
 Uncertainty weighted average (Kalman Filter)
 ============================================
@@ -160,7 +177,10 @@ For the all the main classes, the computation uses a method that is called `comp
 `autoregressive_kalman.forecast_linear_ar1`
 ===========================================
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1Forecast
+.. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1ForecastUncorr
+   :members:
+
+.. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1ForecastVector
    :members:
 
 `autoregressive_kalman.inv_sigma_wgts`
@@ -178,4 +198,25 @@ For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) w
 ====================================
 
 .. automodule:: glomar_gridding.autoregressive_kalman.cov_diagonal
+   :members:
+
+`autoregressive_kalman.lasso_estimate`
+====================================
+
+.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_estimate.LassoEstimate_AR1
+   :members:
+
+`autoregressive_kalman.lasso_postprocessing`
+====================================
+
+.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_postprocessing.LassoWeights
+   :members:
+
+.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_postprocessing.LassoError
+   :members:
+
+`autoregressive_kalman.compute_autocorrelation`
+====================================
+
+.. automodule:: glomar_gridding.autoregressive_kalman.compute_autocorrelation
    :members:
