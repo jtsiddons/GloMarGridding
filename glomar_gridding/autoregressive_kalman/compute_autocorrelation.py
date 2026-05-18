@@ -21,6 +21,8 @@ vectorize for an array with m rows give m scalars.
 The same behavior can be gotten using np.apply_along_axis
 """
 import numpy as np
+import xarray as xr
+import warnings
 
 
 def get_anomalies(vec: np.ndarray):
@@ -160,3 +162,82 @@ get_auto_corr_1_vectorize = np.vectorize(
     doc='Vectorized `get_auto_corr`',
     signature='(n)->(), (), (), ()',
 )
+
+
+def compute_lag_1_ts_metrics_from_da(
+        da: xr.DataArray,
+        lag: int = 1,
+    ) -> tuple[xr.DataArray, xr.DataArray]:
+    """
+    Compute the following (local) time series metrics
+    - nth-lagged autocorrelation
+    - sample variance
+
+    For n > 1, the autoregressive regression coefficient
+    depends on lagged correlation for shorter lags.
+    See Yule-Walker equations for details.
+
+    This computation ignores spatial correlation. Time series metrics
+    are local.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        A 2+-dimension data array that presumes time is on axis-0
+        By climate data conventions, usually only ensemble number/realization
+        should have axis number lower than time.
+        e.g. Ens, time, z, y, x ... etc.
+        Reorder your dimensions first!
+    lag: int
+        the lagged autocorrelation needed
+        if lag > 1, then your autoregressive model coefficients are
+        different, see Yule-Walker equations for details
+
+    Returns
+    -------
+    da1: xarray.DataArray
+        data array with lagged autoregression
+    da2: xarray.DataArray
+        data array with sample variance
+    """
+    if da.dims[0] != 'time':
+        raise ValueError(f"Unexpected dim order: {da.dims}")
+    da_varname = da.name
+    if hasattr(da, 'long_name'):
+        da_long_varname = da.long_name
+    else:
+        da_long_varname = da_varname
+    if hasattr(da, 'units'):
+        units = da.units
+    else:
+        warnings.warn(
+            'ds has no units, setting it to 1',
+            UserWarning,
+        )
+        units = '1'
+    #
+    ar = da[0].copy()
+    ar = ar.rename(f"{da_varname}_ar{lag}")
+    ar.attrs['units'] = '1'
+    ar.attrs['long_name'] = f"{da_long_varname} lag-{lag} correlation"
+    print(ar.shape)
+    #
+    variance = da[0].copy()
+    variance = variance.rename(f"{da_varname}_variance")
+    variance.attrs['units'] = f'{units}**2'
+    variance.attrs['long_name'] = f"{da_long_varname} variance"
+    print(variance.shape)
+    #
+    ar_arr, _, variance_arr, _ = np.apply_along_axis(
+        get_auto_corr,
+        0,
+        da.values,
+    )
+    #
+    variance.values = variance_arr
+    ar.values = ar_arr
+    #
+    return (
+        ar,
+        variance,
+    )
