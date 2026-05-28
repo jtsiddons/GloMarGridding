@@ -49,7 +49,6 @@ from glomar_gridding.kriging import (
 )
 from glomar_gridding.stochastic import StochasticKriging
 from glomar_gridding.variogram import MaternVariogram
-from glomar_gridding.spline import VariogramKriging
 
 
 def _load_results() -> np.ndarray:
@@ -89,40 +88,6 @@ def test_ordinary_kriging() -> None:  # noqa: D103
     k, _ = kriging_ordinary(S, SS, obs_vals, covariance.values)
 
     assert np.allclose(EXPECTED, np.reshape(k, (20, 20), "C"))  # noqa: S101
-    return None
-
-
-def test_variogram_spline() -> None:
-    obs = pl.DataFrame(
-        {
-            "lat": [5.0, 15.0, 10.0],
-            "lon": [5.0, 10.0, 15.0],
-            "val": [1.0, 0.0, 1.0],
-        }
-    )
-    X = obs.select("lat", "lon").to_numpy()
-    y = obs.get_column("val").to_numpy()
-    X_grid = np.mgrid[1.0:21.0, 1.0:21.0]
-    X_test = X_grid.reshape(2, -1).T
-
-    variogram = MaternVariogram(
-        range=35 / 3,
-        psill=4.0,
-        nugget=0.0,
-        nu=1.5,
-    )
-
-    interpolator = VariogramKriging(
-        X,
-        y,
-        variogram,
-        kriging_method="ordinary",
-        distance_method="euclidean",
-    )
-    interpolator.fit(lam=0, set_results=True, compute_stats=True)
-    result, _ = interpolator.predict(X_test, compute_se=False)
-
-    assert np.allclose(EXPECTED, np.reshape(result, (20, 20), "C"))  # noqa: S101
     return None
 
 
