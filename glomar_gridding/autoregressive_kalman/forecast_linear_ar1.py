@@ -24,6 +24,48 @@ class Autoregressive1ForecastUncorr:
     Use Autoregressive1Forecast for full vector case.
 
     Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
+
+    Parameters
+    ----------
+    analysis: numpy.ndarray
+        1D vector of analysis
+        (such as Kriging and Kalman filter outputs)
+        for t=t
+        dtype `float`, shape `(N, )`
+    errcov_analysis: numpy.ndarray
+        1D error variance or
+        2D error covariance for analysis
+        if latter, it will only use the diagonal
+        dtype `float`, shape `(N, )` | `(N, N)`
+    lag_1_autocor: numpy.ndarray
+        1D vector of lag-1 autocorrelation
+        Shape should be same as analysis
+        dtype `float`, shape `(N, )`
+    clim_mean: numpy.ndarray
+        1D vector of climatological mean
+        Shape should be same as analysis
+        dtype `float`, shape `(N, )`
+    clim_covar: numpy.ndarray
+        Climatological covariance,
+        Can be 1D or 2D,
+        The shape of this should either be n x n (like ellipse covariance)
+        or n (vector of variance at each grid point)
+        If a 2D matrix is provided, it will take the diagonal
+        dtype `float`, shape `(N, )` | `(N, N)`
+    errcov_analysis_is_sdev: bool
+        Flag indicating if errcov_analysis is
+        variance or standard deviation.
+        This only applies to vectored form (n x 1 shape) of errcov_analysis
+        Default False, errcov_analysis is variance (like SST**2) or
+        full covariance matrix.
+        True if standard deviation
+    clim_covar_is_sdev: bool
+        Flag indicating if clim_covar is
+        variance or standard deviation.
+        This only applies to vectored form (n x 1 shape) of clim_covar
+        Default False, clim_covar is variance (like SST**2) or
+        full covariance matrix.
+        True if standard deviation
     """
 
     def __init__(
@@ -36,51 +78,7 @@ class Autoregressive1ForecastUncorr:
         errcov_analysis_is_sdev: bool = False,
         clim_covar_is_sdev: bool = False,
     ):
-        """
-        __init__ for Autoregressive1Forecast class
-
-        Parameters
-        ----------
-        analysis: numpy.ndarray
-            1D vector of analysis
-            (such as Kriging and Kalman filter outputs)
-            for t=t
-            dtype `float`, shape `(N, )`
-        errcov_analysis: numpy.ndarray
-            1D error variance or
-            2D error covariance for analysis
-            if latter, it will only use the diagonal
-            dtype `float`, shape `(N, )` | `(N, N)`
-        lag_1_autocor: numpy.ndarray
-            1D vector of lag-1 autocorrelation
-            Shape should be same as analysis
-            dtype `float`, shape `(N, )`
-        clim_mean: numpy.ndarray
-            1D vector of climatological mean
-            Shape should be same as analysis
-            dtype `float`, shape `(N, )`
-        clim_covar: numpy.ndarray
-            Climatological covariance,
-            Can be 1D or 2D,
-            The shape of this should either be n x n (like ellipse covariance)
-            or n (vector of variance at each grid point)
-            If a 2D matrix is provided, it will take the diagonal
-            dtype `float`, shape `(N, )` | `(N, N)`
-        errcov_analysis_is_sdev: bool
-            Flag indicating if errcov_analysis is
-            variance or standard deviation.
-            This only applies to vectored form (n x 1 shape) of errcov_analysis
-            Default False, errcov_analysis is variance (like SST**2) or
-            full covariance matrix.
-            True if standard deviation
-        clim_covar_is_sdev: bool
-            Flag indicating if clim_covar is
-            variance or standard deviation.
-            This only applies to vectored form (n x 1 shape) of clim_covar
-            Default False, clim_covar is variance (like SST**2) or
-            full covariance matrix.
-            True if standard deviation
-        """
+        """__init__ for Autoregressive1Forecast class"""
         #
         # analysis
         self.analysis = analysis
@@ -123,11 +121,11 @@ class Autoregressive1ForecastUncorr:
         # Use only diagonal if 2D matrices are provided for
         # clim_covar and errcov_analysis
         if len(self.clim_covar.shape) == 2:
-            if not self._check_sq_matrix(self.clim_covar):
+            if not _check_sq_matrix(self.clim_covar):
                 raise ValueError(f"Not square {self.clim_covar.shape = }.")
             self.clim_covar = np.diag(self.clim_covar)
         if len(self.errcov_analysis.shape) == 2:
-            if not self._check_sq_matrix(self.errcov_analysis):
+            if not _check_sq_matrix(self.errcov_analysis):
                 raise ValueError(f"Not square {self.errcov_analysis.shape = }.")
             self.errcov_analysis = np.diag(self.errcov_analysis)
         #
@@ -169,11 +167,6 @@ class Autoregressive1ForecastUncorr:
         if self.errcov_analysis.shape != self.lag_1_autocor.shape:
             raise ValueError("Inconsistent shape detected!")
 
-    def _check_sq_matrix(self, arr: np.ndarray):
-        check1 = arr.shape[0] == arr.shape[1]
-        check2 = len(arr.shape) == 2
-        return check1 and check2
-
     def compute_forecast_local(self, full_errcov_out: bool = True):
         """
         Compute AR1 forecast and estimate uncertainties
@@ -186,20 +179,11 @@ class Autoregressive1ForecastUncorr:
 
         Parameters
         ----------
-        analysis: numpy.ndarray
-            1D vector of independent variables for t
-        errcov_analysis: numpy.ndarray
-            2D errcov for analysis
-        lag_1_autocor: numpy.ndarray
-            1D vector of lag correlation
-        clim_mean: numpy.ndarray
-            1D climatological mean for analysis
-        clim_covar: numpy.ndarray
-            climatology_variance: 1D (local) climatological variance
-            for analysis
+        full_errcov_out: bool
+            If True, new attribute errcov will be a diagonal matrix
 
-        Returns
-        -------
+        Attributes
+        ----------
         forecast: numpy.ndarray
             AR1 forecast
         errcov: numpy.ndarray
@@ -290,6 +274,34 @@ class Autoregressive1ForecastVector:
 
     (2) Uncertainity of multivariate autoregression:
     https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression
+
+    Parameters
+    ----------
+    analysis: numpy.ndarray
+        1D vector of analysis
+        (such as Kriging and Kalman filter outputs)
+        for t=t
+        dtype `float`, shape `(N, )`
+    errcov_analysis: numpy.ndarray
+        2D error covariance for analysis
+        dtype `float`, shape `(N, N)`
+    weights: numpy.ndarray | scipy.sparse.sparray
+        2D weights
+        dtype `float`, shape `(N, N)`
+    clim_mean: numpy.ndarray
+        1D vector of climatological mean
+        Shape should be same as analysis
+        dtype `float`, shape `(N, )`
+    clim_covar: numpy.ndarray
+        Climatological covariance,
+        Can be 1D or 2D,
+        The shape of this should either be n x n (like ellipse covariance)
+        or n (vector of variance at each grid point)
+        dtype `float`, shape `(N, N)`
+    estimated_ar1_errcov: numpy.ndarray | None
+        A precomputed estimate for :math:`C - W C W^{T}`
+        Defaults to None in which that is computed from
+        `weights` and `clim_covar`
     """
 
     def __init__(
@@ -301,37 +313,7 @@ class Autoregressive1ForecastVector:
         clim_covar: np.ndarray,
         estimated_ar1_errcov: np.ndarray | None = None,
         ):
-        """
-        __init__ for Autoregressive1Forecast class
-
-        Parameters
-        ----------
-        analysis: numpy.ndarray
-            1D vector of analysis
-            (such as Kriging and Kalman filter outputs)
-            for t=t
-            dtype `float`, shape `(N, )`
-        errcov_analysis: numpy.ndarray
-            2D error covariance for analysis
-            dtype `float`, shape `(N, N)`
-        weights: numpy.ndarray | scipy.sparse.sparray
-            2D weights
-            dtype `float`, shape `(N, N)`
-        clim_mean: numpy.ndarray
-            1D vector of climatological mean
-            Shape should be same as analysis
-            dtype `float`, shape `(N, )`
-        clim_covar: numpy.ndarray
-            Climatological covariance,
-            Can be 1D or 2D,
-            The shape of this should either be n x n (like ellipse covariance)
-            or n (vector of variance at each grid point)
-            dtype `float`, shape `(N, N)`
-        estimated_ar1_errcov: numpy.ndarray | None
-            A precomputed estimate for :math:`C - W C W^{T}`
-            Defaults to None in which that is computed from
-            `weights` and `clim_covar`
-        """
+        """__init__ for Autoregressive1Forecast class"""
         #
         self.analysis = analysis
         self.errcov_analysis = errcov_analysis
@@ -474,13 +456,13 @@ class Autoregressive1ForecastVector:
         if self.analysis.shape[0] != self.clim_mean.shape[0]:
             raise ValueError("analysis shape inconsistent with clim_mean")
         #
-        if not self._check_sq_matrix(self.weights):
+        if not _check_sq_matrix(self.weights):
             raise ValueError(f"Bad shp {self.weights.shape = }.")
         #
-        if not self._check_sq_matrix(self.clim_covar):
+        if not _check_sq_matrix(self.clim_covar):
             raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
         #
-        if not self._check_sq_matrix(self.errcov_analysis):
+        if not _check_sq_matrix(self.errcov_analysis):
             err_msg = "Bad shape errcov_analysis "
             err_msg += f"{self.errcov_analysis.shape}."
             raise ValueError(err_msg)
@@ -489,17 +471,12 @@ class Autoregressive1ForecastVector:
         if self.errcov_analysis.shape != self.weights.shape:
             raise ValueError("Inconsistent shape detected!")
 
-    def _check_sq_matrix(self, arr: np.ndarray):
-        check1 = arr.shape[0] == arr.shape[1]
-        check2 = len(arr.shape) == 2
-        return check1 and check2
-
     def compute_forecast_vector(
         self,
         check_wgt_stability: bool = True,
         full_errcov_out: bool = True,
         check_errcov_psd: bool = True,
-        kwargs4clip: dict | None = None,
+        **clip_kwargs,
     ):
         """
         Compute VAR forecast using weights or covariances
@@ -515,15 +492,17 @@ class Autoregressive1ForecastVector:
             Defaults to True
         check_errcov_psd: bool
             Check if error covariance is positive semi-definite, fix if needed
-        kwargs4clip: dict | None
+        clip_kwargs: dict | None
             kwargs for check_and_fix_psd_errcov_by_clipping
 
-        Returns
-        -------
+        Attributes
+        ----------
         forecast: numpy.ndarray
             AR1 forecast
         errcov: numpy.ndarray
             The error covariance for the forecast
+        bad_model: bool
+            Boolean advisory that the weights being unchecked
         """
         print(f"{self.weights = }")
         if check_wgt_stability:
@@ -560,9 +539,7 @@ class Autoregressive1ForecastVector:
         self.errcov = sigma_sq_eps + sigma_sq_analysis
         #
         if check_errcov_psd:
-            if kwargs4clip is None:
-                kwargs4clip = {}
-            self.check_and_fix_psd_errcov_by_clipping(**kwargs4clip)
+            self.check_and_fix_psd_errcov_by_clipping(**clip_kwargs)
         #
         if not full_errcov_out:
             self.errcov = np.diag(self.errcov)
@@ -582,6 +559,17 @@ class Autoregressive1ForecastVector:
         estimates, like off diagonal term being (considerably) larger than
         diagonal terms; that's an invalid (error) covariance matrix, saying
         correlation > 1 which is impossible!
+
+        Parameters
+        ----------
+        warn_instead: bool
+            By default, this method only generates a warning attribute
+            If this is set to True, method will raise exception
+
+        Attributes
+        ----------
+        bad_model: bool
+            Boolean advisory that the weights being not weakly stationary
         """
         print("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
@@ -640,3 +628,11 @@ class Autoregressive1ForecastVector:
             )
         else:
             print('Error covariance clipping is unneccessary.')
+
+
+def _check_sq_matrix(arr: np.ndarray) -> bool:
+    """Check if arr is 2D and square"""
+    return (
+        len(arr.shape) == 2
+        and arr.shape[0] == arr.shape[1]
+    )

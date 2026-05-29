@@ -36,6 +36,25 @@ class KalmanOut:
     """
     class to compute blended forecast and observations
     variable names follows compute_inv_variance_wgt_mean_kalman
+
+    Parameters
+    ----------
+    forecast_vector: numpy.ndarray
+        1D vector of forecasts
+    obs_vector: numpy.ndarray
+        1D vector of (gridded) observations
+    errcov_forecast: numpy.ndarray
+        2D matrix of errcov for forecast_vector
+    errcov_obs: numpy.ndarray
+        2D matrix of errcov for obs_vector
+    cov_forecast_and_obs: numpy.ndarray | None
+        covariance between forecast/first-guess & observations
+        In NWP-DA, this is usually assumed to be zero
+        aka observation and forecast errors are not correlated.
+        Set it to None if that is zero
+    ez_covariances: bool
+        Ignore off-diagonals of errcov_forecast, errcov_obs,
+        and cov_forecast_and_obs if set to True, default True
     """
 
     def __init__(
@@ -47,26 +66,7 @@ class KalmanOut:
         cov_forecast_and_obs: np.ndarray | None,
         ez_covariances: bool = True,
     ):
-        """
-        __init__ for KalmanOut class
-
-        Parameters
-        ----------
-        forecast_vector: numpy.ndarray
-            1D vector of forecasts
-        obs_vector: numpy.ndarray
-            1D vector of (gridded) observations
-        errcov_forecast: numpy.ndarray
-            2D matrix of errcov for forecast_vector
-        errcov_obs: numpy.ndarray
-            2D matrix of errcov for obs_vector
-        cov_forecast_and_obs: numpy.ndarray | None
-            covariance between forecast & observations
-            Set it to None if that is zero
-        ez_covariances: bool
-            Ignore off-diagonals of errcov_forecast, errcov_obs,
-            and cov_forecast_and_obs if set to True, default True
-        """
+        """__init__ for KalmanOut class"""
         self.forecast_vector = forecast_vector
         self.obs_vector = obs_vector
         if ez_covariances:
@@ -201,34 +201,18 @@ class KalmanOut:
         Hence solve set of linear equations that:
         (forecast_err + obs_err) @ gain.T = forecast_err
 
-        Parameters
+        Attributes
         ----------
-        forecast_vector: numpy.ndarray
-            1D vector of forecasts
-        obs_vector: numpy.ndarray
-            1D vector of (gridded) observations
-        errcov_forecast: numpy.ndarray
-            2D matrix of error covariance for forecast_vector
-        errcov_forecast: numpy.ndarray
-            2D matrix of error covariance for obs_vector
-        cov_forecast_and_obs: numpy.ndarray | None
-            2D covariance between forecast & observations
-            Set to None if zero
-        multiply_operator: callable
-            Operator to multiply variables - matrix or algebra multiplication
-        one_maker: callable
-            Function to create 1s - identity matrix or vector of 1
-
-        Returns
-        -------
         wgt_mean: numpy.ndarray
             Posterior analysis
         errcov: numpy.ndarray
             Posterior error covariance
-        kalman_gain: numpy.ndarray
+        kalman_gain_from_new_obs: numpy.ndarray
             Kalman gain (either a 2D matrix or 1D vector)
-        forecast_wgt: numpy.ndarray
+            aka the weights assigned to the new information
+        wgts_from_ar_forecast: numpy.ndarray
             Identity matrix or one vector minus Kalman gain
+            aka the weights assigned to the prior/first-guess
         """
         forecast_vector_shape = self.forecast_vector.shape
         if len(forecast_vector_shape) != 1:
@@ -306,6 +290,27 @@ class KalmanOutUncorrCorrSplit:
     This splits the error covariances into diagonal and non-diagonal bits
 
     It is a wrapper for KalmanOut.
+
+    Parameters
+    ----------
+    forecast_vector: numpy.ndarray
+        1D vector of forecasts
+    obs_vector: numpy.ndarray
+        1D vector of (gridded) observations
+    errcov_forecast: numpy.ndarray
+        2D matrix of errcov for forecast_vector
+    errcov_obs: numpy.ndarray
+        2D matrix of errcov for obs_vector
+    cov_forecast_and_obs: numpy.ndarray | None
+        covariance between forecast & observations
+        Set it to None if that is zero
+    arr_2_decide_if_points_are_isolated: numpy.ndarray
+        The matrix (usually a covariance) to determine
+        if the point is diagonally isolated. This can
+        be the prior spatial covariance.
+    zero_threshold: float
+        The threshold applied to arr_2_decide_if_points_are_isolated
+        to decide if the row/column is diagonal.
     """
 
     def __init__(
@@ -318,30 +323,7 @@ class KalmanOutUncorrCorrSplit:
         arr_2_decide_if_points_are_isolated: np.ndarray,
         zero_threshold: float = cd.EFFECTIVELY_ZERO_DEFAULT,
     ):
-        """
-        __init__ for KalmanOut class
-
-        Parameters
-        ----------
-        forecast_vector: numpy.ndarray
-            1D vector of forecasts
-        obs_vector: numpy.ndarray
-            1D vector of (gridded) observations
-        errcov_forecast: numpy.ndarray
-            2D matrix of errcov for forecast_vector
-        errcov_obs: numpy.ndarray
-            2D matrix of errcov for obs_vector
-        cov_forecast_and_obs: numpy.ndarray | None
-            covariance between forecast & observations
-            Set it to None if that is zero
-        arr_2_decide_if_points_are_isolated: numpy.ndarray
-            The matrix (usually a covariance) to determine
-            if the point is diagonally isolated. This can
-            be the prior spatial covariance.
-        zero_threshold: float
-            The threshold applied to arr_2_decide_if_points_are_isolated
-            to decide if the row/column is diagonal.
-        """
+        """__init__ for KalmanOut class"""
         #
         _check_2d_and_square(errcov_forecast)
         _check_2d_and_square(errcov_obs)
