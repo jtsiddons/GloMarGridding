@@ -5,19 +5,12 @@ from numpy import linalg
 import scipy as sp
 
 from glomar_gridding.autoregressive_kalman import cov_diagonal as cd
-# from . import cov_diagonal as cd
+from glomar_gridding.autoregressive_kalman.util import (
+    check_sq_matrix,
+    check_1d,
+)
 
 EFFECTIVELY_ZERO_VAR_DEFAULT = 1e-6
-
-
-def check_1d(a: np.ndarray):
-    """Check if array a is 1D, 2D or something invalid"""
-    if len(a.shape) == 1:
-        return True
-    elif len(a.shape) == 2:
-        if a.shape[0] == a.shape[1]:
-            return False
-    raise ValueError("a is not 1 or 2D")
 
 
 def matmul(
@@ -325,10 +318,13 @@ class KalmanOutUncorrCorrSplit:
     ):
         """__init__ for KalmanOut class"""
         #
-        _check_2d_and_square(errcov_forecast)
-        _check_2d_and_square(errcov_obs)
+        if not check_sq_matrix(errcov_forecast):
+            raise ValueError("errcov_forecast should be 2D and square")
+        if not check_sq_matrix(errcov_obs):
+            raise ValueError("errcov_obs should be 2D and square")
         if cov_forecast_and_obs is not None:
-            _check_2d_and_square(cov_forecast_and_obs)
+            if not check_sq_matrix(cov_forecast_and_obs):
+                raise ValueError("cov_forecast_and_obs should be 2D and square")
         #
         self.d_off_diagonal, _, self.d_diagonal_only, _ = (
             cd.diag_and_nondiag_rows_subsampler(  # noqa: E501
@@ -470,11 +466,3 @@ class KalmanOutUncorrCorrSplit:
                 diag_fillvalue=0.0,
             )
         )
-
-
-def _check_2d_and_square(arr: np.ndarray):
-    """Check if matrix is square"""
-    if len(arr.shape) != 2:
-        raise ValueError("arr should be 2D")
-    if arr.shape[0] != arr.shape[1]:
-        raise ValueError("arr should be square")

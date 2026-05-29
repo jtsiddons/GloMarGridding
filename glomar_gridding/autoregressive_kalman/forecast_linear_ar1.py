@@ -11,6 +11,7 @@ import scipy as sp
 import warnings
 
 from glomar_gridding.covariance_tools import explained_variance_clip
+from glomar_gridding.autoregressive_kalman.util import check_sq_matrix
 
 
 class Autoregressive1ForecastUncorr:
@@ -121,11 +122,11 @@ class Autoregressive1ForecastUncorr:
         # Use only diagonal if 2D matrices are provided for
         # clim_covar and errcov_analysis
         if len(self.clim_covar.shape) == 2:
-            if not _check_sq_matrix(self.clim_covar):
+            if not check_sq_matrix(self.clim_covar):
                 raise ValueError(f"Not square {self.clim_covar.shape = }.")
             self.clim_covar = np.diag(self.clim_covar)
         if len(self.errcov_analysis.shape) == 2:
-            if not _check_sq_matrix(self.errcov_analysis):
+            if not check_sq_matrix(self.errcov_analysis):
                 raise ValueError(f"Not square {self.errcov_analysis.shape = }.")
             self.errcov_analysis = np.diag(self.errcov_analysis)
         #
@@ -456,13 +457,13 @@ class Autoregressive1ForecastVector:
         if self.analysis.shape[0] != self.clim_mean.shape[0]:
             raise ValueError("analysis shape inconsistent with clim_mean")
         #
-        if not _check_sq_matrix(self.weights):
+        if not check_sq_matrix(self.weights):
             raise ValueError(f"Bad shp {self.weights.shape = }.")
         #
-        if not _check_sq_matrix(self.clim_covar):
+        if not check_sq_matrix(self.clim_covar):
             raise ValueError(f"Bad shp {self.clim_covar.shape = }.")
         #
-        if not _check_sq_matrix(self.errcov_analysis):
+        if not check_sq_matrix(self.errcov_analysis):
             err_msg = "Bad shape errcov_analysis "
             err_msg += f"{self.errcov_analysis.shape}."
             raise ValueError(err_msg)
@@ -628,11 +629,3 @@ class Autoregressive1ForecastVector:
             )
         else:
             print('Error covariance clipping is unneccessary.')
-
-
-def _check_sq_matrix(arr: np.ndarray) -> bool:
-    """Check if arr is 2D and square"""
-    return (
-        len(arr.shape) == 2
-        and arr.shape[0] == arr.shape[1]
-    )
