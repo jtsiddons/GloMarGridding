@@ -314,8 +314,8 @@ class LassoError():
 
     def to_xarray_da(
             self,
-            lats: np.ndarray = np.linspace(-19.5, 19.5, 40),
-            lons: np.ndarray = np.linspace(-179.5, 179.5, 360),
+            lats: np.ndarray,
+            lons: np.ndarray,
             name: str = "error_covariance",
             attrs: dict | None = None,
     ):
@@ -327,6 +327,22 @@ class LassoError():
             "lasso_lambda_hyperparm": 0.01,
             "description": "VAR(1) estimated error covariance for SST",
             "units": "1"}
+
+        Parameters
+        ----------
+        lats: numpy.ndarray
+            Array of latitude values, such as `np.linspace(-19.5, 19.5, 40)`
+        lons: numpy.ndarray
+            Array of longitude values, such as `np.linspace(-179.5, 179.5, 360)`
+        name: str
+            Name of the variable
+        attrs: dict
+            Attributes to be added the `xarray.DataArray`
+
+        Returns
+        -------
+        da: xarray.DataArray
+            errcov as a DataArray that has metadata and written easily to netCDF
         """
         if not self.expanded:
             self.expand_R()
