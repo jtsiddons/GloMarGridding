@@ -23,6 +23,26 @@ class LassoWeights():
     Expanding them to full domain
     Convert them from numpy array or scipy sparse array
     to xarray DataArray
+
+    Parameters
+    ----------
+    W: numpy.ndarray | scipy.sparse.sparray
+        A 2D data weights array
+        Should normally be sparse
+        If it is not an instance sp.sparse.sparray,
+        it will converted to one.
+        dtype `float`
+        shape `(N, N)`
+    D: numpy.ndarray | scipy.sparse.sparray
+        A 2D array indicating unmasked location
+        Should normally be sparse
+        If it is not an instance sp.sparse.sparray,
+        it will converted to one.
+        dtype `uint`, `bool` etc.
+        shape `(N, M)`
+    dtype: type
+        numpy or python native float types that are used
+        for xarray to store the outputs
     """
 
     def __init__(
@@ -31,29 +51,7 @@ class LassoWeights():
         D: np.ndarray | sp.sparse.sparray,
         dtype: type = np.float32,
     ):
-        """
-        __init__ for LassoWeights
-
-        Parameters
-        ----------
-        W: numpy.ndarray
-            A 2D data weights array
-            Should normally be sparse
-            If it is not an instance sp.sparse.sparray,
-            it will converted to one.
-            dtype `float`
-            shape `(N, N)`
-        D: numpy.ndarray
-            A 2D array indicating unmasked location
-            Should normally be sparse
-            If it is not an instance sp.sparse.sparray,
-            it will converted to one.
-            dtype `uint`, `bool` etc.
-            shape `(N, M)`
-        dtype: type
-            numpy or python native float types that are used
-            for xarray to store the outputs
-        """
+        """__init__ for LassoWeights"""
         self.type = dtype
         if sp.sparse.issparse(W):
             self.W = W
@@ -124,11 +122,11 @@ class LassoWeights():
 
     def to_xarray_da(
             self,
-            lats: np.ndarray = np.linspace(-19.5, 19.5, 40),
-            lons: np.ndarray = np.linspace(-179.5, 179.5, 360),
+            lats: np.ndarray,
+            lons: np.ndarray,
             name: str = "weights",
             attrs: dict | None = {"description": "weights", "units": "1"},
-    ):
+    ) -> xr.DataArray:
         """
         Convert expanded W into a xarray DataArray instance
 
@@ -138,6 +136,22 @@ class LassoWeights():
             "description": "standardised VAR(1) weights for SST",
             "units": "1",
         }
+
+        Parameters
+        ----------
+        lats: numpy.ndarray
+            Array of latitude values, such as `np.linspace(-19.5, 19.5, 40)`
+        lons: numpy.ndarray
+            Array of longitude values, such as `np.linspace(-179.5, 179.5, 360)`
+        name: str
+            Name of the variable
+        attrs: dict
+            Attributes to be added the `xarray.DataArray`
+
+        Returns
+        -------
+        da: xarray.DataArray
+            w as a DataArray that has metadata and written easily to netCDF
         """
         if not self.expanded:
             self.expand_W()
@@ -174,7 +188,7 @@ class LassoError():
     matrix. That is equivalent to:
 
     .. math::
-    C - W C W^{T}
+       C - W C W^{T}
 
     part of the AR forecast error.
 
@@ -187,49 +201,53 @@ class LassoError():
     :math:`W K W^{T}` (:math:`K` is Kriging covariance.)
 
     Convert output to xarray DataArray
+
+    Convention for the residues matrix:
+    rows - residues at each point (axis = 0)
+    number of columns - number of time (in/outsample) residues
+    per row (axis = 1)
+
+    Parameters
+    ----------
+    residues_matrix: numpy.ndarray
+        A 2D data residues
+        dtype `float`
+        shape `(N, T*)`
+    dof_adj: float | int | None
+        Degrees of freedom adjustment when computing covariance
+        of the regression residues or forecast errors. This usually
+        only applies to in-sample residue.
+        The usual divisor for R @ R.T is sample size per time
+        series/feature (dof == sample_size). However, it is in-sample
+        residues of a regression fit:
+        dof = sample_size - number_of_covariates
+        if covariates/covariates are not correlated with each other nor
+        the regression is regularized.
+        If None (or 0 default), dof_adj will be set to 0,
+        and R @ R.T will be divided by T*.
+        Some ways to estimate dof_adj (if needed) can result
+        in non-integer values, but single line OLS and Lasso
+        always give integer adjustments to DOF.
+    D: numpy.ndarray
+        A 2D array indicating unmasked location
+        Should normally be sparse
+        If it is not an instance sp.sparse.sparray,
+        it will converted to one.
+        dtype `uint`, `bool` etc.
+        shape `(N, M)`
+    dtype: type
+        numpy or python native float types that are used
+        for xarray to store the outputs
     """
 
     def __init__(
         self,
         residues_matrix: np.ndarray,
-        dof_adj: int | float | None = 0,
+        dof_adj: int | float = 0,
         D: np.ndarray | None = None,
         dtype: type = np.float32,
     ):
-        """
-        __init__ for LassoError
-
-        residues:
-        rows - residues at each point (axis = 0)
-        number of columns - number of time (in/outsample) residues
-        per row (axis = 1)
-
-        Parameters
-        ----------
-        residues_matrix: numpy.ndarray
-            A 2D data residues
-            dtype `float`
-            shape `(N, T*)`
-        dof_adj: float | int | None
-            Depending on how residues_matrix is estimated
-            degree of freedom adjustment may be needed
-            to the divisor of R @ R.T
-            If None (or 0 default), dof_adj will be set to 0,
-            and R @ R.T will be divided by T*.
-            Some ways to estimate dof_adj (if needed) can result
-            in non-integer values, but single line OLS and Lasso
-            always give integer adjustments to DOF.
-        D: numpy.ndarray
-            A 2D array indicating unmasked location
-            Should normally be sparse
-            If it is not an instance sp.sparse.sparray,
-            it will converted to one.
-            dtype `uint`, `bool` etc.
-            shape `(N, M)`
-        dtype: type
-            numpy or python native float types that are used
-            for xarray to store the outputs
-        """
+        """__init__ for LassoError"""
         self.type = dtype
         self.residues_matrix: np.ndarray = residues_matrix
         if D is not None:
@@ -251,7 +269,7 @@ class LassoError():
         Estimate error covariance
 
         .. math::
-            E = R @ R^{T} / (T^{*} - dof_adj)
+           E = R @ R^{T} / (T^{*} - dof_adj)
         """
         print('Computing error covariance')
         dof = self.t - self.dof_adj
@@ -261,7 +279,7 @@ class LassoError():
         self.R = (self.residues_matrix @ self.residues_matrix.T) / dof
         self.errcov_computed = True
 
-    def expand_R(self, fillvalue: float | None = 0.36):  # noqa: N802
+    def expand_R(self, fillvalue: float = 0.36):  # noqa: N802
         """
         Expand estimate errorcov to include the full domain
         A fill value can be used to fill the diagonal of

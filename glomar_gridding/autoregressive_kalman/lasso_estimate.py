@@ -24,8 +24,6 @@ from typing import Literal
 Lasso = linear_model.Lasso
 LassoSelection = Literal['cyclic', 'random']
 
-OUT_DTYPE = np.float32
-
 
 class LassoEstimate_AR1():
     """
@@ -39,6 +37,43 @@ class LassoEstimate_AR1():
     This method is not directly compatible with covariance estimated
     using the ellipse method. No correlation-must-decrease-with-distance
     constrains when estimating the Lasso weights.
+
+    See:
+    https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html
+    as well. This is just a wrapper for that but will loop through
+    data_sample over many rows.
+
+    Parameters
+    ----------
+    data_sample: numpy.ndarray
+        A 2D data sample array
+        Different columns for different time
+        Different rows for different grid points/locations
+        dtype `float`
+        shape `(T, N)` following netCDF/Grib convention
+    standardise: bool
+        Should data_sample be standardised automatically
+        (i.e. A* = A - E(A) / sigma(A) )
+    lasso_lambda_hyperparm: float
+        The lambda hyperparameter for Lasso regression
+        It is called `alpha` in sklearn, but it is more common
+        to call in lambda in the literature.
+        Tuning of alpha/lambda is usually done by orders of magitude
+        0.0001, 0.001, 0.01, 0.1, 1... etc (default of sklearn is 1)
+    lasso_selection: str
+        `selection` in sklearn lasso class, see sklearn documentation
+    out_of_sample_residues: bool
+        Should the residues of the fit be estimated out of sample
+        When set to True, data_sample is split by hold_out_ratio
+        and data not used for training will be used to estimate
+        the residues. Otherwise, residues are estimated in-sample.
+    hold_out_ratio: float
+        The ratio of data be used that is withheld for
+        cross-validation. It is only used if out_of_sample_residues
+        is True
+    dtype: type
+        numpy or python native float types that are used
+        to store the outputs
     """
 
     def __init__(
@@ -49,48 +84,9 @@ class LassoEstimate_AR1():
         lasso_selection: LassoSelection = "random",
         out_of_sample_residues: bool = True,
         hold_out_ratio: float = 0.5,
-        dtype: type = OUT_DTYPE,
+        dtype: type = np.float32,
     ):
-        """
-        __init__ for LassoEstimate_AR1 class
-
-        See:
-        https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html
-        as well. This is just a wrapper for that but will loop through
-        data_sample over many rows.
-
-        Parameters
-        ----------
-        data_sample: numpy.ndarray
-            A 2D data sample array
-            Different columns for different time
-            Different rows for different grid points/locations
-            dtype `float`
-            shape `(T, N)` following netCDF/Grib convention
-        standardise: bool
-            Should data_sample be standardised automatically
-            (i.e. A* = A - E(A) / sigma(A) )
-        lasso_lambda_hyperparm: float
-            The lambda hyperparameter for Lasso regression
-            It is called `alpha` in sklearn, but it is more common
-            to call in lambda in the literature.
-            Tuning of alpha/lambda is usually done by orders of magitude
-            0.0001, 0.001, 0.01, 0.1, 1... etc (default of sklearn is 1)
-        lasso_selection: str
-            `selection` in sklearn lasso class, see sklearn documentation
-        out_of_sample_residues: bool
-            Should the residues of the fit be estimated out of sample
-            When set to True, data_sample is split by hold_out_ratio
-            and data not used for training will be used to estimate
-            the residues. Otherwise, residues are estimated in-sample.
-        hold_out_ratio: float
-            The ratio of data be used that is withheld for
-            cross-validation. It is only used if out_of_sample_residues
-            is True
-        dtype: type
-            numpy or python native float types that are used
-            to store the outputs
-        """
+        """__init__ for LassoEstimate_AR1 class"""
         check_shape(data_sample)
         self.standardise = standardise
         if standardise:
@@ -155,12 +151,12 @@ class LassoEstimate_AR1():
 
         Adds the following attributes to class instance:
 
-        Returns
-        -------
-        self.coefficients: numpy.ndarray
+        Attributes
+        ----------
+        coefficients: numpy.ndarray
             The weights of the fits
             shape `(N, N)`
-        self.residues: numpy.ndarray
+        residues: numpy.ndarray
             The residues of the fit
             The length of residue time series
             depends on `out_of_sample_residues`
@@ -232,7 +228,7 @@ class LassoEstimate_AR1():
             print('Coefficients have not been computed yet.')
 
 
-def check_shape(X):
+def check_shape(X, dim: int = 2):
     """
     Check X to be 2D
     This should follow the convention that
@@ -242,16 +238,15 @@ def check_shape(X):
     (E), T, (Z), Y, X
     So reshaping (T, Y, X) >> T, YX will be sufficient
     """
-    if len(X.shape) != 2:
-        raise ValueError(f'Unexpected shape: {X.shape = }')
+    if len(X.shape) != dim:
+        raise ValueError(f'Unexpected shape: {X.shape = } != {dim}')
 
 
 def standardise_data(
         X,
         normalise=True,
-        return_mean_and_std=True,
         axis=0,
-    ):
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Standardise the data samples by
     1) subtracting the mean
@@ -261,17 +256,26 @@ def standardise_data(
     ----------
     X: np.ndarray
         As in data_sample in LassoEstimate_AR1 class
+        Shape (N, M)
     normalise: bool
         If set to True, divide by sample standard deviation
-    return_mean_and_std: bool
-        Return the sample mean and standard deviation prior to
-        standardisation
     axis: int
-        The axis that the standardisation is applied
+        The axis that the standardisation is applied.
         axis=0 follows the convention that each column
         is a seperate time series, which is the
-        standard for netCDF and Grib files (i.e. time as 1st dimension;
-        (T, YX) convention).
+        standard for netCDF and GRIB files (i.e. time is usually
+        the 1st dimension unless there is an ensemble dimension;
+        spatial dimensions follow time dimension, aka the
+        (T, YX...) convention).
+
+    Returns
+    -------
+    ans : tuple
+        Tuple of (
+            standardised or zero-mean sample - shape `(N, M)`,
+            sample mean of X computed along axis - shape `(N,)`,
+            normalisation (if standardise, this is sigma) - shape `(N,)`,
+        )
     """
     X_bar = np.mean(X, axis=axis)
     if normalise:
@@ -279,12 +283,9 @@ def standardise_data(
     else:
         X_std = np.ones_like(X_bar)
     X_standardised = (X - X_bar) / X_std
-    if return_mean_and_std:
-        ans = (
-            X_standardised,
-            X_bar,
-            X_std,
-        )
-    else:
-        ans = X_standardised
+    ans = (
+        X_standardised,
+        X_bar,
+        X_std,
+    )
     return ans
