@@ -45,7 +45,7 @@ class KalmanOut:
         In NWP-DA, this is usually assumed to be zero
         aka observation and forecast errors are not correlated.
         Set it to None if that is zero
-    ez_covariances: bool
+    use_diag: bool
         Ignore off-diagonals of errcov_forecast, errcov_obs,
         and cov_forecast_and_obs if set to True, default True
     """
@@ -57,13 +57,13 @@ class KalmanOut:
         errcov_forecast: np.ndarray,
         errcov_obs: np.ndarray,
         cov_forecast_and_obs: np.ndarray | None,
-        ez_covariances: bool = True,
+        use_diag: bool = True,
     ):
         """__init__ for KalmanOut class"""
         self.forecast_vector = forecast_vector
         self.obs_vector = obs_vector
-        if ez_covariances:
-            self.ez_covariances = True
+        if use_diag:
+            self.use_diag = True
             if check_1d(errcov_forecast):
                 self.errcov_forecast = errcov_forecast
             else:
@@ -82,7 +82,7 @@ class KalmanOut:
             self.multiply_operator = np.multiply
             self.one_maker = np.ones
         else:
-            self.ez_covariances = False
+            self.use_diag = False
             self.errcov_forecast = errcov_forecast
             self.errcov_obs = errcov_obs
             self.cov_forecast_and_obs = cov_forecast_and_obs
@@ -103,7 +103,7 @@ class KalmanOut:
         This reduces memory footprint and may make block-splitting
         by cov_diagonal easier.
 
-        It is not intended to be use for ez_covariance mode (?).
+        It is not intended to be use for use_diag mode (?).
         This is only used to handle situations that the error covariances
         are big.
 
@@ -114,9 +114,9 @@ class KalmanOut:
         convert2sparse: bool
             Convert error covariances to scipy sparse array if True
         """
-        if self.ez_covariances:
+        if self.use_diag:
             err_msg = "This method is not intended to be use with "
-            err_msg += "non-2D error covariances/ez_covariances."
+            err_msg += "use_diag."
             raise ValueError(err_msg)
         self.errcov_forecast = self._small_elements_2_zero_and_sparse(
             self.errcov_forecast,
@@ -228,7 +228,7 @@ class KalmanOut:
         #
         # Weights and error covariance if obs and forecast are uncorrelated
         print("Computing kalman_gain")
-        if self.ez_covariances:
+        if self.use_diag:
             # Vector form
             self.kalman_gain_from_new_obs = self.multiply_operator(
                 self.errcov_forecast,
@@ -382,7 +382,7 @@ class KalmanOutUncorrCorrSplit:
             np.diag(errcov_forecast_d),
             np.diag(errcov_obs_d),
             cov_forecast_and_obs_d,
-            ez_covariances=True,
+            use_diag=True,
         )
         self.corr_part = KalmanOut(
             forecast_vector_c,
@@ -390,7 +390,7 @@ class KalmanOutUncorrCorrSplit:
             errcov_forecast_c,
             errcov_obs_c,
             cov_forecast_and_obs_c,
-            ez_covariances=False,
+            use_diag=False,
         )
 
     def solve_uncorr(self):
