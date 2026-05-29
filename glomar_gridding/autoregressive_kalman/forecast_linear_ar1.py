@@ -596,10 +596,7 @@ class Autoregressive1ForecastVector:
         largest_eigval = np.max(np.real(eigvals))
         print(f"{smallest_eigval = }")
         print(f"{largest_eigval = }")
-        self.bad_model = np.logical_or(
-            smallest_eigval < -1.0,
-            largest_eigval > 1.0,
-        )
+        self.bad_model = (smallest_eigval < -1.0) or (largest_eigval > 1.0)
         if self.bad_model:
             errmsg = "Eigenvalues of estimated weights have values > 1; "
             errmsg += "autocovariance "
