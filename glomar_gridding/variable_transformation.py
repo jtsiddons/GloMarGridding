@@ -1,10 +1,10 @@
 """Normality transformation of variables"""
 
 import numpy as np
-from scipy import stats
+from scipy import special
 
 
-def weibull_2_normality(
+def weibull_to_normality(
     x: np.ndarray,
     c: float,
     use_kp11: bool = False,
@@ -51,5 +51,5 @@ def weibull_2_normality(
         x_hat = x**lam
         return x_hat
     lam = 0.2654 * c
-    x_hat = stats.boxcox(x, lmbda=lam)
+    x_hat = special.boxcox(x, lam)
     return x_hat
