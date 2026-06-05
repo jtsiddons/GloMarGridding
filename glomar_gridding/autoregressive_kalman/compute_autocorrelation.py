@@ -20,6 +20,7 @@ vectorize for an array with m rows give m scalars.
 
 The same behavior can be gotten using np.apply_along_axis
 """
+
 import numpy as np
 import xarray as xr
 import warnings
@@ -51,15 +52,12 @@ def get_anomalies(vec: np.ndarray):
 # anomalies computed along each row
 get_anomalies_vectorize = np.vectorize(
     get_anomalies,
-    doc='Vectorized `get_anomalies`',
-    signature='(n)->(n)',
+    doc="Vectorized `get_anomalies`",
+    signature="(n)->(n)",
 )
 
 
-def get_obs_variance(
-        vec: np.ndarray,
-        dof: int = 1
-    ):
+def get_obs_variance(vec: np.ndarray, dof: int = 1):
     """
     Compute observed variance (standard deviation squared)
     Bessel correction applied by default
@@ -81,6 +79,7 @@ def get_obs_variance(
     variance = np.nansum(squared_anomalies) / (n - dof)
     return variance
 
+
 # obs_variance, operated over many time series
 # for a matrix with m rows and n colums
 # gives an answer of m scalars
@@ -88,15 +87,15 @@ def get_obs_variance(
 
 obs_variance_vectorize = np.vectorize(
     lambda vec: get_obs_variance(vec, dof=1),
-    doc='Vectorized `get_obs_variance`',
-    signature='(n),()->()',
+    doc="Vectorized `get_obs_variance`",
+    signature="(n),()->()",
 )
 
 
 def get_auto_corr(
-        vec: np.ndarray,
-        n: int = 1,
-    ):
+    vec: np.ndarray,
+    n: int = 1,
+):
     """
     Compute lag-n autocorrelation
 
@@ -142,14 +141,15 @@ def get_auto_corr(
     cov = np.ma.cov(
         np.ma.masked_invalid(anomalies[:-n]),
         np.ma.masked_invalid(anomalies[n:]),
-        ddof=0,   # Or you can sort out the dof here...
+        ddof=0,  # Or you can sort out the dof here...
     )
     var_t_eq_0 = cov[0, 0]  # variance of ... :-n
     var_t_plus_n = cov[1, 1]  # Variance of n: ...
     autocovariance_n = cov[1, 0]  # Observed autocovariance
     ar_n = autocovariance_n / np.sqrt(var_t_eq_0 * var_t_plus_n)  # autocorr
-    sigma2_eps = (1 - ar_n ** 2) * variance  # Uncertainity**2 of the AR model
+    sigma2_eps = (1 - ar_n**2) * variance  # Uncertainity**2 of the AR model
     return ar_n, autocovariance_n, variance, sigma2_eps
+
 
 # get_auto_corr_1, operated over many time series
 # behaves similarily to obs_variance_vectorize but give
@@ -159,15 +159,15 @@ def get_auto_corr(
 
 get_auto_corr_1_vectorize = np.vectorize(
     lambda vec: get_auto_corr(vec, 1),
-    doc='Vectorized `get_auto_corr`',
-    signature='(n)->(), (), (), ()',
+    doc="Vectorized `get_auto_corr`",
+    signature="(n)->(), (), (), ()",
 )
 
 
 def compute_lag_1_ts_metrics_from_da(
-        da: xr.DataArray,
-        lag: int = 1,
-    ) -> tuple[xr.DataArray, xr.DataArray]:
+    da: xr.DataArray,
+    lag: int = 1,
+) -> tuple[xr.DataArray, xr.DataArray]:
     """
     Compute the following (local) time series metrics
     - nth-lagged autocorrelation
@@ -200,32 +200,32 @@ def compute_lag_1_ts_metrics_from_da(
     da2: xarray.DataArray
         data array with sample variance
     """
-    if da.dims[0] != 'time':
+    if da.dims[0] != "time":
         raise ValueError(f"Unexpected dim order: {da.dims}")
     da_varname = da.name
-    if hasattr(da, 'long_name'):
+    if hasattr(da, "long_name"):
         da_long_varname = da.long_name
     else:
         da_long_varname = da_varname
-    if hasattr(da, 'units'):
+    if hasattr(da, "units"):
         units = da.units
     else:
         warnings.warn(
-            'ds has no units, setting it to 1',
+            "ds has no units, setting it to 1",
             UserWarning,
         )
-        units = '1'
+        units = "1"
     #
     ar = da[0].copy()
     ar = ar.rename(f"{da_varname}_ar{lag}")
-    ar.attrs['units'] = '1'
-    ar.attrs['long_name'] = f"{da_long_varname} lag-{lag} correlation"
+    ar.attrs["units"] = "1"
+    ar.attrs["long_name"] = f"{da_long_varname} lag-{lag} correlation"
     print(ar.shape)
     #
     variance = da[0].copy()
     variance = variance.rename(f"{da_varname}_variance")
-    variance.attrs['units'] = f'{units}**2'
-    variance.attrs['long_name'] = f"{da_long_varname} variance"
+    variance.attrs["units"] = f"{units}**2"
+    variance.attrs["long_name"] = f"{da_long_varname} variance"
     print(variance.shape)
     #
     ar_arr, _, variance_arr, _ = np.apply_along_axis(

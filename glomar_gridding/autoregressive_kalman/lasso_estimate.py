@@ -15,6 +15,7 @@ For the purpose of docstring
 N - number of gridpoints
 T - length of time series at each grid point
 """
+
 import numpy as np
 import scipy as sp
 
@@ -22,10 +23,10 @@ from sklearn import linear_model
 from typing import Literal
 
 Lasso = linear_model.Lasso
-LassoSelection = Literal['cyclic', 'random']
+LassoSelection = Literal["cyclic", "random"]
 
 
-class LassoEstimate_AR1():
+class LassoEstimate_AR1:
     """
     A method to estimate of weights for Autoregressive1ForecastVector
     using regularized line-by-line / gridpoint-by-gridpoint (aka seemingly
@@ -121,21 +122,21 @@ class LassoEstimate_AR1():
         estimation.
         """
         if self.out_of_sample_residues:
-            print('Out-of-sample will be used to compute residues.')
-            print('Holdout cross-validation will be performed.')
+            print("Out-of-sample will be used to compute residues.")
+            print("Holdout cross-validation will be performed.")
             self.half_of_the_data = int(self.n_t * self.hold_out_ratio)
             #
             # Training data
-            self.X = self.sample[:(self.half_of_the_data - 1), :]
-            self.all_y = self.sample[1:(self.half_of_the_data), :]
+            self.X = self.sample[: (self.half_of_the_data - 1), :]
+            self.all_y = self.sample[1 : (self.half_of_the_data), :]
             #
             # Holdout data
-            self.X_withheld = self.sample[(self.half_of_the_data):-1, :]
-            self.all_y_withheld = self.sample[(self.half_of_the_data + 1):, :]
+            self.X_withheld = self.sample[(self.half_of_the_data) : -1, :]
+            self.all_y_withheld = self.sample[(self.half_of_the_data + 1) :, :]
         else:
-            print('Training data will be used to compute residues.')
-            print('Holdout cross-validation will not be performed.')
-            print('The full input dataset will be used to fit the model.')
+            print("Training data will be used to compute residues.")
+            print("Holdout cross-validation will not be performed.")
+            print("The full input dataset will be used to fit the model.")
             self.X = self.X_withheld = self.sample[:-1, :]
             self.all_y = self.all_y_withheld = self.sample[1:, :]
 
@@ -214,7 +215,9 @@ class LassoEstimate_AR1():
                 outsample_RMSE = np.sqrt(np.mean(np.square(outsample_residues)))
                 print("Outsample diagonstics:")
                 print(f"MAE(Lasso(l={self.lambda_hyperparm}))={outsample_MAE}")
-                print(f"RMSE(Lasso(l={self.lambda_hyperparm}))={outsample_RMSE}")
+                print(
+                    f"RMSE(Lasso(l={self.lambda_hyperparm}))={outsample_RMSE}"
+                )
                 self.residues[xy, :] = outsample_residues
             else:
                 self.residues[xy, :] = insample_residuals
@@ -222,10 +225,10 @@ class LassoEstimate_AR1():
 
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
-        if hasattr(self, 'coefficients'):
+        if hasattr(self, "coefficients"):
             self.coefficients = sp.sparse.csr_array(self.coefficients)
         else:
-            print('Coefficients have not been computed yet.')
+            print("Coefficients have not been computed yet.")
 
 
 def check_shape(X, dim: int = 2):
@@ -239,14 +242,14 @@ def check_shape(X, dim: int = 2):
     So reshaping (T, Y, X) >> T, YX will be sufficient
     """
     if len(X.shape) != dim:
-        raise ValueError(f'Unexpected shape: {X.shape = } != {dim}')
+        raise ValueError(f"Unexpected shape: {X.shape = } != {dim}")
 
 
 def standardise_data(
-        X,
-        normalise=True,
-        axis=0,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    X,
+    normalise=True,
+    axis=0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Standardise the data samples by
     1) subtracting the mean

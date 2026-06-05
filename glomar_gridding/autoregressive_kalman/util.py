@@ -1,13 +1,11 @@
 """Common functions"""
+
 import numpy as np
 
 
 def check_sq_matrix(arr: np.ndarray) -> bool:
     """Check if arr is 2D and square"""
-    return (
-        len(arr.shape) == 2
-        and arr.shape[0] == arr.shape[1]
-    )
+    return len(arr.shape) == 2 and arr.shape[0] == arr.shape[1]
 
 
 def check_1d(arr: np.ndarray):

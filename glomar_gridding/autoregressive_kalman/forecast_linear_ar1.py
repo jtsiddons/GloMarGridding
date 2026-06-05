@@ -149,8 +149,8 @@ class Autoregressive1ForecastUncorr:
             raise ValueError(err_msg)
         self.bad_model = np.any(np.abs(self.lag_1_autocor) >= 1)
         if self.bad_model:
-            print('Large abs values (>= 1, <= -1) detected in lag_1_autocor')
-            print('They are set to 0.99')
+            print("Large abs values (>= 1, <= -1) detected in lag_1_autocor")
+            print("They are set to 0.99")
             self.lag_1_autocor[self.lag_1_autocor >= 1.0] = 0.99
             self.lag_1_autocor[self.lag_1_autocor <= -1.0] = -0.99
         #
@@ -313,7 +313,7 @@ class Autoregressive1ForecastVector:
         clim_mean: np.ndarray,
         clim_covar: np.ndarray,
         estimated_ar1_errcov: np.ndarray | None = None,
-        ):
+    ):
         """__init__ for Autoregressive1Forecast class"""
         #
         self.analysis = analysis
@@ -322,10 +322,10 @@ class Autoregressive1ForecastVector:
         self.clim_mean = clim_mean
         self.clim_covar = clim_covar
         if not (
-            isinstance(estimated_ar1_errcov, np.ndarray) or
-            (estimated_ar1_errcov is None)
+            isinstance(estimated_ar1_errcov, np.ndarray)
+            or (estimated_ar1_errcov is None)
         ):
-            err_msg = 'Unknown type/value for estimated_ar1_errcov; '
+            err_msg = "Unknown type/value for estimated_ar1_errcov; "
             err_msg += f"{estimated_ar1_errcov = }."
             raise ValueError(err_msg)
         self.estimated_ar1_errcov = estimated_ar1_errcov
@@ -522,13 +522,13 @@ class Autoregressive1ForecastVector:
         #
         print("Computing uncertainties")
         if self.estimated_ar1_errcov is None:
-            print('Computing C - W C W.T')
+            print("Computing C - W C W.T")
             sigma_sq_eps = (
-                self.clim_covar -
-                self.weights @ self.clim_covar @ self.weights.T
+                self.clim_covar
+                - self.weights @ self.clim_covar @ self.weights.T
             )
         else:
-            print('Using pre-computed C - W C W.T')
+            print("Using pre-computed C - W C W.T")
             print(f"{self.estimated_ar1_errcov = }")
             sigma_sq_eps = self.estimated_ar1_errcov
         #
@@ -608,16 +608,16 @@ class Autoregressive1ForecastVector:
                 raise ValueError(errmsg)
 
     def check_and_fix_psd_errcov_by_clipping(
-            self,
-            target_variance_fraction=0.95,
-        ):
+        self,
+        target_variance_fraction=0.95,
+    ):
         """
         Check if self.errcov positive semi-definite
         If not, use explained_variance_clip to patch it.
         """
         if not hasattr(self, "errcov"):
             raise ValueError("errcov has not been estimated yet!")
-        print('Checking validity of error covariance')
+        print("Checking validity of error covariance")
         errcov_eigvals = np.linalg.eigvalsh(self.errcov)
         if np.min(errcov_eigvals) < 0:
             self.errcov = explained_variance_clip(
@@ -625,4 +625,4 @@ class Autoregressive1ForecastVector:
                 target_variance_fraction=target_variance_fraction,
             )
         else:
-            print('Error covariance clipping is unneccessary.')
+            print("Error covariance clipping is unneccessary.")

@@ -344,18 +344,14 @@ class KalmanOutUncorrCorrSplit:
         forecast_vector_d = forecast_vector[has_diag_only]
         obs_vector_d = obs_vector[has_diag_only]
         #
-        errcov_forecast_d = (
-            errcov_forecast[has_diag_only, :][:, has_diag_only]
-        )
-        errcov_obs_d = (
-            errcov_obs[has_diag_only, :][:, has_diag_only]
-        )
+        errcov_forecast_d = errcov_forecast[has_diag_only, :][:, has_diag_only]
+        errcov_obs_d = errcov_obs[has_diag_only, :][:, has_diag_only]
         #
         cov_forecast_and_obs_d = None
         if cov_forecast_and_obs is not None:
-            cov_forecast_and_obs_d = (
-                cov_forecast_and_obs[has_diag_only, :][:, has_diag_only]
-            )
+            cov_forecast_and_obs_d = cov_forecast_and_obs[has_diag_only, :][
+                :, has_diag_only
+            ]
             cov_forecast_and_obs_d = np.diag(cov_forecast_and_obs_d)
         #
         has_off_diagonal = self._d_2_bool(self.d_off_diagonal)
@@ -363,18 +359,16 @@ class KalmanOutUncorrCorrSplit:
         forecast_vector_c = forecast_vector[has_off_diagonal]
         obs_vector_c = obs_vector[has_off_diagonal]
         #
-        errcov_forecast_c = (
-            errcov_forecast[has_off_diagonal, :][:, has_off_diagonal]
-        )
-        errcov_obs_c = (
-            errcov_obs[has_off_diagonal, :][:, has_off_diagonal]
-        )
+        errcov_forecast_c = errcov_forecast[has_off_diagonal, :][
+            :, has_off_diagonal
+        ]
+        errcov_obs_c = errcov_obs[has_off_diagonal, :][:, has_off_diagonal]
         #
         cov_forecast_and_obs_c = None
         if cov_forecast_and_obs is not None:
-            cov_forecast_and_obs_c = (
-                cov_forecast_and_obs[has_off_diagonal, :][:, has_off_diagonal]
-            )
+            cov_forecast_and_obs_c = cov_forecast_and_obs[has_off_diagonal, :][
+                :, has_off_diagonal
+            ]
         #
         self.uncorr_part = KalmanOut(
             forecast_vector_d,
@@ -411,7 +405,7 @@ class KalmanOutUncorrCorrSplit:
         elif sp.sparse.issparse(d_matrix):
             return np.any(d_matrix.toarray(), axis=0)
         else:
-            raise ValueError('Unknown type d_matrix')
+            raise ValueError("Unknown type d_matrix")
 
     def combine_results(self):
         """Blend the results of uncorrelated and correlated streams"""
@@ -428,41 +422,30 @@ class KalmanOutUncorrCorrSplit:
             + np.matrix(self.corr_part.wgt_mean) @ self.d_off_diagonal
         )[0]
         #
-        self.errcov = (
-            cd.restore_diag_only_rows(
-                np.diag(self.uncorr_part.errcov),
-                self.d_diagonal_only,
-                diag_fillvalue=0.0
-            ) +
-            cd.restore_diag_only_rows(
-                self.corr_part.errcov,
-                self.d_off_diagonal,
-                diag_fillvalue=0.0
-            )
+        self.errcov = cd.restore_diag_only_rows(
+            np.diag(self.uncorr_part.errcov),
+            self.d_diagonal_only,
+            diag_fillvalue=0.0,
+        ) + cd.restore_diag_only_rows(
+            self.corr_part.errcov, self.d_off_diagonal, diag_fillvalue=0.0
         )
         #
-        self.kalman_gain_from_new_obs = (
-            cd.restore_diag_only_rows(
-                np.diag(self.uncorr_part.kalman_gain_from_new_obs),
-                self.d_diagonal_only,
-                diag_fillvalue=0.0,
-            ) +
-            cd.restore_diag_only_rows(
-                self.corr_part.kalman_gain_from_new_obs,
-                self.d_off_diagonal,
-                diag_fillvalue=0.0,
-            )
+        self.kalman_gain_from_new_obs = cd.restore_diag_only_rows(
+            np.diag(self.uncorr_part.kalman_gain_from_new_obs),
+            self.d_diagonal_only,
+            diag_fillvalue=0.0,
+        ) + cd.restore_diag_only_rows(
+            self.corr_part.kalman_gain_from_new_obs,
+            self.d_off_diagonal,
+            diag_fillvalue=0.0,
         )
         #
-        self.wgts_from_ar_forecast = (
-            cd.restore_diag_only_rows(
-                np.diag(self.uncorr_part.wgts_from_ar_forecast),
-                self.d_diagonal_only,
-                diag_fillvalue=0.0,
-            ) +
-            cd.restore_diag_only_rows(
-                self.corr_part.wgts_from_ar_forecast,
-                self.d_off_diagonal,
-                diag_fillvalue=0.0,
-            )
+        self.wgts_from_ar_forecast = cd.restore_diag_only_rows(
+            np.diag(self.uncorr_part.wgts_from_ar_forecast),
+            self.d_diagonal_only,
+            diag_fillvalue=0.0,
+        ) + cd.restore_diag_only_rows(
+            self.corr_part.wgts_from_ar_forecast,
+            self.d_off_diagonal,
+            diag_fillvalue=0.0,
         )

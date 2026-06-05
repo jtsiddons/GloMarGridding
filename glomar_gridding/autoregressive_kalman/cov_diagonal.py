@@ -45,8 +45,8 @@ def remove_diag_only_rows(
     n_rows = cov.shape[0]
     print(f"{cov.shape = }")
     if not np.all(np.diag(cov) > zero_threshold):
-        err_msg = f'There are elements below {zero_threshold = }'
-        err_msg += ' (negatives included) on the diagonal.'
+        err_msg = f"There are elements below {zero_threshold = }"
+        err_msg += " (negatives included) on the diagonal."
         raise ValueError(err_msg)
     has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
@@ -59,9 +59,9 @@ def remove_diag_only_rows(
     )
     print(f"{D.shape = }")
     #
-    new_cov_arr = (
-        cov[has_off_diagonal_elements, :][:, has_off_diagonal_elements]
-    )
+    new_cov_arr = cov[has_off_diagonal_elements, :][
+        :, has_off_diagonal_elements
+    ]
     print(f"{new_cov_arr.shape = }")
     #
     return new_cov_arr, D
@@ -101,14 +101,14 @@ def restore_diag_only_rows(
     elif sp.sparse.issparse(D):
         has_off_diag = np.any(D.toarray(), axis=0)
     else:
-        err_msg = 'D must be an instance numpy array or scipy sparse array'
+        err_msg = "D must be an instance numpy array or scipy sparse array"
         raise ValueError(err_msg)
     #
     print(f"{trimmed_cov_arr.shape = }")
     print(f"{D.shape = }")
     n = len(has_off_diag)
     if np.sum(has_off_diag) != trimmed_cov_arr.shape[0]:
-        err_msg = 'D shape is inconsistent with shape of trimmed_cov_arr.'
+        err_msg = "D shape is inconsistent with shape of trimmed_cov_arr."
         raise ValueError(err_msg)
     new_cov_arr = np.eye(n) * diag_fillvalue
     fill_inds = np.logical_and.outer(has_off_diag, has_off_diag)
@@ -168,8 +168,8 @@ def diag_and_nondiag_rows_subsampler(
     #
     # This returns True for rows that have off diagonal elements
     if not np.all(np.diag(cov) > zero_threshold):
-        err_msg = f'There are elements below {zero_threshold = }'
-        err_msg += ' (negatives included) on the diagonal.'
+        err_msg = f"There are elements below {zero_threshold = }"
+        err_msg += " (negatives included) on the diagonal."
         raise ValueError(err_msg)
     has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
@@ -193,9 +193,9 @@ def diag_and_nondiag_rows_subsampler(
     diag_cov = np.array(np.diag(cov))
     if return_subsampled_arr:
         isolated_diag_vals = diag_cov[~has_off_diagonal_elements]
-        the_denser_parts = (
-            cov[has_off_diagonal_elements, :][:, has_off_diagonal_elements]
-        )
+        the_denser_parts = cov[has_off_diagonal_elements, :][
+            :, has_off_diagonal_elements
+        ]
     else:
         isolated_diag_vals = None
         the_denser_parts = None

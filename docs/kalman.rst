@@ -82,12 +82,12 @@ find in Chapter 8 of [Wilks]:
 
 For the diagonal :math:`\Phi` case, the lagged autocorrelation is easy to compute from observations; its application
 to statistical forecasting is highly stable and quick. The weights for the multi-variate correlated case are
-much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of 
+much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of
 the seemingly unrelated regression of vector autoregression. For high resolution
 datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using
-regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via ``scikit-learn``; 
+regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via ``scikit-learn``;
 LASSO generally leads to sparse :math:`\mathbf{W}`, makes them easier to handle memory and computational cost via
-sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the 
+sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the
 the least squares cost function that is proportional to the sum of the absolute values of all regression coefficients. The
 sum is scaled by a tunable hyperparameter; it is usually called :math:`\lambda` in statistics literature (including the Wikipedia
 article) but is called :math:`\alpha` instead in ``scikit-learn`` documentation.

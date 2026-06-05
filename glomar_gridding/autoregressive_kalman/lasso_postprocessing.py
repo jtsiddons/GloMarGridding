@@ -16,7 +16,7 @@ import xarray as xr
 import cov_diagonal
 
 
-class LassoWeights():
+class LassoWeights:
     """
     Class to post process Lasso regression estimate weights
     e.g. the `self.coefficients` from class LassoEstimate_AR1
@@ -58,13 +58,13 @@ class LassoWeights():
         elif isinstance(W, np.ndarray):
             self.W: sp.sparse.sparray = sp.sparse.csc_array(W, dtype=self.type)
         else:
-            raise ValueError(f'Unknown object {type(W)}.')
+            raise ValueError(f"Unknown object {type(W)}.")
         if sp.sparse.issparse(D):
             self.D = D
         elif isinstance(D, np.ndarray):
             self.D: sp.sparse.sparray = sp.sparse.csc_array(D, dtype=np.uint8)
         else:
-            raise ValueError(f'Unknown object {type(D)}.')
+            raise ValueError(f"Unknown object {type(D)}.")
         self.expanded = False
 
     def expand_W(self, fillvalue: float | None = 0.6):  # noqa: N802
@@ -83,12 +83,12 @@ class LassoWeights():
         # Both D and W are sp.sparse.spmatrix, and behaves and performs
         # differently than functions in cov_diagonal; (error) covariance
         # is, in contrast, a dense matrix.
-        print('Expanding W into full matrix')
+        print("Expanding W into full matrix")
         self.W = self.D.T @ self.W @ self.D
         if fillvalue is not None:
             # See:
             # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-            print(f'Filling diagonals of fully empty rows with {fillvalue}')
+            print(f"Filling diagonals of fully empty rows with {fillvalue}")
             empty_rows = self.W.getnnz(1) == 0
             where_empty = np.where(empty_rows)[0]
             n_empty_rows = np.sum(empty_rows)
@@ -116,16 +116,16 @@ class LassoWeights():
         if not self.expanded:
             print("W is already D-subsampled; no action taken.")
             return
-        print('Shrinking W back to its original shape')
+        print("Shrinking W back to its original shape")
         self.W = self.D @ self.W @ self.D.T
         self.expanded = False
 
     def to_xarray_da(
-            self,
-            lats: np.ndarray,
-            lons: np.ndarray,
-            name: str = "weights",
-            attrs: dict | None = {"description": "weights", "units": "1"},
+        self,
+        lats: np.ndarray,
+        lons: np.ndarray,
+        name: str = "weights",
+        attrs: dict | None = {"description": "weights", "units": "1"},
     ) -> xr.DataArray:
         """
         Convert expanded W into a xarray DataArray instance
@@ -161,16 +161,20 @@ class LassoWeights():
         xx = xx.flatten().astype(np.float32)
         yy = yy.flatten().astype(np.float32)
         # yyxx = np.column_stack([yy, xx])
-        w_dim = xr.Coordinates({
-            "row": np.arange(self.W.shape[0], dtype=np.uint32),
-            "col": np.arange(self.W.shape[0], dtype=np.uint32),
-        })
-        w_dim.update({
-            "row_lat": ("row", yy),
-            "col_lat": ("col", yy),
-            "row_lon": ("row", xx),
-            "col_lon": ("col", xx),
-        })
+        w_dim = xr.Coordinates(
+            {
+                "row": np.arange(self.W.shape[0], dtype=np.uint32),
+                "col": np.arange(self.W.shape[0], dtype=np.uint32),
+            }
+        )
+        w_dim.update(
+            {
+                "row_lat": ("row", yy),
+                "col_lat": ("col", yy),
+                "row_lon": ("row", xx),
+                "col_lon": ("col", xx),
+            }
+        )
         da = xr.DataArray(
             data=self.W.toarray(),
             coords=w_dim,
@@ -180,7 +184,7 @@ class LassoWeights():
         return da
 
 
-class LassoError():
+class LassoError:
     """
     Class to post process Lasso regression estimate residues
     e.g. the `self.residues` from class LassoEstimate_AR1
@@ -271,7 +275,7 @@ class LassoError():
         .. math::
            E = R @ R^{T} / (T^{*} - dof_adj)
         """
-        print('Computing error covariance')
+        print("Computing error covariance")
         dof = self.t - self.dof_adj
         print(f"{dof = }")
         print(f"{self.t = }; {self.dof_adj = }")
@@ -296,13 +300,11 @@ class LassoError():
         if fillvalue is None:
             fillvalue = 0.36
         #
-        print(f'Expanding R, filling 0 diagonals with {fillvalue}.')
-        self.R = (
-            cov_diagonal.restore_diag_only_rows(
-                self.R,
-                self.D,
-                diag_fillvalue=fillvalue,
-            )
+        print(f"Expanding R, filling 0 diagonals with {fillvalue}.")
+        self.R = cov_diagonal.restore_diag_only_rows(
+            self.R,
+            self.D,
+            diag_fillvalue=fillvalue,
         )
         # self.R = self.D.T @ self.R @ self.D
         # if fillvalue is not None:
@@ -313,11 +315,11 @@ class LassoError():
         self.expanded = True
 
     def to_xarray_da(
-            self,
-            lats: np.ndarray,
-            lons: np.ndarray,
-            name: str = "error_covariance",
-            attrs: dict | None = None,
+        self,
+        lats: np.ndarray,
+        lons: np.ndarray,
+        name: str = "error_covariance",
+        attrs: dict | None = None,
     ):
         """
         Convert estimated error covariance into a xarray DataArray instance
@@ -354,16 +356,20 @@ class LassoError():
         xx, yy = np.meshgrid(lons, lats)
         xx = xx.flatten().astype(np.float32)
         yy = yy.flatten().astype(np.float32)
-        r_dim = xr.Coordinates({
-            "row": np.arange(self.R.shape[0], dtype=np.uint32),
-            "col": np.arange(self.R.shape[0], dtype=np.uint32),
-        })
-        r_dim.update({
-            "row_lat": ("row", yy),
-            "col_lat": ("col", yy),
-            "row_lon": ("row", xx),
-            "col_lon": ("col", xx),
-        })
+        r_dim = xr.Coordinates(
+            {
+                "row": np.arange(self.R.shape[0], dtype=np.uint32),
+                "col": np.arange(self.R.shape[0], dtype=np.uint32),
+            }
+        )
+        r_dim.update(
+            {
+                "row_lat": ("row", yy),
+                "col_lat": ("col", yy),
+                "row_lon": ("row", xx),
+                "col_lon": ("col", xx),
+            }
+        )
         da = xr.DataArray(
             data=self.R,
             coords=r_dim,
