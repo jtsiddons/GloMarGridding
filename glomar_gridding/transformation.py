@@ -1,4 +1,4 @@
-"""Normality transformation of variables"""
+"""Transformation of variables including to approximately normal"""
 
 import numpy as np
 from scipy import special
@@ -10,8 +10,8 @@ def weibull_to_normality(
     use_kp11: bool = False,
 ):
     r"""
-    Box Cox transform to make Weibull-distributed variable near normal.
-    This is usually used for wind speeds.
+    Box Cox transform to make Weibull-distributed variable to near normal.
+    This includes wind speeds, which is often modelled with Weibull.
     The transformation lambda parameter depends on the shape parameter.
 
     Reference: https://doi.org/10.2307/2287172
@@ -35,7 +35,7 @@ def weibull_to_normality(
     Parameters
     ----------
     x: numpy.ndarray
-        Variable that needs standardisation
+        Variable that needs transformation
     c: float
         Weibull shape parameter
     use_kp11: bool
