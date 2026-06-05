@@ -115,7 +115,7 @@ class Autoregressive1ForecastUncorr:
         else:
             self.clim_covar = clim_covar
         #
-        # Names of methods to compute prrediction
+        # Names of methods to compute prediction
         self.compute_forecast = self.compute_forecast_local
         self.predict = self.compute_forecast_local  # sklearn standard
         #
@@ -227,10 +227,10 @@ class Autoregressive1ForecastVector:
     Weights can be provided. It can be computed from non-lagged and
     lag-1 covariances, using classmethod `from_autocov`.
 
-    Latter is possibly unstable. Typical spatial unlagged covariances
+    Latter is possibly unstable. Typical spatial 0-lag covariances
     are computed using variogram techniques, and they may not
     work with lag-1 and there is no sure way to ensure
-    <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable. GlomarGridding has no
+    <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable. GloMarGridding has no
     functionality to compute lagged autocovariances.
 
     Autoregressive1ForecastUncorr is a special case of this class with
@@ -239,7 +239,7 @@ class Autoregressive1ForecastVector:
     Weights are only stable if its spectral radius is less than 1. Otherwise
     weights violate weak temporal stationarity assumption.
 
-    Instead usually weights are estimated seperately using regression taking
+    Instead usually weights are estimated separately using regression taking
     advantage of seemingly (un)related regression (SUR) method with additional
     use of regularization (like Lasso) to deal with weight stability,
     multicollinearity, and insufficient sample sizes/too many covariates.
@@ -271,9 +271,9 @@ class Autoregressive1ForecastVector:
     that
     sigma_sq_eps + sigma_sq_analysis == spatiotemporal Kriging for t+1
 
-    In pracitice, `analysis` will be computed recursively using Kalman filter.
+    In practice, `analysis` will be computed recursively using Kalman filter.
 
-    (2) Uncertainity of multivariate autoregression:
+    (2) Uncertainty of multivariate autoregression:
     https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression
 
     Parameters
@@ -390,8 +390,8 @@ class Autoregressive1ForecastVector:
         Both <x(t), x(t)> and <x(t), x(t-1)> are symmetric
 
         This approach is often unstable as lag1_autocov and clim_covar
-        are estimated seperately, and there is no gurantee that the computed
-        weights statisfy weak stationary requirement that the spectral radius
+        are estimated separately, and there is no guarantee that the computed
+        weights satisfy weak stationary requirement that the spectral radius
         of weights have to be less than 1.
 
         Parameters
@@ -625,4 +625,4 @@ class Autoregressive1ForecastVector:
                 target_variance_fraction=target_variance_fraction,
             )
         else:
-            print("Error covariance clipping is unneccessary.")
+            print("Error covariance clipping is unnecessary.")

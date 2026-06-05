@@ -176,7 +176,7 @@ class KalmanOut:
         errcov_forecast & errcov_obs
 
         This uses a form that requires only ONE matrix inverses
-        and reciporcals (good!) and is more commonly seen in
+        and reciprocals (good!) and is more commonly seen in
         Kalman Filter guides (including the form uses in Wikipedia)
         https://en.wikipedia.org/wiki/Kalman_filter
         Probably everyone hate matrix inverses... (for good reason)

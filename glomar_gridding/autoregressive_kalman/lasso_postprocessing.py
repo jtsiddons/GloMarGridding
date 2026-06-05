@@ -4,8 +4,8 @@ putting outputs in usable form
 
 (Somewhat) similar to lasso_estimate:
 
-N - number of gridpoints
-M - number of valid gridpoints (N >= M)
+N - number of grid points
+M - number of valid grid points (N >= M)
 T* - length of cross-validated errors at each grid point
 """
 
@@ -208,7 +208,7 @@ class LassoError:
 
     Convention for the residues matrix:
     rows - residues at each point (axis = 0)
-    number of columns - number of time (in/outsample) residues
+    number of columns - number of time (in/out-of sample) residues
     per row (axis = 1)
 
     Parameters

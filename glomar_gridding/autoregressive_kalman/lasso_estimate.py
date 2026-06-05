@@ -1,6 +1,6 @@
 """
 Direct estimation of weights used in vectorized autoregressive model
-using gridpoint-by-gridpoint fitting of Lasso regression
+using grid point-by-grid point fitting of Lasso regression
 (aka seemingly (un)related regression)
 
 Outputs can be organised to be used for class `Autoregressive1ForecastVector`
@@ -9,10 +9,10 @@ in `forecast_linear_ar1`
 Uses sklearn
 
 Default lasso_lambda_hyperparm is estimated by tuning 1 deg x 1 deg ERA5 MAT
-and ESA SST on gridpoints in the tropical Indian Ocean, Carribean, and NINO3.4.
+and ESA SST on grid points in the tropical Indian Ocean, Caribbean, and NINO3.4.
 
 For the purpose of docstring
-N - number of gridpoints
+N - number of grid points
 T - length of time series at each grid point
 """
 
@@ -29,10 +29,10 @@ LassoSelection = Literal["cyclic", "random"]
 class LassoEstimate_AR1:
     """
     A method to estimate of weights for Autoregressive1ForecastVector
-    using regularized line-by-line / gridpoint-by-gridpoint (aka seemingly
+    using regularized line-by-line / grid point-by-grid point (aka seemingly
     (un)related regression SUR) Lasso regression.
 
-    This method is signficantly slower than using compute_autocorrelation
+    This method is significantly slower than using compute_autocorrelation
     but handle spatial autocorrelation more properly.
 
     This method is not directly compatible with covariance estimated
@@ -51,7 +51,7 @@ class LassoEstimate_AR1:
         Different columns for different time
         Different rows for different grid points/locations
         dtype `float`
-        shape `(T, N)` following netCDF/Grib convention
+        shape `(T, N)` following netCDF/GRIB convention
     standardise: bool
         Should data_sample be standardised automatically
         (i.e. A* = A - E(A) / sigma(A) )
@@ -59,7 +59,7 @@ class LassoEstimate_AR1:
         The lambda hyperparameter for Lasso regression
         It is called `alpha` in sklearn, but it is more common
         to call in lambda in the literature.
-        Tuning of alpha/lambda is usually done by orders of magitude
+        Tuning of alpha/lambda is usually done by orders of magnitude
         0.0001, 0.001, 0.01, 0.1, 1... etc (default of sklearn is 1)
     lasso_selection: str
         `selection` in sklearn lasso class, see sklearn documentation
@@ -98,7 +98,7 @@ class LassoEstimate_AR1:
                 data_sample
             )
         else:
-            advisory = "If some values along XY are systemtically small, "
+            advisory = "If some values along XY are systematically small, "
             advisory += "this may distort Lasso estimates, "
             advisory += "standardisation is recommended."
             print(advisory)
@@ -235,7 +235,7 @@ def check_shape(X, dim: int = 2):
     """
     Check X to be 2D
     This should follow the convention that
-    Each column represent different xy gridpoints
+    Each column represent different xy grid points
     Each row represents another time
     Proper netCDF files should have the correct order of the dimensions:
     (E), T, (Z), Y, X
@@ -265,7 +265,7 @@ def standardise_data(
     axis: int
         The axis that the standardisation is applied.
         axis=0 follows the convention that each column
-        is a seperate time series, which is the
+        is a separate time series, which is the
         standard for netCDF and GRIB files (i.e. time is usually
         the 1st dimension unless there is an ensemble dimension;
         spatial dimensions follow time dimension, aka the

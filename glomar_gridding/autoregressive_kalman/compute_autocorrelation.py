@@ -5,11 +5,11 @@ Estimation of lag-1 autocorrelation and other metrics
 for a single time series
 
 Outputs can be organised to be used `Autoregressive1ForecastUncorr`
-in `forecast_linear_ar1`. It is not the most sophsticated and fancy
+in `forecast_linear_ar1`. It is not the most sophisticated and fancy
 computation (in a matter of fact very elementary).
 
 Uses numpy.vectorize to extend the computation to multiple time series,
-but each time series are treated seperately (i.e. no correlation
+but each time series are treated separately (i.e. no correlation
 between time series). Function applied along each row.
 
 get_anomalies: n -> n:
@@ -34,7 +34,7 @@ def get_anomalies(vec: np.ndarray):
     Parameters
     ----------
     vec: numpy.ndarray
-        Array that needs be 0-meaned
+        Array that needs be 0-averaged
 
     Returns
     -------
@@ -47,7 +47,7 @@ def get_anomalies(vec: np.ndarray):
 
 
 # get_anomalies, operated over many time series
-# for a matrix with m rows and n colums
+# for a matrix with m rows and n columns
 # gives an answer of m rows and n columns;
 # anomalies computed along each row
 get_anomalies_vectorize = np.vectorize(
@@ -81,7 +81,7 @@ def get_obs_variance(vec: np.ndarray, dof: int = 1):
 
 
 # obs_variance, operated over many time series
-# for a matrix with m rows and n colums
+# for a matrix with m rows and n columns
 # gives an answer of m scalars
 
 
@@ -130,7 +130,7 @@ def get_auto_corr(
     print(f"Number of valid values = {np.sum(~np.isnan(anomalies))}")
     # See Wilks book Time Domain II chapter Eq 8.22
     # With reasonably large sample size 30 year of daily data,
-    # the dof correction is neglieble
+    # the dof correction is negligible
     # For lagged correlation, the degrees of freedom is
     # Sample_Size - Lag (aka n) - 1 (Bessel Correction)
     ddof_correction = n + 1
@@ -147,14 +147,14 @@ def get_auto_corr(
     var_t_plus_n = cov[1, 1]  # Variance of n: ...
     autocovariance_n = cov[1, 0]  # Observed autocovariance
     ar_n = autocovariance_n / np.sqrt(var_t_eq_0 * var_t_plus_n)  # autocorr
-    sigma2_eps = (1 - ar_n**2) * variance  # Uncertainity**2 of the AR model
+    sigma2_eps = (1 - ar_n**2) * variance  # Uncertainty**2 of the AR model
     return ar_n, autocovariance_n, variance, sigma2_eps
 
 
 # get_auto_corr_1, operated over many time series
-# behaves similarily to obs_variance_vectorize but give
+# behaves similarly to obs_variance_vectorize but give
 # more scalars (aka for a m-row n-column array, it gives
-# 4 different m-lengthed vectors
+# 4 different length-m vectors
 
 
 get_auto_corr_1_vectorize = np.vectorize(
