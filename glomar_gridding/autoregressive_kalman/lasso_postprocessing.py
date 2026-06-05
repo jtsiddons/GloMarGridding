@@ -310,7 +310,7 @@ class LassoError:
         """
         if self.D is None:
             raise ValueError("No D provided to class.")
-        if not hasattr(self, 'R'):
+        if not hasattr(self, "R"):
             err_msg = "Use method estimate_errcov or kwarg autoprocess "
             err_msg += "to compute errcov first."
             raise AttributeError(err_msg)
@@ -358,7 +358,7 @@ class LassoError:
         da: xarray.DataArray
             errcov as a DataArray that has metadata and written easily to netCDF
         """
-        if not hasattr(self, 'R'):
+        if not hasattr(self, "R"):
             err_msg = "Use method estimate_errcov or kwarg autoprocess "
             err_msg += "to compute errcov first."
             raise AttributeError(err_msg)
