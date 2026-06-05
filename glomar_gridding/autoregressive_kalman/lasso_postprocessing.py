@@ -43,6 +43,13 @@ class LassoWeights:
     dtype: type
         numpy or python native float types that are used
         for xarray to store the outputs
+    fillvalue: float
+        The diagonal fill value of the weights
+        Default 0.6
+    auto_process: bool
+        Allow the normal workflow of this class to be carried out
+        automatically. That is to `expand_W` automatically.
+        default `True`
     """
 
     def __init__(
@@ -50,9 +57,12 @@ class LassoWeights:
         W: np.ndarray | sp.sparse.sparray,
         D: np.ndarray | sp.sparse.sparray,
         dtype: type = np.float32,
+        fillvalue: float = 0.6,
+        auto_process: bool = True,
     ):
         """__init__ for LassoWeights"""
         self.type = dtype
+        self.fillvalue = fillvalue
         if sp.sparse.issparse(W):
             self.W = W
         elif isinstance(W, np.ndarray):
@@ -66,14 +76,16 @@ class LassoWeights:
         else:
             raise ValueError(f"Unknown object {type(D)}.")
         self.expanded = False
+        if auto_process:
+            self.expand_W()
 
-    def expand_W(self, fillvalue: float | None = 0.6):  # noqa: N802
+    def expand_W(self):  # noqa: N802
         """
         Expand W to include the full domain
         A fill value can be used to fill the diagonal of
         the originally fully empty rows.
-        Note for VAR(1): 1 e-folding for t+2 implies a local ~0.6
-        in the diagonal
+        Note for VAR(1): 1 e-folding for t+2 implies a ~0.6
+        in the diagonal which is the default of __init__
         """
         if self.expanded:
             print("W is already expanded by D; no action taken.")
@@ -85,26 +97,25 @@ class LassoWeights:
         # is, in contrast, a dense matrix.
         print("Expanding W into full matrix")
         self.W = self.D.T @ self.W @ self.D
-        if fillvalue is not None:
-            # See:
-            # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-            print(f"Filling diagonals of fully empty rows with {fillvalue}")
-            empty_rows = self.W.getnnz(1) == 0
-            where_empty = np.where(empty_rows)[0]
-            n_empty_rows = np.sum(empty_rows)
-            W_coo = self.W.tocoo()
-            W_dat = W_coo.data.copy()
-            W_row = W_coo.coords[0].copy()
-            W_col = W_coo.coords[1].copy()
-            del W_coo
-            W_dat = np.append(W_dat, np.array([fillvalue] * n_empty_rows))
-            W_row = np.append(W_row, where_empty)
-            W_col = np.append(W_col, where_empty)
-            self.W = sp.sparse.csr_matrix(
-                (W_dat, (W_row, W_col)),
-                shape=self.W.shape,
-                dtype=self.type,
-            )
+        # See:
+        # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
+        print(f"Filling diagonals of fully empty rows with {self.fillvalue}")
+        empty_rows = self.W.getnnz(1) == 0
+        where_empty = np.where(empty_rows)[0]
+        n_empty_rows = np.sum(empty_rows)
+        W_coo = self.W.tocoo()
+        W_dat = W_coo.data.copy()
+        W_row = W_coo.coords[0].copy()
+        W_col = W_coo.coords[1].copy()
+        del W_coo
+        W_dat = np.append(W_dat, np.array([self.fillvalue] * n_empty_rows))
+        W_row = np.append(W_row, where_empty)
+        W_col = np.append(W_col, where_empty)
+        self.W = sp.sparse.csr_matrix(
+            (W_dat, (W_row, W_col)),
+            shape=self.W.shape,
+            dtype=self.type,
+        )
         self.expanded = True
 
     def shrink_W(self):  # noqa: N802
@@ -160,7 +171,6 @@ class LassoWeights:
         xx, yy = np.meshgrid(lons, lats)
         xx = xx.flatten().astype(np.float32)
         yy = yy.flatten().astype(np.float32)
-        # yyxx = np.column_stack([yy, xx])
         w_dim = xr.Coordinates(
             {
                 "row": np.arange(self.W.shape[0], dtype=np.uint32),
@@ -242,6 +252,13 @@ class LassoError:
     dtype: type
         numpy or python native float types that are used
         for xarray to store the outputs
+    fillvalue: float
+        The diagonal fill value of the error covariance
+        Default 0.36
+    auto_process: bool
+        Allow the normal workflow of this class to be carried out
+        automatically. That is to `estimate_errcov` and then
+        `expand_R` if `D` is provided; default `True`
     """
 
     def __init__(
@@ -250,23 +267,26 @@ class LassoError:
         dof_adj: int | float = 0,
         D: np.ndarray | None = None,
         dtype: type = np.float32,
+        fillvalue: float = 0.36,
+        auto_process: bool = True,
     ):
         """__init__ for LassoError"""
         self.type = dtype
         self.residues_matrix: np.ndarray = residues_matrix
+        self.fillvalue = fillvalue
         if D is not None:
             self.D: sp.sparse.sparray = sp.sparse.csc_array(D, dtype=np.uint8)
         else:
             self.D = None
-        if dof_adj is not None:
-            self.dof_adj = dof_adj
-        else:
-            self.dof_adj = 0
+        self.dof_adj = dof_adj
         if self.dof_adj < 0:
             raise ValueError(f"dof_adj cannot be negative! {self.dof_adj = }")
         self.t = self.residues_matrix.shape[1]
-        self.errcov_computed = False
         self.expanded = False
+        if auto_process:
+            self.estimate_errcov()
+            if self.D is not None:
+                self.expand_R()
 
     def estimate_errcov(self):
         """
@@ -281,9 +301,8 @@ class LassoError:
         print(f"{self.t = }; {self.dof_adj = }")
         print(f"{dof = }")
         self.R = (self.residues_matrix @ self.residues_matrix.T) / dof
-        self.errcov_computed = True
 
-    def expand_R(self, fillvalue: float = 0.36):  # noqa: N802
+    def expand_R(self):  # noqa: N802
         """
         Expand estimate errorcov to include the full domain
         A fill value can be used to fill the diagonal of
@@ -291,27 +310,20 @@ class LassoError:
         """
         if self.D is None:
             raise ValueError("No D provided to class.")
-        if not self.errcov_computed:
-            err_msg = "Use method estimate_errcov to compute errcov first."
-            raise ValueError(err_msg)
+        if not hasattr(self, 'R'):
+            err_msg = "Use method estimate_errcov or kwarg autoprocess "
+            err_msg += "to compute errcov first."
+            raise AttributeError(err_msg)
         if self.expanded:
             print("R is already expanded by D; no action taken.")
             return
-        if fillvalue is None:
-            fillvalue = 0.36
         #
-        print(f"Expanding R, filling 0 diagonals with {fillvalue}.")
+        print(f"Expanding R, filling 0 diagonals with {self.fillvalue}.")
         self.R = cov_diagonal.restore_diag_only_rows(
             self.R,
             self.D,
-            diag_fillvalue=fillvalue,
+            diag_fillvalue=self.fillvalue,
         )
-        # self.R = self.D.T @ self.R @ self.D
-        # if fillvalue is not None:
-        #     print(f'Filling diagonals of fully empty rows with {fillvalue}')
-        #     diag_R = np.array(np.diag(self.R))
-        #     diag_R[diag_R == 0] = fillvalue
-        #     np.fill_diagonal(self.R, diag_R)
         self.expanded = True
 
     def to_xarray_da(
@@ -346,6 +358,10 @@ class LassoError:
         da: xarray.DataArray
             errcov as a DataArray that has metadata and written easily to netCDF
         """
+        if not hasattr(self, 'R'):
+            err_msg = "Use method estimate_errcov or kwarg autoprocess "
+            err_msg += "to compute errcov first."
+            raise AttributeError(err_msg)
         if not self.expanded:
             self.expand_R()
         if attrs is None:
