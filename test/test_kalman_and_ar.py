@@ -2,7 +2,9 @@
 Kalman filter test:
 - Based on examples: https://kalmanfilter.net/
 
-AR1: uses manually checkable result + modified result from example 8.3 in Wilks 2006:
+AR1
+Uses manually checkable result
+plus modified result from example 8.3 in Wilks 2006:
 - 3 points with Lag1-autocorrelation of 0.7, 0.6, 0.67
 - climatological value at each point 1.0, -1.0, 20.23
 - climatological sigma at each point 2.0, 3.0, 8.961 (4.0, 9.0, 80.292 variance)
@@ -31,7 +33,7 @@ from glomar_gridding.autoregressive_kalman import (
 )
 
 
-def test_kalman():
+def test_kalman() -> None:
     """Iteration 1 in https://kalmanfilter.net/"""
     #
     # Approximate (rounded) correct answers
@@ -91,7 +93,7 @@ def test_kalman():
     )
 
 
-def test_ar():
+def test_ar() -> None:
     """
     AR1: uses manually checkable result + modified example 8.3 in Wilks 2006:
     - 3 points with Lag1-autocorr        0.7,  0.6,  0.67
@@ -151,7 +153,7 @@ def test_ar():
         variance,
     )
     t3.compute_forecast_local()
-    # Note: correct_var is already rounded..., so need to round the other bit too
+    # Note: correct_var is already rounded, so need to round the other bit too
     correct_var_new = correct_var + np.round(
         np.diag(phi) @ errcov_analysis_non_zero @ np.diag(phi), 2
     )
@@ -159,7 +161,7 @@ def test_ar():
     assert np.all(np.isclose(np.round(t3.errcov, 2), correct_var_new))
 
 
-def test_var():
+def test_var() -> None:
     """
     Loosely based on example 64 in (weights are changed):
     https://faculty.washington.edu/ezivot/econ584/notes/varModels.pdf
@@ -193,4 +195,4 @@ def test_var():
     correct_errcov = clim_covar - W @ clim_covar @ W.T
     assert np.all(t1.forecast == correct_ans)
     assert np.all(np.isclose((t1.errcov - t1.errcov.T), np.zeros((2, 2))))
-    assert np.all(correct_errcov, t1.errcov)
+    assert np.all(correct_errcov == t1.errcov)
