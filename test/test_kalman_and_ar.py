@@ -1,6 +1,6 @@
 """
 Kalman filter test:
-- Based on examples: https://kalmanfilter.net/ 
+- Based on examples: https://kalmanfilter.net/
 
 AR1: uses manually checkable result + modified result from example 8.3 in Wilks 2006:
 - 3 points with Lag1-autocorrelation of 0.7, 0.6, 0.67
@@ -35,43 +35,61 @@ def test_kalman():
     """Iteration 1 in https://kalmanfilter.net/"""
     #
     # Approximate (rounded) correct answers
-    correct_kalman_gain = np.array([
-        [0.4048, 0.6377],
-        [0.0399, 0.3144],
-    ])  # K(1,1)
+    correct_kalman_gain = np.array(
+        [
+            [0.4048, 0.6377],
+            [0.0399, 0.3144],
+        ]
+    )  # K(1,1)
     correct_z11 = np.array([11009.37, 201.43])  # x_hat(1,1)
-    correct_r11 = np.array([
-        [14.57, 1.43],
-        [1.43, 0.71],
-    ])  # P(1,1)
+    correct_r11 = np.array(
+        [
+            [14.57, 1.43],
+            [1.43, 0.71],
+        ]
+    )  # P(1,1)
     #
     z0 = np.array([11000.0, 200.0])  # x_hat(1, 0)
-    r0 = np.array([
-        [28.5, 3.75],
-        [3.75, 1.25],
-    ])  # P(1,0)
+    r0 = np.array(
+        [
+            [28.5, 3.75],
+            [3.75, 1.25],
+        ]
+    )  # P(1,0)
     z1 = np.array([11020.0, 202.0])  # z(1)
     r1 = np.diag([36.0, 2.25])  # R(1)
     #
     # Compute
     kalman_test = inv_sigma_wgts.KalmanOut(
-        z0, z1, r0, r1, None, use_diag_only=False,
+        z0,
+        z1,
+        r0,
+        r1,
+        None,
+        use_diag_only=False,
     )
     kalman_test.compute_outputs()
     #
     # Assert check
-    assert np.all(np.isclose(
-        np.round(kalman_test.kalman_gain_from_new_obs, 4),
-        correct_kalman_gain,
-    ))
-    assert np.all(np.isclose(
-        np.round(kalman_test.wgt_mean, 2),
-        correct_z11,
-    ))
-    assert np.all(np.isclose(
-        np.round(kalman_test.errcov, 2),
-        correct_r11,
-    ))
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.kalman_gain_from_new_obs, 4),
+            correct_kalman_gain,
+        )
+    )
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.wgt_mean, 2),
+            correct_z11,
+        )
+    )
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.errcov, 2),
+            correct_r11,
+        )
+    )
+
 
 def test_ar():
     """
@@ -134,9 +152,8 @@ def test_ar():
     )
     t3.compute_forecast_local()
     # Note: correct_var is already rounded..., so need to round the other bit too
-    correct_var_new = (
-        correct_var +
-        np.round(np.diag(phi) @ errcov_analysis_non_zero @ np.diag(phi), 2)
+    correct_var_new = correct_var + np.round(
+        np.diag(phi) @ errcov_analysis_non_zero @ np.diag(phi), 2
     )
     assert np.all(np.isclose(np.round(t3.forecast, 2), correct_z01))
     assert np.all(np.isclose(np.round(t3.errcov, 2), correct_var_new))
@@ -151,10 +168,12 @@ def test_var():
      1.3 + 0.0 x (-1.0 - (-0.7)) + 0.7 x (1.0 - 1.3) =  1.09
     """
     climatology = np.array([-0.7, 1.3])
-    W = np.array([
-        [0.7, 0.2],
-        [0.0, 0.7],
-    ])
+    W = np.array(
+        [
+            [0.7, 0.2],
+            [0.0, 0.7],
+        ]
+    )
     W = sp.sparse.csc_array(W)
     z0 = np.array([-1.0, 1.0])
     clim_covar = np.diag([0.6, 0.6])
@@ -168,7 +187,8 @@ def test_var():
     )
     t1.compute_forecast_vector(
         check_wgt_stability=False,
-        check_errcov_psd=False,)
+        check_errcov_psd=False,
+    )
     correct_ans = np.array([-0.97, 1.09])
     correct_errcov = clim_covar - W @ clim_covar @ W.T
     assert np.all(t1.forecast == correct_ans)
