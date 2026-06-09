@@ -52,7 +52,7 @@ def remove_diag_only_rows(
     n_validrows = int(np.sum(has_off_diagonal_elements))
     print(f"{n_validrows = }")
     if n_validrows < 1:
-        raise ValueError(f"{n_validrows} must be at >= 1")
+        raise ValueError("cov is diagonal; no non-diagonal rows to work with")
     #
     D = sp.sparse.csr_matrix(
         np.eye(n_rows, dtype=np.uint8)[has_off_diagonal_elements, :]
@@ -177,7 +177,7 @@ def diag_and_nondiag_rows_subsampler(
     print(f"{n_validrows = }")
     print(f"{n_diag_only = }")
     if n_validrows < 1:
-        raise ValueError(f"{n_validrows} must be at >= 1")
+        raise ValueError("cov is diagonal; no non-diagonal rows to work with")
     #
     d_off_diagonal = sp.sparse.csr_matrix(
         np.eye(n_rows, dtype=np.uint8)[has_off_diagonal_elements, :]
