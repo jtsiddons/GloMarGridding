@@ -141,12 +141,10 @@ class LassoEstimate_AR1:
             self.X = self.X_withheld = self.sample[:-1, :]
             self.all_y = self.all_y_withheld = self.sample[1:, :]
 
-    def fit(self):
-        """Fit the Lasso regression"""
-        self.line_by_line_sur_lasso()
-
     def line_by_line_sur_lasso(self):
         """
+        Fit the Lasso regression
+
         The complete fitting procedure following line-by-line estimate
         of the regression coefficients
         based on seemingly (un)related regression approach
@@ -223,6 +221,9 @@ class LassoEstimate_AR1:
             else:
                 self.residues[xy, :] = insample_residuals
         print("Task complete")
+
+    # Alias to follow the convention used in scikit-learn & statsmodels
+    fit = line_by_line_sur_lasso
 
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
