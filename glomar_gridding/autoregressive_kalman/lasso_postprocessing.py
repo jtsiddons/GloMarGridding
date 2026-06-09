@@ -44,7 +44,7 @@ class LassoWeights:
     dtype: type
         numpy or python native float types that are used
         for xarray to store the outputs
-    fillvalue: float
+    fill_value: float
         The diagonal fill value of the weights
         Default 0.6
     auto_process: bool
@@ -58,12 +58,12 @@ class LassoWeights:
         W: np.ndarray | sp.sparse.sparray,
         D: np.ndarray | sp.sparse.sparray,
         dtype: type = np.float32,
-        fillvalue: float = 0.6,
+        fill_value: float = 0.6,
         auto_process: bool = True,
     ):
         """__init__ for LassoWeights"""
         self.type = dtype
-        self.fillvalue = fillvalue
+        self.fill_value = fill_value
         if sp.sparse.issparse(W):
             self.W = W
         elif isinstance(W, np.ndarray):
@@ -100,7 +100,7 @@ class LassoWeights:
         self.W = self.D.T @ self.W @ self.D
         # See:
         # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-        logging.debug(f"Filling diagonals of empty rows with {self.fillvalue}")
+        logging.debug(f"Filling diagonals of empty rows with {self.fill_value}")
         empty_rows = self.W.getnnz(1) == 0
         where_empty = np.where(empty_rows)[0]
         n_empty_rows = np.sum(empty_rows)
@@ -109,7 +109,7 @@ class LassoWeights:
         W_row = W_coo.coords[0].copy()
         W_col = W_coo.coords[1].copy()
         del W_coo
-        W_dat = np.append(W_dat, np.array([self.fillvalue] * n_empty_rows))
+        W_dat = np.append(W_dat, np.array([self.fill_value] * n_empty_rows))
         W_row = np.append(W_row, where_empty)
         W_col = np.append(W_col, where_empty)
         self.W = sp.sparse.csr_matrix(
@@ -122,7 +122,7 @@ class LassoWeights:
     def shrink_W(self):  # noqa: N802
         """
         If W is expanded, shrink back to its original shape
-        fillvalues are removed by row-column subsampling
+        fill values are removed by row-column subsampling
         """
         if not self.expanded:
             logging.debug("W is already D-subsampled; no action taken.")
@@ -252,7 +252,7 @@ class LassoError:
     dtype: type
         numpy or python native float types that are used
         for xarray to store the outputs
-    fillvalue: float
+    fill_value: float
         The diagonal fill value of the error covariance
         Default 0.36
     auto_process: bool
@@ -267,13 +267,13 @@ class LassoError:
         dof_adj: int | float = 0,
         D: np.ndarray | None = None,
         dtype: type = np.float32,
-        fillvalue: float = 0.36,
+        fill_value: float = 0.36,
         auto_process: bool = True,
     ):
         """__init__ for LassoError"""
         self.type = dtype
         self.residues_matrix: np.ndarray = residues_matrix
-        self.fillvalue = fillvalue
+        self.fill_value = fill_value
         if D is not None:
             self.D: sp.sparse.sparray = sp.sparse.csc_array(D, dtype=np.uint8)
         else:
@@ -319,12 +319,12 @@ class LassoError:
             return
         #
         logging.debug(
-            f"Expanding R, filling 0 diagonals with {self.fillvalue}."
+            f"Expanding R, filling 0 diagonals with {self.fill_value}."
         )
         self.R = cov_diagonal.restore_diag_only_rows(
             self.R,
             self.D,
-            diag_fillvalue=self.fillvalue,
+            diag_fill_value=self.fill_value,
         )
         self.expanded = True
 

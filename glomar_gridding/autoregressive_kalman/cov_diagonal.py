@@ -71,12 +71,12 @@ def remove_diag_only_rows(
 def restore_diag_only_rows(
     trimmed_cov_arr: np.ndarray,
     D: np.ndarray | sp.sparse.sparray,
-    diag_fillvalue: float = 1.2,
+    diag_fill_value: float = 1.2,
 ) -> np.ndarray:
     """
     Re-expanding subsampled covariance matrix prior to
     the removal of diagonal-only elements.
-    Diagonal elements are filled with diag_fillvalue.
+    Diagonal elements are filled with diag_fill_value.
 
     Parameters
     ----------
@@ -86,11 +86,11 @@ def restore_diag_only_rows(
         The subsampling array that did the original purge
         (see remove_diag_only_rows)
         There should only be a single 1 or True per row (axis=0)
-    diag_fillvalue: float
-        The diagonal fillvalue for restored rows and columns
+    diag_fill_value: float
+        The diagonal fill value for restored rows and columns
     atol: float
         Instead of checking for exact 0s, this is the threshold
-        to decide diag_fillvalue replacement will occur
+        to decide diag_fill_value replacement will occur
 
     Returns
     -------
@@ -111,7 +111,7 @@ def restore_diag_only_rows(
     if np.sum(has_off_diag) != trimmed_cov_arr.shape[0]:
         err_msg = "D shape is inconsistent with shape of trimmed_cov_arr."
         raise ValueError(err_msg)
-    new_cov_arr = np.eye(n) * diag_fillvalue
+    new_cov_arr = np.eye(n) * diag_fill_value
     fill_inds = np.logical_and.outer(has_off_diag, has_off_diag)
     np.place(new_cov_arr, fill_inds, trimmed_cov_arr)
     #

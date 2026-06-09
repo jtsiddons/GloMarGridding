@@ -423,27 +423,27 @@ class KalmanOutUncorrCorrSplit:
         self.errcov = cd.restore_diag_only_rows(
             np.diag(self.uncorr_part.errcov),
             self.d_diagonal_only,
-            diag_fillvalue=0.0,
+            diag_fill_value=0.0,
         ) + cd.restore_diag_only_rows(
-            self.corr_part.errcov, self.d_off_diagonal, diag_fillvalue=0.0
+            self.corr_part.errcov, self.d_off_diagonal, diag_fill_value=0.0
         )
         #
         self.kalman_gain_from_new_obs = cd.restore_diag_only_rows(
             np.diag(self.uncorr_part.kalman_gain_from_new_obs),
             self.d_diagonal_only,
-            diag_fillvalue=0.0,
+            diag_fill_value=0.0,
         ) + cd.restore_diag_only_rows(
             self.corr_part.kalman_gain_from_new_obs,
             self.d_off_diagonal,
-            diag_fillvalue=0.0,
+            diag_fill_value=0.0,
         )
         #
         self.wgts_from_ar_forecast = cd.restore_diag_only_rows(
             np.diag(self.uncorr_part.wgts_from_ar_forecast),
             self.d_diagonal_only,
-            diag_fillvalue=0.0,
+            diag_fill_value=0.0,
         ) + cd.restore_diag_only_rows(
             self.corr_part.wgts_from_ar_forecast,
             self.d_off_diagonal,
-            diag_fillvalue=0.0,
+            diag_fill_value=0.0,
         )
