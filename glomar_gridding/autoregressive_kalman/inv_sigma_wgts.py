@@ -5,10 +5,7 @@ from numpy import linalg
 import scipy as sp
 
 from glomar_gridding.autoregressive_kalman import cov_diagonal as cd
-from glomar_gridding.autoregressive_kalman.util import (
-    check_sq_matrix,
-    check_1d,
-)
+from glomar_gridding.utils import check_sq_matrix, check_1d
 
 EFFECTIVELY_ZERO_VAR_DEFAULT = 1e-6
 

@@ -120,9 +120,8 @@ class LassoWeights:
 
     def shrink_W(self):  # noqa: N802
         """
-        If W is expanded, shrink back to its original shape,
-        fillvalues shall burn at stake,
-        No one expects the /dev/null Inquisition (diabolical laughter)!
+        If W is expanded, shrink back to its original shape
+        fillvalues are removed by row-column subsampling
         """
         if not self.expanded:
             print("W is already D-subsampled; no action taken.")

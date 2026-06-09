@@ -11,7 +11,7 @@ import scipy as sp
 import warnings
 
 from glomar_gridding.covariance_tools import explained_variance_clip
-from glomar_gridding.autoregressive_kalman.util import check_sq_matrix
+from glomar_gridding.utils import check_sq_matrix
 
 
 class Autoregressive1ForecastUncorr:

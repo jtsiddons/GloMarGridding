@@ -19,10 +19,11 @@ T - length of time series at each grid point
 import numpy as np
 import scipy as sp
 
-from sklearn import linear_model
+from sklearn.linear_model import Lasso
 from typing import Literal
 
-Lasso = linear_model.Lasso
+from glomar_gridding.utils import check_shape
+
 LassoSelection = Literal["cyclic", "random"]
 
 
@@ -231,20 +232,6 @@ class LassoEstimate_AR1:
             print("Coefficients have not been computed yet.")
 
 
-def check_shape(X, dim: int = 2):
-    """
-    Check X to be 2D
-    This should follow the convention that
-    Each column represent different xy grid points
-    Each row represents another time
-    Proper netCDF files should have the correct order of the dimensions:
-    (E), T, (Z), Y, X
-    So reshaping (T, Y, X) >> T, YX will be sufficient
-    """
-    if len(X.shape) != dim:
-        raise ValueError(f"Unexpected shape: {X.shape = } != {dim}")
-
-
 def standardise_data(
     X,
     normalise=True,
@@ -273,12 +260,17 @@ def standardise_data(
 
     Returns
     -------
-    ans : tuple
-        Tuple of (
-            standardised or zero-mean sample - shape `(N, M)`,
-            sample mean of X computed along axis - shape `(N,)`,
-            normalisation (if standardise, this is sigma) - shape `(N,)`,
-        )
+    X_standardised: numpy.ndarray
+        standardised or zero-mean sample
+        shape `(N, M)`
+    sample_mean: numpy.ndarray
+        sample mean of X computed along axis
+        shape `(N,)`,
+    X_std: numpy.ndarray
+        The normalisation for X_standardised
+        If standardise is True, this is a vector of standard deviations
+        Otherwise it a vector of 1s
+        shape `(N,)`
     """
     X_bar = np.mean(X, axis=axis)
     if normalise:
@@ -286,9 +278,8 @@ def standardise_data(
     else:
         X_std = np.ones_like(X_bar)
     X_standardised = (X - X_bar) / X_std
-    ans = (
+    return (
         X_standardised,
         X_bar,
         X_std,
     )
-    return ans

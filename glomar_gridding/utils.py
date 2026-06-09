@@ -791,3 +791,52 @@ def get_spatial_mean(
     invcov = ones.T @ np.linalg.inv(covx)
 
     return float(1 / (invcov @ ones) * (invcov @ grid_obs))
+
+
+def check_sq_matrix(arr: np.ndarray) -> bool:
+    """Check if arr is 2D and square"""
+    return len(arr.shape) == 2 and arr.shape[0] == arr.shape[1]
+
+
+def check_1d(arr: np.ndarray):
+    """
+    Check if arr is 1D (returns True), 2D square (returns False),
+    or something else
+    Exception raises if arr is neither 1D nor 2D square array
+    (aka something else)
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        An array to be checked if it is 1D, 2D or some other dimensions
+
+    Returns
+    -------
+    check: bool
+        True means 1D
+        False means 2D Square
+        Anything else throws an exception
+    """
+    if len(arr.shape) == 1:
+        return True
+    elif len(arr.shape) == 2:
+        if arr.shape[0] == arr.shape[1]:
+            return False
+        else:
+            raise ValueError("arr is 2D but not square")
+    else:
+        raise ValueError("arr is not 1 or 2D")
+
+
+def check_shape(X, dim: int = 2):
+    """
+    Check X to be 2D
+    This should follow the convention that
+    Each column represent different xy grid points
+    Each row represents another time
+    Proper netCDF files should have the correct order of the dimensions:
+    (E), T, (Z), Y, X
+    So reshaping (T, Y, X) >> T, YX will be sufficient
+    """
+    if len(X.shape) != dim:
+        raise ValueError(f"Unexpected shape: {X.shape = } != {dim}")
