@@ -68,7 +68,7 @@ class LassoWeights:
         elif isinstance(W, np.ndarray):
             self.W: sp.sparse.sparray = sp.sparse.csc_array(W, dtype=self.type)
         else:
-            raise ValueError(f"Unknown object {type(W)}.")
+            raise ValueError("W must be np.ndarray or sp.sparse.sparray")
         if sp.sparse.issparse(D):
             self.D = D
         elif isinstance(D, np.ndarray):
@@ -85,7 +85,7 @@ class LassoWeights:
         A fill value can be used to fill the diagonal of
         the originally fully empty rows.
         Note for VAR(1): 1 e-folding for t+2 implies a ~0.6
-        in the diagonal which is the default of __init__
+        in the diagonal which is the default of `LassoWeights`
         """
         if self.expanded:
             print("W is already expanded by D; no action taken.")
