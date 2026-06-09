@@ -79,7 +79,7 @@ def inv_weibull_to_normality(
     """
     if use_kp11:
         lam = 0.2776 * c
-        x = x_hat**(1 / lam)
+        x = x_hat ** (1 / lam)
         return x
     lam = 0.2654 * c
     x = special.inv_boxcox(x_hat, lam)
