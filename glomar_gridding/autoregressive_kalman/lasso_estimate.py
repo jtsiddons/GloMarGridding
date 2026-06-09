@@ -205,8 +205,12 @@ class LassoEstimate_AR1:
             insample_MAE = np.mean(np.abs(insample_residuals))
             insample_RMSE = np.sqrt(np.mean(np.square(insample_residuals)))
             logging.debug("Insample diagonstics:")
-            logging.debug(f"MAE(Lasso(l={self.lambda_hyperparm}))={insample_MAE}")
-            logging.debug(f"RMSE(Lasso(l={self.lambda_hyperparm}))={insample_RMSE}")
+            logging.debug(
+                f"MAE(Lasso(l={self.lambda_hyperparm}))={insample_MAE}"
+            )
+            logging.debug(
+                f"RMSE(Lasso(l={self.lambda_hyperparm}))={insample_RMSE}"
+            )
             #
             if self.out_of_sample_residues:
                 outsample_predictions = ossaL.predict(self.X_withheld)
