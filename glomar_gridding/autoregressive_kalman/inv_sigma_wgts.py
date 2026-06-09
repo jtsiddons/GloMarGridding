@@ -1,5 +1,6 @@
 """Kalman Filter: Compute inverse variance weighted average"""
 
+import logging
 import numpy as np
 from numpy import linalg
 import scipy as sp
@@ -224,7 +225,7 @@ class KalmanOut:
             )
         #
         # Weights and error covariance if obs and forecast are uncorrelated
-        print("Computing kalman_gain")
+        logging.debug("Computing kalman_gain")
         if self.use_diag_only:
             # Vector form
             self.kalman_gain_from_new_obs = self.multiply_operator(
@@ -238,14 +239,14 @@ class KalmanOut:
                 self.errcov_forecast,
             ).T
         #
-        print("Computing forecast_wgt")
+        logging.debug("Computing forecast_wgt")
         self.wgts_from_ar_forecast = (
             self.one_maker(self.kalman_gain_from_new_obs.shape[0])
             - self.kalman_gain_from_new_obs
         )
         #
         # Output weighted mean
-        print("Computing weighted mean")
+        logging.debug("Computing weighted mean")
         self.wgt_mean = self.multiply_operator(
             self.kalman_gain_from_new_obs,
             (self.obs_vector - self.forecast_vector),
@@ -253,7 +254,7 @@ class KalmanOut:
         self.wgt_mean += self.forecast_vector
         #
         # Output error covariance
-        print("Computing updating uncertainties")
+        logging.debug("Computing updating uncertainties")
         self.errcov = self.multiply_operator(
             (
                 self.one_maker(self.errcov_obs.shape[0])
@@ -331,10 +332,10 @@ class KalmanOutUncorrCorrSplit:
                 return_subsampled_arr=False,
             )
         )
-        print(f"{self.d_off_diagonal = }")
-        print(f"{np.sum(self.d_off_diagonal) = }")
-        print(f"{self.d_diagonal_only = }")
-        print(f"{np.sum(self.d_diagonal_only) = }")
+        logging.debug(f"{self.d_off_diagonal = }")
+        logging.debug(f"{np.sum(self.d_off_diagonal) = }")
+        logging.debug(f"{self.d_diagonal_only = }")
+        logging.debug(f"{np.sum(self.d_diagonal_only) = }")
         #
         has_diag_only = self._d_2_bool(self.d_diagonal_only)
         #

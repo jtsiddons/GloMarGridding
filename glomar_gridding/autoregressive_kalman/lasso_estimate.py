@@ -16,8 +16,10 @@ N - number of grid points
 T - length of time series at each grid point
 """
 
+import logging
 import numpy as np
 import scipy as sp
+import warnings
 
 from sklearn.linear_model import Lasso
 from typing import Literal
@@ -92,9 +94,9 @@ class LassoEstimate_AR1:
         check_shape(data_sample)
         self.standardise = standardise
         if standardise:
-            advisory = "Remember adjust weights and predictions"
+            advisory = "Remember to adjust weights and predictions"
             advisory += " when deploying model for VAR(1)!"
-            print(advisory)
+            logging.debug(advisory)
             self.sample, self.sample_mean, self.sample_sigma = standardise_data(
                 data_sample
             )
@@ -102,7 +104,7 @@ class LassoEstimate_AR1:
             advisory = "If some values along XY are systematically small, "
             advisory += "this may distort Lasso estimates, "
             advisory += "standardisation is recommended."
-            print(advisory)
+            warnings.warn(advisory, UserWarning)
             self.sample = data_sample
             self.sample_mean = np.zeros_like(data_sample[0, :])
             self.sample_sigma = np.ones_like(data_sample[0, :])
@@ -123,8 +125,8 @@ class LassoEstimate_AR1:
         estimation.
         """
         if self.out_of_sample_residues:
-            print("Out-of-sample will be used to compute residues.")
-            print("Holdout cross-validation will be performed.")
+            logging.debug("Out-of-sample will be used to compute residues.")
+            logging.debug("Holdout cross-validation will be performed.")
             self.half_of_the_data = int(self.n_t * self.hold_out_ratio)
             #
             # Training data
@@ -135,9 +137,9 @@ class LassoEstimate_AR1:
             self.X_withheld = self.sample[(self.half_of_the_data) : -1, :]
             self.all_y_withheld = self.sample[(self.half_of_the_data + 1) :, :]
         else:
-            print("Training data will be used to compute residues.")
-            print("Holdout cross-validation will not be performed.")
-            print("The full input dataset will be used to fit the model.")
+            logging.debug("Training data will be used to compute residues.")
+            logging.debug("Holdout cross-validation will not be performed.")
+            logging.debug("Full input dataset will be used to fit the model.")
             self.X = self.X_withheld = self.sample[:-1, :]
             self.all_y = self.all_y_withheld = self.sample[1:, :]
 
@@ -178,7 +180,7 @@ class LassoEstimate_AR1:
             )
         the_lr_looper = range(self.n_xy)
         for xy in the_lr_looper:
-            print(f"Now working on grid point/line {xy = }/{self.n_xy - 1}")
+            logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
             y = self.all_y[:, xy]
             #
             ossaL = Lasso(
@@ -192,19 +194,19 @@ class LassoEstimate_AR1:
             n_near0_coef_ = np.sum(np.isclose(ossaL.coef_, 0.0))
             n_meaningful_coef_ = ossaL.coef_.shape[0] - n_near0_coef_
             #
-            print(f"{ossaL.coef_ = }")
-            print(f"{n_near0_coef_ = }; {n_meaningful_coef_ = }")
-            print(f"{np.min(ossaL.coef_) = }; {np.max(ossaL.coef_) = }")
-            print(f"{lasso_score = }")
+            logging.debug(f"{ossaL.coef_ = }")
+            logging.debug(f"{n_near0_coef_ = }; {n_meaningful_coef_ = }")
+            logging.debug(f"{np.min(ossaL.coef_) = }; {np.max(ossaL.coef_) = }")
+            logging.debug(f"{lasso_score = }")
             #
             insample_predictions = ossaL.predict(self.X)
             insample_y = y
             insample_residuals = insample_y - insample_predictions
             insample_MAE = np.mean(np.abs(insample_residuals))
             insample_RMSE = np.sqrt(np.mean(np.square(insample_residuals)))
-            print("Insample diagonstics:")
-            print(f"MAE(Lasso(l={self.lambda_hyperparm})) = {insample_MAE}")
-            print(f"RMSE(Lasso(l={self.lambda_hyperparm})) = {insample_RMSE}")
+            logging.debug("Insample diagonstics:")
+            logging.debug(f"MAE(Lasso(l={self.lambda_hyperparm}))={insample_MAE}")
+            logging.debug(f"RMSE(Lasso(l={self.lambda_hyperparm}))={insample_RMSE}")
             #
             if self.out_of_sample_residues:
                 outsample_predictions = ossaL.predict(self.X_withheld)
@@ -212,15 +214,17 @@ class LassoEstimate_AR1:
                 outsample_residues = outsample_y - outsample_predictions
                 outsample_MAE = np.mean(np.abs(outsample_residues))
                 outsample_RMSE = np.sqrt(np.mean(np.square(outsample_residues)))
-                print("Outsample diagonstics:")
-                print(f"MAE(Lasso(l={self.lambda_hyperparm}))={outsample_MAE}")
-                print(
+                logging.debug("Outsample diagonstics:")
+                logging.debug(
+                    f"MAE(Lasso(l={self.lambda_hyperparm}))={outsample_MAE}"
+                )
+                logging.debug(
                     f"RMSE(Lasso(l={self.lambda_hyperparm}))={outsample_RMSE}"
                 )
                 self.residues[xy, :] = outsample_residues
             else:
                 self.residues[xy, :] = insample_residuals
-        print("Task complete")
+        logging.debug("Task complete")
 
     # Alias to follow the convention used in scikit-learn & statsmodels
     fit = line_by_line_sur_lasso
@@ -230,7 +234,7 @@ class LassoEstimate_AR1:
         if hasattr(self, "coefficients"):
             self.coefficients = sp.sparse.csr_array(self.coefficients)
         else:
-            print("Coefficients have not been computed yet.")
+            raise AttributeError("Coefficients have not been computed yet.")
 
 
 def standardise_data(

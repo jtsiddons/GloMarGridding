@@ -6,6 +6,7 @@ for the purpose of docstring
 N: number of analysis points, covariates/features
 """
 
+import logging
 import numpy as np
 import scipy as sp
 import warnings
@@ -85,7 +86,7 @@ class Autoregressive1ForecastUncorr:
         self.analysis = analysis
         #
         # (diagonal) analysis error covariance
-        print(f"{errcov_analysis_is_sdev = }")
+        logging.debug(f"{errcov_analysis_is_sdev = }")
         if errcov_analysis_is_sdev:
             if len(errcov_analysis.shape) > 1:
                 err_msg = "errcov_analysis_is_sdev is True, but "
@@ -104,7 +105,7 @@ class Autoregressive1ForecastUncorr:
         self.clim_mean = clim_mean
         #
         # (diagonal) climatological variance
-        print(f"{clim_covar_is_sdev = }")
+        logging.debug(f"{clim_covar_is_sdev = }")
         if clim_covar_is_sdev:
             if len(clim_covar.shape) > 1:
                 err_msg = "clim_covar_is_sdev is True, but "
@@ -142,15 +143,18 @@ class Autoregressive1ForecastUncorr:
         if self.analysis.shape[0] != self.clim_mean.shape[0]:
             raise ValueError("analysis shape inconsistent with clim_mean")
         #
-        print(f"{self.lag_1_autocor.shape = }")
+        logging.debug(f"{self.lag_1_autocor.shape = }")
         if len(self.lag_1_autocor.shape) != 1:
             err_msg = "lag_1_autocor is not a vector. "
             err_msg += "This class only accepts autocorrelations."
             raise ValueError(err_msg)
         self.bad_model = np.any(np.abs(self.lag_1_autocor) >= 1)
         if self.bad_model:
-            print("Large abs values (>= 1, <= -1) detected in lag_1_autocor")
-            print("They are set to 0.99")
+            warnings.warn(
+                "Large abs values (>= 1) detected in lag_1_autocor",
+                UserWarning,
+            )
+            warnings.warn("They are set to 0.99", UserWarning)
             self.lag_1_autocor[self.lag_1_autocor >= 1.0] = 0.99
             self.lag_1_autocor[self.lag_1_autocor <= -1.0] = -0.99
         #
@@ -161,8 +165,8 @@ class Autoregressive1ForecastUncorr:
             err_msg = "Bad shape errcov_analysis; "
             err_msg += f"{self.errcov_analysis.shape = }"
             raise ValueError(err_msg)
-        print(f"{self.clim_covar.shape = }")
-        print(f"{self.errcov_analysis.shape = }")
+        logging.debug(f"{self.clim_covar.shape = }")
+        logging.debug(f"{self.errcov_analysis.shape = }")
         if self.clim_covar.shape != self.errcov_analysis.shape:
             raise ValueError("Inconsistent shape detected!")
         if self.errcov_analysis.shape != self.lag_1_autocor.shape:
@@ -190,14 +194,14 @@ class Autoregressive1ForecastUncorr:
         errcov: numpy.ndarray
             The error covariance for the forecast
         """
-        print("Computing forecast")
+        logging.debug("Computing forecast")
         #
         # The simple local case:
         diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.lag_1_autocor * diff_with_clim_mean
         self.forecast += self.clim_mean
         #
-        print("Computing uncertainties")
+        logging.debug("Computing uncertainties")
         # Compute error covariances associated with AR1 epsilon
         # that are associated with climatological variance
         #
@@ -353,17 +357,17 @@ class Autoregressive1ForecastVector:
             self.weights,
             sp.sparse.sparray,
         )
-        print(f"{check_if_wgts_are_sp_sparse = }")
+        logging.debug(f"{check_if_wgts_are_sp_sparse = }")
         if not check_if_wgts_are_sp_sparse:
             wgt_advisory = "weight is not a scipy sparse "
             wgt_advisory += "matrix; computation will slow and memory "
             wgt_advisory += "intensive; Lasso weights and lag1 autocorrelation "
             wgt_advisory += "are sparse, but OLS (unstable) and Ridge weights "
             wgt_advisory += "are dense."
-            print(wgt_advisory)
-        print(f"{self.clim_covar.shape = }")
-        print(f"{self.errcov_analysis.shape = }")
-        print(f"{self.weights.shape = }")
+            logging.debug(wgt_advisory)
+        logging.debug(f"{self.clim_covar.shape = }")
+        logging.debug(f"{self.errcov_analysis.shape = }")
+        logging.debug(f"{self.weights.shape = }")
         #
         self._check_args()
         self.bad_model = None
@@ -425,7 +429,7 @@ class Autoregressive1ForecastVector:
         wgt_advisory = "Weights will be solved from lag1_autocov "
         wgt_advisory += "and clim_covar; this is often unstable "
         wgt_advisory += "and is not recommended."
-        print(wgt_advisory)
+        warnings.warn(wgt_advisory, UserWarning)
         #
         if stability_perturbation is not None:
             new_diag = np.diag(clim_covar) + stability_perturbation
@@ -433,7 +437,7 @@ class Autoregressive1ForecastVector:
             np.fill_diagonal(ccp, new_diag)
         else:
             ccp = clim_covar
-        print("Computing weights")
+        logging.debug("Computing weights")
         weights = np.linalg.solve(
             ccp,
             lag_1_autocov,
@@ -505,7 +509,7 @@ class Autoregressive1ForecastVector:
         bad_model: bool
             Boolean advisory that the weights being unchecked
         """
-        print(f"{self.weights = }")
+        logging.debug(f"{self.weights = }")
         if check_wgt_stability:
             self.var_stability_check()
         else:
@@ -515,28 +519,28 @@ class Autoregressive1ForecastVector:
             warnings.warn(warn_msg, UserWarning)
             self.bad_model = True
         #
-        print("Computing forecast")
+        logging.debug("Computing forecast")
         diff_with_clim_mean = self.analysis - self.clim_mean
         self.forecast = self.weights @ diff_with_clim_mean
         self.forecast += self.clim_mean
         #
-        print("Computing uncertainties")
+        logging.debug("Computing uncertainties")
         if self.estimated_ar1_errcov is None:
-            print("Computing C - W C W.T")
+            logging.debug("Computing C - W C W.T")
             sigma_sq_eps = (
                 self.clim_covar
                 - self.weights @ self.clim_covar @ self.weights.T
             )
         else:
-            print("Using pre-computed C - W C W.T")
-            print(f"{self.estimated_ar1_errcov = }")
+            logging.debug("Using pre-computed C - W C W.T")
+            logging.debug(f"{self.estimated_ar1_errcov = }")
             sigma_sq_eps = self.estimated_ar1_errcov
         #
         # Warning:
         # Error covariances may not be (semi-)positive definite
         sigma_sq_analysis = self.weights @ self.errcov_analysis @ self.weights.T
-        print(f"{sigma_sq_eps = }")
-        print(f"{sigma_sq_analysis = }")
+        logging.debug(f"{sigma_sq_eps = }")
+        logging.debug(f"{sigma_sq_analysis = }")
         self.errcov = sigma_sq_eps + sigma_sq_analysis
         #
         if check_errcov_psd:
@@ -572,7 +576,7 @@ class Autoregressive1ForecastVector:
         bad_model: bool
             Boolean advisory that the weights being not weakly stationary
         """
-        print("Checking weight stability")
+        logging.debug("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
         # weights are not a symmetric matrix!
         if isinstance(self.weights, sp.sparse.sparray):
@@ -594,8 +598,8 @@ class Autoregressive1ForecastVector:
         eigvals = eigval_solver(self.weights)
         smallest_eigval = np.min(np.real(eigvals))
         largest_eigval = np.max(np.real(eigvals))
-        print(f"{smallest_eigval = }")
-        print(f"{largest_eigval = }")
+        logging.debug(f"{smallest_eigval = }")
+        logging.debug(f"{largest_eigval = }")
         self.bad_model = (smallest_eigval < -1.0) or (largest_eigval > 1.0)
         if self.bad_model:
             errmsg = "Eigenvalues of estimated weights have values > 1; "
@@ -617,7 +621,7 @@ class Autoregressive1ForecastVector:
         """
         if not hasattr(self, "errcov"):
             raise ValueError("errcov has not been estimated yet!")
-        print("Checking validity of error covariance")
+        logging.debug("Checking validity of error covariance")
         errcov_eigvals = np.linalg.eigvalsh(self.errcov)
         if np.min(errcov_eigvals) < 0:
             self.errcov = explained_variance_clip(
@@ -625,4 +629,4 @@ class Autoregressive1ForecastVector:
                 target_variance_fraction=target_variance_fraction,
             )
         else:
-            print("Error covariance clipping is unnecessary.")
+            logging.debug("Error covariance clipping is unnecessary.")

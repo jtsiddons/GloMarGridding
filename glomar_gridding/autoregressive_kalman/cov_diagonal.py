@@ -13,6 +13,7 @@ diag_and_nondiag_rows_subsampler:
 - option to return the actual subsampled array
 """
 
+import logging
 import numpy as np
 import scipy as sp
 
@@ -43,26 +44,26 @@ def remove_diag_only_rows(
         the subsampling matrix that generates new_cor_arr
     """
     n_rows = cov.shape[0]
-    print(f"{cov.shape = }")
+    logging.debug(f"{cov.shape = }")
     if not np.all(np.diag(cov) > zero_threshold):
         err_msg = f"There are elements below {zero_threshold = }"
         err_msg += " (negatives included) on the diagonal."
         raise ValueError(err_msg)
     has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
-    print(f"{n_validrows = }")
+    logging.debug(f"{n_validrows = }")
     if n_validrows < 1:
         raise ValueError("cov is diagonal; no non-diagonal rows to work with")
     #
     D = sp.sparse.csr_matrix(
         np.eye(n_rows, dtype=np.uint8)[has_off_diagonal_elements, :]
     )
-    print(f"{D.shape = }")
+    logging.debug(f"{D.shape = }")
     #
     new_cov_arr = cov[has_off_diagonal_elements, :][
         :, has_off_diagonal_elements
     ]
-    print(f"{new_cov_arr.shape = }")
+    logging.debug(f"{new_cov_arr.shape = }")
     #
     return new_cov_arr, D
 
@@ -104,8 +105,8 @@ def restore_diag_only_rows(
         err_msg = "D must be an instance numpy array or scipy sparse array"
         raise ValueError(err_msg)
     #
-    print(f"{trimmed_cov_arr.shape = }")
-    print(f"{D.shape = }")
+    logging.debug(f"{trimmed_cov_arr.shape = }")
+    logging.debug(f"{D.shape = }")
     n = len(has_off_diag)
     if np.sum(has_off_diag) != trimmed_cov_arr.shape[0]:
         err_msg = "D shape is inconsistent with shape of trimmed_cov_arr."
@@ -117,9 +118,8 @@ def restore_diag_only_rows(
     old_diag_vals = np.diag(trimmed_cov_arr)
     diag_vals = np.diag(new_cov_arr)
     #
-    print(new_cov_arr)
-    print(f"post-restore trace: {np.sum(diag_vals) = }")
-    print(f"pre-restore trace: {np.sum(old_diag_vals) = }")
+    logging.debug(f"post-restore trace: {np.sum(diag_vals) = }")
+    logging.debug(f"pre-restore trace: {np.sum(old_diag_vals) = }")
     return new_cov_arr
 
 
@@ -164,7 +164,7 @@ def diag_and_nondiag_rows_subsampler(
         Set to None if return_subsampled_arr is False
     """
     n_rows = cov.shape[0]
-    print(f"{cov.shape = }")
+    logging.debug(f"{cov.shape = }")
     #
     # This returns True for rows that have off diagonal elements
     if not np.all(np.diag(cov) > zero_threshold):
@@ -174,8 +174,8 @@ def diag_and_nondiag_rows_subsampler(
     has_off_diagonal_elements = np.sum(np.abs(cov) > zero_threshold, axis=0) > 1
     n_validrows = int(np.sum(has_off_diagonal_elements))
     n_diag_only = cov.shape[0] - n_validrows
-    print(f"{n_validrows = }")
-    print(f"{n_diag_only = }")
+    logging.debug(f"{n_validrows = }")
+    logging.debug(f"{n_diag_only = }")
     if n_validrows < 1:
         raise ValueError("cov is diagonal; no non-diagonal rows to work with")
     #
@@ -185,8 +185,8 @@ def diag_and_nondiag_rows_subsampler(
     d_diagonal_only = sp.sparse.csr_matrix(
         np.eye(n_rows, dtype=np.uint8)[~has_off_diagonal_elements, :]
     )
-    print(f"{d_off_diagonal.shape = }")
-    print(f"{d_diagonal_only.shape = }")
+    logging.debug(f"{d_off_diagonal.shape = }")
+    logging.debug(f"{d_diagonal_only.shape = }")
     #
     # Some versions of numpy (newer ones) return a view instead of array
     # Old versions of numpy will return an array

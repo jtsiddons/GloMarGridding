@@ -21,6 +21,7 @@ vectorize for an array with m rows give m scalars.
 The same behavior can be gotten using np.apply_along_axis
 """
 
+import logging
 import numpy as np
 import xarray as xr
 import warnings
@@ -127,7 +128,7 @@ def get_auto_corr(
         the same autocorrelation
     """
     anomalies = get_anomalies(vec)
-    print(f"Number of valid values = {np.sum(~np.isnan(anomalies))}")
+    logging.debug(f"Number of valid values = {np.sum(~np.isnan(anomalies))}")
     # See Wilks book Time Domain II chapter Eq 8.22
     # With reasonably large sample size 30 year of daily data,
     # the dof correction is negligible
@@ -220,13 +221,13 @@ def compute_lag_1_ts_metrics_from_da(
     ar = ar.rename(f"{da_varname}_ar{lag}")
     ar.attrs["units"] = "1"
     ar.attrs["long_name"] = f"{da_long_varname} lag-{lag} correlation"
-    print(ar.shape)
+    logging.debug(f"{ar.shape = }")
     #
     variance = da[0].copy()
     variance = variance.rename(f"{da_varname}_variance")
     variance.attrs["units"] = f"{units}**2"
     variance.attrs["long_name"] = f"{da_long_varname} variance"
-    print(variance.shape)
+    logging.debug(f"{variance.shape = }")
     #
     ar_arr, _, variance_arr, _ = np.apply_along_axis(
         get_auto_corr,

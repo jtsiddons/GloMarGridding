@@ -9,6 +9,7 @@ M - number of valid grid points (N >= M)
 T* - length of cross-validated errors at each grid point
 """
 
+import logging
 import numpy as np
 import scipy as sp
 import xarray as xr
@@ -88,18 +89,18 @@ class LassoWeights:
         in the diagonal which is the default of `LassoWeights`
         """
         if self.expanded:
-            print("W is already expanded by D; no action taken.")
+            logging.debug("W is already expanded by D; no action taken.")
             return
         #
         # Note:
         # Both D and W are sp.sparse.spmatrix, and behaves and performs
         # differently than functions in cov_diagonal; (error) covariance
         # is, in contrast, a dense matrix.
-        print("Expanding W into full matrix")
+        logging.debug("Expanding W into full matrix")
         self.W = self.D.T @ self.W @ self.D
         # See:
         # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-        print(f"Filling diagonals of fully empty rows with {self.fillvalue}")
+        logging.debug(f"Filling diagonals of empty rows with {self.fillvalue}")
         empty_rows = self.W.getnnz(1) == 0
         where_empty = np.where(empty_rows)[0]
         n_empty_rows = np.sum(empty_rows)
@@ -124,9 +125,9 @@ class LassoWeights:
         fillvalues are removed by row-column subsampling
         """
         if not self.expanded:
-            print("W is already D-subsampled; no action taken.")
+            logging.debug("W is already D-subsampled; no action taken.")
             return
-        print("Shrinking W back to its original shape")
+        logging.debug("Shrinking W back to its original shape")
         self.W = self.D @ self.W @ self.D.T
         self.expanded = False
 
@@ -294,11 +295,11 @@ class LassoError:
         .. math::
            E = R @ R^{T} / (T^{*} - dof_adj)
         """
-        print("Computing error covariance")
+        logging.debug("Computing error covariance")
         dof = self.t - self.dof_adj
-        print(f"{dof = }")
-        print(f"{self.t = }; {self.dof_adj = }")
-        print(f"{dof = }")
+        logging.debug(f"{dof = }")
+        logging.debug(f"{self.t = }; {self.dof_adj = }")
+        logging.debug(f"{dof = }")
         self.R = (self.residues_matrix @ self.residues_matrix.T) / dof
 
     def expand_R(self):  # noqa: N802
@@ -314,10 +315,12 @@ class LassoError:
             err_msg += "to compute errcov first."
             raise AttributeError(err_msg)
         if self.expanded:
-            print("R is already expanded by D; no action taken.")
+            logging.debug("R is already expanded by D; no action taken.")
             return
         #
-        print(f"Expanding R, filling 0 diagonals with {self.fillvalue}.")
+        logging.debug(
+            f"Expanding R, filling 0 diagonals with {self.fillvalue}."
+        )
         self.R = cov_diagonal.restore_diag_only_rows(
             self.R,
             self.D,
