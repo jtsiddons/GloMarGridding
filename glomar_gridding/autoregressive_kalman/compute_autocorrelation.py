@@ -1,5 +1,5 @@
 """
-Docstring for lagged_correlation
+Compute lagged (lag-1) correlations
 
 Estimation of lag-1 autocorrelation and other metrics
 for a single time series

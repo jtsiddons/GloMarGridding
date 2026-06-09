@@ -1,4 +1,4 @@
-"""Compute inverse variance weighted average"""
+"""Kalman Filter: Compute inverse variance weighted average"""
 
 import numpy as np
 from numpy import linalg

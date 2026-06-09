@@ -1,5 +1,5 @@
 """
-Docstring for cov_diagonal
+Diagonal and non-diagonal matrix tools
 
 remove_diag_only_rows:
 - Auto-detect diagonal only rows/columns from an input matrix
