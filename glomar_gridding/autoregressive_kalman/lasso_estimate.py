@@ -183,23 +183,23 @@ class LassoEstimate_AR1:
             logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
             y = self.all_y[:, xy]
             #
-            ossaL = Lasso(
+            lasso = Lasso(
                 alpha=self.lambda_hyperparm,
                 selection=self.selection,
             )
-            ossaL.fit(self.X, y)
-            self.coefficients[xy, :] = ossaL.coef_
+            lasso.fit(self.X, y)
+            self.coefficients[xy, :] = lasso.coef_
             #
-            lasso_score = ossaL.score(self.X, y)
-            n_near0_coef_ = np.sum(np.isclose(ossaL.coef_, 0.0))
-            n_meaningful_coef_ = ossaL.coef_.shape[0] - n_near0_coef_
+            lasso_score = lasso.score(self.X, y)
+            n_near0_coef_ = np.sum(np.isclose(lasso.coef_, 0.0))
+            n_meaningful_coef_ = lasso.coef_.shape[0] - n_near0_coef_
             #
-            logging.debug(f"{ossaL.coef_ = }")
+            logging.debug(f"{lasso.coef_ = }")
             logging.debug(f"{n_near0_coef_ = }; {n_meaningful_coef_ = }")
-            logging.debug(f"{np.min(ossaL.coef_) = }; {np.max(ossaL.coef_) = }")
+            logging.debug(f"{np.min(lasso.coef_) = }; {np.max(lasso.coef_) = }")
             logging.debug(f"{lasso_score = }")
             #
-            insample_predictions = ossaL.predict(self.X)
+            insample_predictions = lasso.predict(self.X)
             insample_y = y
             insample_residuals = insample_y - insample_predictions
             insample_MAE = np.mean(np.abs(insample_residuals))
@@ -213,7 +213,7 @@ class LassoEstimate_AR1:
             )
             #
             if self.out_of_sample_residues:
-                outsample_predictions = ossaL.predict(self.X_withheld)
+                outsample_predictions = lasso.predict(self.X_withheld)
                 outsample_y = self.all_y_withheld[:, xy]
                 outsample_residues = outsample_y - outsample_predictions
                 outsample_MAE = np.mean(np.abs(outsample_residues))
