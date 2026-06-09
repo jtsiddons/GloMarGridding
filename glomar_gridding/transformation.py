@@ -53,3 +53,34 @@ def weibull_to_normality(
     lam = 0.2654 * c
     x_hat = special.boxcox(x, lam)
     return x_hat
+
+
+def inv_weibull_to_normality(
+    x_hat: np.ndarray,
+    c: float,
+    use_kp11: bool = False,
+):
+    """
+    The inverse of weibull_to_normality
+
+    Parameters
+    ----------
+    x_hat: numpy.ndarray
+        Variable that have been transformed
+    c: float
+        Weibull shape parameter
+    use_kp11: bool
+        Use the approximation described in Kulkarni and Powar 2011
+
+    Returns
+    -------
+    x: numpy.ndarray
+        Inverse-transformed x_hat
+    """
+    if use_kp11:
+        lam = 0.2776 * c
+        x = x_hat**(1 / lam)
+        return x
+    lam = 0.2654 * c
+    x = special.inv_boxcox(x_hat, lam)
+    return x
