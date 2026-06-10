@@ -59,10 +59,10 @@ get_anomalies_vectorize = np.vectorize(
 
 
 def get_obs_variance(
-        vec: np.ndarray,
-        ddof: int = 1,
-        compute_anomalies=True,
-    ) -> float:
+    vec: np.ndarray,
+    ddof: int = 1,
+    compute_anomalies=True,
+) -> float:
     """
     Compute observed variance (standard deviation squared).
     Bessel correction applied by default.
@@ -156,9 +156,9 @@ def get_auto_corr(
     )
     var_t_eq_0 = cov[0, 0]  # Observed variance of [... :-n]
     var_t_plus_n = cov[1, 1]  # Observed variance of [n: ...]
-    autocovariance_n = cov[1, 0]  # Observed autocovariance 
-    ar_n = (
-        autocovariance_n / np.sqrt(var_t_eq_0 * var_t_plus_n)
+    autocovariance_n = cov[1, 0]  # Observed autocovariance
+    ar_n = autocovariance_n / np.sqrt(
+        var_t_eq_0 * var_t_plus_n
     )  # Normalises autocovariance to autocorrelation
     # Note:
     # Due to finite sample size, var_t_eq_0 != var_t_plus_n != variance
