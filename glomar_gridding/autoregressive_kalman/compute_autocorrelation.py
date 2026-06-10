@@ -204,10 +204,7 @@ def compute_lag_1_ts_metrics_from_da(
     if da.dims[0] != "time":
         raise ValueError(f"Unexpected dim order: {da.dims}")
     da_varname = da.name
-    if hasattr(da, "long_name"):
-        da_long_varname = da.long_name
-    else:
-        da_long_varname = da_varname
+    da_long_varname = getattr(da, "long_name", da_varname)
     if hasattr(da, "units"):
         units = da.units
     else:
