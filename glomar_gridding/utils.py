@@ -798,7 +798,7 @@ def check_sq_matrix(arr: np.ndarray) -> bool:
     return (len(arr.shape) == 2) and (arr.shape[0] == arr.shape[1])
 
 
-def vec_or_sq_matrix_check(arr: np.ndarray):
+def _vec_or_sq_matrix_check(arr: np.ndarray):
     """
     Check if arr is 1D (returns True), 2D square (returns False),
     or something else

@@ -9,7 +9,7 @@ import warnings
 from glomar_gridding.autoregressive_kalman import cov_diagonal as cd
 from glomar_gridding.utils import (
     check_sq_matrix,
-    vec_or_sq_matrix_check,
+    _vec_or_sq_matrix_check,
     make_square,
     make_diag,
 )
@@ -94,16 +94,16 @@ class KalmanOut:
             self.use_diag_only = False
             # See docstring for further discussion of this check:
             # XOR(
-            # vec_or_sq_matrix_check(errcov_obs),
-            # vec_or_sq_matrix_check(errcov_forecast)
+            # _vec_or_sq_matrix_check(errcov_obs),
+            # _vec_or_sq_matrix_check(errcov_forecast)
             # ) returns True only if one is True and the other is False
-            if vec_or_sq_matrix_check(errcov_obs) != vec_or_sq_matrix_check(
+            if _vec_or_sq_matrix_check(errcov_obs) != _vec_or_sq_matrix_check(
                 errcov_forecast
             ):
                 advisory = "One of the arrays (errcov_obs or errcov_forecast) "
                 advisory += "is a vector while the other is square. This could "
                 advisory += "produce poor results depending on the reason why "
-                advisory += "the shapes of the 2 matrices are like that : "
+                advisory += "the shapes of them are like that : "
                 advisory += f"{errcov_obs.shape = }  {errcov_forecast.shape = }"
                 warnings.warn(advisory, UserWarning)
             self.errcov_forecast = make_square(errcov_forecast)
