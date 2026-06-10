@@ -132,22 +132,29 @@ def get_auto_corr(
     # See Wilks book Time Domain II chapter Eq 8.22
     # With reasonably large sample size 30 year of daily data,
     # the dof correction is negligible
-    # For lagged correlation, the degrees of freedom is
-    # Sample_Size - Lag (aka n) - 1 (Bessel Correction)
-    ddof_correction = n + 1
     #
-    # Observed variance
-    # Sorts out the dof correction here: n minus lag minus 1
-    variance = get_obs_variance(vec, dof=ddof_correction)
+    # Compute observed variance with dof correction
+    # Sample size: len(vec)
+    # Degree of freedom: len(vec) - 1
+    variance = get_obs_variance(vec)
+    #
+    # Compute observed autocovariance and autocorrelation
+    # Sample size: len(vec) - lag
+    # Degree of freedom: len(vec) - lag - 1
     cov = np.ma.cov(
         np.ma.masked_invalid(anomalies[:-n]),
         np.ma.masked_invalid(anomalies[n:]),
-        ddof=0,  # Or you can sort out the dof here...
     )
-    var_t_eq_0 = cov[0, 0]  # variance of ... :-n
-    var_t_plus_n = cov[1, 1]  # Variance of n: ...
-    autocovariance_n = cov[1, 0]  # Observed autocovariance
-    ar_n = autocovariance_n / np.sqrt(var_t_eq_0 * var_t_plus_n)  # autocorr
+    var_t_eq_0 = cov[0, 0]  # Observed variance of [... :-n]
+    var_t_plus_n = cov[1, 1]  # Observed variance of [n: ...]
+    autocovariance_n = cov[1, 0]  # Observed autocovariance 
+    ar_n = (
+        autocovariance_n / np.sqrt(var_t_eq_0 * var_t_plus_n)
+    )  # Normalises autocovariance to autocorrelation
+    # Note:
+    # Due to finite sample size, var_t_eq_0 != var_t_plus_n != variance
+    # even if they are asymptotically the same.
+    # For reasonably large len(vec), they are undistinguishable.
     sigma2_eps = (1 - ar_n**2) * variance  # Uncertainty**2 of the AR model
     return ar_n, autocovariance_n, variance, sigma2_eps
 
