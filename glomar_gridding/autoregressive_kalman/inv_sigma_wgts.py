@@ -4,9 +4,15 @@ import logging
 import numpy as np
 from numpy import linalg
 import scipy as sp
+import warnings
 
 from glomar_gridding.autoregressive_kalman import cov_diagonal as cd
-from glomar_gridding.utils import check_sq_matrix, check_1d
+from glomar_gridding.utils import (
+    check_sq_matrix,
+    vec_or_sq_matrix_check,
+    make_square,
+    make_diag,
+)
 
 EFFECTIVELY_ZERO_VAR_DEFAULT = 1e-6
 
@@ -27,6 +33,20 @@ class KalmanOut:
     """
     class to compute blended forecast and observations
     variable names follows compute_inv_variance_wgt_mean_kalman
+
+    Note:
+    If only one of the two error covariances matrices is a vector/diagonal
+    matrix but the other one is not (square) and is much denser with
+    comparable diagonals, KF and variance weighted means
+    may strongly favour the vector/diagonal matrix, and give poor
+    results (even if results are strictly correct). Check your
+    underlying reason why one is doing that to make sure that is what
+    one intended.
+    Vector autoregression should only match with full Kriging covariance
+    (a fully spatially correlated Kalman filter); local time series
+    autoregression would normally only match with local uncertainty of the
+    Kriging covariance (i.e. the Kriging uncertainty) (i.e. effectively a 1D
+    Kalman Filter).
 
     Parameters
     ----------
@@ -62,28 +82,37 @@ class KalmanOut:
         self.obs_vector = obs_vector
         if use_diag_only:
             self.use_diag_only = True
-            if check_1d(errcov_forecast):
-                self.errcov_forecast = errcov_forecast
-            else:
-                self.errcov_forecast = np.diag(errcov_forecast)
-            if check_1d(errcov_obs):
-                self.errcov_obs = errcov_obs
-            else:
-                self.errcov_obs = np.diag(errcov_obs)
+            self.errcov_forecast = make_diag(errcov_forecast)
+            self.errcov_obs = make_diag(errcov_obs)
             if cov_forecast_and_obs is not None:
-                if check_1d(cov_forecast_and_obs):
-                    self.cov_forecast_and_obs = cov_forecast_and_obs
-                else:
-                    self.cov_forecast_and_obs = np.diag(cov_forecast_and_obs)
+                self.cov_forecast_and_obs = make_diag(cov_forecast_and_obs)
             else:
                 self.cov_forecast_and_obs = None
             self.multiply_operator = np.multiply
             self.one_maker = np.ones
         else:
             self.use_diag_only = False
-            self.errcov_forecast = errcov_forecast
-            self.errcov_obs = errcov_obs
-            self.cov_forecast_and_obs = cov_forecast_and_obs
+            # See docstring for further discussion of this check:
+            # XOR(
+            # vec_or_sq_matrix_check(errcov_obs),
+            # vec_or_sq_matrix_check(errcov_forecast)
+            # ) returns True only if one is True and the other is False
+            if (
+                vec_or_sq_matrix_check(errcov_obs) !=
+                vec_or_sq_matrix_check(errcov_forecast)
+            ):
+                advisory = "One of the arrays (errcov_obs or errcov_forecast) "
+                advisory += "is a vector while the other is square. This could "
+                advisory += "produce poor results depending on the reason why "
+                advisory += "the shapes of the 2 matrices are like that : "
+                advisory += f"{errcov_obs.shape = }  {errcov_forecast.shape = }"
+                warnings.warn(advisory, UserWarning)
+            self.errcov_forecast = make_square(errcov_forecast)
+            self.errcov_obs = make_square(errcov_obs)
+            if cov_forecast_and_obs is not None:
+                self.cov_forecast_and_obs = make_square(cov_forecast_and_obs)
+            else:
+                self.cov_forecast_and_obs = None
             self.multiply_operator = matmul
             self.one_maker = np.eye
 
