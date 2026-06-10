@@ -97,9 +97,8 @@ class KalmanOut:
             # vec_or_sq_matrix_check(errcov_obs),
             # vec_or_sq_matrix_check(errcov_forecast)
             # ) returns True only if one is True and the other is False
-            if (
-                vec_or_sq_matrix_check(errcov_obs) !=
-                vec_or_sq_matrix_check(errcov_forecast)
+            if vec_or_sq_matrix_check(errcov_obs) != vec_or_sq_matrix_check(
+                errcov_forecast
             ):
                 advisory = "One of the arrays (errcov_obs or errcov_forecast) "
                 advisory += "is a vector while the other is square. This could "
