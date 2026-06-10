@@ -26,6 +26,8 @@ import numpy as np
 import xarray as xr
 import warnings
 
+from functools import partial
+
 
 def get_anomalies(vec: np.ndarray) -> np.ndarray:
     """
@@ -47,15 +49,29 @@ def get_anomalies(vec: np.ndarray) -> np.ndarray:
     return anomalies
 
 
-# get_anomalies, operated over many time series
-# for a matrix with m rows and n columns
-# gives an answer of m rows and n columns;
-# anomalies computed along each row
-get_anomalies_vectorize = np.vectorize(
-    get_anomalies,
-    doc="Vectorized `get_anomalies`",
-    signature="(n)->(n)",
-)
+def get_anomalies_vectorize(arr: np.ndarray):
+    """
+    Vectorised get_anomalies
+
+    Similar precautions with get_obs_variance_vectorize:
+    This assumes the convention used in climate data,
+    scikit-learn, multivariate random num generator etc.
+    (transpose arr automatically so it works properly with np.vectorize)
+    See get_obs_variance_vectorize docstring
+
+    Parameters
+    ----------
+    arr: numpy.ndarray
+        Array that needs be 0-averaged for each ROW
+        Shape (N, M) (N samples, M features/independent variable)
+
+    Returns
+    -------
+    anomalies: numpy.ndarray
+        0-averaged values along each ROW
+        Shape (N, M) (N samples for M features)
+    """
+    return np.vectorize(get_anomalies, signature="(n)->(n)")(arr.T)
 
 
 def get_obs_variance(
@@ -74,6 +90,8 @@ def get_obs_variance(
     ddof: int
         Degrees of freedom correction, default 1 (Bessel's correction)
         This is the similar to kwarg used in numpy.cov (bias and ddof)
+    compute_anomalies: bool
+        If True, the mean will be removed from vec
 
     Returns
     -------
@@ -90,16 +108,50 @@ def get_obs_variance(
     return variance
 
 
-# obs_variance, operated over many time series
-# for a matrix with m rows and n columns
-# gives an answer of m scalars
+def get_obs_variance_vectorize(
+        arr: np.ndarray,
+        kwargs_for_get_obs_variance: dict | None = None,
+    ) -> np.ndarray:
+    """
+    Running get_obs_variance for a multi-dimension array
 
+    Warning:
+    Naive np.vectorize may result operations on WRONG axis.
 
-obs_variance_vectorize = np.vectorize(
-    lambda vec: get_obs_variance(vec),
-    doc="Vectorized `get_obs_variance`",
-    signature="(n),()->()",
-)
+    Nearly all climate data, functions like scipy.stats.multivariate_norm
+    (aka scikit-learn convention) will need to be TRANSPOSED for the function
+    to work as normally intended, which is automatically preformed here.
+    (aka (N, M) -- N samples, M features/independent variable)
+    This function (and its companion ones) ASSUMES this will be the shape of arr
+
+    Try this function with 1D vector:
+
+    vec.reshape(-1, 1)
+    (scikit-learn convention for single feature)
+    gives (sample_size, 1) and WORKS
+
+    vec.reshape(1, -1)
+    (scikit-learn convention for single sample)
+    gives (1, sample_size) and DOES NOT WORK
+
+    Parameters
+    ----------
+    arr: numpy.ndarray
+        A multidimensional array that needs a vector of variance for each COLUMN
+        Shape (N, M) (N samples, M features/independent variable)
+    kwargs_for_get_obs_variance: dict | None
+        kwargs to be added to get_obs_variance (i.e. compute_anomalies and ddof)
+
+    Returns
+    -------
+    variance: numpy.ndarray
+        standard deviation squared
+        Shape (M,) (M features)
+    """
+    if kwargs_for_get_obs_variance is None:
+        kwargs_for_get_obs_variance = {}
+    operator = partial(get_obs_variance, **kwargs_for_get_obs_variance)
+    return np.vectorize(operator, signature="(n)->()")(arr.T)
 
 
 def get_auto_corr(
@@ -168,17 +220,48 @@ def get_auto_corr(
     return ar_n, autocovariance_n, variance, sigma2_eps
 
 
-# get_auto_corr_1, operated over many time series
-# behaves similarly to obs_variance_vectorize but give
-# more scalars (aka for a m-row n-column array, it gives
-# 4 different length-m vectors
+def get_auto_corr_1_vectorize(
+        arr: np.ndarray,
+        n: int = 1,
+):
+    """
+    Vectorised get_auto_corr
+    Defaults to lag 1 via kwargs_for_get_auto_corr
 
+    Similar precautions with get_obs_variance_vectorize:
+    This assumes the convention used in climate data,
+    scikit-learn, multivariate random num generator etc.
+    (transpose arr automatically so it works properly with np.vectorize)
+    See get_obs_variance_vectorize docstring
 
-get_auto_corr_1_vectorize = np.vectorize(
-    lambda vec: get_auto_corr(vec, 1),
-    doc="Vectorized `get_auto_corr`",
-    signature="(n)->(), (), (), ()",
-)
+    Parameters
+    ----------
+    arr: numpy.ndarray
+        A multi-dimension array that needs autoregression correlation
+        Samples should be on EACH ROW
+        Shape (N, M) (N samples, M features/independent variable)
+    n: int
+        order (lag) of AR
+
+    Returns
+    -------
+    ar_n : float
+        the n-th lagged correlation
+        this is autocovariance_n divided by (non-lagged) variance
+        Shape (M,) (M features)
+    autocovariance_n: float
+        Same as in ar_n but not standardized
+        Shape (M,) (M features)
+    variance: float
+        standard deviation squared
+        Shape (M,) (M features)
+    sigma2_eps: float
+        Standard error of the autoregressive model associated with
+        the same autocorrelation
+        Shape (M,) (M features)
+    """
+    operator = partial(get_auto_corr, n=n)
+    return np.vectorize(operator, signature="(n)->(), (), (), ()")(arr.T)
 
 
 def compute_lag_1_ts_metrics_from_da(
