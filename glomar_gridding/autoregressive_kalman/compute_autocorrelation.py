@@ -120,7 +120,7 @@ def get_obs_variance_vectorize(
 
     Nearly all climate data, functions like scipy.stats.multivariate_norm
     (aka scikit-learn convention) will need to be TRANSPOSED for the function
-    to work as normally intended, which is automatically preformed here.
+    to work as normally intended, which is automatically performed here.
     (aka (N, M) -- N samples, M features/independent variable)
     This function (and its companion ones) ASSUMES this will be the shape of arr
 
