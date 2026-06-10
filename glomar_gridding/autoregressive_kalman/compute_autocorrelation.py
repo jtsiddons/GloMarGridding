@@ -58,7 +58,7 @@ get_anomalies_vectorize = np.vectorize(
 )
 
 
-def get_obs_variance(vec: np.ndarray, dof: int = 1):
+def get_obs_variance(vec: np.ndarray, ddof: int = 1):
     """
     Compute observed variance (standard deviation squared)
     Bessel correction applied by default
@@ -67,8 +67,9 @@ def get_obs_variance(vec: np.ndarray, dof: int = 1):
     ----------
     vec: numpy.ndarray
         1D vector that needs observed variance
-    dof: int
+    ddof: int
         Degrees of freedom correction, default 1 (Bessel's correction)
+        This is the similar to kwarg used in numpy.cov (bias and ddof)
 
     Returns
     -------
@@ -77,7 +78,7 @@ def get_obs_variance(vec: np.ndarray, dof: int = 1):
     """
     n = np.sum(~np.isnan(vec))  # Non-nan sample size
     squared_anomalies = np.square(get_anomalies(vec))
-    variance = np.nansum(squared_anomalies) / (n - dof)
+    variance = np.nansum(squared_anomalies) / (n - ddof)
     return variance
 
 
@@ -87,7 +88,7 @@ def get_obs_variance(vec: np.ndarray, dof: int = 1):
 
 
 obs_variance_vectorize = np.vectorize(
-    lambda vec: get_obs_variance(vec, dof=1),
+    lambda vec: get_obs_variance(vec),
     doc="Vectorized `get_obs_variance`",
     signature="(n),()->()",
 )
