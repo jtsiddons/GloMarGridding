@@ -109,9 +109,9 @@ def get_obs_variance(
 
 
 def get_obs_variance_vectorize(
-        arr: np.ndarray,
-        kwargs_for_get_obs_variance: dict | None = None,
-    ) -> np.ndarray:
+    arr: np.ndarray,
+    kwargs_for_get_obs_variance: dict | None = None,
+) -> np.ndarray:
     """
     Running get_obs_variance for a multi-dimension array
 
@@ -221,8 +221,8 @@ def get_auto_corr(
 
 
 def get_auto_corr_1_vectorize(
-        arr: np.ndarray,
-        n: int = 1,
+    arr: np.ndarray,
+    n: int = 1,
 ):
     """
     Vectorised get_auto_corr
