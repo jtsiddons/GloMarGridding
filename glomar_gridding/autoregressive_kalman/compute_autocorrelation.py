@@ -27,7 +27,7 @@ import xarray as xr
 import warnings
 
 
-def get_anomalies(vec: np.ndarray):
+def get_anomalies(vec: np.ndarray) -> np.ndarray:
     """
     Compute anomalies, 0-mean centering data samples
     Samples are NOT standardized by their standard deviation
@@ -58,10 +58,14 @@ get_anomalies_vectorize = np.vectorize(
 )
 
 
-def get_obs_variance(vec: np.ndarray, ddof: int = 1):
+def get_obs_variance(
+        vec: np.ndarray,
+        ddof: int = 1,
+        compute_anomalies=True,
+    ) -> float:
     """
-    Compute observed variance (standard deviation squared)
-    Bessel correction applied by default
+    Compute observed variance (standard deviation squared).
+    Bessel correction applied by default.
 
     Parameters
     ----------
@@ -77,7 +81,11 @@ def get_obs_variance(vec: np.ndarray, ddof: int = 1):
         standard deviation squared
     """
     n = np.sum(~np.isnan(vec))  # Non-nan sample size
-    squared_anomalies = np.square(get_anomalies(vec))
+    if compute_anomalies:
+        samples = get_anomalies(vec)
+    else:
+        samples = vec
+    squared_anomalies = np.square(samples)
     variance = np.nansum(squared_anomalies) / (n - ddof)
     return variance
 
@@ -97,7 +105,7 @@ obs_variance_vectorize = np.vectorize(
 def get_auto_corr(
     vec: np.ndarray,
     n: int = 1,
-):
+) -> tuple[float, float, float, float]:
     """
     Compute lag-n autocorrelation
 
@@ -137,7 +145,7 @@ def get_auto_corr(
     # Compute observed variance with dof correction
     # Sample size: len(vec)
     # Degree of freedom: len(vec) - 1
-    variance = get_obs_variance(vec)
+    variance = get_obs_variance(anomalies, compute_anomalies=False)
     #
     # Compute observed autocovariance and autocorrelation
     # Sample size: len(vec) - lag
