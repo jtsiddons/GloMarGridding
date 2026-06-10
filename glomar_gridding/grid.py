@@ -982,7 +982,9 @@ class Grid:
         covariance_matrix : numpy.ndarray | xarray.DataArray
             The covariance matrix for the full (unmasked) grid.
         """
-        self.cov = self.prep_covariance(covariance_matrix)
+        self.covariance: xr.DataArray | np.ndarray = self.prep_covariance(
+            covariance_matrix
+        )
         return None
 
     def _cross_coords(self) -> xr.Coordinates:
@@ -1143,14 +1145,22 @@ class Grid:
         match kriging_method:
             case "simple":
                 self.krige = SimpleKriging(
-                    covariance=self.covariance.values,
+                    covariance=(
+                        self.covariance.values
+                        if isinstance(self.covariance, xr.DataArray)
+                        else self.covariance
+                    ),
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,
                 )
             case "ordinary":
                 self.krige = OrdinaryKriging(
-                    covariance=self.covariance.values,
+                    covariance=(
+                        self.covariance.values
+                        if isinstance(self.covariance, xr.DataArray)
+                        else self.covariance
+                    ),
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,
@@ -1161,7 +1171,11 @@ class Grid:
                         "Error Covariance is required for StochasticKriging"
                     )
                 self.krige = StochasticKriging(
-                    covariance=self.covariance.values,
+                    covariance=(
+                        self.covariance.values
+                        if isinstance(self.covariance, xr.DataArray)
+                        else self.covariance
+                    ),
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,
