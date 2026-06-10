@@ -6,6 +6,7 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 
 ### Bug fixes
 
+* Correct attribute set by `grid.Grid.set_covariance` to `covariance` (#143).
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
   `grid.map_to_grid`, dynamically set the name using the `grid_prefix` argument (#105).
 
