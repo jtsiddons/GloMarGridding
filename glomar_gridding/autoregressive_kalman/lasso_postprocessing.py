@@ -142,7 +142,7 @@ class LassoWeights:
         Convert expanded W into a xarray DataArray instance
 
         Example attrs:
-        
+
         .. code-block::python
            attrs = {
                "lasso_lambda_hyperparm": 0.01,
@@ -341,7 +341,7 @@ class LassoError:
         Convert estimated error covariance into a xarray DataArray instance
 
         Example attrs:
-        
+
         .. code-block::python
            attrs = {
                "lasso_lambda_hyperparm": 0.01,
