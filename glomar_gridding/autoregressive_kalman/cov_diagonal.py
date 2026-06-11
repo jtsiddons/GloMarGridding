@@ -39,9 +39,9 @@ def remove_diag_only_rows(
     Returns
     -------
     new_cov_arr : numpy.ndarray
-        a new covariance without those diagonal-only elements
+        A new covariance without those diagonal-only elements
     D: numpy.ndarray
-        the subsampling matrix that generates new_cor_arr
+        The subsampling matrix that generates new_cor_arr
     """
     n_rows = cov.shape[0]
     logging.debug(f"{cov.shape = }")
@@ -75,8 +75,8 @@ def restore_diag_only_rows(
 ) -> np.ndarray:
     """
     Re-expanding subsampled covariance matrix prior to
-    the removal of diagonal-only elements.
-    Diagonal elements are filled with diag_fill_value.
+    the removal of diagonal-only elements. Diagonal elements are
+    filled with `diag_fill_value`.
 
     Parameters
     ----------
@@ -84,8 +84,8 @@ def restore_diag_only_rows(
         A trimmed numpy array that needs expanded
     D: numpy.ndarray
         The subsampling array that did the original purge
-        (see remove_diag_only_rows)
-        There should only be a single 1 or True per row (axis=0)
+        (see remove_diag_only_rows); there should only be a
+        single 1 or `True` per row (axis=0)
     diag_fill_value: float
         The diagonal fill value for restored rows and columns
     atol: float
@@ -142,26 +142,25 @@ def diag_and_nondiag_rows_subsampler(
     Parameters
     ----------
     cov: numpy.ndarray
-        covariance matrix with possible diagonal only elements
+        Covariance matrix with possible diagonal only elements
     zero_threshold: float
         The near-zero threshold
     return_subsampled_arr: bool
-        Set to True if one wants the split subsampled covariances,
-        otherwise function will just return the subsampling
-        operator matrices
+        Set to `True` if one wants the split subsampled covariances,
+        otherwise function will just return the subsampling operator matrices
 
     Returns
     -------
     d_off_diagonal: numpy.ndarray
-        sampling matrix operator for the off-diagonal rows
+        Sampling matrix operator for the off-diagonal rows
     the_denser_parts: numpy.ndarray | None
-        a (somewhat denser) subsampled by that matrix
-        Set to None if return_subsampled_arr is False
+        A (somewhat denser) subsampled by that matrix
+        Set to `None` if return_subsampled_arr is `False`
     d_diagonal_only: numpy.ndarray
-        sampling matrix operator for the diagonal only rows
+        Sampling matrix operator for the diagonal only rows
     isolated_diag_vals: numpy.ndarray | None
-        vector with diagonal values of those diagonal rows
-        Set to None if return_subsampled_arr is False
+        Vector with diagonal values of those diagonal rows
+        Set to `None` if return_subsampled_arr is `False`
     """
     n_rows = cov.shape[0]
     logging.debug(f"{cov.shape = }")

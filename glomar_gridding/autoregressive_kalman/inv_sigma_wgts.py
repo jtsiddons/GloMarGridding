@@ -31,7 +31,7 @@ def matmul(
 
 class KalmanOut:
     """
-    class to compute blended forecast and observations
+    Class to compute blended forecast and observations
     variable names follows compute_inv_variance_wgt_mean_kalman
 
     Note:
@@ -42,6 +42,7 @@ class KalmanOut:
     results (even if results are strictly correct). Check your
     underlying reason why one is doing that to make sure that is what
     one intended.
+
     Vector autoregression should only match with full Kriging covariance
     (a fully spatially correlated Kalman filter); local time series
     autoregression would normally only match with local uncertainty of the
@@ -55,17 +56,17 @@ class KalmanOut:
     obs_vector: numpy.ndarray
         1D vector of (gridded) observations
     errcov_forecast: numpy.ndarray
-        2D matrix of errcov for forecast_vector
+        2D matrix of errcov for `forecast_vector`
     errcov_obs: numpy.ndarray
-        2D matrix of errcov for obs_vector
+        2D matrix of errcov for `obs_vector`
     cov_forecast_and_obs: numpy.ndarray | None
-        covariance between forecast/first-guess & observations
+        Covariance between forecast/first-guess & observations
         In NWP-DA, this is usually assumed to be zero
-        aka observation and forecast errors are not correlated.
-        Set it to None if that is zero
+        (aka observation and forecast errors are not correlated);
+        set it to `None` if that is zero (and `None` is the default).
     use_diag_only: bool
-        Ignore off-diagonals of errcov_forecast, errcov_obs,
-        and cov_forecast_and_obs if set to True, default True
+        Ignore off-diagonals of `errcov_forecast`, `errcov_obs`,
+        and `cov_forecast_and_obs` if set to `True`, default `True`.
     """
 
     def __init__(
@@ -121,15 +122,15 @@ class KalmanOut:
         convert2sparse: bool = True,
     ):
         """
-        Setting small elements of self.errcov_obs and errcov_forecast to zero
-        as defined by sparse_threshold value
+        Setting small elements of `self.errcov_obs` and `errcov_forecast` 
+        to zero as defined by sparse_threshold value.
 
-        If there are small values in the diagonals
+        If there are small values in the diagonals.
 
         This reduces memory footprint and may make block-splitting
-        by cov_diagonal easier.
+        by `cov_diagonal` easier.
 
-        It is not intended to be use for use_diag_only mode (?).
+        It is not intended to be use for `use_diag_only mode`.
         This is only used to handle situations that the error covariances
         are big.
 
@@ -138,7 +139,7 @@ class KalmanOut:
         sparse_threshold: float
             (Absolute) off-diagonal values that are to set to zero
         convert2sparse: bool
-            Convert error covariances to scipy sparse array if True
+            Convert error covariances to `scipy.sparse.sparray` if `True`
         """
         if self.use_diag_only:
             err_msg = "This method is not intended to be use with "
@@ -164,20 +165,21 @@ class KalmanOut:
     ) -> np.ndarray | sp.sparse.sparray:
         """
         Set "small" elements of the array to zero
-        Convert of scipy sparse if required
+
+        Convert to `scipy.sparse.sparray` if required
 
         Parameters
         ----------
         arr: numpy.ndarray
             Array to be manipulated
         sparse_threshold: float
-            threshold in which values less than to be to set 0
+            Threshold in which values less than to be to set 0
         leave_diagonal_alone: bool
-            Set to True to leave the diagonal unchanged
-            True by default
+            Set to `True` to leave the diagonal unchanged;
+            `True` by default
         convert2sparse: bool
-            Convert arr to scipy sparse matrix if True
-            True by default
+            Convert arr to `scipy.sparse.sparray` if `True`;
+            `True` by default
 
         Returns
         -------
@@ -204,20 +206,26 @@ class KalmanOut:
         This uses a form that requires only ONE matrix inverses
         and reciprocals (good!) and is more commonly seen in
         Kalman Filter guides (including the form uses in Wikipedia)
-        https://en.wikipedia.org/wiki/Kalman_filter
-        Probably everyone hate matrix inverses... (for good reason)
+        https://en.wikipedia.org/wiki/Kalman_filter;
+        Probably everyone hate matrix inverses... (for good reason).
 
         1D vector form of Kalman gain:
+
         gain = forecast_err / (forecast_err + obs_err)
 
         Matrix form of Kalman gain:
+
         gain = forecast_err @ inv(forecast_err + obs_err)
+
         gain @ (forecast_err + obs_err) = forecast_err
+
         (gain @ (forecast_err + obs_err)).T = forecast_err.T
+
         (forecast_err + obs_err)).T @ gain.T = forecast_err.T
 
-        but forecast_err and obs_err are symmetric
-        Hence solve set of linear equations that:
+        However, `forecast_err` and `obs_err` are symmetric;
+        hence, solve set of linear equations that:
+
         (forecast_err + obs_err) @ gain.T = forecast_err
 
         Attributes
@@ -305,10 +313,11 @@ class KalmanOut:
 
 class KalmanOutUncorrCorrSplit:
     """
-    class to compute blended forecast and observations
+    Class to compute blended forecast and observations
+
     This splits the error covariances into diagonal and non-diagonal bits
 
-    It is a wrapper for KalmanOut.
+    This is a wrapper for KalmanOut.
 
     Parameters
     ----------
@@ -317,18 +326,18 @@ class KalmanOutUncorrCorrSplit:
     obs_vector: numpy.ndarray
         1D vector of (gridded) observations
     errcov_forecast: numpy.ndarray
-        2D matrix of errcov for forecast_vector
+        2D matrix of errcov for `forecast_vector`
     errcov_obs: numpy.ndarray
-        2D matrix of errcov for obs_vector
+        2D matrix of errcov for `obs_vector`
     cov_forecast_and_obs: numpy.ndarray | None
-        covariance between forecast & observations
-        Set it to None if that is zero
+        Covariance between forecast & observations
+        Set it to `None` if that is zero
     arr_2_decide_if_points_are_isolated: numpy.ndarray
         The matrix (usually a covariance) to determine
         if the point is diagonally isolated. This can
         be the prior spatial covariance.
     zero_threshold: float
-        The threshold applied to arr_2_decide_if_points_are_isolated
+        The threshold applied to `arr_2_decide_if_points_are_isolated`
         to decide if the row/column is diagonal.
     """
 

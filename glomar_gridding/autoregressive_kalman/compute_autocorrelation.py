@@ -31,8 +31,9 @@ from functools import partial
 
 def get_anomalies(vec: np.ndarray) -> np.ndarray:
     """
-    Compute anomalies, 0-mean centering data samples
-    Samples are NOT standardized by their standard deviation
+    Compute anomalies, 0-mean centering data samples.
+
+    Samples are NOT standardized by their standard deviation.
 
     Parameters
     ----------
@@ -51,25 +52,25 @@ def get_anomalies(vec: np.ndarray) -> np.ndarray:
 
 def get_anomalies_vectorize(arr: np.ndarray):
     """
-    Vectorised get_anomalies
+    Vectorised `get_anomalies`
 
-    Similar precautions with get_obs_variance_vectorize:
-    This assumes the convention used in climate data,
-    scikit-learn, multivariate random num generator etc.
-    (transpose arr automatically so it works properly with np.vectorize)
-    See get_obs_variance_vectorize docstring
+    Similar precautions with `get_obs_variance_vectorize`:
+    this assumes the convention used in climate data,
+    `scikit-learn`, multivariate random num generator etc.
+    (transpose arr automatically so it works properly with `np.vectorize`).
+    See `get_obs_variance_vectorize` docstring
 
     Parameters
     ----------
     arr: numpy.ndarray
-        Array that needs be 0-averaged for each ROW
-        Shape (N, M) (N samples, M features/independent variable)
+        Array that needs be 0-averaged for each ROW;
+        shape `(N, M)` (N samples, M features/independent variable)
 
     Returns
     -------
     anomalies: numpy.ndarray
-        0-averaged values along each ROW
-        Shape (N, M) (N samples for M features)
+        0-averaged values along each ROW;
+        shape `(N, M)` (N samples for M features)
     """
     return np.vectorize(get_anomalies, signature="(n)->(n)")(arr.T)
 
@@ -88,10 +89,10 @@ def get_obs_variance(
     vec: numpy.ndarray
         1D vector that needs observed variance
     ddof: int
-        Degrees of freedom correction, default 1 (Bessel's correction)
-        This is the similar to kwarg used in numpy.cov (bias and ddof)
+        Degrees of freedom correction, default 1 (Bessel's correction);
+        this is the similar to kwargs used in `numpy.cov` (`bias` and `ddof`)
     compute_anomalies: bool
-        If True, the mean will be removed from vec
+        If `True`, the mean will be removed from vec
 
     Returns
     -------
@@ -115,38 +116,38 @@ def get_obs_variance_vectorize(
     """
     Running get_obs_variance for a multi-dimension array
 
-    Warning:
-    Naive np.vectorize may result operations on WRONG axis.
+    Warning: naive `np.vectorize` may result operations on WRONG axis.
 
-    Nearly all climate data, functions like scipy.stats.multivariate_norm
+    Nearly all climate data, functions like `scipy.stats.multivariate_norm`
     (aka scikit-learn convention) will need to be TRANSPOSED for the function
     to work as normally intended, which is automatically performed here.
-    (aka (N, M) -- N samples, M features/independent variable)
-    This function (and its companion ones) ASSUMES this will be the shape of arr
+    (aka (N, M) -- N samples, M features/independent variable); this function
+    (and its companion ones) ASSUMES this will be the shape of `arr`.
 
     Try this function with 1D vector:
 
-    vec.reshape(-1, 1)
+    `vec.reshape(-1, 1)`
     (scikit-learn convention for single feature)
     gives (sample_size, 1) and WORKS
 
-    vec.reshape(1, -1)
+    `vec.reshape(1, -1)`
     (scikit-learn convention for single sample)
     gives (1, sample_size) and DOES NOT WORK
 
     Parameters
     ----------
     arr: numpy.ndarray
-        A multidimensional array that needs a vector of variance for each COLUMN
-        Shape (N, M) (N samples, M features/independent variable)
+        A multidimensional array that needs a vector of variance for
+        each COLUMN;
+        shape `(N, M)` (N samples, M features/independent variable)
     kwargs_for_get_obs_variance: dict | None
-        kwargs to be added to get_obs_variance (i.e. compute_anomalies and ddof)
+        `kwargs` to be added to get_obs_variance (i.e. `compute_anomalies` and `ddof`)
 
     Returns
     -------
     variance: numpy.ndarray
-        standard deviation squared
-        Shape (M,) (M features)
+        standard deviation squared;
+        shape (M,) (M features)
     """
     if kwargs_for_get_obs_variance is None:
         kwargs_for_get_obs_variance = {}
@@ -161,12 +162,12 @@ def get_auto_corr(
     """
     Compute lag-n autocorrelation
 
-    This is the "weight" for spatially uncorrelated autoregressive model
+    This is the "weight" for spatially uncorrelated autoregressive model.
 
     Degrees of freedom:
     - This should be n minus lag minus 1
-    - for lag-1, there are n - 1 samples, with an additional -1
-    from Bessel's correction
+    - For lag-1, there are n - 1 samples
+    with an additional -1 from Bessel's correction
 
     Parameters
     ----------
@@ -178,12 +179,12 @@ def get_auto_corr(
     Returns
     -------
     ar_n : float
-        the n-th lagged correlation
-        this is autocovariance_n divided by (non-lagged) variance
+        The n-th lagged correlation; this is
+        autocovariance_n divided by (non-lagged) variance
     autocovariance_n: float
-        Same as in ar_n but not standardized
+        Same as in `ar_n` but not normalised
     variance: float
-        standard deviation squared
+        Standard deviation squared
     sigma2_eps: float
         Standard error of the autoregressive model associated with
         the same autocorrelation
@@ -226,39 +227,39 @@ def get_auto_corr_1_vectorize(
 ):
     """
     Vectorised get_auto_corr
-    Defaults to lag 1 via kwargs_for_get_auto_corr
 
-    Similar precautions with get_obs_variance_vectorize:
-    This assumes the convention used in climate data,
+    Defaults to lag-1 via `kwargs_for_get_auto_corr`
+
+    Similar precautions with `get_obs_variance_vectorize`:
+    this assumes the convention used in climate data,
     scikit-learn, multivariate random num generator etc.
-    (transpose arr automatically so it works properly with np.vectorize)
-    See get_obs_variance_vectorize docstring
+    (transpose arr automatically so it works properly with np.vectorize);
+    see `get_obs_variance_vectorize` docstring.
 
     Parameters
     ----------
     arr: numpy.ndarray
-        A multi-dimension array that needs autoregression correlation
-        Samples should be on EACH ROW
-        Shape (N, M) (N samples, M features/independent variable)
+        A multi-dimension array that needs autoregression correlation;
+        shape `(N, M)` (N samples, M features/independent variable)
     n: int
         order (lag) of AR
 
     Returns
     -------
     ar_n : float
-        the n-th lagged correlation
-        this is autocovariance_n divided by (non-lagged) variance
-        Shape (M,) (M features)
+        The n-th lagged correlation; this is
+        autocovariance_n divided by (non-lagged) variance;
+        shape `(M,)` (M features)
     autocovariance_n: float
-        Same as in ar_n but not standardized
-        Shape (M,) (M features)
+        Same as in ar_n but not standardised;
+        shape `(M,)` (M features)
     variance: float
-        standard deviation squared
-        Shape (M,) (M features)
+        Standard deviation squared;
+        shape `(M,)` (M features)
     sigma2_eps: float
         Standard error of the autoregressive model associated with
-        the same autocorrelation
-        Shape (M,) (M features)
+        the same autocorrelation;
+        shape `(M,)` (M features)
     """
     operator = partial(get_auto_corr, n=n)
     return np.vectorize(operator, signature="(n)->(), (), (), ()")(arr.T)
@@ -283,22 +284,22 @@ def compute_lag_1_ts_metrics_from_da(
     Parameters
     ----------
     da: xarray.DataArray
-        A 2+-dimension data array that presumes time is on axis-0
-        By climate data conventions, usually only ensemble number/realization
+        A 2+-dimension data array that presumes time is on axis-0;
+        by climate data conventions, usually only ensemble number/realization
         should have axis number lower than time.
         e.g. Ens, time, z, y, x ... etc.
         Reorder your dimensions first!
     lag: int
-        the lagged autocorrelation needed
+        The lagged autocorrelation needed;
         if lag > 1, then your autoregressive model coefficients are
-        different, see Yule-Walker equations for details
+        different, see Yule-Walker equations for details.
 
     Returns
     -------
     da1: xarray.DataArray
-        data array with lagged autoregression
+        Data array with lagged autoregression
     da2: xarray.DataArray
-        data array with sample variance
+        Data array with sample variance
     """
     if da.dims[0] != "time":
         raise ValueError(f"Unexpected dim order: {da.dims}")

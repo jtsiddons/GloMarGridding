@@ -30,44 +30,41 @@ class Autoregressive1ForecastUncorr:
     Parameters
     ----------
     analysis: numpy.ndarray
-        1D vector of analysis
-        (such as Kriging and Kalman filter outputs)
-        for t=t
+        1D vector of analysis (such as Kriging and
+        Kalman filter outputs) for t=t;
         dtype `float`, shape `(N, )`
     errcov_analysis: numpy.ndarray
-        1D error variance or
-        2D error covariance for analysis
-        if latter, it will only use the diagonal
+        1D error variance or 2D error covariance for analysis;
+        if latter, it will only use the diagonal;
         dtype `float`, shape `(N, )` | `(N, N)`
     lag_1_autocor: numpy.ndarray
-        1D vector of lag-1 autocorrelation
-        Shape should be same as analysis
+        1D vector of lag-1 autocorrelation;
+        shape should be same as analysis;
         dtype `float`, shape `(N, )`
     clim_mean: numpy.ndarray
-        1D vector of climatological mean
-        Shape should be same as analysis
+        1D vector of climatological mean;
+        shape should be same as analysis;
         dtype `float`, shape `(N, )`
     clim_covar: numpy.ndarray
-        Climatological covariance,
-        Can be 1D or 2D,
-        The shape of this should either be n x n (like ellipse covariance)
-        or n (vector of variance at each grid point)
-        If a 2D matrix is provided, it will take the diagonal
+        Climatological covariance;
+        can be 1D or 2D;
+        shape of this should either be n x n (like ellipse covariance)
+        or n (vector of variance at each grid point);
+        if a 2D matrix is provided, it will take the diagonal;
         dtype `float`, shape `(N, )` | `(N, N)`
     errcov_analysis_is_sdev: bool
         Flag indicating if errcov_analysis is
-        variance or standard deviation.
-        This only applies to vectored form (n x 1 shape) of errcov_analysis
-        Default False, errcov_analysis is variance (like SST**2) or
-        full covariance matrix.
-        True if standard deviation
+        variance or standard deviation;
+        this only applies to vectored form (n x 1 shape) of errcov_analysis;
+        default `False`, errcov_analysis is variance (like SST**2) or
+        full covariance matrix;
+        `True` if standard deviation
     clim_covar_is_sdev: bool
-        Flag indicating if clim_covar is
-        variance or standard deviation.
-        This only applies to vectored form (n x 1 shape) of clim_covar
-        Default False, clim_covar is variance (like SST**2) or
-        full covariance matrix.
-        True if standard deviation
+        Flag indicating if clim_covar is variance or standard deviation;
+        this only applies to vectored form (n x 1 shape) of clim_covar;
+        default `False`, clim_covar is variance (like SST**2) or
+        full covariance matrix;
+        `True` if standard deviation
     """
 
     def __init__(
@@ -237,7 +234,7 @@ class Autoregressive1ForecastVector:
     <x(t-1), x(t)> @ <X(t), X(t)>**-1 is stable. GloMarGridding has no
     functionality to compute lagged autocovariances.
 
-    Autoregressive1ForecastUncorr is a special case of this class with
+    `Autoregressive1ForecastUncorr` is a special case of this class with
     the weights being the lag-1 autocorrelation.
 
     Weights are only stable if its spectral radius is less than 1. Otherwise
@@ -252,7 +249,7 @@ class Autoregressive1ForecastVector:
     Regardless, this method is much more expensive. It is in theory more
     complete and deals with spatially correlated component of the analysis.
 
-    Compute Lag-1 autoregressive forecast as a prior for Kalman filter.
+    Compute lag-1 autoregressive forecast as a prior for Kalman filter.
 
     Other notes:
 
@@ -273,7 +270,8 @@ class Autoregressive1ForecastVector:
        = W_Krige(t, t-1)
 
     Uncertainty: It can be shown that if errcov_analysis are Kriging covariance
-    that
+    that:
+
     sigma_sq_eps + sigma_sq_analysis == spatiotemporal Kriging for t+1
 
     In practice, `analysis` will be computed recursively using Kalman filter.
@@ -284,29 +282,27 @@ class Autoregressive1ForecastVector:
     Parameters
     ----------
     analysis: numpy.ndarray
-        1D vector of analysis
-        (such as Kriging and Kalman filter outputs)
-        for t=t
+        1D vector of analysis (such as Kriging and
+        Kalman filter outputs) for t=t;
         dtype `float`, shape `(N, )`
     errcov_analysis: numpy.ndarray
-        2D error covariance for analysis
+        2D error covariance for analysis;
         dtype `float`, shape `(N, N)`
     weights: numpy.ndarray | scipy.sparse.sparray
-        2D weights
+        2D weights;
         dtype `float`, shape `(N, N)`
     clim_mean: numpy.ndarray
-        1D vector of climatological mean
-        Shape should be same as analysis
+        1D vector of climatological mean;
+        shape should be same as analysis;
         dtype `float`, shape `(N, )`
     clim_covar: numpy.ndarray
-        Climatological covariance,
-        Can be 1D or 2D,
-        The shape of this should either be n x n (like ellipse covariance)
-        or n (vector of variance at each grid point)
+        Climatological covariance; can be 1D or 2D;
+        shape of this should either be n x n (like ellipse covariance)
+        or n (vector of variance at each grid point);
         dtype `float`, shape `(N, N)`
     estimated_ar1_errcov: numpy.ndarray | None
-        A precomputed estimate for :math:`C - W C W^{T}`
-        Defaults to None in which that is computed from
+        A precomputed estimate for :math:`C - W C W^{T}`;
+        defaults to None in which that is computed from
         `weights` and `clim_covar`
     """
 
@@ -389,7 +385,9 @@ class Autoregressive1ForecastVector:
         estimate weights using W = lag1_autocov @ inv(clim_covar)
 
         W = <x(t), x(t-1)> @ <x(t), x(t)>**-1
+
         W @ <x(t), x(t)> = <x(t), x(t-1)>
+
         <x(t), x(t)> @ W.T = <x(t), x(t-1)>  <<< computed using np.linalg.solve
 
         Both <x(t), x(t)> and <x(t), x(t-1)> are symmetric
@@ -402,25 +400,24 @@ class Autoregressive1ForecastVector:
         Parameters
         ----------
         analysis: numpy.ndarray
-            1D vector of analysis
-            (such as Kriging and Kalman filter outputs)
-            for t=t
+            1D vector of analysis (such as Kriging and
+            Kalman filter outputs) for t=t;
             dtype `float`, shape `(N, )`
         errcov_analysis: numpy.ndarray
-            2D error covariance for analysis
+            2D error covariance for analysis;
             dtype `float`, shape `(N, N)`
         lag_1_autocov: numpy.ndarray
-            2D lag-1 autocovariance
+            2D lag-1 autocovariance;
             dtype `float`, shape `(N, N)`
         clim_mean: numpy.ndarray
-            1D vector of climatological mean
-            Shape should be same as analysis
+            1D vector of climatological mean;
+            shape should be same as analysis;
             dtype `float`, shape `(N, )`
         clim_covar: numpy.ndarray
-            Climatological covariance,
-            Can be 1D or 2D,
-            The shape of this should either be n x n (like ellipse covariance)
-            or n (vector of variance at each grid point)
+            Climatological covariance;
+            can be 1D or 2D;
+            shape of this should either be n x n (like ellipse covariance)
+            or n (vector of variance at each grid point);
             dtype `float`, shape `(N, N)`
         stability_perturbation: float | None
             A diagonal perturbation to be added clim_covar for
@@ -494,10 +491,10 @@ class Autoregressive1ForecastVector:
             Check weights (in extension for the auto and climatological
             covariances) are stable; see var_stability_check
         full_errcov_out: bool
-            Return full error covariance if True
-            Defaults to True
+            Return full error covariance if True;
+            defaults to `True`
         check_errcov_psd: bool
-            Check if error covariance is positive semi-definite, fix if needed
+            Check if error covariance is positive semi-definite; fix if needed
         clip_kwargs: dict | None
             kwargs for check_and_fix_psd_errcov_by_clipping
 
@@ -566,8 +563,8 @@ class Autoregressive1ForecastVector:
         Parameters
         ----------
         warn_instead: bool
-            By default, this method only generates a warning attribute
-            If this is set to True, method will raise exception
+            By default, this method only generates a warning attribute;
+            if this is set to `True`, method will raise exception
         """
         logging.debug("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
@@ -609,8 +606,8 @@ class Autoregressive1ForecastVector:
         target_variance_fraction=0.95,
     ):
         """
-        Check if self.errcov positive semi-definite
-        If not, use explained_variance_clip to patch it.
+        Check if self.errcov positive semi-definite;
+        if not, use `explained_variance_clip` to patch it.
         """
         if not hasattr(self, "errcov"):
             raise ValueError("errcov has not been estimated yet!")

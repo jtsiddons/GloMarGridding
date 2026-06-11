@@ -19,37 +19,32 @@ from glomar_gridding.autoregressive_kalman import cov_diagonal
 
 class LassoWeights:
     """
-    Class to post process Lasso regression estimate weights
-    e.g. the `self.coefficients` from class LassoEstimate_AR1
-    Expanding them to full domain
-    Convert them from numpy array or scipy sparse array
-    to xarray DataArray
+    Class to post process Lasso regression estimate weights;
+    e.g. the `self.coefficients` from class `LassoEstimate_AR1`;
+    Expanding them to full domain,
+    convert them from `numpy.ndarray` or `scipy.sparse.sparray`
+    to `xarray.DataArray`
 
     Parameters
     ----------
     W: numpy.ndarray | scipy.sparse.sparray
-        A 2D data weights array
-        Should normally be sparse
-        If it is not an instance sp.sparse.sparray,
-        it will converted to one.
-        dtype `float`
+        A 2D data weights array, should normally be sparse;
+        if not an instance `sp.sparse.sparray`, it will converted to one;
+        dtype `float`;
         shape `(N, N)`
     D: numpy.ndarray | scipy.sparse.sparray
-        A 2D array indicating unmasked location
-        Should normally be sparse
-        If it is not an instance sp.sparse.sparray,
-        it will converted to one.
-        dtype `uint`, `bool` etc.
+        A 2D array indicating unmasked location, should normally be sparse;
+        If not an instance `sp.sparse.sparray`, it will converted to one;
+        dtype `uint8` or `bool`;
         shape `(N, M)`
     dtype: type
-        numpy or python native float types that are used
-        for xarray to store the outputs
+        `numpy` or python native `float` types that are used
+        for `xarray` to store the outputs
     fill_value: float
-        The diagonal fill value of the weights
-        Default 0.6
+        The diagonal fill value of the weights; default 0.6
     auto_process: bool
         Allow the normal workflow of this class to be carried out
-        automatically. That is to `expand_W` automatically.
+        automatically. That is to `expand_W` automatically;
         default `True`
     """
 
@@ -82,9 +77,9 @@ class LassoWeights:
 
     def expand_W(self):  # noqa: N802
         """
-        Expand W to include the full domain
-        A fill value can be used to fill the diagonal of
-        the originally fully empty rows.
+        Expand W to include the full domain; a fill value can be used to fill
+        the diagonal of the originally fully empty rows.
+
         Note for VAR(1): 1 e-folding for t+2 implies a ~0.6
         in the diagonal which is the default of `LassoWeights`
         """
@@ -121,7 +116,7 @@ class LassoWeights:
 
     def shrink_W(self):  # noqa: N802
         """
-        If W is expanded, shrink back to its original shape
+        If W is expanded, shrink back to its original shape;
         fill values are removed by row-column subsampling
         """
         if not self.expanded:
@@ -200,6 +195,7 @@ class LassoError:
     """
     Class to post process Lasso regression estimate residues
     e.g. the `self.residues` from class LassoEstimate_AR1
+
     The residues are recomputed into an estimated error covariance
     matrix. That is equivalent to:
 
@@ -208,26 +204,26 @@ class LassoError:
 
     part of the AR forecast error.
 
-    Since LassoEstimate_AR1 by default normalises
-    data before fitting, diagonal observed sigmas have to be multiplied
-    back in (this is not performed here).
+    Since LassoEstimate_AR1 by default normalises data before fitting,
+    diagonal observed sigmas have to be multiplied back in (this is
+    not performed here).
 
-    Errors associated with other things
-    like Kriging errors will still needed to be added in, such as
-    :math:`W K W^{T}` (:math:`K` is Kriging covariance.)
+    Errors associated with other things like Kriging errors will still
+    need to be added in, such as :math:`W K W^{T}` (:math:`K` is
+    Kriging covariance.)
 
-    Convert output to xarray DataArray
+    Converts output to `xarray.DataArray`
 
     Convention for the residues matrix:
-    rows - residues at each point (axis = 0)
-    number of columns - number of time (in/out-of sample) residues
+    - rows: residues at each point (axis = 0)
+    - number of columns: number of time (in/out-of sample) residues
     per row (axis = 1)
 
     Parameters
     ----------
     residues_matrix: numpy.ndarray
-        A 2D data residues
-        dtype `float`
+        A 2D data residues;
+        dtype `float`;
         shape `(N, T*)`
     dof_adj: float | int | None
         Degrees of freedom adjustment when computing covariance
@@ -235,28 +231,24 @@ class LassoError:
         only applies to in-sample residue.
         The usual divisor for R @ R.T is sample size per time
         series/feature (dof == sample_size). However, it is in-sample
-        residues of a regression fit:
-        dof = sample_size - number_of_covariates
-        if covariates/covariates are not correlated with each other nor
-        the regression is regularized.
-        If None (or 0 default), dof_adj will be set to 0,
-        and R @ R.T will be divided by T*.
-        Some ways to estimate dof_adj (if needed) can result
-        in non-integer values, but single line OLS and Lasso
-        always give integer adjustments to DOF.
+        residues of a regression fit: dof = sample_size - number_of_covariates
+        if covariates/covariates are not correlated with each other.
+        If `None` (or 0 default), `dof_adj` will be set to 0,
+        and R @ R.T will be divided by T*. Some ways to estimate `dof_adj`
+        (if needed) can result in non-integer values, but single line OLS
+        and Lasso should give integer adjustments only.
     D: numpy.ndarray
-        A 2D array indicating unmasked location
-        Should normally be sparse
-        If it is not an instance sp.sparse.sparray,
-        it will converted to one.
-        dtype `uint`, `bool` etc.
+        A 2D array indicating unmasked location, should normally be sparse;
+        if it is not an instance `sp.sparse.sparray`, it will be converted
+        to one;
+        dtype `uint`, `bool`;
         shape `(N, M)`
     dtype: type
-        numpy or python native float types that are used
-        for xarray to store the outputs
+        `numpy` or python native `float` types that are used
+        for `xarray` to store the outputs
     fill_value: float
-        The diagonal fill value of the error covariance
-        Default 0.36
+        The diagonal fill value of the error covariance;
+        default 0.36
     auto_process: bool
         Allow the normal workflow of this class to be carried out
         automatically. That is to `estimate_errcov` and then
