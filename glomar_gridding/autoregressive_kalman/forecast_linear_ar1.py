@@ -496,7 +496,7 @@ class Autoregressive1ForecastVector:
         check_errcov_psd: bool
             Check if error covariance is positive semi-definite; fix if needed
         clip_kwargs: dict | None
-            kwargs for check_and_fix_psd_errcov_by_clipping
+            kwargs for _check_and_fix_psd_errcov_by_clipping
 
         Attributes
         ----------
@@ -539,7 +539,7 @@ class Autoregressive1ForecastVector:
         self.errcov = sigma_sq_eps + sigma_sq_analysis
         #
         if check_errcov_psd:
-            self.check_and_fix_psd_errcov_by_clipping(**clip_kwargs)
+            self._check_and_fix_psd_errcov_by_clipping(**clip_kwargs)
         #
         if not full_errcov_out:
             self.errcov = np.diag(self.errcov)
@@ -601,7 +601,7 @@ class Autoregressive1ForecastVector:
             else:
                 raise ValueError(errmsg)
 
-    def check_and_fix_psd_errcov_by_clipping(
+    def _check_and_fix_psd_errcov_by_clipping(
         self,
         target_variance_fraction=0.95,
     ):
