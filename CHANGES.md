@@ -2,7 +2,7 @@
 
 ## 1.2.0 (Unreleased)
 
-Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes).
+Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan (@SCChan21).
 
 ### New features and enhancements
 
