@@ -338,11 +338,14 @@ class LassoError:
         """
         Convert estimated error covariance into a xarray DataArray instance
 
-        attrs:
-        example attrs = {
-            "lasso_lambda_hyperparm": 0.01,
-            "description": "VAR(1) estimated error covariance for SST",
-            "units": "1"}
+        Example attrs:
+        
+        .. code-block::python
+           attrs = {
+               "lasso_lambda_hyperparm": 0.01,
+               "description": "VAR(1) estimated error covariance for SST",
+               "units": "1"
+           }
 
         Parameters
         ----------
