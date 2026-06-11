@@ -74,8 +74,6 @@ find in Chapter 8 of [Wilks]:
     \epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
     (1-\phi^2)\sigma^2_\text{climatology})
 
-.. Work in progress: Ideally, this should be done in vectorised form.
-
 `Wikipedia intro <https://en.wikipedia.org/wiki/Vector_autoregression>`__
 
 `Wikipedia intro <https://en.wikipedia.org/wiki/Lasso_(statistics)>`__
@@ -87,15 +85,10 @@ the seemingly unrelated regression of vector autoregression. For high resolution
 datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using
 regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via ``scikit-learn``;
 LASSO generally leads to sparse :math:`\mathbf{W}`, makes them easier to handle memory and computational cost via
-sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the
-the least squares cost function that is proportional to the sum of the absolute values of all regression coefficients. The
+sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the least squares cost
+function that is proportional to the sum of the absolute values of all regression coefficients. The
 sum is scaled by a tunable hyperparameter; it is usually called :math:`\lambda` in statistics literature (including the Wikipedia
 article) but is called :math:`\alpha` instead in ``scikit-learn`` documentation.
-
-.. This requires a modeled or computed lagged autocovariance and contemporary covariance; the latter
-.. can use the `ellipse` covariance (part of `GlomarGridding`... former not yet!). The predicted value
-.. for a point would now depends on values of other points. This also require computation of a weight
-.. matrix that is similar to Kriging with full error covariance that is contains off-diagonal values.
 
 Uncertainty weighted average (Kalman Filter)
 ============================================

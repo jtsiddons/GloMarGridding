@@ -14,7 +14,7 @@ A popular way to do so is via Kalman Filter -- a recursive method that blends a 
 
 This lead to the question how would one produce a forecast priors. The priors/first guesses are often based on outputs of dynamical models like in numerical weather prediction and reanalysis; even in satnav or autopilot, simple dynamics are included (dead-reckoning along roads). Such dynamics are often not part of the development of the gridded observations; GlomarGridding is a package for statistical modelling only.
 
-A simple statistical approach is implemented here to produce such forecast, basing on the simple idea is that current condition (described by the variable `a` below) will generally tend toward climatology (`E(a)`). The simplest way to model that behavior is the local 1st order autoregressive model, in which the expected value for `a(t)` is a linear function of the observed lag-1 correlation and its last observed value (`a(t-1)`), resulting in exponential relaxation toward `E(a)`, plus a normal-distributed uncertainty epsilon:
+A simple statistical approach is implemented here to produce such forecast, basing on the simple idea is that current condition (described by the variable $a$ below) will generally tend toward climatology ($E(a)$). The simplest way to model that behavior is the local 1st order autoregressive model, in which the expected value for $a(t)$ is a linear function of the observed lag-1 correlation and its last observed value ($a(t-1)$), resulting in exponential relaxation toward $E(a)$, plus a normal-distributed uncertainty epsilon:
 
 $$
 a_{t} = \Phi (a_{t-1} - E(a)) + \epsilon
@@ -45,7 +45,9 @@ Work in progress: Ideally, this should be done in vectorised form.
 
 [Wikipedia intro](https://en.wikipedia.org/wiki/Vector_autoregression)
 
-This requires a modeled or computed lagged autocovariance and contemporary covariance; the latter can use the `ellipse` covariance (part of `GlomarGridding`... former not yet!). The predicted value for a point would now depends on values of other points. This also require computation of a weight matrix that is similar to Kriging with full error covariance that is contains off-diagonal values.
+`Wikipedia intro <https://en.wikipedia.org/wiki/Lasso_(statistics)>`__
+
+For the diagonal $\Phi$ case, the lagged autocorrelation is easy to compute from observations; its application to statistical forecasting is highly stable and quick. The weights for the multi-variate correlated case are much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of the seemingly unrelated regression of vector autoregression. For high resolution datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via `scikit-learn`; LASSO generally leads to sparse $\mathbf{W}$, makes them easier to handle memory and computational cost via sparse matrix classes and function within `scipy`. What LASSO does is that it adds a penalty term to the least squares cost function that is proportional to the sum of the absolute values of all regression coefficients. The sum is scaled by a tunable hyperparameter; it is usually called $\lambda$ in statistics literature (including the Wikipedia article) but is called $\alpha$ instead in `scikit-learn` documentation.
 
 # Uncertainty weighted average (Kalman Filter)
 
