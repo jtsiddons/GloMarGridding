@@ -113,9 +113,10 @@ class Autoregressive1ForecastUncorr:
         else:
             self.clim_covar = clim_covar
         #
-        # Names of methods to compute prediction
+        # Aliases for methods to compute prediction
         self.compute_forecast = self.compute_forecast_local
         self.predict = self.compute_forecast_local  # sklearn standard
+        self.solve = self.compute_forecast_local
         #
         # Use only diagonal if 2D matrices are provided for
         # clim_covar and errcov_analysis
@@ -346,9 +347,10 @@ class Autoregressive1ForecastVector:
                 UserWarning,
             )
         #
-        # Names of methods to compute prediction
+        # Aliases for methods to compute prediction
         self.compute_forecast = self.compute_forecast_vector
         self.predict = self.compute_forecast_vector  # sklearn standard
+        self.solve = self.compute_forecast_vector
         #
         check_if_wgts_are_sp_sparse = isinstance(
             self.weights,

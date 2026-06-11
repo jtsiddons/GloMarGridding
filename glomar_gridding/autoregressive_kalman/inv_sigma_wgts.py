@@ -115,6 +115,9 @@ class KalmanOut:
                 self.cov_forecast_and_obs = None
             self.multiply_operator = matmul
             self.one_maker = np.eye
+        # Aliases for `compute_outputs`
+        self.predict = self.compute_outputs  # sklearn standard
+        self.solve = self.compute_outputs
 
     def sparse_approx_4_errcov(
         self,
@@ -421,6 +424,14 @@ class KalmanOutUncorrCorrSplit:
             cov_forecast_and_obs_c,
             use_diag_only=False,
         )
+        # Aliases for `solve`
+        self.predict = self.solve  # sklearn standard
+        self.compute_outputs = self.solve
+
+    def solve(self):
+        """Shortcut to run both `solve_uncorr` and `solve_corr`"""
+        self.solve_uncorr()
+        self.solve_corr()
 
     def solve_uncorr(self):
         """Alias for instance_name.uncorr_part.compute_outputs()"""
