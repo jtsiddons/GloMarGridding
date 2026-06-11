@@ -1,7 +1,7 @@
 """
 Direct estimation of weights used in vectorized autoregressive model
-using grid point-by-grid point fitting of Lasso regression
-(aka seemingly (un)related regression)
+using grid point-by-grid point fitting of Lasso regression Tibshirani
+[Tibshirani_Lasso] (aka seemingly (un)related regression)
 
 Outputs can be organised to be used for class `Autoregressive1ForecastVector`
 in `forecast_linear_ar1`
