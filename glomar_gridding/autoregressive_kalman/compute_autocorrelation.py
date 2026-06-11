@@ -141,7 +141,8 @@ def get_obs_variance_vectorize(
         each COLUMN;
         shape `(N, M)` (N samples, M features/independent variable)
     kwargs_for_get_obs_variance: dict | None
-        `kwargs` to be added to get_obs_variance (i.e. `compute_anomalies` and `ddof`)
+        `kwargs` to be added to get_obs_variance (i.e. `compute_anomalies`
+        and `ddof`)
 
     Returns
     -------
