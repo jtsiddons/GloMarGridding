@@ -148,8 +148,8 @@ class Autoregressive1ForecastUncorr:
             err_msg = "lag_1_autocor is not a vector. "
             err_msg += "This class only accepts autocorrelations."
             raise ValueError(err_msg)
-        self.bad_model = np.any(np.abs(self.lag_1_autocor) >= 1)
-        if self.bad_model:
+        self._bad_model = np.any(np.abs(self.lag_1_autocor) >= 1)
+        if self._bad_model:
             warnings.warn(
                 "Large abs values (>= 1) detected in lag_1_autocor",
                 UserWarning,
@@ -219,7 +219,7 @@ class Autoregressive1ForecastUncorr:
         sigma_sq_eps = climvar_mult * self.clim_covar
         sigma_sq_analysis = autocorr_sq * self.errcov_analysis
         self.errcov = sigma_sq_eps + sigma_sq_analysis
-        self.bad_model = False
+        self._bad_model = False
         if full_errcov_out:
             self.errcov = np.diag(self.errcov)
 
@@ -371,7 +371,7 @@ class Autoregressive1ForecastVector:
         logging.debug(f"{self.weights.shape = }")
         #
         self._check_args()
-        self.bad_model = None
+        self._bad_model = None
 
     @classmethod
     def from_autocov(
@@ -507,8 +507,6 @@ class Autoregressive1ForecastVector:
             AR1 forecast
         errcov: numpy.ndarray
             The error covariance for the forecast
-        bad_model: bool
-            Boolean advisory that the weights being unchecked
         """
         logging.debug(f"{self.weights = }")
         if check_wgt_stability:
@@ -516,9 +514,8 @@ class Autoregressive1ForecastVector:
         else:
             warn_msg = "check_wgt_stability is disabled; "
             warn_msg += "check is recommended as VAR may be unstable. "
-            warn_msg += "As precaution, self.bad_model defaults to True."
             warnings.warn(warn_msg, UserWarning)
-            self.bad_model = True
+            self._bad_model = True
         #
         logging.debug("Computing forecast")
         diff_with_clim_mean = self.analysis - self.clim_mean
@@ -571,11 +568,6 @@ class Autoregressive1ForecastVector:
         warn_instead: bool
             By default, this method only generates a warning attribute
             If this is set to True, method will raise exception
-
-        Attributes
-        ----------
-        bad_model: bool
-            Boolean advisory that the weights being not weakly stationary
         """
         logging.debug("Checking weight stability")
         # Don't use sp.linalg.eigh or np.linalg.eigvalsh etc.,
@@ -601,8 +593,8 @@ class Autoregressive1ForecastVector:
         largest_eigval = np.max(np.real(eigvals))
         logging.debug(f"{smallest_eigval = }")
         logging.debug(f"{largest_eigval = }")
-        self.bad_model = (smallest_eigval < -1.0) or (largest_eigval > 1.0)
-        if self.bad_model:
+        self._bad_model = (smallest_eigval < -1.0) or (largest_eigval > 1.0)
+        if self._bad_model:
             errmsg = "Eigenvalues of estimated weights have values > 1; "
             errmsg += "autocovariance "
             errmsg += "covariance do not satisfy stationarity requirements, "
