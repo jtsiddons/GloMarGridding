@@ -605,7 +605,7 @@ class Autoregressive1ForecastVector:
             errmsg = "Eigenvalues of estimated weights have values > 1; "
             errmsg += "autocovariance "
             errmsg += "covariance do not satisfy stationarity requirements, "
-            errmsg == "and error covariances are incorrect."
+            errmsg += "and error covariances are incorrect."
             if warn_instead:
                 warnings.warn(errmsg, UserWarning)
             else:
