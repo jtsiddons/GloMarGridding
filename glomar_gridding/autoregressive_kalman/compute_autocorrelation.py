@@ -90,7 +90,8 @@ def get_obs_variance(
         1D vector that needs observed variance
     ddof: int
         Degrees of freedom correction, default 1 (Bessel's correction);
-        this is the similar to kwargs used in `numpy.cov` (`bias` and `ddof`)
+        this is the similar to kwargs used in `numpy.cov` (`bias` and
+        `ddof`)
     compute_anomalies: bool
         If `True`, the mean will be removed from vec
 
@@ -111,7 +112,8 @@ def get_obs_variance(
 
 def get_obs_variance_vectorize(
     arr: np.ndarray,
-    kwargs_for_get_obs_variance: dict | None = None,
+    ddof: int = 1,
+    compute_anomalies: bool = True,
 ) -> np.ndarray:
     """
     Running get_obs_variance for a multi-dimension array
@@ -140,9 +142,13 @@ def get_obs_variance_vectorize(
         A multidimensional array that needs a vector of variance for
         each COLUMN;
         shape `(N, M)` (N samples, M features/independent variable)
-    kwargs_for_get_obs_variance: dict | None
-        `kwargs` to be added to get_obs_variance (i.e. `compute_anomalies`
-        and `ddof`)
+    ddof: int
+        Degrees of freedom correction, default 1 (Bessel's correction);
+        this is the similar to kwargs used in `numpy.cov` (`bias` and
+        `ddof`); this is the same keyword for `get_obs_variance`
+    compute_anomalies: bool
+        If `True`, the mean will be removed from vec; this is the same
+        keyword for `get_obs_variance`
 
     Returns
     -------
@@ -150,9 +156,11 @@ def get_obs_variance_vectorize(
         standard deviation squared;
         shape (M,) (M features)
     """
-    if kwargs_for_get_obs_variance is None:
-        kwargs_for_get_obs_variance = {}
-    operator = partial(get_obs_variance, **kwargs_for_get_obs_variance)
+    operator = partial(
+        get_obs_variance,
+        ddof=ddof,
+        compute_anomalies=compute_anomalies,
+    )
     return np.vectorize(operator, signature="(n)->()")(arr.T)
 
 
