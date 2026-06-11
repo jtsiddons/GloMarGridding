@@ -152,8 +152,6 @@ class LassoEstimate_AR1:
         of the regression coefficients based on seemingly (un)related
         regression approach
 
-        Adds the following attributes to class instance:
-
         Attributes
         ----------
         coefficients: numpy.ndarray
@@ -161,9 +159,8 @@ class LassoEstimate_AR1:
             shape `(N, N)`
         residues: numpy.ndarray
             The residues of the fit;
-            length of residue time series
-            depends on `out_of_sample_residues`
-            and `hold_out_ratio`;
+            length of residue time series depends on
+            `out_of_sample_residues` and `hold_out_ratio`;
             shape `(N, T*)` in which `T*` <= `T`
         """
         self.coefficients = np.zeros((self.n_xy, self.n_xy), dtype=self.dtype)

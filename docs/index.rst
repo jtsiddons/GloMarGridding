@@ -69,4 +69,4 @@ Welcome to GloMarGridding's documentation!
 
 .. [Wilks] Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006
 
-.. [Tibshirani_Lasso] Tibshirani, Robert. 1996. ‘Regression Shrinkage and Selection Via the Lasso’. Journal of the Royal Statistical Society Series B: Statistical Methodology 58(1):267–88. doi:10.1111/j.2517-6161.1996.tb02080.x.
+.. [Tibshirani_Lasso] Tibshirani, Robert. 1996. Regression Shrinkage and Selection Via the Lasso. Journal of the Royal Statistical Society Series B: Statistical Methodology 58(1):267–88. doi:10.1111/j.2517-6161.1996.tb02080.x.

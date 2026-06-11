@@ -1,5 +1,5 @@
-Auto Regressive Forecast
-------------------------
+Auto Regressive Forecasting and Kalman Filter
+---------------------------------------------
 
 Introduction and purpose
 ========================
@@ -83,7 +83,7 @@ to statistical forecasting is highly stable and quick. The weights for the multi
 much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of
 the seemingly unrelated regression of vector autoregression. For high resolution
 datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using
-regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso] via ``scikit-learn``;
+regularized regression. The one implemented here uses LASSO regression [Tibshirani_Lasso]_ via ``scikit-learn``;
 LASSO generally leads to sparse :math:`\mathbf{W}`, makes them easier to handle memory and computational cost via
 sparse matrix classes and function within ``scipy``. What LASSO does is that it adds a penalty term to the least squares cost
 function that is proportional to the sum of the absolute values of all regression coefficients. The
@@ -198,6 +198,7 @@ For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) w
 
 .. autoclass:: glomar_gridding.autoregressive_kalman.lasso_estimate.LassoEstimate_AR1
    :members:
+   :noindex:
 
 `autoregressive_kalman.lasso_postprocessing`
 ============================================
