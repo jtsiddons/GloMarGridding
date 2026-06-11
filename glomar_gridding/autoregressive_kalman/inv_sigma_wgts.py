@@ -122,7 +122,7 @@ class KalmanOut:
         convert2sparse: bool = True,
     ):
         """
-        Setting small elements of `self.errcov_obs` and `errcov_forecast` 
+        Setting small elements of `self.errcov_obs` and `errcov_forecast`
         to zero as defined by sparse_threshold value.
 
         If there are small values in the diagonals.
