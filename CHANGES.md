@@ -4,6 +4,11 @@
 
 Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes).
 
+### New features and enhancements
+
+* Approximate normality transformation using the Box-Cox transformation, with
+  function specifically for Weibull-distributed variables (such as wind speeds) (#138).
+
 ### Bug fixes
 
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and

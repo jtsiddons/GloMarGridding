@@ -78,8 +78,8 @@ def inv_weibull_to_normality(
         Inverse-transformed x_hat
     """
     if use_kp11:
-        lam = 0.2776 * c
-        x = x_hat ** (1 / lam)
+        lam_inv = 1 / (0.2776 * c)
+        x = x_hat**lam_inv
         return x
     lam = 0.2654 * c
     x = special.inv_boxcox(x_hat, lam)
