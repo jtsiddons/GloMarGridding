@@ -57,7 +57,7 @@ class LassoEstimate_AR1:
         shape `(T, N)` following netCDF/GRIB convention
     standardise: bool
         Should data_sample be standardised automatically
-        (i.e. A* = A - E(A) / sigma(A) )
+        (i.e. `A* = A - E(A) / sigma(A)` )
     lasso_lambda_hyperparm: float
         The lambda hyperparameter for Lasso regression
         It is called `alpha` in sklearn, but it is more common
