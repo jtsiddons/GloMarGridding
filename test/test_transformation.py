@@ -7,10 +7,7 @@ from glomar_gridding.transformation import (
 
 
 def test_weibull() -> None:
-    """African or European?"""
-    fast_swallow = 16.0
-    slow_swallow = 11.0
-    speeds = [slow_swallow, fast_swallow]
+    speeds = [11.0, 16.0]
     shapes = [np.e, np.pi]
     for speed in speeds:
         for shape in shapes:
