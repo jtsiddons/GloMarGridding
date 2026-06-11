@@ -48,7 +48,7 @@ def weibull_to_normality(
     """
     if use_kp11:
         lam = 0.2776 * c
-        x_hat = x ** lam
+        x_hat = x**lam
         return x_hat
     lam = 0.2654 * c
     x_hat = special.boxcox(x, lam)
