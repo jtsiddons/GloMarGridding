@@ -216,7 +216,7 @@ For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) w
    :members:
 
 `autoregressive_kalman.compute_autocorrelation`
-====================================
+===============================================
 
 .. automodule:: glomar_gridding.autoregressive_kalman.compute_autocorrelation
    :members:
