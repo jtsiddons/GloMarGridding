@@ -14,7 +14,7 @@ import numpy as np
 import scipy as sp
 import xarray as xr
 
-import cov_diagonal
+from glomar_gridding.autoregressive_kalman import cov_diagonal
 
 
 class LassoWeights:
