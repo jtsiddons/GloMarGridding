@@ -142,11 +142,13 @@ class LassoWeights:
         Convert expanded W into a xarray DataArray instance
 
         Example attrs:
-        example attrs = {
-            "lasso_lambda_hyperparm": 0.01,
-            "description": "standardised VAR(1) weights for SST",
-            "units": "1",
-        }
+        
+        .. code-block::python
+           attrs = {
+               "lasso_lambda_hyperparm": 0.01,
+               "description": "standardised VAR(1) weights for SST",
+               "units": "1",
+           }
 
         Parameters
         ----------
