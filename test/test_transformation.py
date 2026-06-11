@@ -24,5 +24,5 @@ def test_weibull() -> None:
                     transformed,
                     shape,
                     use_kp11=use_kp11,
-                    )
+                )
                 assert np.isclose(inverse, speed)
