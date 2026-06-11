@@ -266,10 +266,11 @@ class Autoregressive1ForecastVector:
     W_AR = C(t, t-1) @ INV(C(t, t))
     W_Krige(t,t) = C @ D.T @ INV(C(t, t) + E)
 
-    W_AR @ W_Krige(t,t)
-    = C(t, t-1) @ INV(C) @ C @ D.T @ INV(C(t, t) + E)
-    = C(t, t-1) @ D.T @ INV(C(t, t) + E)
-    = W_Krige(t, t-1)
+    .. code-block
+       W_AR @ W_Krige(t,t)
+       = C(t, t-1) @ INV(C) @ C @ D.T @ INV(C(t, t) + E)
+       = C(t, t-1) @ D.T @ INV(C(t, t) + E)
+       = W_Krige(t, t-1)
 
     Uncertainty: It can be shown that if errcov_analysis are Kriging covariance
     that
