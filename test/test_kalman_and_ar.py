@@ -69,7 +69,12 @@ def test_kalman() -> None:
     #
     # Compute
     kalman_test = inv_sigma_wgts.KalmanOut(
-        z0, z1, r0, r1, None, use_diag_only=False,
+        z0,
+        z1,
+        r0,
+        r1,
+        None,
+        use_diag_only=False,
     )
     kalman_test.predict()
     #
@@ -132,7 +137,12 @@ def test_kalman() -> None:
     #
     # Compute
     kalman_test = inv_sigma_wgts.KalmanOutUncorrCorrSplit(
-        z0, z1, r0, r1, None, r0,
+        z0,
+        z1,
+        r0,
+        r1,
+        None,
+        r0,
     )
     kalman_test.predict()
     #
