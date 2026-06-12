@@ -67,7 +67,7 @@ coverage: install-test ## check code coverage quickly with the default Python
 	python -m coverage report -m
 	python -m coverage html
 
-docs: clean-docs install-docs ## generate Sphinx HTML documentation, including API docs
+docs: clean-docs install-docs ## generate Sphinx PDF documentation
 	sphinx-build -M latex ./docs ./docs/_build
 	make -C docs/_build/latex
 	make -C docs/_build/latex
