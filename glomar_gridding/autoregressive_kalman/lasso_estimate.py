@@ -117,6 +117,9 @@ class LassoEstimate_AR1:
         self.dtype = dtype
         self.lambda_hyperparm = lasso_lambda_hyperparm
         self.selection = lasso_selection
+        #
+        # Alias for legacy method
+        self._line_by_line_sur_lasso = self.fit
 
     def split_holdout(self):
         """
@@ -163,9 +166,6 @@ class LassoEstimate_AR1:
             `out_of_sample_residues` and `hold_out_ratio`;
             shape `(N, T*)` in which `T*` <= `T`
         """
-        self._line_by_line_sur_lasso()
-
-    def _line_by_line_sur_lasso(self):
         self.coefficients = np.zeros((self.n_xy, self.n_xy), dtype=self.dtype)
         # Note numpy default is row-major
         if self.out_of_sample_residues:
