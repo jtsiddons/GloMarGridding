@@ -170,10 +170,12 @@ For the all the main classes, the computation uses a method that is called `comp
 `autoregressive_kalman.forecast_linear_ar1`
 ===========================================
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1ForecastUncorr
+For autoregressive forecasting, providing the weights and autocorrelation already computed.
+
+.. autoclass:: glomar_gridding.autoregressive_kalman.Autoregressive1ForecastUncorr
    :members:
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.forecast_linear_ar1.Autoregressive1ForecastVector
+.. autoclass:: glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector
    :members:
 
 `autoregressive_kalman.inv_sigma_wgts`
@@ -181,10 +183,10 @@ For the all the main classes, the computation uses a method that is called `comp
 
 For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) weights.
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.inv_sigma_wgts.KalmanOut
+.. autoclass:: glomar_gridding.autoregressive_kalman.KalmanOut
    :members:
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.inv_sigma_wgts.KalmanOutUncorrCorrSplit
+.. autoclass:: glomar_gridding.autoregressive_kalman.KalmanOutUncorrCorrSplit
    :members:
 
 `autoregressive_kalman.cov_diagonal`
@@ -193,23 +195,17 @@ For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) w
 .. automodule:: glomar_gridding.autoregressive_kalman.cov_diagonal
    :members:
 
-`autoregressive_kalman.lasso_estimate`
+`autocorrelation`
 ======================================
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_estimate.LassoEstimate_AR1
+.. automodule:: glomar_gridding.autocorrelation.compute_autocorrelation
    :members:
 
-`autoregressive_kalman.lasso_postprocessing`
-============================================
-
-.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_postprocessing.LassoWeights
+.. autoclass:: glomar_gridding.autocorrelation.LassoEstimate_AR1
    :members:
 
-.. autoclass:: glomar_gridding.autoregressive_kalman.lasso_postprocessing.LassoError
+.. autoclass:: glomar_gridding.autocorrelation.LassoWeights
    :members:
 
-`autoregressive_kalman.compute_autocorrelation`
-===============================================
-
-.. automodule:: glomar_gridding.autoregressive_kalman.compute_autocorrelation
+.. autoclass:: glomar_gridding.autocorrelation.LassoError
    :members:
