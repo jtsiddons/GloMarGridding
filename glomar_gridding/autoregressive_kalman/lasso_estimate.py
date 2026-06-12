@@ -117,11 +117,6 @@ class LassoEstimate_AR1:
         self.dtype = dtype
         self.lambda_hyperparm = lasso_lambda_hyperparm
         self.selection = lasso_selection
-        #
-        # Alias to follow the convention used in scikit-learn & statsmodels
-        # as well as compute_outputs used in the rest of the module
-        self.fit = self.line_by_line_sur_lasso
-        self.compute_outputs = self.line_by_line_sur_lasso
 
     def split_holdout(self):
         """
@@ -137,19 +132,19 @@ class LassoEstimate_AR1:
             #
             # Training data
             self.X = self.sample[: (self.half_of_the_data - 1), :]
-            self.all_y = self.sample[1 : (self.half_of_the_data), :]
+            self.y = self.sample[1 : (self.half_of_the_data), :]
             #
             # Holdout data
-            self.X_withheld = self.sample[(self.half_of_the_data) : -1, :]
-            self.all_y_withheld = self.sample[(self.half_of_the_data + 1) :, :]
+            self.X_test = self.sample[(self.half_of_the_data) : -1, :]
+            self.y_test = self.sample[(self.half_of_the_data + 1) :, :]
         else:
             logging.debug("Training data will be used to compute residues.")
             logging.debug("Holdout cross-validation will not be performed.")
             logging.debug("Full input dataset will be used to fit the model.")
-            self.X = self.X_withheld = self.sample[:-1, :]
-            self.all_y = self.all_y_withheld = self.sample[1:, :]
+            self.X = self.X_test = self.sample[:-1, :]
+            self.y = self.y_test = self.sample[1:, :]
 
-    def line_by_line_sur_lasso(self):
+    def fit(self):
         """
         Fit the Lasso regression
 
@@ -168,6 +163,9 @@ class LassoEstimate_AR1:
             `out_of_sample_residues` and `hold_out_ratio`;
             shape `(N, T*)` in which `T*` <= `T`
         """
+        self._line_by_line_sur_lasso()
+
+    def _line_by_line_sur_lasso(self):
         self.coefficients = np.zeros((self.n_xy, self.n_xy), dtype=self.dtype)
         # Note numpy default is row-major
         if self.out_of_sample_residues:
@@ -183,16 +181,16 @@ class LassoEstimate_AR1:
         the_lr_looper = range(self.n_xy)
         for xy in the_lr_looper:
             logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
-            y = self.all_y[:, xy]
+            y1 = self.y[:, xy]
             #
             lasso = Lasso(
                 alpha=self.lambda_hyperparm,
                 selection=self.selection,
             )
-            lasso.fit(self.X, y)
+            lasso.fit(self.X, y1)
             self.coefficients[xy, :] = lasso.coef_
             #
-            lasso_score = lasso.score(self.X, y)
+            lasso_score = lasso.score(self.X, y1)
             n_near0_coef_ = np.sum(np.isclose(lasso.coef_, 0.0))
             n_meaningful_coef_ = lasso.coef_.shape[0] - n_near0_coef_
             #
@@ -202,7 +200,7 @@ class LassoEstimate_AR1:
             logging.debug(f"{lasso_score = }")
             #
             insample_predictions = lasso.predict(self.X)
-            insample_y = y
+            insample_y = y1
             insample_residuals = insample_y - insample_predictions
             insample_MAE = np.mean(np.abs(insample_residuals))
             insample_RMSE = np.sqrt(np.mean(np.square(insample_residuals)))
@@ -215,9 +213,9 @@ class LassoEstimate_AR1:
             )
             #
             if self.out_of_sample_residues:
-                outsample_predictions = lasso.predict(self.X_withheld)
-                outsample_y = self.all_y_withheld[:, xy]
-                outsample_residues = outsample_y - outsample_predictions
+                outsample_predictions = lasso.predict(self.X_test)
+                outsample_y1 = self.y_test[:, xy]
+                outsample_residues = outsample_y1 - outsample_predictions
                 outsample_MAE = np.mean(np.abs(outsample_residues))
                 outsample_RMSE = np.sqrt(np.mean(np.square(outsample_residues)))
                 logging.debug("Outsample diagonstics:")
