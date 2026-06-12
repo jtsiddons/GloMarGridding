@@ -56,7 +56,7 @@ jobs:
 
       - name: Install glomar_gridding
         run: |
-          uv sync --extra test
+          uv sync --group test
 
       - name: Version info
         run: |
