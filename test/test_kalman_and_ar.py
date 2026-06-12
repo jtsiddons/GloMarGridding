@@ -199,7 +199,7 @@ def test_ar() -> None:
         climatology,
         variance,
     )
-    t1.compute_forecast_local()
+    t1.predict()
     correct_z01 = np.array([0.3, -0.4, 23.43])
     correct_var = np.diag([2.04, 5.76, 44.25])
     assert np.all(np.isclose(np.round(t1.forecast, 2), correct_z01))
@@ -226,7 +226,7 @@ def test_ar() -> None:
         climatology,
         variance,
     )
-    t3.compute_forecast_local()
+    t3.predict()
     # Note: correct_var is already rounded, so need to round the other bit too
     correct_var_new = correct_var + np.round(
         np.diag(phi) @ errcov_analysis_non_zero @ np.diag(phi), 2
