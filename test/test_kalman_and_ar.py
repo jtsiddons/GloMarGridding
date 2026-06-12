@@ -214,7 +214,7 @@ def test_ar() -> None:
         errcov_analysis_is_sdev=True,
         clim_covar_is_sdev=True,
     )
-    t2.compute_forecast_local()
+    t2.predict()
     assert np.all(np.isclose(np.round(t2.forecast, 2), correct_z01))
     assert np.all(np.isclose(np.round(t2.errcov, 2), correct_var))
     #
@@ -261,7 +261,7 @@ def test_var() -> None:
         climatology,
         clim_covar,
     )
-    t1.compute_forecast_vector(
+    t1.predict(
         check_wgt_stability=False,
         check_errcov_psd=False,
     )

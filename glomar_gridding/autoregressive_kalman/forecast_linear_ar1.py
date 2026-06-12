@@ -113,11 +113,6 @@ class Autoregressive1ForecastUncorr:
         else:
             self.clim_covar = clim_covar
         #
-        # Aliases for methods to compute prediction
-        self.compute_forecast = self.compute_forecast_local
-        self.predict = self.compute_forecast_local  # sklearn standard
-        self.solve = self.compute_forecast_local
-        #
         # Use only diagonal if 2D matrices are provided for
         # clim_covar and errcov_analysis
         if len(self.clim_covar.shape) == 2:
@@ -130,6 +125,10 @@ class Autoregressive1ForecastUncorr:
             self.errcov_analysis = np.diag(self.errcov_analysis)
         #
         self._check_args()
+        #
+        # Aliases for legacy methods
+        self._compute_forecast = self.predict
+        self._compute_forecast_local = self.predict  # sklearn standard
 
     def _check_args(self):
         """Check attributes set on init"""
@@ -170,7 +169,7 @@ class Autoregressive1ForecastUncorr:
         if self.errcov_analysis.shape != self.lag_1_autocor.shape:
             raise ValueError("Inconsistent shape detected!")
 
-    def compute_forecast_local(self, full_errcov_out: bool = True):
+    def predict(self, full_errcov_out: bool = True):
         """
         Compute AR1 forecast and estimate uncertainties
 
@@ -347,11 +346,6 @@ class Autoregressive1ForecastVector:
                 UserWarning,
             )
         #
-        # Aliases for methods to compute prediction
-        self.compute_forecast = self.compute_forecast_vector
-        self.predict = self.compute_forecast_vector  # sklearn standard
-        self.solve = self.compute_forecast_vector
-        #
         check_if_wgts_are_sp_sparse = isinstance(
             self.weights,
             sp.sparse.sparray,
@@ -370,6 +364,10 @@ class Autoregressive1ForecastVector:
         #
         self._check_args()
         self._bad_model = None
+        #
+        # Aliases for legacy methods
+        self._compute_forecast = self.predict
+        self._compute_forecast_vector = self.predict
 
     @classmethod
     def from_autocov(
@@ -476,7 +474,7 @@ class Autoregressive1ForecastVector:
         if self.errcov_analysis.shape != self.weights.shape:
             raise ValueError("Inconsistent shape detected!")
 
-    def compute_forecast_vector(
+    def predict(
         self,
         check_wgt_stability: bool = True,
         full_errcov_out: bool = True,
