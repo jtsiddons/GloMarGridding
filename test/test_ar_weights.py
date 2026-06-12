@@ -36,7 +36,7 @@ def test_time_series():
     print(x_matrix.shape)
     ans = get_auto_corr_1_vectorize(x_matrix)
     simulated_ar_coefficients = ans[0]
-    simulated_autocovariance = ans[1]
+    # simulated_autocovariance = ans[1]
     simulated_variance = ans[2]
     #
     # Standard error of correlation coefficient is SQRT( (1 - r x r) / (n - 2) )
