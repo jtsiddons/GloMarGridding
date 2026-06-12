@@ -28,8 +28,8 @@ def test_time_series():
     # sigma(x1) = SQRT( (30 x 30) / (1 - 0.4 x 0.4) ) ~ 32.73
     # var(x0) = 625.0
     # var(x1) = 1071
-    x0_variance_theory = (innovation0 ** 2) / (1 - phi0 ** 2)
-    x1_variance_theory = (innovation1 ** 2) / (1 - phi1 ** 2)
+    x0_variance_theory = (innovation0**2) / (1 - phi0**2)
+    x1_variance_theory = (innovation1**2) / (1 - phi1**2)
     #
     # Shape should (100000, 2)
     x_matrix = np.column_stack([x0, x1])
@@ -45,10 +45,12 @@ def test_time_series():
     se_ar = np.sqrt((1 - np.square(ar_vec)) / (n + 1 - 2))
     delta_ar = np.abs(simulated_ar_coefficients - ar_vec)
     #
-    theory_variance_vec = np.array([
-        x0_variance_theory,
-        x1_variance_theory,
-    ])
+    theory_variance_vec = np.array(
+        [
+            x0_variance_theory,
+            x1_variance_theory,
+        ]
+    )
     alpha = 0.005
     chi2_test_stat = (n + 1 - 1) * simulated_variance / theory_variance_vec
     chi2_test_stat_lower_bound = chi2.ppf(alpha / 2, n + 1 - 1)
@@ -68,25 +70,30 @@ def test_time_series():
     assert np.all(chi2_test)
     #
     # Let make 2 time series correlated...
-    corr_x0_x1 = np.array([
-        [1.0, 0.7],
-        [0.7, 1.0],
-    ])
+    corr_x0_x1 = np.array(
+        [
+            [1.0, 0.7],
+            [0.7, 1.0],
+        ]
+    )
     l_cov = np.linalg.cholesky(corr_x0_x1)
     x_matrix_correlated = l_cov.dot(x_matrix.T).T
-    big_x = np.column_stack([
-        x_matrix_correlated[:, 0],
-        x_matrix_correlated[:, 1],
-        x_matrix[:, 0],
-        x_matrix[:, 1],
-    ])
+    big_x = np.column_stack(
+        [
+            x_matrix_correlated[:, 0],
+            x_matrix_correlated[:, 1],
+            x_matrix[:, 0],
+            x_matrix[:, 1],
+        ]
+    )
     print(big_x)
     print(big_x.shape)
     lasso = LassoEstimate_AR1(
         big_x,
         lasso_lambda_hyperparm=0.001,
         out_of_sample_residues=False,
-        standardise=False)
+        standardise=False,
+    )
     lasso.fit()
     #
     assert np.all(np.abs(lasso.coefficients < 1.0))
