@@ -115,9 +115,8 @@ class KalmanOut:
                 self.cov_forecast_and_obs = None
             self.multiply_operator = matmul
             self.one_maker = np.eye
-        # Aliases for `compute_outputs`
-        self.predict = self.compute_outputs  # sklearn standard
-        self.solve = self.compute_outputs
+        # Aliases for legacy code
+        self._compute_outputs = self.predict
 
     def sparse_approx_4_errcov(
         self,
@@ -200,7 +199,7 @@ class KalmanOut:
             arr = sp.sparse.csc_array(arr)
         return arr
 
-    def compute_outputs(self):
+    def predict(self):
         """
         Compute the inverse variance weighted average of
         forecast_vector & obs_vector using provided error covariances
@@ -424,22 +423,22 @@ class KalmanOutUncorrCorrSplit:
             cov_forecast_and_obs_c,
             use_diag_only=False,
         )
-        # Aliases for `solve`
-        self.predict = self.solve  # sklearn standard
-        self.compute_outputs = self.solve
+        # Alias for legacy code
+        self._compute_outputs = self.predict
 
-    def solve(self):
-        """Shortcut to run both `solve_uncorr` and `solve_corr`"""
-        self.solve_uncorr()
-        self.solve_corr()
+    def predict_uncorr(self):
+        """
+        Run `KalmanOutUncorrCorrSplit.uncorr_part.predict`;
+        `uncorr_part` is an instance of `KalmanOut`
+        """
+        self.uncorr_part.predict()
 
-    def solve_uncorr(self):
-        """Alias for instance_name.uncorr_part.compute_outputs()"""
-        self.uncorr_part.compute_outputs()
-
-    def solve_corr(self):
-        """Alias for instance_name.corr_part.compute_outputs()"""
-        self.corr_part.compute_outputs()
+    def predict_corr(self):
+        """
+        Run `KalmanOutUncorrCorrSplit.corr_part.predict`;
+        `corr_part` is an instance of `KalmanOut`
+        """
+        self.corr_part.predict()
 
     def _d_2_bool(
         self,
@@ -453,16 +452,18 @@ class KalmanOutUncorrCorrSplit:
         else:
             raise ValueError("Unknown type d_matrix")
 
-    def combine_results(self):
+    def predict(self):
         """Blend the results of uncorrelated and correlated streams"""
         if not hasattr(self.uncorr_part, "kalman_gain_from_new_obs"):
             err_msg = "Output attributes missing for uncorr_part; "
-            err_msg += "do instance_name.uncorr_part.compute_outputs() first."
-            raise AttributeError(err_msg)
+            err_msg += "running it now."
+            warnings.warn(err_msg, UserWarning)
+            self.predict_uncorr()
         if not hasattr(self.corr_part, "kalman_gain_from_new_obs"):
             err_msg = "Output attributes missing for corr_part; "
-            err_msg += "do instance_name.corr_part.compute_outputs() first."
-            raise AttributeError(err_msg)
+            err_msg += "running it now."
+            warnings.warn(err_msg, UserWarning)
+            self.predict_corr()
         self.wgt_mean = np.array(
             np.matrix(self.uncorr_part.wgt_mean) @ self.d_diagonal_only
             + np.matrix(self.corr_part.wgt_mean) @ self.d_off_diagonal

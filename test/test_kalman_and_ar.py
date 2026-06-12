@@ -34,7 +34,13 @@ from glomar_gridding.autoregressive_kalman import (
 
 
 def test_kalman() -> None:
-    """Iteration 1 in https://kalmanfilter.net/"""
+    """
+    Iteration 1 in https://kalmanfilter.net/
+
+    Copying and pasting from a Firefox or Chrome window:
+    what ChatGPT? Copying and contributing to
+    actual websites or stackoverflow is better.
+    """
     #
     # Approximate (rounded) correct answers
     correct_kalman_gain = np.array(
@@ -63,16 +69,74 @@ def test_kalman() -> None:
     #
     # Compute
     kalman_test = inv_sigma_wgts.KalmanOut(
-        z0,
-        z1,
-        r0,
-        r1,
-        None,
-        use_diag_only=False,
+        z0, z1, r0, r1, None, use_diag_only=False,
     )
-    kalman_test.compute_outputs()
+    kalman_test.predict()
     #
-    # Assert check
+    # Assert
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.kalman_gain_from_new_obs, 4),
+            correct_kalman_gain,
+        )
+    )
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.wgt_mean, 2),
+            correct_z11,
+        )
+    )
+    assert np.all(
+        np.isclose(
+            np.round(kalman_test.errcov, 2),
+            correct_r11,
+        )
+    )
+    # An extension to the original example for the unit testing
+    # of KalmanOutUncorrCorrSplit.
+    # Correct answer of additional bits can be computed by hand or a
+    # good-ole TI-82 (if one still has antiques like that; the original
+    # author of this code does and the thing still works and is
+    # probably older than some people who will read this code; just
+    # need some AA batteries; I mean that bunny toy is still powered by
+    # them; there ain't no USB cables for TI-82 or that bunny)
+    correct_kalman_gain = np.array(
+        [
+            [0.4048, 0.6377, 0.0, 0.0],
+            [0.0399, 0.3144, 0.0, 0.0],
+            [0.0000, 0.0000, 0.5, 0.0],
+            [0.0000, 0.0000, 0.0, 0.8],
+        ]
+    )  # K(1,1)
+    correct_z11 = np.array([11009.37, 201.43, 75.0, 140.0])  # x_hat(1,1)
+    correct_r11 = np.array(
+        [
+            [14.57, 1.43, 0.0, 0.0],
+            [1.43, 0.71, 0.0, 0.0],
+            [0.0, 0.0, 0.7, 0.0],
+            [0.0, 0.0, 0.0, 0.4],
+        ]
+    )  # P(1,1)
+    #
+    z0 = np.array([11000.0, 200.0, 50.0, 100.0])  # x_hat(1, 0)
+    r0 = np.array(
+        [
+            [28.5, 3.75, 0.0, 0.0],
+            [3.75, 1.25, 0.0, 0.0],
+            [0.0, 0.0, 1.4, 0.0],
+            [0.0, 0.0, 0.0, 2.0],
+        ]
+    )  # P(1,0)
+    z1 = np.array([11020.0, 202.0, 100.0, 150.0])  # z(1)
+    r1 = np.diag([36.0, 2.25, 1.40, 0.50])  # R(1)
+    #
+    # Compute
+    kalman_test = inv_sigma_wgts.KalmanOutUncorrCorrSplit(
+        z0, z1, r0, r1, None, r0,
+    )
+    kalman_test.predict()
+    #
+    # Assert
     assert np.all(
         np.isclose(
             np.round(kalman_test.kalman_gain_from_new_obs, 4),
