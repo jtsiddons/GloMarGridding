@@ -198,7 +198,6 @@ For Kalman Filtering, using inverse error covariance weighting (:math:`sigma`) w
 
 .. autoclass:: glomar_gridding.autoregressive_kalman.lasso_estimate.LassoEstimate_AR1
    :members:
-   :noindex:
 
 `autoregressive_kalman.lasso_postprocessing`
 ============================================

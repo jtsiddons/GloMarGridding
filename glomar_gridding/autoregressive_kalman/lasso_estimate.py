@@ -117,6 +117,11 @@ class LassoEstimate_AR1:
         self.dtype = dtype
         self.lambda_hyperparm = lasso_lambda_hyperparm
         self.selection = lasso_selection
+        #
+        # Alias to follow the convention used in scikit-learn & statsmodels
+        # as well as compute_outputs used in the rest of the module
+        self.fit = self.line_by_line_sur_lasso
+        self.compute_outputs = self.line_by_line_sur_lasso
 
     def split_holdout(self):
         """
@@ -226,9 +231,6 @@ class LassoEstimate_AR1:
             else:
                 self.residues[xy, :] = insample_residuals
         logging.debug("Task complete")
-
-    # Alias to follow the convention used in scikit-learn & statsmodels
-    fit = line_by_line_sur_lasso
 
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
