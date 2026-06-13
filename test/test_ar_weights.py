@@ -94,7 +94,7 @@ def test_time_series():
         lasso_lambda_hyperparm=0.001,
         out_of_sample_residues=False,
         standardise=True,
-        lasso_kws={'random_state': seed},
+        lasso_kws={"random_state": seed},
     )
     lasso.fit()
     #

@@ -190,8 +190,8 @@ class LassoEstimate_AR1:
             logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
             y1 = self.y[:, xy]
             #
-            self.lasso_kws.pop('alpha', None)
-            self.lasso_kws.pop('selection', None)
+            self.lasso_kws.pop("alpha", None)
+            self.lasso_kws.pop("selection", None)
             lasso = Lasso(
                 alpha=self.lambda_hyperparm,
                 selection=self.selection,
