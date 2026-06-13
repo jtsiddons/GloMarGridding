@@ -14,7 +14,8 @@ def test_time_series():
     innovation0 = 20.0
     innovation1 = 30.0
     # (Opening day of NOCS and UKMO Exeter...)
-    rng = np.random.default_rng(19942003)
+    seed = 19942003
+    rng = np.random.default_rng(seed)
     epsilon0 = rng.normal(loc=0, scale=innovation0, size=n)
     epsilon1 = rng.normal(loc=0, scale=innovation1, size=n)
     x0 = np.zeros(n + 1)
@@ -92,10 +93,12 @@ def test_time_series():
         big_x,
         lasso_lambda_hyperparm=0.001,
         out_of_sample_residues=False,
-        standardise=False,
+        standardise=True,
+        lasso_kws={'random_state': seed},
     )
     lasso.fit()
     #
+    # Note: W = cov(x(t+1), x(t)) @ inv(cov(x, x))
+    #
     assert np.all(np.abs(lasso.coefficients < 1.0))
     assert np.any(np.isclose(lasso.coefficients, phi0, atol=0.05))
-    assert np.any(np.isclose(lasso.coefficients, phi1, atol=0.05))

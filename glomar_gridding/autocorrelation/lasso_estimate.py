@@ -79,6 +79,11 @@ class LassoEstimate_AR1:
     dtype: type
         `numpy` or python native float types that are used
         to store the outputs
+    lasso_kws: dict | None
+        Dict with (other) keyword arguments for `sklearn.linear_model.Lasso`;
+        Do not use `alpha` or `selection`; use `lasso_selection` and
+        `lasso_lambda_hyperparm` instead. If `alpha` or `selection` are
+        in lasso_kws, they will be removed.
     """
 
     def __init__(
@@ -90,6 +95,7 @@ class LassoEstimate_AR1:
         out_of_sample_residues: bool = True,
         hold_out_ratio: float = 0.5,
         dtype: type = np.float32,
+        lasso_kws: dict | None = None,
     ):
         """__init__ for LassoEstimate_AR1 class"""
         check_shape(data_sample)
@@ -117,6 +123,7 @@ class LassoEstimate_AR1:
         self.dtype = dtype
         self.lambda_hyperparm = lasso_lambda_hyperparm
         self.selection = lasso_selection
+        self.lasso_kws = {} if lasso_kws is None else lasso_kws
         #
         # Alias for legacy method
         self._line_by_line_sur_lasso = self.fit
@@ -183,9 +190,12 @@ class LassoEstimate_AR1:
             logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
             y1 = self.y[:, xy]
             #
+            self.lasso_kws.pop('alpha', None)
+            self.lasso_kws.pop('selection', None)
             lasso = Lasso(
                 alpha=self.lambda_hyperparm,
                 selection=self.selection,
+                **self.lasso_kws,
             )
             lasso.fit(self.X, y1)
             self.coefficients[xy, :] = lasso.coef_
