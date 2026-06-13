@@ -34,7 +34,7 @@ def test_time_series():
     #
     # Shape should (100000, 2)
     x_matrix = np.column_stack([x0, x1])
-    print(x_matrix.shape)
+    # print(x_matrix.shape)
     ans = get_auto_corr_1_vectorize(x_matrix)
     simulated_ar_coefficients = ans[0]
     # simulated_autocovariance = ans[1]
@@ -60,7 +60,7 @@ def test_time_series():
         chi2_test_stat_upper_bound > chi2_test_stat,
         chi2_test_stat > chi2_test_stat_lower_bound,
     )
-    print(chi2_test)
+    # print(chi2_test)
     #
     # For the above seed: it is known to pass the below checks
     #
@@ -87,8 +87,8 @@ def test_time_series():
             x_matrix[:, 1],
         ]
     )
-    print(big_x)
-    print(big_x.shape)
+    # print(big_x)
+    # print(big_x.shape)
     lasso = LassoEstimate_AR1(
         big_x,
         lasso_lambda_hyperparm=0.001,
