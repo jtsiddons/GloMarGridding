@@ -71,14 +71,26 @@ def test_time_series():
     assert np.all(chi2_test)
     #
     # Let make 2 time series correlated...
-    corr_x0_x1 = np.array(
+    cov_x0_x1 = x_matrix.T @ x_matrix / (n - 1)
+    sigma_x0_x1 = np.sqrt(np.diag(cov_x0_x1))
+    mean_x0_x1 = np.mean(x_matrix, axis=0)
+    x_matrix_standardised = x_matrix.copy()
+    x_matrix_standardised[:, 0] = (
+        (x_matrix_standardised[:, 0] - mean_x0_x1[0]) / sigma_x0_x1[0]
+    )
+    x_matrix_standardised[:, 1] = (
+        (x_matrix_standardised[:, 1] - mean_x0_x1[1]) / sigma_x0_x1[1]
+    )
+    adj_cov_x0_x1 = np.diag(sigma_x0_x1) @ np.array(
         [
             [1.0, 0.7],
             [0.7, 1.0],
         ]
-    )
-    l_cov = np.linalg.cholesky(corr_x0_x1)
-    x_matrix_correlated = l_cov.dot(x_matrix.T).T
+    ) @ np.diag(sigma_x0_x1)
+    l_cov = np.linalg.cholesky(adj_cov_x0_x1)
+    x_matrix_correlated = l_cov.dot(x_matrix_standardised.T)
+    x_matrix_correlated = x_matrix_correlated.T
+    #
     big_x = np.column_stack(
         [
             x_matrix_correlated[:, 0],
@@ -87,18 +99,18 @@ def test_time_series():
             x_matrix[:, 1],
         ]
     )
-    # print(big_x)
-    # print(big_x.shape)
+    #
     lasso = LassoEstimate_AR1(
         big_x,
         lasso_lambda_hyperparm=0.001,
         out_of_sample_residues=False,
-        standardise=True,
+        standardise=False,
         lasso_kws={"random_state": seed},
     )
     lasso.fit()
     #
     # Note: W = cov(x(t+1), x(t)) @ inv(cov(x, x))
+    # observed_cov_x_x = big_x.T @ big_x / (n - 1)
     #
     assert np.all(np.abs(lasso.coefficients < 1.0))
     assert np.any(np.isclose(lasso.coefficients, phi0, atol=0.05))
