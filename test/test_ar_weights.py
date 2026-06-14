@@ -76,17 +76,21 @@ def test_time_series():
     mean_x0_x1 = np.mean(x_matrix, axis=0)
     x_matrix_standardised = x_matrix.copy()
     x_matrix_standardised[:, 0] = (
-        (x_matrix_standardised[:, 0] - mean_x0_x1[0]) / sigma_x0_x1[0]
-    )
+        x_matrix_standardised[:, 0] - mean_x0_x1[0]
+    ) / sigma_x0_x1[0]
     x_matrix_standardised[:, 1] = (
-        (x_matrix_standardised[:, 1] - mean_x0_x1[1]) / sigma_x0_x1[1]
+        x_matrix_standardised[:, 1] - mean_x0_x1[1]
+    ) / sigma_x0_x1[1]
+    adj_cov_x0_x1 = (
+        np.diag(sigma_x0_x1)
+        @ np.array(
+            [
+                [1.0, 0.7],
+                [0.7, 1.0],
+            ]
+        )
+        @ np.diag(sigma_x0_x1)
     )
-    adj_cov_x0_x1 = np.diag(sigma_x0_x1) @ np.array(
-        [
-            [1.0, 0.7],
-            [0.7, 1.0],
-        ]
-    ) @ np.diag(sigma_x0_x1)
     l_cov = np.linalg.cholesky(adj_cov_x0_x1)
     x_matrix_correlated = l_cov.dot(x_matrix_standardised.T)
     x_matrix_correlated = x_matrix_correlated.T
