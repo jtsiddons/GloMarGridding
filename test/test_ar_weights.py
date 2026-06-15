@@ -133,7 +133,7 @@ def test_time_series():
     # For the 4 diagonal values of lasso.coefficients:
     # 2 values should be closed to phi0 (0,0 and 2,2)
     # 2 values should be closed to phi1 (1,1 and 3,3)
-    # lasso.coefficients[3, 2] and lasso.coefficients[2, 3] should be 
+    # lasso.coefficients[3, 2] and lasso.coefficients[2, 3] should be
     # close to 0 because x0 and x1 are not correlated
     # However, either lasso.coefficients[0, 1] or lasso.coefficients[1, 0] are
     # not close to 0 because adjusted x2 and x3 are correlated
