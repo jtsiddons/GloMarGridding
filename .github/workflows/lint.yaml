@@ -1,4 +1,4 @@
-name: glomar_gridding lint
+name: glomar_gridding Lint
 on:
   push:
     branches:
@@ -63,7 +63,6 @@ jobs:
 
       - name: Version info
         run: |
-          uv version
           uv pip list
 
       - name: Run linters
