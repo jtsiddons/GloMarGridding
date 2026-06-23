@@ -185,8 +185,7 @@ class LassoEstimate_AR1:
                 (self.n_xy, self.n_t - 1),
                 dtype=self.dtype,
             )
-        the_lr_looper = range(self.n_xy)
-        for xy in the_lr_looper:
+        for xy in range(self.n_xy):
             logging.debug(f"Now working on grid point {xy = }/{self.n_xy - 1}")
             y1 = self.y[:, xy]
             #
