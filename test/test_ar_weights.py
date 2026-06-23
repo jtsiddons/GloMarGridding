@@ -46,9 +46,9 @@ def test_time_series():
     #
     x_matrix1 = np.column_stack([x0, x1])
     x_matrix2 = np.column_stack([x2, x3])
-    ans = get_auto_corr_1_vectorize(x_matrix1)
-    simulated_ar_coefficients = ans[0]
-    simulated_variance = ans[2]
+    result = get_auto_corr_1_vectorize(x_matrix1)
+    simulated_ar_coefficients = result[0]
+    simulated_variance = result[2]
     #
     # Standard error of correlation coefficient is SQRT( (1 - r x r) / (n - 2) )
     # https://stats.stackexchange.com/questions/226380/derivation-of-the-standard-error-for-pearsons-correlation-coefficient
