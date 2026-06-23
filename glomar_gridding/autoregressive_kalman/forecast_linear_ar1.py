@@ -612,8 +612,13 @@ class Autoregressive1ForecastVector:
         if not hasattr(self, "errcov"):
             raise ValueError("errcov has not been estimated yet!")
         logging.debug("Checking validity of error covariance")
-        errcov_eigvals = np.linalg.eigvalsh(self.errcov)
-        if np.min(errcov_eigvals) < 0:
+        # Note:
+        # subset_by_index must have at least 2 elements: [start, end]
+        min_errorcov_eigvals = sp.linalg.eigvalsh(
+            self.errcov,
+            subset_by_index=[0, 0],
+        )[0]
+        if min_errorcov_eigvals < 0:
             self.errcov = explained_variance_clip(
                 self.errcov,
                 target_variance_fraction=target_variance_fraction,
