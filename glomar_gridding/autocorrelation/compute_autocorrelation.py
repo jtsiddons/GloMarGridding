@@ -303,10 +303,15 @@ def compute_lag_ts_metrics_from_da(
 
     Returns
     -------
-    da1: xarray.DataArray
+    ar: xarray.DataArray
         Data array with lagged autoregression
-    da2: xarray.DataArray
+        Unit is always `1`
+        For `da` with dimensions (t, x_1, ..., x_n)
+        `ar` will have shape (x_1, ..., x_n)
+    variance: xarray.DataArray
         Data array with sample variance
+        Unit is `(unit_of_da)**2` (variance, not standard deviation)
+        Same shape as `ar`
     """
     if da.dims[0] != "time":
         raise ValueError(f"Unexpected dim order: {da.dims}; time must go first")
@@ -314,11 +319,11 @@ def compute_lag_ts_metrics_from_da(
     nzyx = da.shape[1:]
     da_varname = da.name
     da_long_varname = getattr(da, "long_name", da_varname)
-    if hasattr(da, "units"):
+    if hasattr(da, "units") and (da.units is not None) and (da.units != ""):
         units = da.units
     else:
         warnings.warn(
-            "ds has no units, setting it to 1",
+            "da has no units, treating it as 1",
             UserWarning,
         )
         units = "1"
