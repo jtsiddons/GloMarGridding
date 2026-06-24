@@ -2,7 +2,7 @@
 
 from glomar_gridding.autocorrelation.compute_autocorrelation import (
     get_auto_corr,
-    get_auto_corr_1_vectorize,
+    get_auto_corr_vectorize,
 )
 
 from glomar_gridding.autocorrelation.lasso_estimate import (
@@ -19,5 +19,5 @@ __all__ = [
     "LassoEstimate_AR1",
     "LassoWeights",
     "get_auto_corr",
-    "get_auto_corr_1_vectorize",
+    "get_auto_corr_vectorize",
 ]
