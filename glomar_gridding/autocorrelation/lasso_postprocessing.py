@@ -140,7 +140,7 @@ class LassoWeights:
 
         .. code-block::python
            attrs = {
-               "lasso_lambda_hyperparm": 0.01,
+               "lasso_hyperparm_lam": 0.01,
                "description": "standardised VAR(1) weights for SST",
                "units": "1",
            }
@@ -336,7 +336,7 @@ class LassoError:
 
         .. code-block::python
            attrs = {
-               "lasso_lambda_hyperparm": 0.01,
+               "lasso_hyperparm_lam": 0.01,
                "description": "VAR(1) estimated error covariance for SST",
                "units": "1"
            }

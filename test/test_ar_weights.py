@@ -118,7 +118,7 @@ def test_time_series():
     #
     lasso = LassoEstimate_AR1(
         big_x,
-        lasso_lambda_hyperparm=0.001,
+        lam=0.001,
         out_of_sample_residues=False,
         standardise=False,
         lasso_kws={"random_state": seed},
