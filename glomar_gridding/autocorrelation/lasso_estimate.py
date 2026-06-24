@@ -8,8 +8,9 @@ in `forecast_linear_ar1`
 
 Uses sklearn
 
-Default lasso_lambda_hyperparm is estimated by tuning 1 deg x 1 deg ERA5 MAT
+Default `lam` is estimated by tuning 1 deg x 1 deg ERA5 MAT
 and ESA SST on grid points in the tropical Indian Ocean, Caribbean, and NINO3.4.
+Your mileage may vary.
 
 For the purpose of docstring
 N - number of grid points
@@ -58,12 +59,14 @@ class LassoEstimate_AR1:
     standardise: bool
         Should data_sample be standardised automatically
         (i.e. `A* = A - E(A) / sigma(A)` )? Standardise if `True`
-    lasso_lambda_hyperparm: float
+    lam: float
         The lambda hyperparameter for Lasso regression;
         it is called `alpha` in `scikit-learn`, but it is more common
-        to be called in `lambda` in the literature.
-        Tuning of `alpha`/`lambda` is usually done by orders of magnitude
+        to be called it `lambda` in the literature.
+        Tuning of it is usually done by orders of magnitude
         0.0001, 0.001, 0.01, 0.1, 1... etc (default of sklearn is 1)
+        If lam=0, it becomes OLS; scikit-learn will probably raise
+        warnings if one does that.
     lasso_selection: str
         `selection` in `scikit-learn` `lasso` class,
         see `scikit-learn` documentation
@@ -81,8 +84,8 @@ class LassoEstimate_AR1:
         to store the outputs
     lasso_kws: dict | None
         Dict with (other) keyword arguments for `sklearn.linear_model.Lasso`;
-        Do not use `alpha` or `selection`; use `lasso_selection` and
-        `lasso_lambda_hyperparm` instead. If `alpha` or `selection` are
+        Do not include `alpha` or `selection` in lasso_kws; use
+        `lasso_selection` and `lam` instead. If `alpha` or `selection` are
         in lasso_kws, they will be removed.
     """
 
@@ -90,7 +93,7 @@ class LassoEstimate_AR1:
         self,
         data_sample: np.ndarray,
         standardise: bool = True,
-        lasso_lambda_hyperparm: float = 0.01,
+        lam: float = 0.01,
         lasso_selection: LassoSelection = "random",
         out_of_sample_residues: bool = True,
         hold_out_ratio: float = 0.5,
@@ -121,12 +124,9 @@ class LassoEstimate_AR1:
         self.n_xy = self.sample.shape[1]  # Vector length (axis=1)
         self.split_holdout()
         self.dtype = dtype
-        self.lambda_hyperparm = lasso_lambda_hyperparm
+        self.lam = lam
         self.selection = lasso_selection
         self.lasso_kws = {} if lasso_kws is None else lasso_kws
-        #
-        # Alias for legacy method
-        self._line_by_line_sur_lasso = self.fit
 
     def split_holdout(self):
         """
@@ -192,7 +192,7 @@ class LassoEstimate_AR1:
             self.lasso_kws.pop("alpha", None)
             self.lasso_kws.pop("selection", None)
             lasso = Lasso(
-                alpha=self.lambda_hyperparm,
+                alpha=self.lam,
                 selection=self.selection,
                 **self.lasso_kws,
             )
@@ -215,10 +215,10 @@ class LassoEstimate_AR1:
             insample_RMSE = np.sqrt(np.mean(np.square(insample_residuals)))
             logging.debug("Insample diagonstics:")
             logging.debug(
-                f"MAE(Lasso(l={self.lambda_hyperparm}))={insample_MAE}"
+                f"MAE(Lasso(l={self.lam}))={insample_MAE}"
             )
             logging.debug(
-                f"RMSE(Lasso(l={self.lambda_hyperparm}))={insample_RMSE}"
+                f"RMSE(Lasso(l={self.lam}))={insample_RMSE}"
             )
             #
             if self.out_of_sample_residues:
@@ -229,10 +229,10 @@ class LassoEstimate_AR1:
                 outsample_RMSE = np.sqrt(np.mean(np.square(outsample_residues)))
                 logging.debug("Outsample diagonstics:")
                 logging.debug(
-                    f"MAE(Lasso(l={self.lambda_hyperparm}))={outsample_MAE}"
+                    f"MAE(Lasso(l={self.lam}))={outsample_MAE}"
                 )
                 logging.debug(
-                    f"RMSE(Lasso(l={self.lambda_hyperparm}))={outsample_RMSE}"
+                    f"RMSE(Lasso(l={self.lam}))={outsample_RMSE}"
                 )
                 self.residues[xy, :] = outsample_residues
             else:
