@@ -149,3 +149,24 @@ def test_time_series():
         ~np.isclose(lasso.coefficients[0, 1], 0, atol=0.01),
         ~np.isclose(lasso.coefficients[1, 0], 0, atol=0.01),
     )
+    # Test weight expansion
+    D = np.array(
+        [
+            [1, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1],
+        ],
+        dtype=np.uint8
+    )
+    original_2_2 = lasso.coefficients[2, 2]
+    lasso.expand_coefficients(D, fill_value=999)
+    assert lasso.coefficients[2, 2] == 999
+    assert lasso.expanded
+    fake_lats = [-2, -1, 0, 1, 2]
+    fake_lons = [178, 179, 180, 181, 182]
+    da = lasso.to_xarray_da_coefficients(fake_lats, fake_lons)
+    assert da.values == lasso.coefficients
+    lasso.shrink_coefficients(D)
+    assert lasso.coefficients[2, 2] == original_2_2
+    assert not lasso.expanded

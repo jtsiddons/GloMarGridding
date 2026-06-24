@@ -22,6 +22,7 @@ import numpy as np
 import scipy as sp
 import warnings
 
+import xarray as xr
 from sklearn.linear_model import Lasso
 from typing import Literal
 
@@ -156,13 +157,20 @@ class LassoEstimate_AR1:
             self.X = self.X_test = self.sample[:-1, :]
             self.y = self.y_test = self.sample[1:, :]
 
-    def fit(self):
+    def fit(self, convert_to_sparse: bool = False):
         """
         Fit the Lasso regression
 
         The complete fitting procedure following line-by-line estimate
         of the regression coefficients based on seemingly (un)related
         regression approach
+
+        Parameters
+        ----------
+        convert_to_sparse: bool
+            If True, runs make_coeff_sparse automatically,
+            which converts coefficients to a scipy sparse
+            matrix. Default False.
 
         Attributes
         ----------
@@ -174,6 +182,9 @@ class LassoEstimate_AR1:
             length of residue time series depends on
             `out_of_sample_residues` and `hold_out_ratio`;
             shape `(N, T*)` in which `T*` <= `T`
+        expanded: bool
+            A bool flag that indicates if coefficients
+            have been expanded by the expand_coefficients method
         """
         self.coefficients = np.zeros((self.n_xy, self.n_xy), dtype=self.dtype)
         # Note numpy default is row-major
@@ -231,11 +242,187 @@ class LassoEstimate_AR1:
                 self.residues[xy, :] = outsample_residues
             else:
                 self.residues[xy, :] = insample_residuals
+        #
+        if convert_to_sparse:
+            self.make_coeff_sparse()
+        self.expanded = False
+        #
         logging.debug("Task complete")
 
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
         if hasattr(self, "coefficients"):
+            logging.debug("coefficients matrix converted to sparse.")
             self.coefficients = sp.sparse.csr_array(self.coefficients)
         else:
             raise AttributeError("Coefficients have not been computed yet.")
+
+    def expand_coefficients(
+        self,
+        D: np.ndarray | sp.sparse.sparray,
+        dtype: type = np.float32,
+        fill_value: float = 0.6,
+    ):
+        """
+        Expands coefficients according to the subsampling
+        matrix D. D should be array of integers of 0s and 1s,
+        and will be converted to sparse if not sparse already.
+
+        self.coefficient matrix will be converted to sparse
+        if has not been converted.
+
+        Parameters
+        ----------
+        D: numpy.ndarray | scipy.sparse.sparray
+            A 2D array indicating unmasked location, should normally be sparse;
+            If not an instance `sp.sparse.sparray`, it will converted to one;
+            dtype `uint8` or `bool`;
+            shape `(N, M)`
+        dtype: type
+            `numpy` or python native `float` types that are used for
+            expanded array. Given the nature of this type of analysis
+            double precision floats (float64) are overkill. Defaults
+            to single precision floats (float32).
+        fill_value: float
+            The diagonal fill value of the weights; default 0.6
+        """
+        if not sp.sparse.issparse(self.coefficients):
+            self.make_coeff_sparse()
+        D = _D_check(D)
+        #
+        W = D.T @ self.coefficients @ D
+        # See:
+        # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
+        logging.debug(f"Filling diagonals of empty rows with {self.fill_value}")
+        empty_rows = W.getnnz(1) == 0
+        where_empty = np.where(empty_rows)[0]
+        n_empty_rows = np.sum(empty_rows)
+        W_coo = W.tocoo()
+        W_dat = W_coo.data.copy()
+        W_row = W_coo.coords[0].copy()
+        W_col = W_coo.coords[1].copy()
+        del W_coo
+        W_dat = np.append(W_dat, np.array([fill_value] * n_empty_rows))
+        W_row = np.append(W_row, where_empty)
+        W_col = np.append(W_col, where_empty)
+        self.coefficients = sp.sparse.csr_matrix(
+            (W_dat, (W_row, W_col)),
+            shape=W.shape,
+            dtype=dtype,
+        )
+        self.expanded = True
+
+    def shrink_coefficients(
+            self,
+            D: np.ndarray | sp.sparse.sparray,
+        ):
+        """
+        Reverses expand_coefficients, again by
+        the subsampling matrix D.
+
+        Parameters
+        ----------
+        D: numpy.ndarray | scipy.sparse.sparray
+            A 2D array indicating unmasked location, should normally be sparse;
+            If not an instance `sp.sparse.sparray`, it will converted to one;
+            dtype `uint8` or `bool`;
+            shape `(N, M)`
+        """
+        D = _D_check(D)
+        self.coefficients = D @ self.coefficients @ D.T
+        self.expanded = False
+
+    def to_xarray_da_coefficients(
+        self,
+        lats: np.ndarray,
+        lons: np.ndarray,
+        name: str = "weights",
+        attrs: dict | None = {"description": "weights", "units": "1"},
+    ) -> xr.DataArray:
+        """
+        Convert expanded coefficients into a xarray DataArray instance
+
+        Example attrs for netCDF:
+
+        .. code-block::python
+           attrs = {
+               "lasso_hyperparm_lam": 0.01,
+               "description": "standardised VAR(1) weights for SST",
+               "units": "1",
+           }
+
+        Parameters
+        ----------
+        lats: numpy.ndarray
+            Array of latitude values, such as `np.linspace(-19.5, 19.5, 40)`
+        lons: numpy.ndarray
+            Array of longitude values, such as `np.linspace(-179.5, 179.5, 360)`
+        name: str
+            Name of the variable
+        attrs: dict
+            Attributes to be added the `xarray.DataArray`
+
+        Returns
+        -------
+        da: xarray.DataArray
+            self.coefficients as a DataArray that has metadata and
+            written easily to netCDF file
+        """
+        if not self.expanded:
+            warnings.warn(
+                "self.coefficients have not been expanded yet",
+                UserWarning,
+            )
+        if attrs is None:
+            attrs = {}
+        xx, yy = np.meshgrid(lons, lats)
+        xx = xx.flatten().astype(np.float32)
+        yy = yy.flatten().astype(np.float32)
+        w_dim = xr.Coordinates(
+            {
+                "row": np.arange(self.W.shape[0], dtype=np.uint32),
+                "col": np.arange(self.W.shape[0], dtype=np.uint32),
+            }
+        )
+        w_dim.update(
+            {
+                "row_lat": ("row", yy),
+                "col_lat": ("col", yy),
+                "row_lon": ("row", xx),
+                "col_lon": ("col", xx),
+            }
+        )
+        da = xr.DataArray(
+            data=self.coefficients.toarray(),
+            coords=w_dim,
+            name=name,
+            attrs=attrs,
+        )
+        return da
+
+
+def _D_check(D: np.ndarray | sp.sparse.sparray):
+    """
+    Basic check if D is a (sparse) array.
+    Error raised if D is not an array.
+    Convert to sparse if needed to.
+
+    Parameters
+    ----------
+    D: numpy.ndarray | scipy.sparse.sparray
+        An array to be checked (usually a subsampling
+        matrix)
+
+    Returns
+    -------
+    D: scipy.sparse.sparray
+        Sparse version of D
+    """
+    if sp.sparse.issparse(D):
+        logging.debug("D is sparse.")
+    elif isinstance(D, np.ndarray):
+        logging.debug("Converting D to sparse.")
+        D = sp.sparse.csc_array(D.copy(), dtype=np.uint8)
+    else:
+        raise ValueError(f"Unknown object {type(D)}.")
+    return D
