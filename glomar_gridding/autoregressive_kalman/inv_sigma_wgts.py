@@ -334,12 +334,12 @@ class KalmanOutUncorrCorrSplit:
     cov_forecast_and_obs: numpy.ndarray | None
         Covariance between forecast & observations
         Set it to `None` if that is zero
-    arr_2_decide_if_points_are_isolated: numpy.ndarray
+    arr_to_decide_isolated_pts: numpy.ndarray
         The matrix (usually a covariance) to determine
         if the point is diagonally isolated. This can
         be the prior spatial covariance.
     zero_threshold: float
-        The threshold applied to `arr_2_decide_if_points_are_isolated`
+        The threshold applied to `arr_to_decide_isolated_pts`
         to decide if the row/column is diagonal.
     """
 
@@ -350,7 +350,7 @@ class KalmanOutUncorrCorrSplit:
         errcov_forecast: np.ndarray,
         errcov_obs: np.ndarray,
         cov_forecast_and_obs: np.ndarray | None,
-        arr_2_decide_if_points_are_isolated: np.ndarray,
+        arr_to_decide_isolated_pts: np.ndarray,
         zero_threshold: float = cd.EFFECTIVELY_ZERO_DEFAULT,
     ):
         """__init__ for KalmanOut class"""
@@ -364,9 +364,8 @@ class KalmanOutUncorrCorrSplit:
                 raise ValueError("cov_forecast_and_obs should be 2D and square")
         #
         self.d_off_diagonal, _, self.d_diagonal_only, _ = (
-            cd.diag_and_nondiag_rows_subsampler(  # noqa: E501
-                # errcov_forecast + errcov_obs,
-                arr_2_decide_if_points_are_isolated,
+            cd.diag_and_nondiag_rows_subsampler(
+                arr_to_decide_isolated_pts,
                 zero_threshold=zero_threshold,
                 return_subsampled_arr=False,
             )
