@@ -16,7 +16,8 @@
 
 from abc import abstractmethod
 from collections.abc import Callable
-from math import exp, factorial
+import logging
+from math import exp, factorial, floor, gamma, pi
 from types import NoneType
 from typing import Protocol
 
@@ -55,9 +56,16 @@ class _Interpolator(Protocol):
     @property
     def error_cov(self) -> np.ndarray: ...
 
-    def get_K(self, positions: np.ndarray | None) -> np.ndarray: ...  # noqa: N802
+    def A_matrix(  # noqa: N802
+        self,
+        M_inv: np.ndarray | NoneType = None,
+        X: np.ndarray | NoneType = None,
+        diag_only: bool = False,
+    ) -> np.ndarray: ...
 
-    def dist_func(self, positions: np.ndarray | None) -> np.ndarray: ...
+    def get_K(self, positions: np.ndarray | NoneType) -> np.ndarray: ...  # noqa: N802
+
+    def dist_func(self, positions: np.ndarray | NoneType) -> np.ndarray: ...
 
     def kernel(self, distances: np.ndarray) -> np.ndarray: ...
 
@@ -81,7 +89,7 @@ class SplineResult:
     y_fit : numpy.ndarray
         The fitted result of the Spline interpolation at the input coordinates.
     parent : Spline
-        The Spline instance used to generate the result. Requires 'covariance',
+        The Spline instance used to generate the result. Requires 'kernel',
         'trend_basis' and 'y' attributes to be set.
     compute_stats : bool
         Compute fitting statistics. Sets statistical attributes to the instance.
@@ -112,7 +120,7 @@ class SplineResult:
     def fit_stats(self) -> NoneType:
         """
         Get statistics from a Spline fit. Requires the 'parent' attribute to
-        be set and to be a Spline with 'covariance', 'trend_basis', and 'y'
+        be set and to be a Spline with 'kernel', 'trend_basis', and 'y'
         attributes to be set.
 
         Attributes
@@ -127,21 +135,28 @@ class SplineResult:
             Mean square error.
         var : float
             Variance.
+        sigma2 : float
+            The sigma MLE for the fit.
+        tau2 : float
+            The squared Tau MLE for the fit.
         """
+        if hasattr(self, "tau2"):
+            # Already have stats
+            return None
         n_pts = len(self.y_fit)
         residual = self.parent.y - self.y_fit
         sumsq = np.sum(np.power(residual, 2))
 
-        H = (
-            np.hstack([self.parent.K, self.parent.trend_basis])
-            @ self.M_inv[:, :n_pts]
-        )
+        A = self.parent.A_matrix(M_inv=self.M_inv, X=None, diag_only=True)
 
-        self.signal = np.trace(H)
+        self.signal = np.sum(A)
         self.error = n_pts - self.signal
         self.gcv = (sumsq * n_pts) / (self.error**2)
         self.msr = sumsq / n_pts
         self.var = sumsq / self.error
+
+        self.sigma2 = sum(self.parent.y * self.weights) / n_pts
+        self.tau2 = self.sigma2 * self.lam
 
         return None
 
@@ -257,7 +272,7 @@ class Spline(_Interpolator):
 
     def get_K(self, positions: np.ndarray | None = None) -> np.ndarray:  # noqa: N802
         """
-        Get the spatial structure / covariance matrix.
+        Spatial structure matrix determined by the kernel of the Spline model.
 
         Parameters
         ----------
@@ -286,10 +301,10 @@ class Spline(_Interpolator):
             "Not implemented for the generic Spline class."
         )
 
-    def _compute_result(self, covariance, w, trend_basis, c) -> np.ndarray:
+    def _compute_result(self, K, w, P, c) -> np.ndarray:
         if self.n_t > 0:
-            return covariance @ w + trend_basis @ c
-        return covariance @ w
+            return K @ w + P @ c
+        return K @ w
 
     def _get_weights(
         self,
@@ -354,9 +369,14 @@ class Spline(_Interpolator):
             The result of fitting the Spline class using the training data used
             to initialise the Spline instance. This value is also set to the
             'result' attribute if `set_results` is True.
+
+        See Also
+        --------
+        scipy.optimize.minimize_scalar
+            For optimisation options.
         """
         if lam is None:
-            print("Estimating Lambda Using GCV")
+            logging.debug("Estimating Lambda Using GCV")
             lam = self.estimate_lambda_gcv(**kwargs)
 
         weights, trend_coefs, M_inv = self._get_weights(lam=lam)
@@ -388,9 +408,106 @@ class Spline(_Interpolator):
 
         self.result.fit_stats()
 
+    def A_matrix(  # noqa: N802
+        self,
+        M_inv: np.ndarray | NoneType = None,
+        X: np.ndarray | NoneType = None,
+        diag_only: bool = False,
+    ) -> np.ndarray:
+        """
+        The A-matrix for computation of fit/prediction statistics.
+
+        Parameters
+        ----------
+        M_inv : numpy.ndarray | None
+            The inverse of the fitting matrix, used to compute some statistics.
+            If not supplied, then the M_inv of the fitted result (if the
+            'fitted' attribute is True) is used.
+        X : numpy.ndarray | None
+            Optional positions for which to compute the A-matrix. If not
+            supplied then the training positions are used.
+        diag_only: bool
+            Compute only the diagonal of the A-matrix, useful for computing
+            simple statistics of the fit.
+
+        Returns
+        -------
+        numpy.ndarray
+            The A-matrix, or a vector containing the diagonal of the A-matrix.
+        """
+        if M_inv is None:
+            if not self.fitted or not hasattr(self, "result"):
+                raise ValueError(
+                    "Must first fit the model if not providing a result."
+                )
+
+            M_inv = self.result.M_inv
+
+        K = self.get_K(X) if X is not None else self.K
+        P = self.get_trend_basis(X) if X is not None else self.trend_basis
+
+        left = np.hstack([K, P])
+        right = M_inv[:, : self.n_pts]
+
+        if diag_only and left.shape == right.shape == (self.n_pts, self.n_pts):
+            # See: https://stackoverflow.com/questions/17437817/python-how-to-get-diagonalab-without-having-to-perform-ab
+            # Want both matrices square and of size n_pts
+            return np.einsum("ij,ji->i", left, right)
+        if diag_only:
+            raise ValueError("Cannot compute diagonal for mismatched output")
+
+        return (left @ right).T
+
+    def standard_error(
+        self,
+        X: np.ndarray | NoneType = None,
+        result: SplineResult | NoneType = None,
+    ) -> np.ndarray:
+        """
+        Standard Error of a prediction.
+
+        Calculation follows that of the R Fields package. [Nychka]_
+
+        Parameters
+        ----------
+        X : numpy.ndarray | None
+            Optional positions, typically the same as those used for prediction.
+            If unset then the standard error for the fitted training data is
+            calculated.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        numpy.ndarray
+            Vector containing standard error of the prediction at the input
+            positions.
+        """
+        if result is None:
+            if not self.fitted or not hasattr(self, "result"):
+                raise ValueError(
+                    "Must first fit the model if not providing a result."
+                )
+
+            result = self.result
+
+        result.fit_stats()
+
+        K = self.get_K(X) if X is not None else self.K
+
+        Cov_y = result.sigma2 * self.K + result.tau2 * np.eye(self.n_pts)
+        A = self.A_matrix(M_inv=result.M_inv, X=X)
+
+        temp1 = result.sigma2 * np.sum(A * K.T, axis=0)
+        temp2 = np.sum(Cov_y @ A * A, axis=0)
+
+        return np.sqrt(temp2 - 2 * temp1)
+
     def _predict(
         self,
-        X_test: np.ndarray,
+        X_test: np.ndarray | NoneType = None,
         compute_se: bool = True,
         result: SplineResult | NoneType = None,
     ) -> tuple[np.ndarray, np.ndarray | NoneType]:
@@ -402,9 +519,9 @@ class Spline(_Interpolator):
 
         Parameters
         ----------
-        X_test : numpy.ndarray
+        X_test : numpy.ndarray | None
             New positions use to predict using the SplineResult. Must be unique
-            positions.
+            positions. If unset, the training data is used.
         compute_se : bool
             Optionally compute standard error of the prediction.
         result : SplineResult | None
@@ -417,7 +534,8 @@ class Spline(_Interpolator):
         prediction : numpy.ndarray
             The predicted values at the test positions.
         standard_error : numpy.ndarray | None
-            Standard error of the fit if `compute_se` is True, otherwise None.
+            Standard error of the predictions at the input positions if
+            `compute_se` is True, otherwise None.
         """
         if result is None:
             if not self.fitted or not hasattr(self, "result"):
@@ -427,16 +545,20 @@ class Spline(_Interpolator):
 
             result = self.result
 
+        result.fit_stats()
+
+        if X_test is None:
+            prediction = result.y_fit
+            return (
+                prediction,
+                self.standard_error(result=result) if compute_se else None,
+            )
+
         n_pts = len(X_test)
         if n_pts != len(np.unique(X_test, axis=0)):
             raise ValueError("Have duplicate positions")
 
-        if not hasattr(result, "var"):
-            print("Computing variance of the fit.")
-            result.fit_stats()
-
         P = self.get_trend_basis(X_test)
-        # Num grid pts, num obs pts
         D = self.dist_func(X_test)
         K = self.kernel(D)
 
@@ -444,14 +566,14 @@ class Spline(_Interpolator):
             K, result.weights, P, result.trend_coefs
         )
 
-        if not compute_se:
-            return prediction, None
-
-        U = np.hstack([K, P]) if self.n_t > 0 else K
-        Usolved = np.abs(np.sum((U @ result.M_inv) * U, axis=1))
-        standard_error = np.sqrt(Usolved * result.var)
-
-        return prediction, standard_error
+        return (
+            prediction,
+            (
+                self.standard_error(X=X_test, result=result)
+                if compute_se
+                else None
+            ),
+        )
 
     def estimate_lambda_gcv(
         self,
@@ -468,8 +590,13 @@ class Spline(_Interpolator):
 
         Returns
         -------
-        lam : float
-            The result of an optimisation for the smoothing parameter.
+        float
+            The result of an optimisation for the smoothing parameter (lambda).
+
+        See Also
+        --------
+        scipy.optimize.minimize_scalar
+            For optimisation options.
         """
         if "bounds" in kwargs:
             kwargs["bounds"] = np.log(kwargs["bounds"])
@@ -491,7 +618,7 @@ class Spline(_Interpolator):
 
     def predict(
         self,
-        X_test: np.ndarray,
+        X_test: np.ndarray | None = None,
         compute_se: bool = True,
         result: SplineResult | None = None,
     ) -> tuple[np.ndarray, np.ndarray | None]:
@@ -505,7 +632,7 @@ class Spline(_Interpolator):
         ----------
         X_test : numpy.ndarray
             New positions use to predict using the SplineResult. Must be unique
-            positions.
+            positions. If unset, the training data is used.
         compute_se : bool
             Optionally compute standard error of the prediction.
         result : SplineResult | None
@@ -518,7 +645,8 @@ class Spline(_Interpolator):
         prediction : numpy.ndarray
             The predicted values at the test positions.
         standard_error : numpy.ndarray | None
-            Standard error of the fit if `compute_se` is True, otherwise None.
+            Standard error of the predictions at the input positions if
+            `compute_se` is True, otherwise None.
         """
         return self._predict(
             X_test,
@@ -562,6 +690,10 @@ class ThinPlateSpline(Spline):
     error_cov : numpy.ndarray | None
         An optional error covariance. If unset then the default error covariance
         matrix is used - in most cases this will be the identity matrix.
+    use_radbas_const : bool
+        Use the Radial Basis constant to scale the computed kernel. This value
+        will scale the kernel to match that computed by the R fields package
+        [Nychka]_. This will effect the value of the smoothing parameter (lam).
 
     References
     ----------
@@ -575,8 +707,13 @@ class ThinPlateSpline(Spline):
         X: np.ndarray,
         y: np.ndarray,
         error_cov: np.ndarray | NoneType = None,
+        use_radbas_const: bool = False,
     ) -> NoneType:
-        self.n_t = X.shape[1] + 1
+        n_coords = X.shape[1]
+        self.n_t = n_coords + 1
+        self.radbas_const = (
+            _radbas_constant(n_coords, n_coords) if use_radbas_const else 1
+        )
         super().__init__(X, y, error_cov)
 
     @property
@@ -611,7 +748,8 @@ class ThinPlateSpline(Spline):
         return euclidean_distances(positions, self.X)
 
     def get_trend_basis(self, positions: np.ndarray) -> np.ndarray:
-        """Linear trend basis for universal kriging: [1, x, y, ...].
+        """
+        Linear trend basis for universal kriging: [1, x, y, ...].
 
         Parameters
         ----------
@@ -631,7 +769,9 @@ class ThinPlateSpline(Spline):
 
     def kernel(self, distances: np.ndarray) -> np.ndarray:
         r"""
-        Thin Plate Spline RBF kernel. This is
+        Thin Plate Spline RBF kernel.
+
+        This is
 
         .. math::
            r^2 \times \log(r)
@@ -649,14 +789,120 @@ class ThinPlateSpline(Spline):
             The result of the ThinPlateSpline kernel.
         """
         with np.errstate(divide="ignore", invalid="ignore"):
-            return np.where(
+            return self.radbas_const * np.where(
                 distances == 0, 0.0, np.power(distances, 2) * np.log(distances)
             )
+
+    def fit(
+        self,
+        lam: float | None = None,
+        set_results: bool = True,
+        compute_stats: bool = True,
+        **kwargs,
+    ) -> SplineResult:
+        """
+        Fit the ThinPlateSpline.
+
+        With optional smoothing. Optionally save the results.
+
+        Parameters
+        ----------
+        lam : float | None
+            Optional smoothing parameter. If set to 0 the interpolation will be
+            an **exact** interpolator. If unset, the value will be estimated
+            using a GCV method.
+        set_results : bool
+            Assign the results to the `result` attribute and set the `fitted`
+            attribute to True. This is generally advised.
+        compute_stats : bool
+            Add the statistics to the results attribute.
+        **kwargs
+            Keyword parameters to pass to minimize_scalar if estimating the
+            smoothing parameter using the GCV approach. Note, if 'lam' is not
+            None then keyword arguments will not be used.
+
+        Returns
+        -------
+        result : SplineResult
+            The result of fitting the Spline class using the training data used
+            to initialise the Spline instance. This value is also set to the
+            'result' attribute if `set_results` is True.
+
+        See Also
+        --------
+        scipy.optimize.minimize_scalar
+            For optimisation options.
+        """
+        return super().fit(lam, set_results, compute_stats, **kwargs)
+
+    def predict(
+        self,
+        X_test: np.ndarray | None = None,
+        compute_se: bool = True,
+        result: SplineResult | None = None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """
+        Predict for new positions.
+
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult. Must be unique
+            positions. If unset, the training data is used.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the predictions at the input positions if
+            `compute_se` is True, otherwise None.
+        """
+        return super().predict(X_test, compute_se, result)
+
+    def standard_error(
+        self,
+        X: np.ndarray | NoneType = None,
+        result: SplineResult | NoneType = None,
+    ) -> np.ndarray:
+        """
+        Standard Error of a prediction.
+
+        Calculation follows that of the R Fields package. [Nychka]_
+
+        Parameters
+        ----------
+        X : numpy.ndarray | None
+            Optional positions, typically the same as those used for prediction.
+            If unset then the standard error for the fitted training data is
+            calculated.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        numpy.ndarray
+            Vector containing standard error of the prediction at the input
+            positions.
+        """
+        return super().standard_error(X, result)
 
 
 class SphericalThinPlateSpline(Spline):
     r"""
     Spherical form of Thin Plate Spline Interpolation and Smoothing.
+
     Adapted from [Wahba_Sphere]_.
 
     This approach is specifically designed to operate using spherical geometry,
@@ -676,9 +922,6 @@ class SphericalThinPlateSpline(Spline):
     the positions are not used (directly) as predictors in this method (unlike
     the traditional thin-plate spline method). Consequently, this method is
     closer to ordinary kriging.
-
-    The use of the Kernel can be overridden by specifying an input covariance
-    matrix.
 
     Parameters
     ----------
@@ -786,6 +1029,111 @@ class SphericalThinPlateSpline(Spline):
         res[np.isclose(res, 0.0)] = 0.0
         return res
 
+    def fit(
+        self,
+        lam: float | None = None,
+        set_results: bool = True,
+        compute_stats: bool = True,
+        **kwargs,
+    ) -> SplineResult:
+        """
+        Fit the SphericalThinPlateSpline.
+
+        With optional smoothing. Optionally save the results.
+
+        Parameters
+        ----------
+        lam : float | None
+            Optional smoothing parameter. If set to 0 the interpolation will be
+            an **exact** interpolator. If unset, the value will be estimated
+            using a GCV method.
+        set_results : bool
+            Assign the results to the `result` attribute and set the `fitted`
+            attribute to True. This is generally advised.
+        compute_stats : bool
+            Add the statistics to the results attribute.
+        **kwargs
+            Keyword parameters to pass to minimize_scalar if estimating the
+            smoothing parameter using the GCV approach. Note, if 'lam' is not
+            None then keyword arguments will not be used.
+
+        Returns
+        -------
+        result : SplineResult
+            The result of fitting the Spline class using the training data used
+            to initialise the Spline instance. This value is also set to the
+            'result' attribute if `set_results` is True.
+
+        See Also
+        --------
+        scipy.optimize.minimize_scalar
+            For optimisation options.
+        """
+        return super().fit(lam, set_results, compute_stats, **kwargs)
+
+    def predict(
+        self,
+        X_test: np.ndarray | None = None,
+        compute_se: bool = True,
+        result: SplineResult | None = None,
+    ) -> tuple[np.ndarray, np.ndarray | None]:
+        """
+        Predict for new positions.
+
+        Predicts using the weights and trend coefficients from the set `result`
+        attribute, or from a provided SplineResult instance.
+
+        Parameters
+        ----------
+        X_test : numpy.ndarray
+            New positions use to predict using the SplineResult. Must be unique
+            positions. If unset, the training data is used.
+        compute_se : bool
+            Optionally compute standard error of the prediction.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        prediction : numpy.ndarray
+            The predicted values at the test positions.
+        standard_error : numpy.ndarray | None
+            Standard error of the predictions at the input positions if
+            `compute_se` is True, otherwise None.
+        """
+        return super().predict(X_test, compute_se, result)
+
+    def standard_error(
+        self,
+        X: np.ndarray | NoneType = None,
+        result: SplineResult | NoneType = None,
+    ) -> np.ndarray:
+        """
+        Standard Error of a prediction.
+
+        Calculation follows that of the R Fields package. [Nychka]_
+
+        Parameters
+        ----------
+        X : numpy.ndarray | None
+            Optional positions, typically the same as those used for prediction.
+            If unset then the standard error for the fitted training data is
+            calculated.
+        result : SplineResult | None
+            Optional SplineResult instance to use for prediction (instead of the
+            set `result` attribute). If not set, the `result` attribute must be
+            set and the `fitted` attribute must be True.
+
+        Returns
+        -------
+        numpy.ndarray
+            Vector containing standard error of the prediction at the input
+            positions.
+        """
+        return super().standard_error(X, result)
+
 
 def _zwca(distances: np.ndarray) -> tuple[np.ndarray, ...]:
     """Get the z, W, C, and A components for q2"""
@@ -801,3 +1149,25 @@ def _q2(distances: np.ndarray) -> np.ndarray:
     """R with q2 from [Wahba_Sphere]_"""
     _, W, C, A = _zwca(distances)
     return (A * (12 * W**2 - 4 * W) - 6 * C * W + 6 * W + 1) / 2
+
+
+def _radbas_constant(m: float, d: float) -> float:
+    # Adapted From R Fields
+    def _gamma_negative(x: float) -> float:
+        if x >= 0:
+            return gamma(x)
+        # Handles negative x
+        # Shift x to positive, adjust gamma calculation
+        r = floor(x)
+        fac = x**r
+        x += r
+        return gamma(x) / fac
+
+    if d % 2 == 0:
+        return (
+            ((-1) ** (1 + m + d / 2)) * (2 ** (1 - 2 * m)) * (pi ** (-d / 2))
+        ) / (gamma(m) * _gamma_negative(m - d / 2 + 1))
+    else:
+        return (
+            _gamma_negative(d / 2 - m) * (2 ** (-2 * m)) * (pi ** (-2 / 2))
+        ) / gamma(m)

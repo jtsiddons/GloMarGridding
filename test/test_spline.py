@@ -98,7 +98,14 @@ def test_var() -> None:
     assert np.all(var > 0)
 
 
-def test_se():
+@pytest.mark.parametrize(
+    "model, thresh",
+    [
+        (ThinPlateSpline, 1e-3),
+        (SphericalThinPlateSpline, 5e-2),
+    ],
+)
+def test_se(model, thresh):
     # TEST: against a result using R. Original data generated using
     #
     # np.random.seed(101)
@@ -125,7 +132,7 @@ def test_se():
     X = data.select("x1", "x2").to_numpy()
     y = data.get_column("y").to_numpy()
 
-    tps = ThinPlateSpline(X, y)
+    tps = model(X, y)
     tps.fit()
     py_gcv = tps.result.gcv
 
@@ -151,3 +158,5 @@ def test_se():
     assert se_mse < 5e-4
     assert pred_mse < 5e-4
     assert gcv_diff < 1e-4
+
+    assert np.allclose(py_se, r_se, atol=thresh)
