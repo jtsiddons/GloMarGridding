@@ -7,7 +7,8 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 ### New features and enhancements
 
 * Add `spline` module for Spline-based interpolation, e.g. `glomar_gridding.spline.ThinPlateSpline`
-  and alternative `Kriging` approaches with `glomar_gridding.spline.OrdinaryKriging` (#40).
+  and spline interpolator for spherical geometry (`glomar_gridding.spline.SphericalThinPlateSpline`
+  (#40).
 
 ### Bug fixes
 
