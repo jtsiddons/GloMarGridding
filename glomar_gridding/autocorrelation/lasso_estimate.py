@@ -214,12 +214,8 @@ class LassoEstimate_AR1:
             insample_MAE = np.mean(np.abs(insample_residuals))
             insample_RMSE = np.sqrt(np.mean(np.square(insample_residuals)))
             logging.debug("Insample diagonstics:")
-            logging.debug(
-                f"MAE(Lasso(l={self.lam}))={insample_MAE}"
-            )
-            logging.debug(
-                f"RMSE(Lasso(l={self.lam}))={insample_RMSE}"
-            )
+            logging.debug(f"MAE(Lasso(l={self.lam}))={insample_MAE}")
+            logging.debug(f"RMSE(Lasso(l={self.lam}))={insample_RMSE}")
             #
             if self.out_of_sample_residues:
                 outsample_predictions = lasso.predict(self.X_test)
@@ -228,12 +224,8 @@ class LassoEstimate_AR1:
                 outsample_MAE = np.mean(np.abs(outsample_residues))
                 outsample_RMSE = np.sqrt(np.mean(np.square(outsample_residues)))
                 logging.debug("Outsample diagonstics:")
-                logging.debug(
-                    f"MAE(Lasso(l={self.lam}))={outsample_MAE}"
-                )
-                logging.debug(
-                    f"RMSE(Lasso(l={self.lam}))={outsample_RMSE}"
-                )
+                logging.debug(f"MAE(Lasso(l={self.lam}))={outsample_MAE}")
+                logging.debug(f"RMSE(Lasso(l={self.lam}))={outsample_RMSE}")
                 self.residues[xy, :] = outsample_residues
             else:
                 self.residues[xy, :] = insample_residuals
