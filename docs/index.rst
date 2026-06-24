@@ -35,6 +35,8 @@ Welcome to GloMarGridding's documentation!
 
 .. [Cressie] Cressie, N. A. C.: Statistics for Spatial Data, Wiley Series in Probability and Statistics, Wiley, 1 edn., ISBN 978-0-471-00255-0 978-1-119-11515-1, https://doi.org/10.1002/9781119115151, 1993.
 
+.. [Nychka]  Nychka, D., Furrer, R., Paige, J. and Sain, S.: Package 'fields', http://cran.r-project.org/web/packages/fields/fields.pdf, 2015.
+
 .. [Higham] Higham, N. J., Strabi´c, N., and Šego, V.: Restoring Definiteness via Shrinking, with an Application to Correlation Matrices with a Fixed255 Block, SIAM Review, 58, 245–263, https://www.jstor.org/stable/24778894, 2016.
 
 .. [Higham_blog_nearest] https://nhigham.com/2021/01/26/what-is-the-nearest-positive-semidefinite-matrix/
