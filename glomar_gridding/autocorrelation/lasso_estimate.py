@@ -138,19 +138,20 @@ class LassoEstimate_AR1:
         if self.out_of_sample_residues:
             logging.debug("Out-of-sample will be used to compute residues.")
             logging.debug("Holdout cross-validation will be performed.")
-            self.half_of_the_data = int(self.n_t * self.hold_out_ratio)
+            self.split_point = int(self.n_t * self.hold_out_ratio)
             #
             # Training data
-            self.X = self.sample[: (self.half_of_the_data - 1), :]
-            self.y = self.sample[1 : (self.half_of_the_data), :]
+            self.X = self.sample[: (self.split_point - 1), :]
+            self.y = self.sample[1 : (self.split_point), :]
             #
             # Holdout data
-            self.X_test = self.sample[(self.half_of_the_data) : -1, :]
-            self.y_test = self.sample[(self.half_of_the_data + 1) :, :]
+            self.X_test = self.sample[(self.split_point) : -1, :]
+            self.y_test = self.sample[(self.split_point + 1) :, :]
         else:
             logging.debug("Training data will be used to compute residues.")
             logging.debug("Holdout cross-validation will not be performed.")
             logging.debug("Full input dataset will be used to fit the model.")
+            self.split_point = None
             self.X = self.X_test = self.sample[:-1, :]
             self.y = self.y_test = self.sample[1:, :]
 
@@ -177,7 +178,7 @@ class LassoEstimate_AR1:
         # Note numpy default is row-major
         if self.out_of_sample_residues:
             self.residues = np.zeros(
-                (self.n_xy, self.half_of_the_data - 1),
+                (self.n_xy, self.split_point - 1),
                 dtype=self.dtype,
             )
         else:
