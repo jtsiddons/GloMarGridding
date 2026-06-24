@@ -118,10 +118,10 @@ class KalmanOut:
         # Aliases for legacy code
         self._compute_outputs = self.predict
 
-    def sparse_approx_4_errcov(
+    def sparse_approx_for_errcov(
         self,
         sparse_threshold: float = EFFECTIVELY_ZERO_VAR_DEFAULT,
-        convert2sparse: bool = True,
+        convert_to_sparse: bool = True,
     ):
         """
         Setting small elements of `self.errcov_obs` and `errcov_forecast`
@@ -140,30 +140,30 @@ class KalmanOut:
         ----------
         sparse_threshold: float
             (Absolute) off-diagonal values that are to set to zero
-        convert2sparse: bool
+        convert_to_sparse: bool
             Convert error covariances to `scipy.sparse.sparray` if `True`
         """
         if self.use_diag_only:
             err_msg = "This method is not intended to be use with "
             err_msg += "use_diag_only."
             raise ValueError(err_msg)
-        self.errcov_forecast = self._small_elements_2_zero_and_sparse(
+        self.errcov_forecast = self._small_elements_to_zero_and_sparse(
             self.errcov_forecast,
             sparse_threshold=sparse_threshold,
-            convert2sparse=convert2sparse,
+            convert_to_sparse=convert_to_sparse,
         )
-        self.errcov_obs = self._small_elements_2_zero_and_sparse(
+        self.errcov_obs = self._small_elements_to_zero_and_sparse(
             self.errcov_obs,
             sparse_threshold=sparse_threshold,
-            convert2sparse=convert2sparse,
+            convert_to_sparse=convert_to_sparse,
         )
 
-    def _small_elements_2_zero_and_sparse(
+    def _small_elements_to_zero_and_sparse(
         self,
         arr: np.ndarray,
         sparse_threshold: float = EFFECTIVELY_ZERO_VAR_DEFAULT,
         leave_diagonal_alone: bool = True,
-        convert2sparse: bool = True,
+        convert_to_sparse: bool = True,
     ) -> np.ndarray | sp.sparse.sparray:
         """
         Set "small" elements of the array to zero
@@ -179,7 +179,7 @@ class KalmanOut:
         leave_diagonal_alone: bool
             Set to `True` to leave the diagonal unchanged;
             `True` by default
-        convert2sparse: bool
+        convert_to_sparse: bool
             Convert arr to `scipy.sparse.sparray` if `True`;
             `True` by default
 
@@ -191,11 +191,11 @@ class KalmanOut:
         if len(arr.shape) != 2:
             raise ValueError("This function accepts 2D arrays only.")
         if leave_diagonal_alone:
-            gaid = np.diag(arr)
+            diag_ = np.diag(arr)
         arr[np.abs(arr) < sparse_threshold] = 0.0
         if leave_diagonal_alone:
-            np.fill_diagonal(arr, gaid)
-        if convert2sparse:
+            np.fill_diagonal(arr, diag_)
+        if convert_to_sparse:
             arr = sp.sparse.csc_array(arr)
         return arr
 
