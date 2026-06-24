@@ -288,12 +288,12 @@ class LassoEstimate_AR1:
         """
         if not sp.sparse.issparse(self.coefficients):
             self.make_coeff_sparse()
-        D = _D_check(D)
+        D = _d_check(D)
         #
         W = D.T @ self.coefficients @ D
         # See:
         # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-        logging.debug(f"Filling diagonals of empty rows with {self.fill_value}")
+        logging.debug(f"Filling diagonals of empty rows with {fill_value}")
         empty_rows = W.getnnz(1) == 0
         where_empty = np.where(empty_rows)[0]
         n_empty_rows = np.sum(empty_rows)
@@ -328,7 +328,7 @@ class LassoEstimate_AR1:
             dtype `uint8` or `bool`;
             shape `(N, M)`
         """
-        D = _D_check(D)
+        D = _d_check(D)
         self.coefficients = D @ self.coefficients @ D.T
         self.expanded = False
 
@@ -401,7 +401,7 @@ class LassoEstimate_AR1:
         return da
 
 
-def _D_check(D: np.ndarray | sp.sparse.sparray):
+def _d_check(D: np.ndarray | sp.sparse.sparray):
     """
     Basic check if D is a (sparse) array.
     Error raised if D is not an array.
