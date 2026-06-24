@@ -22,7 +22,6 @@ from types import NoneType
 from typing import Protocol
 
 import numpy as np
-import scipy as sp
 from scipy.optimize import OptimizeResult, minimize_scalar
 
 from sklearn.metrics.pairwise import haversine_distances, euclidean_distances
@@ -323,7 +322,7 @@ class Spline(_Interpolator):
                 ]
             )
         # NOTE: require inverse for other calculations
-        M_inv = sp.linalg.inv(K_reg, assume_a="sym")
+        M_inv = np.linalg.inv(K_reg)
 
         b = self.y
         if self.n_t > 0:
