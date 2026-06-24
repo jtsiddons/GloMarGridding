@@ -449,9 +449,13 @@ class Spline(_Interpolator):
         left = np.hstack([K, P])
         right = M_inv[:, : self.n_pts]
 
-        if diag_only and left.shape == right.shape == (self.n_pts, self.n_pts):
+        if (
+            diag_only
+            and left.shape[1] == right.shape[0]
+            and left.shape[0] == right.shape[1]
+        ):
             # See: https://stackoverflow.com/questions/17437817/python-how-to-get-diagonalab-without-having-to-perform-ab
-            # Want both matrices square and of size n_pts
+            # Want to be able to compute a diagonal
             return np.einsum("ij,ji->i", left, right)
         if diag_only:
             raise ValueError("Cannot compute diagonal for mismatched output")
