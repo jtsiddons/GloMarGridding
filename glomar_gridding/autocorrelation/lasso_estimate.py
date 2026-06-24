@@ -380,8 +380,8 @@ class LassoEstimate_AR1:
         yy = yy.flatten().astype(np.float32)
         w_dim = xr.Coordinates(
             {
-                "row": np.arange(self.W.shape[0], dtype=np.uint32),
-                "col": np.arange(self.W.shape[0], dtype=np.uint32),
+                "row": np.arange(self.coefficients.shape[0], dtype=np.uint32),
+                "col": np.arange(self.coefficients.shape[0], dtype=np.uint32),
             }
         )
         w_dim.update(
@@ -422,7 +422,7 @@ def _d_check(D: np.ndarray | sp.sparse.sparray):
         logging.debug("D is sparse.")
     elif isinstance(D, np.ndarray):
         logging.debug("Converting D to sparse.")
-        D = sp.sparse.csc_array(D.copy(), dtype=np.uint8)
+        D = sp.sparse.csr_array(D.copy(), dtype=np.uint8)
     else:
         raise ValueError(f"Unknown object {type(D)}.")
     return D
