@@ -272,7 +272,7 @@ def get_auto_corr_vectorize(
     return np.vectorize(operator, signature="(n)->(), (), (), ()")(arr.T)
 
 
-def compute_lag_1_ts_metrics_from_da(
+def compute_lag_ts_metrics_from_da(
     da: xr.DataArray,
     lag: int = 1,
 ) -> tuple[xr.DataArray, xr.DataArray]:
@@ -309,7 +309,9 @@ def compute_lag_1_ts_metrics_from_da(
         Data array with sample variance
     """
     if da.dims[0] != "time":
-        raise ValueError(f"Unexpected dim order: {da.dims}")
+        raise ValueError(f"Unexpected dim order: {da.dims}; time must go first")
+    ntime = da.shape[0]
+    nzyx = da.shape[1:]
     da_varname = da.name
     da_long_varname = getattr(da, "long_name", da_varname)
     if hasattr(da, "units"):
@@ -333,14 +335,31 @@ def compute_lag_1_ts_metrics_from_da(
     variance.attrs["long_name"] = f"{da_long_varname} variance"
     logging.debug(f"{variance.shape = }")
     #
-    ar_arr, _, variance_arr, _ = np.apply_along_axis(
-        get_auto_corr,
-        0,
-        da.values,
-    )
+    # No reshaping required.
+    # For generic variable like A(t, ..., y, x),
+    # below works assuming t sits on axis=0 of A
     #
-    variance.values = variance_arr
-    ar.values = ar_arr
+    # ar_arr, _, variance_arr, _ = np.apply_along_axis(
+    #     lambda vec: get_auto_corr(vec, lag=lag),
+    #     0,
+    #     da.values,
+    # )
+    # variance.values = variance_arr
+    # ar.values = ar_arr
+    #
+    # Note:
+    # get_auto_corr_vectorize can only take A(t, i)-like variables.
+    # It cannot take A(t, ..., y, x) directly.
+    # It requires reshaping to A(t, i).
+    ar_arr, _, variance_arr, _ = get_auto_corr_vectorize(
+        da.values.reshape((ntime, np.prod(nzyx))),
+        lag=lag,
+    )
+    variance.values = variance_arr.reshape(nzyx)
+    ar.values = ar_arr.reshape(nzyx)
+    #
+    variance.values[np.isinf(variance.values)] = np.NAN
+    ar.values[np.isinf(ar.values)] = np.NAN
     #
     return (
         ar,
