@@ -157,7 +157,7 @@ def test_time_series():
             [0, 0, 0, 1, 0],
             [0, 0, 0, 0, 1],
         ],
-        dtype=np.uint8
+        dtype=np.uint8,
     )
     original_2_2 = lasso.coefficients[2, 2]
     lasso.expand_coefficients(D, fill_value=999)

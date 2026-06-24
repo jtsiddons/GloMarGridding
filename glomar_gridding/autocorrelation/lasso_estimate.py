@@ -313,9 +313,9 @@ class LassoEstimate_AR1:
         self.expanded = True
 
     def shrink_coefficients(
-            self,
-            D: np.ndarray | sp.sparse.sparray,
-        ):
+        self,
+        D: np.ndarray | sp.sparse.sparray,
+    ):
         """
         Reverses expand_coefficients, again by
         the subsampling matrix D.
