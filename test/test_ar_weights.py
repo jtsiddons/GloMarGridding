@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import chi2
 
 from glomar_gridding.autocorrelation import (
-    get_auto_corr_1_vectorize,
+    get_auto_corr_vectorize,
     LassoEstimate_AR1,
 )
 
@@ -15,7 +15,7 @@ def test_time_series():
     phi1 = 0.4
     innovation0 = 20.0
     innovation1 = 30.0
-    # Opening day of NOCS and UKMO Exeter...
+    # Opening year of NOCS and UKMO Exeter...
     seed = 19942003
     #
     # Simulate 4 temporally correlated time series
@@ -46,7 +46,7 @@ def test_time_series():
     #
     x_matrix1 = np.column_stack([x0, x1])
     x_matrix2 = np.column_stack([x2, x3])
-    result = get_auto_corr_1_vectorize(x_matrix1)
+    result = get_auto_corr_vectorize(x_matrix1)
     simulated_ar_coefficients = result[0]
     simulated_variance = result[2]
     #

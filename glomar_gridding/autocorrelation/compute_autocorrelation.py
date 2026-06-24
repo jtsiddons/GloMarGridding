@@ -166,7 +166,7 @@ def get_obs_variance_vectorize(
 
 def get_auto_corr(
     vec: np.ndarray,
-    n: int = 1,
+    lag: int = 1,
 ) -> tuple[float, float, float, float]:
     """
     Compute lag-n autocorrelation
@@ -182,16 +182,16 @@ def get_auto_corr(
     ----------
     vec: numpy.ndarray
         1D vector that needs autoregression correlation
-    n: int
+    lag: int
         order (lag) of AR
 
     Returns
     -------
-    ar_n : float
-        The n-th lagged correlation; this is
+    ar_lag : float
+        The `lag`-th lagged correlation; this is
         autocovariance_n divided by (non-lagged) variance
-    autocovariance_n: float
-        Same as in `ar_n` but not normalised
+    autocovariance_lag: float
+        Same as in `ar_lag` but not normalised
     variance: float
         Standard deviation squared
     sigma2_eps: float
@@ -213,31 +213,29 @@ def get_auto_corr(
     # Sample size: len(vec) - lag
     # Degree of freedom: len(vec) - lag - 1
     cov = np.ma.cov(
-        np.ma.masked_invalid(anomalies[:-n]),
-        np.ma.masked_invalid(anomalies[n:]),
+        np.ma.masked_invalid(anomalies[:-lag]),
+        np.ma.masked_invalid(anomalies[lag:]),
     )
     var_t_eq_0 = cov[0, 0]  # Observed variance of [... :-n]
     var_t_plus_n = cov[1, 1]  # Observed variance of [n: ...]
-    autocovariance_n = cov[1, 0]  # Observed autocovariance
-    ar_n = autocovariance_n / np.sqrt(
+    autocovariance_lag = cov[1, 0]  # Observed autocovariance
+    ar_lag = autocovariance_lag / np.sqrt(
         var_t_eq_0 * var_t_plus_n
     )  # Normalises autocovariance to autocorrelation
     # Note:
     # Due to finite sample size, var_t_eq_0 != var_t_plus_n != variance
     # even if they are asymptotically the same.
     # For reasonably large len(vec), they are undistinguishable.
-    sigma2_eps = (1 - ar_n**2) * variance  # Uncertainty**2 of the AR model
-    return ar_n, autocovariance_n, variance, sigma2_eps
+    sigma2_eps = (1 - ar_lag**2) * variance  # Uncertainty**2 of the AR model
+    return ar_lag, autocovariance_lag, variance, sigma2_eps
 
 
-def get_auto_corr_1_vectorize(
+def get_auto_corr_vectorize(
     arr: np.ndarray,
-    n: int = 1,
+    lag: int = 1,
 ):
     """
     Vectorised get_auto_corr
-
-    Defaults to lag-1 via `kwargs_for_get_auto_corr`
 
     Similar precautions with `get_obs_variance_vectorize`:
     this assumes the convention used in climate data,
@@ -250,17 +248,17 @@ def get_auto_corr_1_vectorize(
     arr: numpy.ndarray
         A multi-dimension array that needs autoregression correlation;
         shape `(N, M)` (N samples, M features/independent variable)
-    n: int
+    lag: int
         order (lag) of AR
 
     Returns
     -------
-    ar_n : float
+    ar_lag : float
         The n-th lagged correlation; this is
         autocovariance_n divided by (non-lagged) variance;
         shape `(M,)` (M features)
-    autocovariance_n: float
-        Same as in ar_n but not standardised;
+    autocovariance_lag: float
+        Same as in ar_lag but not standardised;
         shape `(M,)` (M features)
     variance: float
         Standard deviation squared;
@@ -270,7 +268,7 @@ def get_auto_corr_1_vectorize(
         the same autocorrelation;
         shape `(M,)` (M features)
     """
-    operator = partial(get_auto_corr, n=n)
+    operator = partial(get_auto_corr, lag=lag)
     return np.vectorize(operator, signature="(n)->(), (), (), ()")(arr.T)
 
 
@@ -283,7 +281,7 @@ def compute_lag_1_ts_metrics_from_da(
     - nth-lagged autocorrelation
     - sample variance
 
-    For n > 1, the autoregressive regression coefficient
+    For lag > 1, the autoregressive regression coefficient
     depends on lagged correlation for shorter lags.
     See Yule-Walker equations for details.
 
