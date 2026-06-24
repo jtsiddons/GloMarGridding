@@ -293,11 +293,11 @@ class LassoEstimate_AR1:
         W = D.T @ self.coefficients @ D
         # See:
         # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
-        logging.debug(f"Filling diagonals of empty rows with {fill_value}")
-        # Obsolete
+        # Part of the original solution is obsolete with retirement of getnnz
         # https://github.com/scverse/scanpy/issues/2773
-        # empty_rows = W.getnnz(1) == 0
-        empty_rows = np.diff(W.indptr) == 0
+        logging.debug(f"Filling diagonals of empty rows with {fill_value}")
+        # empty_rows = W.getnnz(1) == 0  # legacy, used in stackoverflow example
+        empty_rows = np.diff(W.indptr) == 0  # current solution
         where_empty = np.where(empty_rows)[0]
         n_empty_rows = np.sum(empty_rows)
         W_coo = W.tocoo()
