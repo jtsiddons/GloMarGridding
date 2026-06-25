@@ -166,20 +166,16 @@ def test_time_series():
         # https://stats.stackexchange.com/questions/156518/what-is-the-standard-error-of-the-sample-standard-deviation
         # SE_variance = SQRT((2 x sigma**4)/(N - 1)) for N(*) for known sigma
         nt = lasso.residues.shape[1]
-        se_innovation0 = np.sqrt(
-            2.0 * (innovation0 ** 4) / (nt - 1)
-        )
-        se_innovation1 = np.sqrt(
-            2.0 * (innovation1 ** 4) / (nt - 1)
-        )
+        se_innovation0 = np.sqrt(2.0 * (innovation0**4) / (nt - 1))
+        se_innovation1 = np.sqrt(2.0 * (innovation1**4) / (nt - 1))
         # Due to the way big_x is constructed:
         # R[0, 0], R[2, 2] should have be close to innovation0**2
         # R[3, 3] should have be close to innovation1**2
         # R[1, 1] is different... it gets adjusted by Cholesky to mimic the
         # the correlation between feature 0,1 while keeping feature 0 unchanged
-        assert np.abs(lasso.R[0, 0] - innovation0 ** 2) < (se_innovation0 * 3)
-        assert np.abs(lasso.R[2, 2] - innovation0 ** 2) < (se_innovation0 * 3)
-        assert np.abs(lasso.R[3, 3] - innovation1 ** 2) < (se_innovation1 * 3)
+        assert np.abs(lasso.R[0, 0] - innovation0**2) < (se_innovation0 * 3)
+        assert np.abs(lasso.R[2, 2] - innovation0**2) < (se_innovation0 * 3)
+        assert np.abs(lasso.R[3, 3] - innovation1**2) < (se_innovation1 * 3)
     #
     # Test weight expansion
     D = np.array(

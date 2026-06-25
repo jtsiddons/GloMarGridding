@@ -266,9 +266,9 @@ class LassoEstimate_AR1:
         self.coefficients = sp.sparse.csr_array(self.coefficients)
 
     def estimate_errcov(
-            self,
-            dof_adj: float | int = 0,
-        ):
+        self,
+        dof_adj: float | int = 0,
+    ):
         """
         Estimate error covariance
 
@@ -313,9 +313,7 @@ class LassoEstimate_AR1:
             logging.debug(f"{dof_adj = }")
             dof_divider = np.diag(np.sqrt(np.reciprocal(dof_per_line)))
             self.R = (
-                dof_divider @
-                (self.residues @ self.residues.T) @
-                dof_divider
+                dof_divider @ (self.residues @ self.residues.T) @ dof_divider
             )
 
     def expand_coefficients(
