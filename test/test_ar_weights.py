@@ -152,30 +152,30 @@ def test_time_series():
         )
         #
         lasso.estimate_errcov()
-        assert np.all(np.isclose(lasso.R - lasso.R.T, 0))
+        assert np.all(np.isclose(lasso.errcov - lasso.errcov.T, 0))
         # Features 2 and 3 are not correlated...
-        assert np.abs(lasso.R[2, 3] / lasso.R[2, 2]) < 0.01
-        assert np.abs(lasso.R[2, 3] / lasso.R[3, 3]) < 0.01
+        assert np.abs(lasso.errcov[2, 3] / lasso.errcov[2, 2]) < 0.01
+        assert np.abs(lasso.errcov[2, 3] / lasso.errcov[3, 3]) < 0.01
         # But features 0 and 1 are...
         # given parameters above should be 0.6-0.7ish?
-        mini_errcov = lasso.R[:2, :2]
+        mini_errcov = lasso.errcov[:2, :2]
         inv_sigma = np.reciprocal(np.sqrt(np.diag(mini_errcov)))
         mini_errcor = np.diag(inv_sigma) @ mini_errcov @ np.diag(inv_sigma)
         assert np.abs(mini_errcor[0, 1] - 0.7) < 0.1
         # Standard error of the (error) covariance diagonal
         # https://stats.stackexchange.com/questions/156518/what-is-the-standard-error-of-the-sample-standard-deviation
-        # SE_variance = SQRT((2 x sigma**4)/(N - 1)) for N(*) for known sigma
+        # SE_variance = SQRT((2 x sigma**4)/(N - 1)) for N(0, sigma)
         nt = lasso.residues.shape[1]
         se_innovation0 = np.sqrt(2.0 * (innovation0**4) / (nt - 1))
         se_innovation1 = np.sqrt(2.0 * (innovation1**4) / (nt - 1))
         # Due to the way big_x is constructed:
-        # R[0, 0], R[2, 2] should have be close to innovation0**2
-        # R[3, 3] should have be close to innovation1**2
-        # R[1, 1] is different... it gets adjusted by Cholesky to mimic the
+        # errcov[0, 0], errcov[2, 2] should have be close to innovation0**2
+        # errcov[3, 3] should have be close to innovation1**2
+        # errcov[1, 1] is different... it gets adjusted by Cholesky to mimic the
         # the correlation between feature 0,1 while keeping feature 0 unchanged
-        assert np.abs(lasso.R[0, 0] - innovation0**2) < (se_innovation0 * 3)
-        assert np.abs(lasso.R[2, 2] - innovation0**2) < (se_innovation0 * 3)
-        assert np.abs(lasso.R[3, 3] - innovation1**2) < (se_innovation1 * 3)
+        assert np.abs(lasso.errcov[0, 0] - innovation0**2) < (se_innovation0 * 3)
+        assert np.abs(lasso.errcov[2, 2] - innovation0**2) < (se_innovation0 * 3)
+        assert np.abs(lasso.errcov[3, 3] - innovation1**2) < (se_innovation1 * 3)
     #
     # Test weight expansion
     D = np.array(

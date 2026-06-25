@@ -259,6 +259,14 @@ class LassoEstimate_AR1:
                 "call fit method first."
             )
 
+    def _check_errcov_call(self):
+        """Check if method estimate_errcov has been called"""
+        if not hasattr(self, "errcov"):
+            raise AttributeError(
+                "Error covariance have not been computed yet; "
+                "call estimate_errcov method first."
+            )
+
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
         self._check_fit_call()
@@ -279,7 +287,12 @@ class LassoEstimate_AR1:
         ----------
         dof_adj: float | int
             Additional degree of freedom adjustment
-            for each line seeming-unrelated regression
+            for each line of seeming-unrelated regression
+
+        Attributes
+        ----------
+        errcov : np.ndarray
+            Error covariance for the regression
         """
         self._check_fit_call()
         logging.debug("Computing error covariance")
@@ -290,7 +303,7 @@ class LassoEstimate_AR1:
             dof = t - dof_adj
             logging.debug(f"{dof = }")
             logging.debug(f"{dof_adj = }")
-            self.R = (self.residues @ self.residues.T) / dof
+            self.errcov: np.ndarray = (self.residues @ self.residues.T) / dof
         else:
             # Note:
             # self.residues.shape[0] == self.coefficients.shape[0]
@@ -312,7 +325,7 @@ class LassoEstimate_AR1:
             logging.debug(f"{np.max(dof_per_line) = }")
             logging.debug(f"{dof_adj = }")
             dof_divider = np.diag(np.sqrt(np.reciprocal(dof_per_line)))
-            self.R = (
+            self.errcov: np.ndarray = (
                 dof_divider @ (self.residues @ self.residues.T) @ dof_divider
             )
 
