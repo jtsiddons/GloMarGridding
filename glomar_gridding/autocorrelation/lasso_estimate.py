@@ -508,7 +508,7 @@ class LassoEstimate_AR1:
         .. code-block::python
            attrs = {
                "lasso_hyperparm_lam": 0.01,
-               "description": "VAR(1) estimated error covariance for SST",
+               "description": "standardised VAR(1) error covariance for SST",
                "units": "1"
            }
 
