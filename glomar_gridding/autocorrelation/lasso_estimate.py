@@ -372,7 +372,7 @@ class LassoEstimate_AR1:
         self._check_errcov_call()
         if not sp.sparse.issparse(self.coefficients):
             self.make_coeff_sparse()
-        self.D: sp.sparse.csr_array = _d_check(D)
+        self.D: sp.sparse.sparray = _d_check(D)
         #
         # Process the error covariance
         self.errcov = cov_diagonal.restore_diag_only_rows(
@@ -460,6 +460,7 @@ class LassoEstimate_AR1:
             self.coefficients as a DataArray that has metadata and
             written easily to netCDF file
         """
+        self._check_fit_call()
         if not self.expanded:
             warnings.warn(
                 "self.coefficients have not been expanded yet",
@@ -487,6 +488,77 @@ class LassoEstimate_AR1:
         da = xr.DataArray(
             data=self.coefficients.toarray(),
             coords=w_dim,
+            name=name,
+            attrs=attrs,
+        )
+        return da
+
+    def to_xarray_da_errcov(
+        self,
+        lats: np.ndarray,
+        lons: np.ndarray,
+        name: str = "error_covariance",
+        attrs: dict | None = None,
+    ):
+        """
+        Convert estimated error covariance into a xarray DataArray instance
+
+        Example attrs:
+
+        .. code-block::python
+           attrs = {
+               "lasso_hyperparm_lam": 0.01,
+               "description": "VAR(1) estimated error covariance for SST",
+               "units": "1"
+           }
+
+        Parameters
+        ----------
+        lats: numpy.ndarray
+            Array of latitude values, such as `np.linspace(-19.5, 19.5, 40)`
+        lons: numpy.ndarray
+            Array of longitude values, such as `np.linspace(-179.5, 179.5, 360)`
+        name: str
+            Name of the variable
+        attrs: dict
+            Attributes to be added the `xarray.DataArray`
+
+        Returns
+        -------
+        da: xarray.DataArray
+            errcov as a DataArray that has metadata and written easily to netCDF
+        """
+        self._check_errcov_call()
+        if not self.expanded:
+            warnings.warn(
+                "self.coefficients have not been expanded yet",
+                UserWarning,
+            )
+        if attrs is None:
+            attrs = {
+                "description": "standardised error_covariance_of_VAR(1)",
+                "units": "1",
+            }
+        xx, yy = np.meshgrid(lons, lats)
+        xx = xx.flatten().astype(np.float32)
+        yy = yy.flatten().astype(np.float32)
+        r_dim = xr.Coordinates(
+            {
+                "row": np.arange(self.errcov.shape[0], dtype=np.uint32),
+                "col": np.arange(self.errcov.shape[0], dtype=np.uint32),
+            }
+        )
+        r_dim.update(
+            {
+                "row_lat": ("row", yy),
+                "col_lat": ("col", yy),
+                "row_lon": ("row", xx),
+                "col_lon": ("col", xx),
+            }
+        )
+        da = xr.DataArray(
+            data=self.errcov,
+            coords=r_dim,
             name=name,
             attrs=attrs,
         )
