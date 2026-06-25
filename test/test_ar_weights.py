@@ -5,7 +5,7 @@ from glomar_gridding.autocorrelation import (
     get_auto_corr_vectorize,
     LassoEstimate_AR1,
 )
-
+from glomar_gridding.covariance_tools import cov_2_cor
 
 def test_time_series():
     # It has been Monte Carlo/stochastic simulation
@@ -116,6 +116,12 @@ def test_time_series():
         ]
     )
     #
+    y_y_t = np.cov(big_x.T)
+    A = big_x.T[:, :-1]
+    B = big_x.T[:, 1:]
+    y_y_tp1_t = A @ B.T / (n - 1)
+    w_mle = np.linalg.solve(y_y_t, y_y_tp1_t).T
+    #
     for out_of_sample_residues in [True, False]:
         lasso = LassoEstimate_AR1(
             big_x,
@@ -125,6 +131,11 @@ def test_time_series():
             lasso_kws={"random_state": seed},
         )
         lasso.fit()
+        #
+        diff = np.linalg.norm(w_mle - lasso.coefficients)
+        assert diff < 0.05
+        #
+        cor_err_alt = cov_2_cor(y_y_t - w_mle @ y_y_t @ w_mle.T)
         #
         # Note:
         # W = cov(x(t+1), x(t)) @ inv(cov(x, x)) for OLS
@@ -153,15 +164,15 @@ def test_time_series():
         #
         lasso.estimate_errcov()
         assert np.all(np.isclose(lasso.errcov - lasso.errcov.T, 0))
+        #
         # Features 2 and 3 are not correlated...
         assert np.abs(lasso.errcov[2, 3] / lasso.errcov[2, 2]) < 0.01
         assert np.abs(lasso.errcov[2, 3] / lasso.errcov[3, 3]) < 0.01
-        # But features 0 and 1 are...
-        # given parameters above should be 0.6-0.7ish?
-        mini_errcov = lasso.errcov[:2, :2]
-        inv_sigma = np.reciprocal(np.sqrt(np.diag(mini_errcov)))
-        mini_errcor = np.diag(inv_sigma) @ mini_errcov @ np.diag(inv_sigma)
-        assert np.abs(mini_errcor[0, 1] - 0.7) < 0.1
+        #
+        # But features 0 and 1 are correlated
+        mini_errcor = cov_2_cor(lasso.errcov[:2, :2])
+        diff = np.linalg.norm(cor_err_alt[:2, :2] - mini_errcor)
+        assert diff < 0.05
         # Standard error of the (error) covariance diagonal
         # https://stats.stackexchange.com/questions/156518/what-is-the-standard-error-of-the-sample-standard-deviation
         # SE_variance = SQRT((2 x sigma**4)/(N - 1)) for N(0, sigma)
