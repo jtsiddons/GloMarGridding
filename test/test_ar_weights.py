@@ -7,6 +7,7 @@ from glomar_gridding.autocorrelation import (
 )
 from glomar_gridding.covariance_tools import cov_2_cor
 
+
 def test_time_series():
     # It has been Monte Carlo/stochastic simulation
     # can be used to test anything!
