@@ -265,6 +265,59 @@ class LassoEstimate_AR1:
         logging.debug("coefficients matrix converted to sparse.")
         self.coefficients = sp.sparse.csr_array(self.coefficients)
 
+    def estimate_errcov(
+            self,
+            dof_adj: float | int = 0,
+        ):
+        """
+        Estimate error covariance
+
+        .. math::
+           E = R @ R^{T} / (T^{*} - dof_adj)
+
+        Parameters
+        ----------
+        dof_adj: float | int
+            Additional degree of freedom adjustment
+            for each line seeming-unrelated regression
+        """
+        self._check_fit_call()
+        logging.debug("Computing error covariance")
+        # Note:
+        # self.residues.shape[1] are different for out and in-samples
+        t = self.residues.shape[1]
+        if self.out_of_sample_residues:
+            dof = t - dof_adj
+            logging.debug(f"{dof = }")
+            logging.debug(f"{dof_adj = }")
+            self.R = (self.residues @ self.residues.T) / dof
+        else:
+            # Note:
+            # self.residues.shape[0] == self.coefficients.shape[0]
+            n_regression = self.residues.shape[0]
+            # In general for in-sample residues case,
+            # dof = len(training_data) minus (number of regression coefficients)
+            dof_per_line = np.array([t] * n_regression)
+            n_coef_per_line = np.sum(
+                ~np.isclose(self.coefficients, 0),
+                axis=1,
+            )
+            # dof_per_line will be np.int64 array unless explicitly changed
+            # np.reciprocal does not like that: 1 / 2 (int) = 0 (!)
+            dof_per_line: np.ndarray = dof_per_line - n_coef_per_line
+            dof_per_line = dof_per_line.astype(np.float32)
+            if dof_adj != 0:
+                dof_per_line = dof_per_line - dof_adj
+            logging.debug(f"{np.min(dof_per_line) = }")
+            logging.debug(f"{np.max(dof_per_line) = }")
+            logging.debug(f"{dof_adj = }")
+            dof_divider = np.diag(np.sqrt(np.reciprocal(dof_per_line)))
+            self.R = (
+                dof_divider @
+                (self.residues @ self.residues.T) @
+                dof_divider
+            )
+
     def expand_coefficients(
         self,
         D: np.ndarray | sp.sparse.sparray,
@@ -332,9 +385,7 @@ class LassoEstimate_AR1:
         self.expanded = True
         self.D = D
 
-    def unexpand_coefficients(
-        self,
-    ):
+    def unexpand_coefficients(self):
         """
         Reverses expand_coefficients, by the
         subsampling matrix D. Removes the D attribute.

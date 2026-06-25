@@ -116,39 +116,71 @@ def test_time_series():
         ]
     )
     #
-    lasso = LassoEstimate_AR1(
-        big_x,
-        lam=0.001,
-        out_of_sample_residues=False,
-        standardise=False,
-        lasso_kws={"random_state": seed},
-    )
-    lasso.fit()
+    for out_of_sample_residues in [True, False]:
+        lasso = LassoEstimate_AR1(
+            big_x,
+            lam=0.001,
+            out_of_sample_residues=out_of_sample_residues,
+            standardise=False,
+            lasso_kws={"random_state": seed},
+        )
+        lasso.fit()
+        #
+        # Note:
+        # W = cov(x(t+1), x(t)) @ inv(cov(x, x)) for OLS
+        # This is not true for Lasso in general, but should
+        # nearly be the case for this particular example
+        #
+        # For the 4 diagonal values of lasso.coefficients:
+        # 2 values should be closed to phi0 (0,0 and 2,2)
+        # 2 values should be closed to phi1 (1,1 and 3,3)
+        # lasso.coefficients[3, 2] and lasso.coefficients[2, 3] should be
+        # close to 0 because x0 and x1 are not correlated
+        # However, either lasso.coefficients[0, 1] or lasso.coefficients[1, 0] are
+        # not close to 0 because adjusted x2 and x3 are correlated
+        #
+        assert np.all(np.abs(lasso.coefficients < 1.0))
+        assert np.isclose(lasso.coefficients[0, 0], phi0, atol=0.01)
+        assert np.isclose(lasso.coefficients[2, 2], phi0, atol=0.01)
+        assert np.isclose(lasso.coefficients[1, 1], phi1, atol=0.01)
+        assert np.isclose(lasso.coefficients[3, 3], phi1, atol=0.01)
+        assert np.isclose(lasso.coefficients[2, 3], 0, atol=0.01)
+        assert np.isclose(lasso.coefficients[3, 2], 0, atol=0.01)
+        assert np.logical_or(
+            ~np.isclose(lasso.coefficients[0, 1], 0, atol=0.01),
+            ~np.isclose(lasso.coefficients[1, 0], 0, atol=0.01),
+        )
+        #
+        lasso.estimate_errcov()
+        assert np.all(np.isclose(lasso.R - lasso.R.T, 0))
+        # Features 2 and 3 are not correlated...
+        assert np.abs(lasso.R[2, 3] / lasso.R[2, 2]) < 0.01
+        assert np.abs(lasso.R[2, 3] / lasso.R[3, 3]) < 0.01
+        # But features 0 and 1 are...
+        # given parameters above should be 0.6-0.7ish?
+        mini_errcov = lasso.R[:2, :2]
+        inv_sigma = np.reciprocal(np.sqrt(np.diag(mini_errcov)))
+        mini_errcor = np.diag(inv_sigma) @ mini_errcov @ np.diag(inv_sigma)
+        assert np.abs(mini_errcor[0, 1] - 0.7) < 0.1
+        # Standard error of the (error) covariance diagonal
+        # https://stats.stackexchange.com/questions/156518/what-is-the-standard-error-of-the-sample-standard-deviation
+        # SE_variance = SQRT((2 x sigma**4)/(N - 1)) for N(*) for known sigma
+        nt = lasso.residues.shape[1]
+        se_innovation0 = np.sqrt(
+            2.0 * (innovation0 ** 4) / (nt - 1)
+        )
+        se_innovation1 = np.sqrt(
+            2.0 * (innovation1 ** 4) / (nt - 1)
+        )
+        # Due to the way big_x is constructed:
+        # R[0, 0], R[2, 2] should have be close to innovation0**2
+        # R[3, 3] should have be close to innovation1**2
+        # R[1, 1] is different... it gets adjusted by Cholesky to mimic the
+        # the correlation between feature 0,1 while keeping feature 0 unchanged
+        assert np.abs(lasso.R[0, 0] - innovation0 ** 2) < (se_innovation0 * 3)
+        assert np.abs(lasso.R[2, 2] - innovation0 ** 2) < (se_innovation0 * 3)
+        assert np.abs(lasso.R[3, 3] - innovation1 ** 2) < (se_innovation1 * 3)
     #
-    # Note:
-    # W = cov(x(t+1), x(t)) @ inv(cov(x, x)) for OLS
-    # This is not true for Lasso in general, but should
-    # nearly be the case for this particular example
-    #
-    # For the 4 diagonal values of lasso.coefficients:
-    # 2 values should be closed to phi0 (0,0 and 2,2)
-    # 2 values should be closed to phi1 (1,1 and 3,3)
-    # lasso.coefficients[3, 2] and lasso.coefficients[2, 3] should be
-    # close to 0 because x0 and x1 are not correlated
-    # However, either lasso.coefficients[0, 1] or lasso.coefficients[1, 0] are
-    # not close to 0 because adjusted x2 and x3 are correlated
-    #
-    assert np.all(np.abs(lasso.coefficients < 1.0))
-    assert np.isclose(lasso.coefficients[0, 0], phi0, atol=0.01)
-    assert np.isclose(lasso.coefficients[2, 2], phi0, atol=0.01)
-    assert np.isclose(lasso.coefficients[1, 1], phi1, atol=0.01)
-    assert np.isclose(lasso.coefficients[3, 3], phi1, atol=0.01)
-    assert np.isclose(lasso.coefficients[2, 3], 0, atol=0.01)
-    assert np.isclose(lasso.coefficients[3, 2], 0, atol=0.01)
-    assert np.logical_or(
-        ~np.isclose(lasso.coefficients[0, 1], 0, atol=0.01),
-        ~np.isclose(lasso.coefficients[1, 0], 0, atol=0.01),
-    )
     # Test weight expansion
     D = np.array(
         [
