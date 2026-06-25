@@ -136,8 +136,8 @@ def test_time_series():
         # 2 values should be closed to phi1 (1,1 and 3,3)
         # lasso.coefficients[3, 2] and lasso.coefficients[2, 3] should be
         # close to 0 because x0 and x1 are not correlated
-        # However, either lasso.coefficients[0, 1] or lasso.coefficients[1, 0] are
-        # not close to 0 because adjusted x2 and x3 are correlated
+        # However, either lasso.coefficients[0, 1] or lasso.coefficients[1, 0]
+        # are not close to 0 because adjusted x2 and x3 are correlated
         #
         assert np.all(np.abs(lasso.coefficients < 1.0))
         assert np.isclose(lasso.coefficients[0, 0], phi0, atol=0.01)
