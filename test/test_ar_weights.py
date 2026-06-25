@@ -173,9 +173,15 @@ def test_time_series():
         # errcov[3, 3] should have be close to innovation1**2
         # errcov[1, 1] is different... it gets adjusted by Cholesky to mimic the
         # the correlation between feature 0,1 while keeping feature 0 unchanged
-        assert np.abs(lasso.errcov[0, 0] - innovation0**2) < (se_innovation0 * 3)
-        assert np.abs(lasso.errcov[2, 2] - innovation0**2) < (se_innovation0 * 3)
-        assert np.abs(lasso.errcov[3, 3] - innovation1**2) < (se_innovation1 * 3)
+        assert np.abs(lasso.errcov[0, 0] - innovation0**2) < (
+            se_innovation0 * 3
+        )
+        assert np.abs(lasso.errcov[2, 2] - innovation0**2) < (
+            se_innovation0 * 3
+        )
+        assert np.abs(lasso.errcov[3, 3] - innovation1**2) < (
+            se_innovation1 * 3
+        )
     #
     # Test weight expansion
     D = np.array(
