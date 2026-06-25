@@ -193,14 +193,25 @@ def test_time_series():
         ],
         dtype=np.uint8,
     )
-    original_2_2 = lasso.coefficients[2, 2]
-    lasso.expand_coefficients(D, fill_value=999)
-    assert lasso.coefficients[2, 2] == 999
+    original_2_2_coefficent = lasso.coefficients[2, 2]
+    original_2_2_errcov = lasso.errcov[2, 2]
+    mp_favourite_number_approx = 3.141
+    da_favourite_number = 42.0
+    lasso.expand_coefficients(
+        D,
+        fill_value_w=mp_favourite_number_approx,
+        fill_value_errcov=da_favourite_number,
+    )
+    # For some reasons, this can actually introduce floating point
+    # rounding errors!
+    assert np.isclose(lasso.coefficients[2, 2], mp_favourite_number_approx)
+    assert np.isclose(lasso.errcov[2, 2], da_favourite_number)
     assert lasso.expanded
     fake_lats = [-2, -1, 0, 1, 2]
     fake_lons = [180]
     da = lasso.to_xarray_da_coefficients(fake_lats, fake_lons)
     assert np.all(da.values == lasso.coefficients.toarray())
     lasso.unexpand_coefficients()
-    assert lasso.coefficients[2, 2] == original_2_2
+    assert lasso.coefficients[2, 2] == original_2_2_coefficent
+    assert lasso.errcov[2, 2] == original_2_2_errcov
     assert not lasso.expanded

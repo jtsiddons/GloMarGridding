@@ -26,6 +26,7 @@ import xarray as xr
 from sklearn.linear_model import Lasso
 from typing import Literal
 
+from glomar_gridding.autoregressive_kalman import cov_diagonal
 from glomar_gridding.utils import check_shape
 from glomar_gridding.transformation import standardise_data
 
@@ -333,7 +334,8 @@ class LassoEstimate_AR1:
         self,
         D: np.ndarray | sp.sparse.sparray,
         dtype: type = np.float32,
-        fill_value: float = 0.6,
+        fill_value_w: float = 0.6,
+        fill_value_errcov: float = 0.36,
     ):
         """
         Expands coefficients according to the subsampling
@@ -357,25 +359,37 @@ class LassoEstimate_AR1:
             expanded array. Given the nature of this type of analysis
             double precision floats (float64) are overkill. Defaults
             to single precision floats (float32).
-        fill_value: float
-            The diagonal fill value of the weights; default 0.6
+        fill_value_w: float
+            The diagonal fill value for the weights; default 0.6
 
         Attributes
         ----------
         D: scipy.sparse.sparray
-            Adds `D` as an attribute
+            Adds `D` as an attribute,
+            store in sparse if not already sparse
         """
         self._check_fit_call()
+        self._check_errcov_call()
         if not sp.sparse.issparse(self.coefficients):
             self.make_coeff_sparse()
-        D = _d_check(D)
+        self.D: sp.sparse.csr_array = _d_check(D)
         #
-        W = D.T @ self.coefficients @ D
+        # Process the error covariance
+        self.errcov = cov_diagonal.restore_diag_only_rows(
+            self.errcov,
+            self.D,
+            diag_fill_value=fill_value_errcov,
+        )
+        #
+        # Process the weights
+        # cov_diagonal.restore_diag_only_rows does not work with sparse matrices
+        # but sparse matrices have their own optimisations
+        W = self.D.T @ self.coefficients @ self.D
         # See:
         # https://stackoverflow.com/questions/32743584/python-lil-matrix-vs-csr-matrix-in-extremely-large-sparse-matrices
         # Part of the original solution is obsolete with retirement of getnnz
         # https://github.com/scverse/scanpy/issues/2773
-        logging.debug(f"Filling diagonals of empty rows with {fill_value}")
+        logging.debug(f"Filling diagonals of empty rows with {fill_value_w}")
         # empty_rows = W.getnnz(1) == 0  # legacy, used in stackoverflow example
         empty_rows = np.diff(W.indptr) == 0  # current solution
         where_empty = np.where(empty_rows)[0]
@@ -385,7 +399,7 @@ class LassoEstimate_AR1:
         W_row = W_coo.coords[0].copy()
         W_col = W_coo.coords[1].copy()
         del W_coo
-        W_dat = np.append(W_dat, np.array([fill_value] * n_empty_rows))
+        W_dat = np.append(W_dat, np.array([fill_value_w] * n_empty_rows))
         W_row = np.append(W_row, where_empty)
         W_col = np.append(W_col, where_empty)
         self.coefficients = sp.sparse.csr_matrix(
@@ -394,7 +408,6 @@ class LassoEstimate_AR1:
             dtype=dtype,
         )
         self.expanded = True
-        self.D = D
 
     def unexpand_coefficients(self):
         """
@@ -407,6 +420,7 @@ class LassoEstimate_AR1:
                 "and attribute D has not been set."
             )
         self.coefficients = self.D @ self.coefficients @ self.D.T
+        self.errcov = self.D @ self.errcov @ self.D.T
         self.expanded = False
         del self.D
 
