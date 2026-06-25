@@ -167,6 +167,6 @@ def test_time_series():
     fake_lons = [180]
     da = lasso.to_xarray_da_coefficients(fake_lats, fake_lons)
     assert np.all(da.values == lasso.coefficients.toarray())
-    lasso.shrink_coefficients(D)
+    lasso.unexpand_coefficients()
     assert lasso.coefficients[2, 2] == original_2_2
     assert not lasso.expanded

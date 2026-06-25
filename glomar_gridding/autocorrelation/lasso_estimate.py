@@ -185,6 +185,8 @@ class LassoEstimate_AR1:
         expanded: bool
             A bool flag that indicates if coefficients
             have been expanded by the expand_coefficients method
+            Set to `False`; it will only be set to `True` if
+            method `expand_coefficients` is called later.
         """
         self.coefficients = np.zeros((self.n_xy, self.n_xy), dtype=self.dtype)
         # Note numpy default is row-major
@@ -249,13 +251,19 @@ class LassoEstimate_AR1:
         #
         logging.debug("Task complete")
 
+    def _check_fit_call(self):
+        """Check if method fit has been called"""
+        if not hasattr(self, "coefficients"):
+            raise AttributeError(
+                "Coefficients have not been computed yet; "
+                "call fit method first."
+            )
+
     def make_coeff_sparse(self):
         """Convert the weights to scipy sparse format"""
-        if hasattr(self, "coefficients"):
-            logging.debug("coefficients matrix converted to sparse.")
-            self.coefficients = sp.sparse.csr_array(self.coefficients)
-        else:
-            raise AttributeError("Coefficients have not been computed yet.")
+        self._check_fit_call()
+        logging.debug("coefficients matrix converted to sparse.")
+        self.coefficients = sp.sparse.csr_array(self.coefficients)
 
     def expand_coefficients(
         self,
@@ -269,7 +277,9 @@ class LassoEstimate_AR1:
         and will be converted to sparse if not sparse already.
 
         self.coefficient matrix will be converted to sparse
-        if has not been converted.
+        if it has not been converted.
+
+        Sets attribute `expanded` to `True`.
 
         Parameters
         ----------
@@ -285,7 +295,13 @@ class LassoEstimate_AR1:
             to single precision floats (float32).
         fill_value: float
             The diagonal fill value of the weights; default 0.6
+
+        Attributes
+        ----------
+        D: scipy.sparse.sparray
+            Adds `D` as an attribute
         """
+        self._check_fit_call()
         if not sp.sparse.issparse(self.coefficients):
             self.make_coeff_sparse()
         D = _d_check(D)
@@ -314,26 +330,23 @@ class LassoEstimate_AR1:
             dtype=dtype,
         )
         self.expanded = True
+        self.D = D
 
-    def shrink_coefficients(
+    def unexpand_coefficients(
         self,
-        D: np.ndarray | sp.sparse.sparray,
     ):
         """
-        Reverses expand_coefficients, again by
-        the subsampling matrix D.
-
-        Parameters
-        ----------
-        D: numpy.ndarray | scipy.sparse.sparray
-            A 2D array indicating unmasked location, should normally be sparse;
-            If not an instance `sp.sparse.sparray`, it will converted to one;
-            dtype `uint8` or `bool`;
-            shape `(N, M)`
+        Reverses expand_coefficients, by the
+        subsampling matrix D. Removes the D attribute.
         """
-        D = _d_check(D)
-        self.coefficients = D @ self.coefficients @ D.T
+        if not self.expanded:
+            raise AttributeError(
+                "Method expand_coefficients has not be called, "
+                "and attribute D has not been set."
+            )
+        self.coefficients = self.D @ self.coefficients @ self.D.T
         self.expanded = False
+        del self.D
 
     def to_xarray_da_coefficients(
         self,
