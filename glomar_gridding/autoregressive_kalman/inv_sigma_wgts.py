@@ -78,7 +78,6 @@ class KalmanOut:
         cov_forecast_and_obs: np.ndarray | None,
         use_diag_only: bool = True,
     ):
-        """__init__ for KalmanOut class"""
         self.forecast_vector = forecast_vector
         self.obs_vector = obs_vector
         if use_diag_only:
@@ -353,8 +352,6 @@ class KalmanOutUncorrCorrSplit:
         arr_to_decide_isolated_pts: np.ndarray,
         zero_threshold: float = cd.EFFECTIVELY_ZERO_DEFAULT,
     ):
-        """__init__ for KalmanOut class"""
-        #
         if not check_sq_matrix(errcov_forecast):
             raise ValueError("errcov_forecast should be 2D and square")
         if not check_sq_matrix(errcov_obs):

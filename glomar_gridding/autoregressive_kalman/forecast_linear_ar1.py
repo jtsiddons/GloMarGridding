@@ -77,7 +77,6 @@ class Autoregressive1ForecastUncorr:
         errcov_analysis_is_sdev: bool = False,
         clim_covar_is_sdev: bool = False,
     ):
-        """__init__ for Autoregressive1Forecast class"""
         #
         # analysis
         self.analysis = analysis
@@ -315,7 +314,6 @@ class Autoregressive1ForecastVector:
         clim_covar: np.ndarray,
         estimated_ar1_errcov: np.ndarray | None = None,
     ):
-        """__init__ for Autoregressive1Forecast class"""
         #
         self.analysis = analysis
         self.errcov_analysis = errcov_analysis
