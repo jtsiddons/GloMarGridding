@@ -114,8 +114,6 @@ class KalmanOut:
                 self.cov_forecast_and_obs = None
             self.multiply_operator = matmul
             self.one_maker = np.eye
-        # Aliases for legacy code
-        self._compute_outputs = self.predict
 
     def sparse_approx_for_errcov(
         self,
@@ -419,8 +417,6 @@ class KalmanOutUncorrCorrSplit:
             cov_forecast_and_obs_c,
             use_diag_only=False,
         )
-        # Alias for legacy code
-        self._compute_outputs = self.predict
 
     def predict_uncorr(self):
         """
