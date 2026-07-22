@@ -400,12 +400,14 @@ class Spline(_Interpolator):
 
         return result
 
-    def get_stats(self) -> NoneType:
+    def get_stats(self) -> SplineResult:
         """Get the statistics of the fitted result."""
         if not hasattr(self, "result"):
             raise AttributeError("'result' attribute not set, run 'fit' method")
 
         self.result.fit_stats()
+
+        return self.result
 
     def A_matrix(  # noqa: N802
         self,
