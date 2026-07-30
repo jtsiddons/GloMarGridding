@@ -43,7 +43,7 @@ def get_anomalies(vec: np.ndarray) -> np.ndarray:
     Returns
     -------
     anomalies: numpy.ndarray
-        0-meaned values
+        0-mean-ed values
     """
     sample_mean = np.nanmean(vec)
     anomalies = vec - sample_mean

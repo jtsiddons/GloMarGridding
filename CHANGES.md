@@ -9,6 +9,12 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 * Approximate normality transformation using the Box-Cox transformation, with
   function specifically for Weibull-distributed variables (such as wind speeds) (#138).
 
+### New features and enhancements
+
+* Add `spline` module for Spline-based interpolation, e.g. `glomar_gridding.spline.ThinPlateSpline`
+  and spline interpolator for spherical geometry (`glomar_gridding.spline.SphericalThinPlateSpline`)
+  (#40).
+
 ### Bug fixes
 
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
