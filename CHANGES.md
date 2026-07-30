@@ -15,6 +15,15 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
   and spline interpolator for spherical geometry (`glomar_gridding.spline.SphericalThinPlateSpline`)
   (#40).
 
+### Breaking Changes
+
+* Raise `NotImplementedError` for `ellipse.EllipseModel` if `unit_sigma=False` (#91)
+
+### New Features
+
+* Add parallel option to estimate ellipse parameters using `itertools.batched` and
+  `joblib.parallel`. `ellipse.estimate.get_ellipse_params` (#91)
+
 ### Bug fixes
 
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
