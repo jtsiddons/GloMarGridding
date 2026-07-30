@@ -65,7 +65,7 @@
 
 
 \title{GloMarGridding}
-\date{Jun 24, 2026}
+\date{Jul 30, 2026}
 \release{1.1.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -1141,20 +1141,20 @@ They are easier to handle because stdevs in the covariance function become 1
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{anisotropic}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Should the output be an ellipse? Set to False for circle.
+\sphinxstyleliteralstrong{\sphinxupquote{anisotropic}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Should the output be an ellipse? Set to False for circle.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{rotated}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Can the ellipse be rotated. If anisotropic is False this value cannot
+\sphinxstyleliteralstrong{\sphinxupquote{rotated}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Can the ellipse be rotated. If anisotropic is False this value cannot
 be True.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Use physical distances rather than lat/lon distance.
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Use physical distances rather than lat/lon distance.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{v}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Matern Shape Parameter. Must be \textgreater{} 0.0.
+\sphinxstyleliteralstrong{\sphinxupquote{v}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Matern Shape Parameter. Must be \textgreater{} 0.0.
 
 \item {}
 \sphinxAtStartPar
@@ -1214,7 +1214,7 @@ Much of the variable names are defined the same way as earlier
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{X}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Array of displacements. Expected to be 1\sphinxhyphen{}dimensional if the ellipse
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array of displacements. Expected to be 1\sphinxhyphen{}dimensional if the ellipse
 model is not anisotropic, 2\sphinxhyphen{}dimensional otherwise. In units of km if
 the ellipse uses physical distances, otherwise in degrees. The
 displacements are from each position within the test region to the
@@ -1222,7 +1222,7 @@ centre of the ellipse.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{y}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Vector of observed correlations between the centre of the ellipse
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Vector of observed correlations between the centre of the ellipse
 and each test point.
 
 \item {}
@@ -1237,7 +1237,7 @@ the ellipse model are used if not set.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{opt\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} scipy.optimize.minimize optimisation method. Defaults to
+\sphinxstyleliteralstrong{\sphinxupquote{opt\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} scipy.optimize.minimize optimisation method. Defaults to
 “Nelder\sphinxhyphen{}Mead”. See \sphinxurl{https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html}
 for valid values.
 
@@ -1331,20 +1331,20 @@ should be set to the scale parameter
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{X}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Observed displacements to the centre of the ellipse.
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Observed displacements to the centre of the ellipse.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{y}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} Observed correlation against the centre of the ellipse.
+\sphinxstyleliteralstrong{\sphinxupquote{y}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Observed correlation against the centre of the ellipse.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{params}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Ellipse parameters (in the current optimize iteration) or if you
+\sphinxstyleliteralstrong{\sphinxupquote{params}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{float}}{]}}) \textendash{} Ellipse parameters (in the current optimize iteration) or if you
 want to compute the actual negative log\sphinxhyphen{}likelihood.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{arctanh\_transform}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Should the Fisher (arctanh) transform be used
+\sphinxstyleliteralstrong{\sphinxupquote{arctanh\_transform}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Should the Fisher (arctanh) transform be used
 This is usually option, but it does make the computation
 more stable if they are close to 1 (or \sphinxhyphen{}1; doesn’t apply here)
 
@@ -1356,7 +1356,7 @@ more stable if they are close to 1 (or \sphinxhyphen{}1; doesn’t apply here)
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-float
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}
 
 \end{description}\end{quote}
 
@@ -1411,12 +1411,12 @@ self.fit\_ellipse\_model.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{data\_array}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ma.MaskedArray}}) \textendash{} Training data stored within a numpy array. In general, this input should
+\sphinxstyleliteralstrong{\sphinxupquote{data\_array}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Training data stored within a numpy array. In general, this input should
 be extracted from an xarray.DataArray, and masked appropriately.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Coordinates}}) \textendash{} The coordinates associated with the data\_array value. It is expected
+\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Coordinates}}}) \textendash{} The coordinates associated with the data\_array value. It is expected
 that these are {[}“time”, “latitude”, “longitude”{]}
 
 \end{itemize}
@@ -1437,7 +1437,7 @@ Calculate covariance and correlation matrices.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{rounding}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Round the values of the output.
+\sphinxstyleliteralstrong{\sphinxupquote{rounding}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Round the values of the output.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -1507,7 +1507,7 @@ lat
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{default\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} Default value(s) to fill arrays where parameter estimation is not
+\sphinxstyleliteralstrong{\sphinxupquote{default\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}) \textendash{} Default value(s) to fill arrays where parameter estimation is not
 possible (typically due to masking). Typically, one should set a
 value that is appropriate to the type of the field. If a single
 value is provided, this is used for all fields. If not, the length
@@ -1516,18 +1516,18 @@ of the \sphinxtitleref{EllipseModel}
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{matern\_ellipse}} ({\hyperref[\detokenize{ellipse:glomar_gridding.ellipse.EllipseModel}]{\sphinxcrossref{\sphinxstyleliteralemphasis{\sphinxupquote{EllipseModel}}}}}) \textendash{} EllipseModel to use for parameter estimation
+\sphinxstyleliteralstrong{\sphinxupquote{matern\_ellipse}} (\DUrole{sphinx_autodoc_typehints-type}{{\hyperref[\detokenize{ellipse:glomar_gridding.ellipse.EllipseModel}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{EllipseModel}}}}}}) \textendash{} EllipseModel to use for parameter estimation
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Maximum separation in distance unit that data will be fed
+\sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Maximum separation in distance unit that data will be fed
 into parameter fitting
 Units depend on physical\_distance attribute (km if True, otherwise
 degrees).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Minimum separation in distance unit that data
+\sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Minimum separation in distance unit that data
 will be fed into parameter fitting
 Units depend on physical\_distance attribute (km if True, otherwise
 degrees).
@@ -1615,11 +1615,11 @@ The code does it using bootstrapping.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of simulations to bootstrap for SE estimation.
+\sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} Number of simulations to bootstrap for SE estimation.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Select training data using physical distance (haversine distance) or
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Select training data using physical distance (haversine distance) or
 Euclidean distance of degree difference between each position and
 all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
@@ -1659,7 +1659,7 @@ scipy.optimize.minimize kwargs “options)”
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-xarray.Dataset
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Dataset}}}
 
 \end{description}\end{quote}
 
@@ -1746,18 +1746,18 @@ lat
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{xy\_point}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} The index point where ellipses will be fitted to
+\sphinxstyleliteralstrong{\sphinxupquote{xy\_point}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} The index point where ellipses will be fitted to
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Maximum separation in distance unit that data will be fed
+\sphinxstyleliteralstrong{\sphinxupquote{max\_distance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Maximum separation in distance unit that data will be fed
 into parameter fitting
 Units depend on physical\_distance attribute (km if True, otherwise
 degrees).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Minimum separation in distance unit that data
+\sphinxstyleliteralstrong{\sphinxupquote{min\_distance}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Minimum separation in distance unit that data
 will be fed into parameter fitting
 Units depend on physical\_distance attribute (km if True, otherwise
 degrees).
@@ -1845,11 +1845,11 @@ The code does it using bootstrapping.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} Number of simulations to bootstrap for SE estimation.
+\sphinxstyleliteralstrong{\sphinxupquote{n\_sim}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} Number of simulations to bootstrap for SE estimation.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Select training data using physical distance (haversine distance) or
+\sphinxstyleliteralstrong{\sphinxupquote{physical\_distance\_selection}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Select training data using physical distance (haversine distance) or
 Euclidean distance of degree difference between each position and
 all possible training data. Data that falls within the min and max
 distance values using the selected distance method are selected as
@@ -1864,7 +1864,7 @@ matrix.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-dict
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{dict}}{[}\sphinxcode{\sphinxupquote{str}}, \sphinxcode{\sphinxupquote{Any}}{]} | \sphinxcode{\sphinxupquote{None}}}
 
 \end{description}\end{quote}
 
@@ -1916,42 +1916,42 @@ Invalid (masked) points:
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Lx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Long length scales of the ellipses (length of semi\sphinxhyphen{}major axis) or radius
+\sphinxstyleliteralstrong{\sphinxupquote{Lx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Long length scales of the ellipses (length of semi\sphinxhyphen{}major axis) or radius
 of circles.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{Ly}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Short length scales of the ellipses (length of semi\sphinxhyphen{}minor axis). If set
+\sphinxstyleliteralstrong{\sphinxupquote{Ly}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Short length scales of the ellipses (length of semi\sphinxhyphen{}minor axis). If set
 to None then the ellipses are isotropic and they are circles.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{theta}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Rotation angles of the ellipses in radians. If set to None then the
+\sphinxstyleliteralstrong{\sphinxupquote{theta}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Rotation angles of the ellipses in radians. If set to None then the
 ellipses are unrotated.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Standard deviations of the ellipses.
+\sphinxstyleliteralstrong{\sphinxupquote{stdev}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Standard deviations of the ellipses.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Array containing the latitude values
+\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array containing the latitude values
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} Array containing the longitude values
+\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array containing the longitude values
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{v}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Matern shape parameter
+\sphinxstyleliteralstrong{\sphinxupquote{v}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Matern shape parameter
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{delta\_x\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} How are displacements computed between points
+\sphinxstyleliteralstrong{\sphinxupquote{delta\_x\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Optional}}{[}\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}Met\_Office\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}Modified\_Met\_Office\textquotesingle{}}}{]}{]}}) \textendash{} How are displacements computed between points
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{max\_dist}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} If the Haversine distance between 2 points exceed max\_dist,
+\sphinxstyleliteralstrong{\sphinxupquote{max\_dist}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} If the Haversine distance between 2 points exceed max\_dist,
 covariance is set to 0. If set to None then an infinite max dist is
 assumed and covariance between all pairs of positions will be computed.
 
@@ -1962,7 +1962,7 @@ np.float32.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{CovarianceMethod}}) \textendash{}
+\sphinxstyleliteralstrong{\sphinxupquote{covariance\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}batched\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}low\_memory\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}array\textquotesingle{}}}{]}}) \textendash{}
 \sphinxAtStartPar
 Set the covariance method used:
 \begin{itemize}
@@ -1991,7 +1991,7 @@ the method will be overwritten to “low\_memory”.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{batch\_size}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Size of the batch to use for the “batched” method. Must be set if the
+\sphinxstyleliteralstrong{\sphinxupquote{batch\_size}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Size of the batch to use for the “batched” method. Must be set if the
 covariance\_method is set to “batched”.
 
 \end{itemize}
@@ -2046,7 +2046,7 @@ the covariance matrix as a vector (excluding the diagonal).
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{References}
@@ -2111,7 +2111,7 @@ the covariance matrix as a vector (excluding the diagonal).
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-numpy.ndarray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
 
 \end{description}\end{quote}
 \subsubsection*{References}
@@ -2280,11 +2280,11 @@ Overwrites the \sphinxtitleref{cov\_ns} attribute.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{diag\_fill\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} Value to assign to diagonal masked values. Defaults to \sphinxtitleref{np.nan}
+\sphinxstyleliteralstrong{\sphinxupquote{diag\_fill\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}) \textendash{} Value to assign to diagonal masked values. Defaults to \sphinxtitleref{np.nan}
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} Value to assign to off\sphinxhyphen{}diagonal masked values. Defaults to \sphinxtitleref{np.nan}
+\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}) \textendash{} Value to assign to off\sphinxhyphen{}diagonal masked values. Defaults to \sphinxtitleref{np.nan}
 
 \end{itemize}
 
@@ -4758,7 +4758,7 @@ Get the statistics of the fitted result.
 \begin{quote}\begin{description}
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{None}}}
+\DUrole{sphinx_autodoc_typehints-type}{{\hyperref[\detokenize{splines:glomar_gridding.spline.SplineResult}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{SplineResult}}}}}}
 
 \end{description}\end{quote}
 
@@ -5922,7 +5922,7 @@ replicates the behaviour of
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{xarray.Coordinates}}) \textendash{} The coordinates of the output grid.
+\sphinxstyleliteralstrong{\sphinxupquote{coords}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Coordinates}}}) \textendash{} The coordinates of the output grid.
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -5952,7 +5952,7 @@ Add and apply a mask to the grid.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ma.MaskedArray}}) \textendash{} The mask to apply, either an array of Booleans or a masked array.
+\sphinxstyleliteralstrong{\sphinxupquote{mask}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{MaskedArray}}}) \textendash{} The mask to apply, either an array of Booleans or a masked array.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -5978,22 +5978,22 @@ Assign a vector of values to a grid, using a list of grid index values.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{values}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}) \textendash{} The values to map onto the output grid.
+\sphinxstyleliteralstrong{\sphinxupquote{values}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The values to map onto the output grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_idx}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} The 1d index of the grid (assuming “C” style ravelling) for each
 value. If unset then it is assumed that the values are complete for
 the (possibly masked) grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\sphinxstyleliteralemphasis{\sphinxupquote{Any}}) \textendash{} The value to fill unassigned grid boxes. Must be a valid value of
+\sphinxstyleliteralstrong{\sphinxupquote{fill\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Any}}}) \textendash{} The value to fill unassigned grid boxes. Must be a valid value of
 the input \sphinxtitleref{values} data type.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} The input grid\_idx represents the index for the masked grid, apply
+\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} The input grid\_idx represents the index for the masked grid, apply
 the mapping to the final grid index.
 
 \end{itemize}
@@ -6004,7 +6004,7 @@ the mapping to the final grid index.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-xarray.DataArray
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}
 
 \end{description}\end{quote}
 
@@ -6072,7 +6072,7 @@ This sets the \sphinxtitleref{covariance} and \sphinxtitleref{variogram} attribu
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Lower\sphinxhyphen{}case name of the variogram model to use. One of “exponential”,
+\sphinxstyleliteralstrong{\sphinxupquote{variogram}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}exponential\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}gaussian\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}matern\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}spherical\textquotesingle{}}}{]}}) \textendash{} Lower\sphinxhyphen{}case name of the variogram model to use. One of “exponential”,
 “gaussian”, “matern”, or “spherical”. The \sphinxtitleref{variogram} attribute will
 be set to an instance of the equivalent class from
 \sphinxtitleref{glomar\_gridding.variogram}.
@@ -6121,7 +6121,7 @@ decimal degrees.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{dist\_func}} (\sphinxstyleliteralemphasis{\sphinxupquote{Callable}}) \textendash{} Distance function to use to compute pairwise distances. See
+\sphinxstyleliteralstrong{\sphinxupquote{dist\_func}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Callable}}}) \textendash{} Distance function to use to compute pairwise distances. See
 glomar\_gridding.distances.calculate\_distance\_matrix for more
 information. Defaults to Haversine distances.
 
@@ -6200,25 +6200,25 @@ allowing for finer resolution in some direction.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{resolution}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Resolution of the grid. Can be a single resolution value that will
+\sphinxstyleliteralstrong{\sphinxupquote{resolution}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{float}}{]}}) \textendash{} Resolution of the grid. Can be a single resolution value that will
 be applied to all coordinates, or a list of values mapping a
 resolution value to each of the coordinates.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}{]}}) \textendash{} A list of bounds of the form \sphinxtitleref{(lower\_bound, upper\_bound)} indicating
 the bounding box of the returned grid. For a grid between \sphinxhyphen{}180 and
 180 degrees in Longitude, one would set the bounds in this dimension
 to \sphinxtitleref{(\sphinxhyphen{}180, 180)} (if using “left” for the ‘definition’ argument).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} List of coordinate names in the same order as the bounds and
+\sphinxstyleliteralstrong{\sphinxupquote{coord\_names}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{str}}{]}}) \textendash{} List of coordinate names in the same order as the bounds and
 resolution(s).
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{ (}}\sphinxstyleliteralemphasis{\sphinxupquote{"left"}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{"center"}}\sphinxstyleliteralemphasis{\sphinxupquote{)}}) \textendash{}
+\sphinxstyleliteralstrong{\sphinxupquote{definition}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}center\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}left\textquotesingle{}}}{]}}) \textendash{}
 \sphinxAtStartPar
 Each grid box is defined by the centre of the box in each
 coordinate. This argument defines whether the lower bound in each
@@ -6323,12 +6323,12 @@ all of the attributes and methods of that class.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{kriging\_method}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Lower\sphinxhyphen{}case name of the Kriging class to use. One of “simple”,
+\sphinxstyleliteralstrong{\sphinxupquote{kriging\_method}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}simple\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}ordinary\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}stochastic\textquotesingle{}}}{]}}) \textendash{} Lower\sphinxhyphen{}case name of the Kriging class to use. One of “simple”,
 “ordinary”, or “stochastic”.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optional error covariance matrix. This will apply a smoothing
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional error covariance matrix. This will apply a smoothing
 effect to the observation points (as well as over the infilling).
 
 \end{itemize}
@@ -6365,38 +6365,38 @@ DataArray is then used as the output grid of the Gridding process.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\sphinxstyleliteralemphasis{\sphinxupquote{polars.DataFrame}}) \textendash{} The observational DataFrame containing positional data with
+\sphinxstyleliteralstrong{\sphinxupquote{obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataFrame}}}) \textendash{} The observational DataFrame containing positional data with
 latitude, longitude values within the \sphinxtitleref{obs\_latname} and
 \sphinxtitleref{obs\_lonname} columns respectively. Observations are mapped to the
 nearest grid\sphinxhyphen{}point in the grid.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{str}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} Names of the column containing positional values in the input
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_coords}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{str}}{]}}) \textendash{} Names of the column containing positional values in the input
 observational DataFrame.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Sort the observational DataFrame by the grid index
+\sphinxstyleliteralstrong{\sphinxupquote{sort}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Sort the observational DataFrame by the grid index
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]} }}\sphinxstyleliteralemphasis{\sphinxupquote{| }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}{]} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optionally filter the grid and DataFrame to fall within spatial
 bounds. This list must have the same size and ordering as
 \sphinxtitleref{obs\_coords} and \sphinxtitleref{grid\_coords} arguments.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} Add the grid positional information to the observational DataFrame.
+\sphinxstyleliteralstrong{\sphinxupquote{add\_grid\_pts}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Add the grid positional information to the observational DataFrame.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\sphinxstyleliteralemphasis{\sphinxupquote{str}}) \textendash{} Prefix to use for the new grid columns in the observational
+\sphinxstyleliteralstrong{\sphinxupquote{grid\_prefix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Prefix to use for the new grid columns in the observational
 DataFrame.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} If the Grid is masked convert the grid index values to the masked
+\sphinxstyleliteralstrong{\sphinxupquote{apply\_mask}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} If the Grid is masked convert the grid index values to the masked
 grid values. This will drop any observations whose grid position is
 masked.
 
@@ -6411,7 +6411,7 @@ respectively. The DataFrame is also sorted (ascendingly) by the
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
-pandas.DataFrame
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataFrame}}}
 
 \end{description}\end{quote}
 \subsubsection*{Examples}
@@ -6444,7 +6444,7 @@ error covariance matrix ahead of masked kriging, for example.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The covariance matrix.
+\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The covariance matrix.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -6491,7 +6491,7 @@ Filter the Grid by a set of bounds. Updates the \sphinxtitleref{grid} attribute.
 \sphinxlineitem{Parameters}\begin{itemize}
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\sphinxstyleliteralemphasis{\sphinxupquote{list}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{tuple}}\sphinxstyleliteralemphasis{\sphinxupquote{{[}}}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{, }}\sphinxstyleliteralemphasis{\sphinxupquote{float}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}\sphinxstyleliteralemphasis{\sphinxupquote{{]}}}) \textendash{} A list of tuples containing the lower and upper bounds for each
+\sphinxstyleliteralstrong{\sphinxupquote{bounds}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{list}}{[}\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}{]}}) \textendash{} A list of tuples containing the lower and upper bounds for each
 dimension.
 
 \item {}
@@ -6527,7 +6527,7 @@ Sets the \sphinxtitleref{covariance} attribute.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The covariance matrix for the full (unmasked) grid.
+\sphinxstyleliteralstrong{\sphinxupquote{covariance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The covariance matrix for the full (unmasked) grid.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -6556,7 +6556,7 @@ Sets the \sphinxtitleref{dist} attribute.
 \begin{quote}\begin{description}
 \sphinxlineitem{Parameters}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\sphinxstyleliteralemphasis{\sphinxupquote{numpy.ndarray}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{xarray.DataArray}}) \textendash{} The distance matrix for the full (unmasked) grid.
+\sphinxstyleliteralstrong{\sphinxupquote{distance\_matrix}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} The distance matrix for the full (unmasked) grid.
 
 \sphinxlineitem{Return type}
 \sphinxAtStartPar
@@ -6589,6 +6589,2057 @@ Shape of the grid
 \pysigstopsignatures
 \sphinxAtStartPar
 Size of grid
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+\sphinxstepscope
+
+
+\chapter{Auto Regressive Forecasting and Kalman Filter}
+\label{\detokenize{kalman:auto-regressive-forecasting-and-kalman-filter}}\label{\detokenize{kalman::doc}}
+
+\section{Introduction and purpose}
+\label{\detokenize{kalman:introduction-and-purpose}}
+\sphinxAtStartPar
+Most marine datasets are what we called a 2DVAR analysis \sphinxhyphen{} the current analysis is based on the
+present observations only (2D as in x, y; in contrast of 3DVAR seen in historical weather
+forecasting literature: x, y, z).
+
+\sphinxAtStartPar
+This limits the amount of the observations one can used, resulting in higher uncertainty. In many
+cases, this is mitigated by temporally aggregating the observations (like doing monthly analysis
+instead of daily analysis) or blending multiple input sources (like high\sphinxhyphen{}level remote sensing data
+product). Sometimes one is stuck with such spotty observations; like one really wants a daily
+analysis based purely on daily observations. How we can reduce the uncertainties?
+
+\sphinxAtStartPar
+This leads to the introduction of time dimension into the analysis. This is what we called 4DVAR (x,
+y, z, t) weather forecasting (or 3DVAR if one is dealing with only surface variables \sphinxhyphen{} x, y, t).
+
+\sphinxAtStartPar
+A popular way to do so is via Kalman Filter \textendash{} a recursive method that blends a forecast to the
+present state (aka prior) with present observations, resulting a posterior analysis that is more
+accurate with just the forecast or the observations. The method is widely used in autopilot and
+positioning. For Earth sciences, they are often associated with numerical weather prediction and
+reanalyses. Kalman filter has been used in producing more accurate weather forecasts and historical
+reanalysis by the ECWMF and the UK Met Office
+(\sphinxurl{https://www.met.reading.ac.uk/~darc/training/ecmwf\_collaborative\_training/EnKF\_AFowler.pdf}).
+
+
+\section{Producing the prior using a simple autoregressive statistical model}
+\label{\detokenize{kalman:producing-the-prior-using-a-simple-autoregressive-statistical-model}}
+\sphinxAtStartPar
+This lead to the question how would one produce a forecast priors. The priors/first guesses are
+often based on outputs of dynamical models like in numerical weather prediction and reanalysis; even
+in satnav or autopilot, simple dynamics are included (dead\sphinxhyphen{}reckoning along roads). Such dynamics are
+often not part of the development of the gridded observations; GlomarGridding is a package for
+statistical modelling only.
+
+\sphinxAtStartPar
+A simple statistical approach is implemented here to produce such forecast, basing on the simple
+idea is that current condition (described by the variable \sphinxtitleref{a} below) will generally tend toward
+climatology (\(E(a)\)). The simplest way to model that behavior is the local 1st order autoregressive
+model, in which the expected value for \(a(t)\) is a linear function of the observed lag\sphinxhyphen{}1 correlation
+and its last observed value (\(a(t-1)\)), resulting in exponential relaxation toward \(E(a)\), plus a
+normal\sphinxhyphen{}distributed uncertainty epsilon:
+\begin{equation*}
+\begin{split}a_{t} = \Phi (a_{t-1} - E(a)) + \epsilon\end{split}
+\end{equation*}
+\sphinxAtStartPar
+This is often referred as the (non\sphinxhyphen{}vectored) \sphinxhref{https://en.wikipedia.org/wiki/Autoregressive\_model}{AR1 model} . More sophisticated approach can be used
+like full vectorised form (requires full lagged autocovariance matrix), multi\sphinxhyphen{}lag, or autoregressive
+moving average (ARMA).
+
+\sphinxAtStartPar
+The AR1 model produces its own uncertainty. Input uncertainties can be incorporated following
+standard propagation of error rules. This is essential as uncertainty lie in the heart of Kalman
+Filter. Let say \(\Phi\) is a diagonal matrix with local lag\sphinxhyphen{}1 correlation, \(\Sigma_\text{climatology}\)
+is the diagonal matrix with climatological variance (no off\sphinxhyphen{}diagonal contribution; this requires full
+vectorised AR1), \(\Sigma_{t}\) is a diagonal matrix of the diagonal of error covariance for the current
+observations, the full uncertainty can be estimated as:
+\begin{equation*}
+\begin{split}\epsilon_{\text{AR1}} \sim \text{MVN}(0, \Phi\Sigma_{t}\Phi^T +
+\Sigma_\text{climatology}-\Phi\Sigma_\text{climatology}\Phi^T)\end{split}
+\end{equation*}
+\sphinxAtStartPar
+The above form is correct even for weights that has off\sphinxhyphen{}diagonal terms. In that case, \(\Phi\) is no longer a
+diagonal autocorrelation matrix but the weights for fully vectorised multi\sphinxhyphen{}variate model \(\mathbf{W}\);
+\(\mathbf{W} = \Phi\) is a merely a special case.
+\begin{equation*}
+\begin{split}a_{t} = \mathbf{W} (a_{t-1} - E(a)) + \epsilon\end{split}
+\end{equation*}
+\sphinxAtStartPar
+In the local and diagonal case, the above is equivalent to the below at each grid point, like the equations that one can
+find in Chapter 8 of {[}Wilks{]}:
+\begin{equation*}
+\begin{split}\epsilon_{\text{AR1}} \sim \text{N}(0, \phi^2\sigma^2_{t} +
+(1-\phi^2)\sigma^2_\text{climatology})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+\sphinxhref{https://en.wikipedia.org/wiki/Vector\_autoregression}{Wikipedia intro}
+
+\sphinxAtStartPar
+\sphinxhref{https://en.wikipedia.org/wiki/Lasso\_(statistics)}{Wikipedia intro}
+
+\sphinxAtStartPar
+For the diagonal \(\Phi\) case, the lagged autocorrelation is easy to compute from observations; its application
+to statistical forecasting is highly stable and quick. The weights for the multi\sphinxhyphen{}variate correlated case are
+much more complicated. It is usually estimated by fitting each grid point with a regression model, taking advantage of
+the seemingly unrelated regression of vector autoregression. For high resolution
+datasets, fitting such models often results in overfitting and low predictive power. This can be mitigated using
+regularized regression. The one implemented here uses LASSO regression \sphinxcite{index:tibshirani-lasso} via \sphinxcode{\sphinxupquote{scikit\sphinxhyphen{}learn}};
+LASSO generally leads to sparse \(\mathbf{W}\), makes them easier to handle memory and computational cost via
+sparse matrix classes and function within \sphinxcode{\sphinxupquote{scipy}}. What LASSO does is that it adds a penalty term to the least squares cost
+function that is proportional to the sum of the absolute values of all regression coefficients. The
+sum is scaled by a tunable hyperparameter; it is usually called \(\lambda\) in statistics literature (including the Wikipedia
+article) but is called \(\alpha\) instead in \sphinxcode{\sphinxupquote{scikit\sphinxhyphen{}learn}} documentation.
+
+
+\section{Uncertainty weighted average (Kalman Filter)}
+\label{\detokenize{kalman:uncertainty-weighted-average-kalman-filter}}
+\sphinxAtStartPar
+Kalman Filter, in its heart, is a weighted average \textendash{} an average for two input streams: the
+prior/first\sphinxhyphen{}guess/forecast what the current state probably be, and what the most recent observations
+say. The weights are determined only by uncertainties as neither the first\sphinxhyphen{}guess and observations
+are perfect. In simple English, produce a better observations by taking multiple sources, weighting
+in favour the more accurate one.
+
+\sphinxAtStartPar
+Let say the uncertainty of the forecast and observations can be described by two different uni\sphinxhyphen{} or
+multi\sphinxhyphen{}variate zero\sphinxhyphen{}averaged normal distribution with some scalar variance / error covariance matrix.
+\begin{equation*}
+\begin{split}\epsilon_{\text{forecast}} \sim N(0, \sigma_{\text{forecast}}^2) \text{or} MVN(0,
+\Sigma_{\text{forecast}})\end{split}
+\end{equation*}\begin{equation*}
+\begin{split}\epsilon_{\text{obs}} \sim N(0, \sigma_{\text{obs}}^2) \text{or} MVN(0, \Sigma_{\text{obs}})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Assuming observations are on the same grid as the forecast (true for the exercise), the Kalman gain
+(weight for new observations) is:
+
+\sphinxAtStartPar
+Univariate:
+\begin{equation*}
+\begin{split}K = \frac{\sigma_{\text{forecast}}^2 } { \sigma_{\text{forecast}}^2 + \sigma_{\text{obs}}^2}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+Multi\sphinxhyphen{}variate:
+\begin{equation*}
+\begin{split}K = \Sigma_{\text{forecast}} (\Sigma_{\text{forecast}} + \sigma_{\text{obs}})^{-1} =
+\sigma_{\text{obs}}^{-1} (\Sigma_{\text{forecast}}^{-1} + \sigma_{\text{obs}}^{-1})^{-1}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+in which K is solution to the following linear equation, this is how it is solved in the code using
+\sphinxtitleref{numpy.linalg.solve}. No actual error covariance inversions is needed.
+\begin{equation*}
+\begin{split}(\Sigma_{\text{forecast}} + \sigma_{\text{obs}}) K^{T} = \Sigma_{\text{forecast}}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+noting that Sigma is symmetrical but \(K\) is not (similar to Kriging weights).
+
+\sphinxAtStartPar
+Once the weights are known, the posterior analysis is a weighted average of forecast and observations
+\begin{equation*}
+\begin{split}\tilde{a}(t) = K a_{\text{obs}} + (I - K)  a_{\text{forecast}} = K (a_{\text{obs}} -
+a_{\text{forecast}} ) +  a_{\text{forecast}}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+with posterior error covariance of:
+\begin{equation*}
+\begin{split}\Sigma_{\text{analysis}} = (\textbf{I} - \textbf{K}) \Sigma_{\text{forecast}}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+If observations are not on the same grid as the forecast, additional mapping multiplications are
+needed; that leads the usual form one will see in text books or Wikipedia.
+
+\sphinxAtStartPar
+The workflow here will be:
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {}
+\sphinxAtStartPar
+Produce an initial \(t=0\) analysis
+
+\item {}
+\sphinxAtStartPar
+Do a t+1 forecast
+
+\item {}
+\sphinxAtStartPar
+Krige the observations for \(t+1\)
+
+\item {}
+\sphinxAtStartPar
+Blend the forecast with Kriging result using Kalman filter
+
+\item {}
+\sphinxAtStartPar
+Go back to step 2 using the posterior analysis and error covariance
+
+\end{enumerate}
+
+
+\section{Code and usage}
+\label{\detokenize{kalman:code-and-usage}}
+\sphinxAtStartPar
+The main processing involve two modules
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxtitleref{autoregresive\_kalman.forecast\_linear\_ar1}
+
+\item {}
+\sphinxAtStartPar
+\sphinxtitleref{autoregresive\_kalman.inv\_sigma\_wgts}
+
+\end{itemize}
+
+\sphinxAtStartPar
+There is a helping code module called \sphinxtitleref{autoregressive\_kalman.cov\_diagonal} which can be used to
+separate the analysis between we expect to not to be spatially correlated with bits that are
+spatially correlated.
+
+\sphinxAtStartPar
+For the all the main classes, the computation uses a method that is called \sphinxtitleref{compute\_XXXXX}.
+
+
+\section{\sphinxtitleref{autoregressive\_kalman.forecast\_linear\_ar1}}
+\label{\detokenize{kalman:autoregressive-kalman-forecast-linear-ar1}}
+\sphinxAtStartPar
+For autoregressive forecasting, providing the weights and autocorrelation already computed.
+\index{Autoregressive1ForecastUncorr (class in glomar\_gridding.autoregressive\_kalman)@\spxentry{Autoregressive1ForecastUncorr}\spxextra{class in glomar\_gridding.autoregressive\_kalman}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastUncorr}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.}}\sphinxbfcode{\sphinxupquote{Autoregressive1ForecastUncorr}}}
+{\sphinxparam{\DUrole{n}{analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lag\_1\_autocor}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_mean}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_covar}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_analysis\_is\_sdev}\DUrole{o}{=}\DUrole{default_value}{False}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_covar\_is\_sdev}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Class to compute AR1 forecast
+
+\sphinxAtStartPar
+Local/uncorrelated only: Lag\sphinxhyphen{}1 correlations are the
+weights and are in 1\sphinxhyphen{}D vector. All predictions are based on
+local autocorrelation only
+
+\sphinxAtStartPar
+Use Autoregressive1Forecast for full vector case.
+
+\sphinxAtStartPar
+Compute Lag\sphinxhyphen{}1 autoregressive forecast as a prior for Kalman filter.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of analysis (such as Kriging and
+Kalman filter outputs) for t=t;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D error variance or 2D error covariance for analysis;
+if latter, it will only use the diagonal;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )} | \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag\_1\_autocor}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of lag\sphinxhyphen{}1 autocorrelation;
+shape should be same as analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of climatological mean;
+shape should be same as analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Climatological covariance;
+can be 1D or 2D;
+shape of this should either be n x n (like ellipse covariance)
+or n (vector of variance at each grid point);
+if a 2D matrix is provided, it will take the diagonal;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )} | \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_analysis\_is\_sdev}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Flag indicating if errcov\_analysis is
+variance or standard deviation;
+this only applies to vectored form (n x 1 shape) of errcov\_analysis;
+default \sphinxtitleref{False}, errcov\_analysis is variance (like SST**2) or
+full covariance matrix;
+\sphinxtitleref{True} if standard deviation
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar\_is\_sdev}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Flag indicating if clim\_covar is variance or standard deviation;
+this only applies to vectored form (n x 1 shape) of clim\_covar;
+default \sphinxtitleref{False}, clim\_covar is variance (like SST**2) or
+full covariance matrix;
+\sphinxtitleref{True} if standard deviation
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{predict() (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr method)@\spxentry{predict()}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastUncorr.predict}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{\sphinxparam{\DUrole{n}{full\_errcov\_out}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute AR1 forecast and estimate uncertainties
+
+\sphinxAtStartPar
+Speed:
+\sphinxurl{https://stackoverflow.com/questions/44388358/python-numpy-matrix-multiplication-with-one-diagonal-matrix}
+
+\sphinxAtStartPar
+This version uses scalar multiplication, less use of np.diag, and should
+be faster.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_errcov\_out}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} If True, new attribute errcov will be a diagonal matrix
+
+\end{description}\end{quote}
+\index{forecast (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr attribute)@\spxentry{forecast}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastUncorr.forecast}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{forecast}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+AR1 forecast
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{errcov (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr attribute)@\spxentry{errcov}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastUncorr attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastUncorr.errcov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{errcov}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+The error covariance for the forecast
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{Autoregressive1ForecastVector (class in glomar\_gridding.autoregressive\_kalman)@\spxentry{Autoregressive1ForecastVector}\spxextra{class in glomar\_gridding.autoregressive\_kalman}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.}}\sphinxbfcode{\sphinxupquote{Autoregressive1ForecastVector}}}
+{\sphinxparam{\DUrole{n}{analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{weights}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_mean}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_covar}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimated\_ar1\_errcov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Class to compute AR1 forecast in full vectorized form
+
+\sphinxAtStartPar
+Weights can be provided. It can be computed from non\sphinxhyphen{}lagged and
+lag\sphinxhyphen{}1 covariances, using classmethod \sphinxtitleref{from\_autocov}.
+
+\sphinxAtStartPar
+Latter is possibly unstable. Typical spatial 0\sphinxhyphen{}lag covariances
+are computed using variogram techniques, and they may not
+work with lag\sphinxhyphen{}1 and there is no sure way to ensure
+\textless{}x(t\sphinxhyphen{}1), x(t)\textgreater{} @ \textless{}X(t), X(t)\textgreater{}**\sphinxhyphen{}1 is stable. GloMarGridding has no
+functionality to compute lagged autocovariances.
+
+\sphinxAtStartPar
+\sphinxtitleref{Autoregressive1ForecastUncorr} is a special case of this class with
+the weights being the lag\sphinxhyphen{}1 autocorrelation.
+
+\sphinxAtStartPar
+Weights are only stable if its spectral radius is less than 1. Otherwise
+weights violate weak temporal stationarity assumption.
+
+\sphinxAtStartPar
+Instead usually weights are estimated separately using regression taking
+advantage of seemingly (un)related regression (SUR) method with additional
+use of regularization (like Lasso) to deal with weight stability,
+multicollinearity, and insufficient sample sizes/too many covariates.
+Weights estimated this way often meets spectral radius \textless{} 1 requirement.
+
+\sphinxAtStartPar
+Regardless, this method is much more expensive. It is in theory more
+complete and deals with spatially correlated component of the analysis.
+
+\sphinxAtStartPar
+Compute lag\sphinxhyphen{}1 autoregressive forecast as a prior for Kalman filter.
+
+\sphinxAtStartPar
+Other notes:
+
+\sphinxAtStartPar
+(1) If \sphinxtitleref{analysis} is a Kriging analysis, results here produces the same
+result as if applying spatiotemporal Kriging for t+1
+
+\sphinxAtStartPar
+The weight for spatiotemporal Kriging is:
+W\_Krige(t, t\sphinxhyphen{}1) = C(t, t\sphinxhyphen{}1) D.T @ INV(C(t, t) + E)
+
+\sphinxAtStartPar
+That is the same as weights for AR1 multiplying on top of Kriging (t,t):
+W\_AR = C(t, t\sphinxhyphen{}1) @ INV(C(t, t))
+W\_Krige(t,t) = C @ D.T @ INV(C(t, t) + E)
+
+\sphinxAtStartPar
+Uncertainty: It can be shown that if errcov\_analysis are Kriging covariance
+that:
+
+\sphinxAtStartPar
+sigma\_sq\_eps + sigma\_sq\_analysis == spatiotemporal Kriging for t+1
+
+\sphinxAtStartPar
+In practice, \sphinxtitleref{analysis} will be computed recursively using Kalman filter.
+
+\sphinxAtStartPar
+(2) Uncertainty of multivariate autoregression:
+\sphinxurl{https://math.stackexchange.com/questions/5004102/covariance-of-a-multivariate-autoregression}
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of analysis (such as Kriging and
+Kalman filter outputs) for t=t;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D error covariance for analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{weights}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{sparray}}}) \textendash{} 2D weights;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of climatological mean;
+shape should be same as analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Climatological covariance; can be 1D or 2D;
+shape of this should either be n x n (like ellipse covariance)
+or n (vector of variance at each grid point);
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{estimated\_ar1\_errcov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} A precomputed estimate for \(C - W C W^{T}\);
+defaults to None in which that is computed from
+\sphinxtitleref{weights} and \sphinxtitleref{clim\_covar}
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{from\_autocov() (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector class method)@\spxentry{from\_autocov()}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector class method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector.from_autocov}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{classmethod}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{from\_autocov}}}
+{\sphinxparam{\DUrole{n}{analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_analysis}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lag\_1\_autocov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_mean}}\sphinxparamcomma \sphinxparam{\DUrole{n}{clim\_covar}}\sphinxparamcomma \sphinxparam{\DUrole{n}{stability\_perturbation}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{estimated\_ar1\_errcov}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+With provided lag\_1\_autocov (lag\sphinxhyphen{}1 autocovariance),
+estimate weights using W = lag1\_autocov @ inv(clim\_covar)
+
+\sphinxAtStartPar
+W = \textless{}x(t), x(t\sphinxhyphen{}1)\textgreater{} @ \textless{}x(t), x(t)\textgreater{}**\sphinxhyphen{}1
+
+\sphinxAtStartPar
+W @ \textless{}x(t), x(t)\textgreater{} = \textless{}x(t), x(t\sphinxhyphen{}1)\textgreater{}
+
+\sphinxAtStartPar
+\textless{}x(t), x(t)\textgreater{} @ W.T = \textless{}x(t), x(t\sphinxhyphen{}1)\textgreater{}  \textless{}\textless{}\textless{} computed using np.linalg.solve
+
+\sphinxAtStartPar
+Both \textless{}x(t), x(t)\textgreater{} and \textless{}x(t), x(t\sphinxhyphen{}1)\textgreater{} are symmetric
+
+\sphinxAtStartPar
+This approach is often unstable as lag1\_autocov and clim\_covar
+are estimated separately, and there is no guarantee that the computed
+weights satisfy weak stationary requirement that the spectral radius
+of weights have to be less than 1.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of analysis (such as Kriging and
+Kalman filter outputs) for t=t;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_analysis}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D error covariance for analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag\_1\_autocov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D lag\sphinxhyphen{}1 autocovariance;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_mean}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of climatological mean;
+shape should be same as analysis;
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, )}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clim\_covar}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Climatological covariance;
+can be 1D or 2D;
+shape of this should either be n x n (like ellipse covariance)
+or n (vector of variance at each grid point);
+dtype \sphinxtitleref{float}, shape \sphinxtitleref{(N, N)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{stability\_perturbation}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} A diagonal perturbation to be added clim\_covar for
+the purpose of computing the weights. This may avoid
+problems that clim\_covar being (close to) invertible.
+
+\end{itemize}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{predict() (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector method)@\spxentry{predict()}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector.predict}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{\sphinxparam{\DUrole{n}{check\_wgt\_stability}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{full\_errcov\_out}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{check\_errcov\_psd}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{o}{**}\DUrole{n}{clip\_kwargs}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute VAR forecast using weights or covariances
+that are part of class.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{check\_wgt\_stability}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Check weights (in extension for the auto and climatological
+covariances) are stable; see var\_stability\_check
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{full\_errcov\_out}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Return full error covariance if True;
+defaults to \sphinxtitleref{True}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{check\_errcov\_psd}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Check if error covariance is positive semi\sphinxhyphen{}definite; fix if needed
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{clip\_kwargs}} (\sphinxstyleliteralemphasis{\sphinxupquote{dict}}\sphinxstyleliteralemphasis{\sphinxupquote{ | }}\sphinxstyleliteralemphasis{\sphinxupquote{None}}) \textendash{} kwargs for \_check\_and\_fix\_psd\_errcov\_by\_clipping
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{forecast (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector attribute)@\spxentry{forecast}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector.forecast}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{forecast}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+AR1 forecast
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{errcov (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector attribute)@\spxentry{errcov}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector.errcov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{errcov}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+The error covariance for the forecast
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{var\_stability\_check() (glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector method)@\spxentry{var\_stability\_check()}\spxextra{glomar\_gridding.autoregressive\_kalman.Autoregressive1ForecastVector method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.Autoregressive1ForecastVector.var_stability_check}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{var\_stability\_check}}}
+{\sphinxparam{\DUrole{n}{warn\_instead}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+A multivariate stationary AR model is only stable if and only
+if all eigvals of the weights have absolute values less than 1
+\sphinxurl{https://kevinkotze.github.io/ts-7-slide/\#10}
+which is from
+\sphinxurl{https://www.jstor.org/stable/j.ctv14jx6sm}
+Chapter 10 Proposition 10.1
+
+\sphinxAtStartPar
+If weights fail stability check, it implies expected value
+of anomalies can grow in time.
+Testing shows, one also gets wrong uncertainty
+estimates, like off diagonal term being (considerably) larger than
+diagonal terms; that’s an invalid (error) covariance matrix, saying
+correlation \textgreater{} 1 which is impossible!
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{warn\_instead}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} By default, this method only generates a warning attribute;
+if this is set to \sphinxtitleref{True}, method will raise exception
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\section{\sphinxtitleref{autoregressive\_kalman.inv\_sigma\_wgts}}
+\label{\detokenize{kalman:autoregressive-kalman-inv-sigma-wgts}}
+\sphinxAtStartPar
+For Kalman Filtering, using inverse error covariance weighting (\(sigma\)) weights.
+\index{KalmanOut (class in glomar\_gridding.autoregressive\_kalman)@\spxentry{KalmanOut}\spxextra{class in glomar\_gridding.autoregressive\_kalman}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.}}\sphinxbfcode{\sphinxupquote{KalmanOut}}}
+{\sphinxparam{\DUrole{n}{forecast\_vector}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_vector}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_forecast}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cov\_forecast\_and\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{use\_diag\_only}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Class to compute blended forecast and observations
+variable names follows compute\_inv\_variance\_wgt\_mean\_kalman
+
+\sphinxAtStartPar
+Note:
+If only one of the two error covariances matrices is a vector/diagonal
+matrix but the other one is not (square) and is much denser with
+comparable diagonals, KF and variance weighted means
+may strongly favour the vector/diagonal matrix, and give poor
+results (even if results are strictly correct). Check your
+underlying reason why one is doing that to make sure that is what
+one intended.
+
+\sphinxAtStartPar
+Vector autoregression should only match with full Kriging covariance
+(a fully spatially correlated Kalman filter); local time series
+autoregression would normally only match with local uncertainty of the
+Kriging covariance (i.e. the Kriging uncertainty) (i.e. effectively a 1D
+Kalman Filter).
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{forecast\_vector}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of forecasts
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_vector}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of (gridded) observations
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_forecast}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D matrix of errcov for \sphinxtitleref{forecast\_vector}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D matrix of errcov for \sphinxtitleref{obs\_vector}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov\_forecast\_and\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Covariance between forecast/first\sphinxhyphen{}guess \& observations
+In NWP\sphinxhyphen{}DA, this is usually assumed to be zero
+(aka observation and forecast errors are not correlated);
+set it to \sphinxtitleref{None} if that is zero (and \sphinxtitleref{None} is the default).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{use\_diag\_only}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Ignore off\sphinxhyphen{}diagonals of \sphinxtitleref{errcov\_forecast}, \sphinxtitleref{errcov\_obs},
+and \sphinxtitleref{cov\_forecast\_and\_obs} if set to \sphinxtitleref{True}, default \sphinxtitleref{True}.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{predict() (glomar\_gridding.autoregressive\_kalman.KalmanOut method)@\spxentry{predict()}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.predict}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the inverse variance weighted average of
+forecast\_vector \& obs\_vector using provided error covariances
+errcov\_forecast \& errcov\_obs
+
+\sphinxAtStartPar
+This uses a form that requires only ONE matrix inverses
+and reciprocals (good!) and is more commonly seen in
+Kalman Filter guides (including the form uses in Wikipedia)
+\sphinxurl{https://en.wikipedia.org/wiki/Kalman\_filter};
+Probably everyone hate matrix inverses… (for good reason).
+
+\sphinxAtStartPar
+1D vector form of Kalman gain:
+
+\sphinxAtStartPar
+gain = forecast\_err / (forecast\_err + obs\_err)
+
+\sphinxAtStartPar
+Matrix form of Kalman gain:
+
+\sphinxAtStartPar
+gain = forecast\_err @ inv(forecast\_err + obs\_err)
+
+\sphinxAtStartPar
+gain @ (forecast\_err + obs\_err) = forecast\_err
+
+\sphinxAtStartPar
+(gain @ (forecast\_err + obs\_err)).T = forecast\_err.T
+
+\sphinxAtStartPar
+(forecast\_err + obs\_err)).T @ gain.T = forecast\_err.T
+
+\sphinxAtStartPar
+However, \sphinxtitleref{forecast\_err} and \sphinxtitleref{obs\_err} are symmetric;
+hence, solve set of linear equations that:
+
+\sphinxAtStartPar
+(forecast\_err + obs\_err) @ gain.T = forecast\_err
+\index{wgt\_mean (glomar\_gridding.autoregressive\_kalman.KalmanOut attribute)@\spxentry{wgt\_mean}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.wgt_mean}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{wgt\_mean}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Posterior analysis
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{errcov (glomar\_gridding.autoregressive\_kalman.KalmanOut attribute)@\spxentry{errcov}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.errcov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{errcov}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Posterior error covariance
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{kalman\_gain\_from\_new\_obs (glomar\_gridding.autoregressive\_kalman.KalmanOut attribute)@\spxentry{kalman\_gain\_from\_new\_obs}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.kalman_gain_from_new_obs}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{kalman\_gain\_from\_new\_obs}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Kalman gain (either a 2D matrix or 1D vector)
+aka the weights assigned to the new information
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{wgts\_from\_ar\_forecast (glomar\_gridding.autoregressive\_kalman.KalmanOut attribute)@\spxentry{wgts\_from\_ar\_forecast}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.wgts_from_ar_forecast}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{wgts\_from\_ar\_forecast}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Identity matrix or one vector minus Kalman gain
+aka the weights assigned to the prior/first\sphinxhyphen{}guess
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{sparse\_approx\_for\_errcov() (glomar\_gridding.autoregressive\_kalman.KalmanOut method)@\spxentry{sparse\_approx\_for\_errcov()}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOut method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOut.sparse_approx_for_errcov}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{sparse\_approx\_for\_errcov}}}
+{\sphinxparam{\DUrole{n}{sparse\_threshold}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}\sphinxparamcomma \sphinxparam{\DUrole{n}{convert\_to\_sparse}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Setting small elements of \sphinxtitleref{self.errcov\_obs} and \sphinxtitleref{errcov\_forecast}
+to zero as defined by sparse\_threshold value.
+
+\sphinxAtStartPar
+If there are small values in the diagonals.
+
+\sphinxAtStartPar
+This reduces memory footprint and may make block\sphinxhyphen{}splitting
+by \sphinxtitleref{cov\_diagonal} easier.
+
+\sphinxAtStartPar
+It is not intended to be use for \sphinxtitleref{use\_diag\_only mode}.
+This is only used to handle situations that the error covariances
+are big.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{sparse\_threshold}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} (Absolute) off\sphinxhyphen{}diagonal values that are to set to zero
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{convert\_to\_sparse}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Convert error covariances to \sphinxtitleref{scipy.sparse.sparray} if \sphinxtitleref{True}
+
+\end{itemize}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{KalmanOutUncorrCorrSplit (class in glomar\_gridding.autoregressive\_kalman)@\spxentry{KalmanOutUncorrCorrSplit}\spxextra{class in glomar\_gridding.autoregressive\_kalman}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOutUncorrCorrSplit}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.}}\sphinxbfcode{\sphinxupquote{KalmanOutUncorrCorrSplit}}}
+{\sphinxparam{\DUrole{n}{forecast\_vector}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_vector}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_forecast}}\sphinxparamcomma \sphinxparam{\DUrole{n}{errcov\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{cov\_forecast\_and\_obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{arr\_to\_decide\_isolated\_pts}}\sphinxparamcomma \sphinxparam{\DUrole{n}{zero\_threshold}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Class to compute blended forecast and observations
+
+\sphinxAtStartPar
+This splits the error covariances into diagonal and non\sphinxhyphen{}diagonal bits
+
+\sphinxAtStartPar
+This is a wrapper for KalmanOut.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{forecast\_vector}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of forecasts
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{obs\_vector}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector of (gridded) observations
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_forecast}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D matrix of errcov for \sphinxtitleref{forecast\_vector}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{errcov\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 2D matrix of errcov for \sphinxtitleref{obs\_vector}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov\_forecast\_and\_obs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Covariance between forecast \& observations
+Set it to \sphinxtitleref{None} if that is zero
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr\_to\_decide\_isolated\_pts}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} The matrix (usually a covariance) to determine
+if the point is diagonally isolated. This can
+be the prior spatial covariance.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{zero\_threshold}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The threshold applied to \sphinxtitleref{arr\_to\_decide\_isolated\_pts}
+to decide if the row/column is diagonal.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{predict() (glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method)@\spxentry{predict()}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOutUncorrCorrSplit.predict}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Blend the results of uncorrelated and correlated streams
+
+\end{fulllineitems}
+
+\index{predict\_corr() (glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method)@\spxentry{predict\_corr()}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOutUncorrCorrSplit.predict_corr}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict\_corr}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Run \sphinxtitleref{KalmanOutUncorrCorrSplit.corr\_part.predict};
+\sphinxtitleref{corr\_part} is an instance of \sphinxtitleref{KalmanOut}
+
+\end{fulllineitems}
+
+\index{predict\_uncorr() (glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method)@\spxentry{predict\_uncorr()}\spxextra{glomar\_gridding.autoregressive\_kalman.KalmanOutUncorrCorrSplit method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.KalmanOutUncorrCorrSplit.predict_uncorr}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{predict\_uncorr}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Run \sphinxtitleref{KalmanOutUncorrCorrSplit.uncorr\_part.predict};
+\sphinxtitleref{uncorr\_part} is an instance of \sphinxtitleref{KalmanOut}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
+\section{\sphinxtitleref{autoregressive\_kalman.cov\_diagonal}}
+\label{\detokenize{kalman:module-glomar_gridding.autoregressive_kalman.cov_diagonal}}\label{\detokenize{kalman:autoregressive-kalman-cov-diagonal}}\index{module@\spxentry{module}!glomar\_gridding.autoregressive\_kalman.cov\_diagonal@\spxentry{glomar\_gridding.autoregressive\_kalman.cov\_diagonal}}\index{glomar\_gridding.autoregressive\_kalman.cov\_diagonal@\spxentry{glomar\_gridding.autoregressive\_kalman.cov\_diagonal}!module@\spxentry{module}}
+\sphinxAtStartPar
+Diagonal and non\sphinxhyphen{}diagonal matrix tools
+
+\sphinxAtStartPar
+remove\_diag\_only\_rows:
+\sphinxhyphen{} Auto\sphinxhyphen{}detect diagonal only rows/columns from an input matrix
+\sphinxhyphen{} Purge them to form a smaller matrix and saves the matrix
+
+\sphinxAtStartPar
+restore\_diag\_only\_rows:
+\sphinxhyphen{} reverses the process, but one needs to give a filler value
+
+\sphinxAtStartPar
+diag\_and\_nondiag\_rows\_subsampler:
+\sphinxhyphen{} get the subsampling matrix of diagonal and off\sphinxhyphen{}diagonal rows/columns
+\sphinxhyphen{} option to return the actual subsampled array
+\index{diag\_and\_nondiag\_rows\_subsampler() (in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal)@\spxentry{diag\_and\_nondiag\_rows\_subsampler()}\spxextra{in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.cov_diagonal.diag_and_nondiag_rows_subsampler}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.cov\_diagonal.}}\sphinxbfcode{\sphinxupquote{diag\_and\_nondiag\_rows\_subsampler}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{zero\_threshold}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}\sphinxparamcomma \sphinxparam{\DUrole{n}{return\_subsampled\_arr}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Get the subsampling matrices for rows and columns with
+only diagonal\sphinxhyphen{}only elements and off\sphinxhyphen{}diagonal elements.
+
+\sphinxAtStartPar
+“Diagonal\sphinxhyphen{}only” elements are defined according to the zero\_threshold.
+Any rows and columns that do not satisfy the “diagonal\sphinxhyphen{}only” definition
+is considered to have off\sphinxhyphen{}diagonal elements.
+
+\sphinxAtStartPar
+Returns a tuple with up to 4 matrices including the subsampling
+matrices.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Covariance matrix with possible diagonal only elements
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{zero\_threshold}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The near\sphinxhyphen{}zero threshold
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{return\_subsampled\_arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Set to \sphinxtitleref{True} if one wants the split subsampled covariances,
+otherwise function will just return the subsampling operator matrices
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{None}} | \sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{None}} | \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{d\_off\_diagonal} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Sampling matrix operator for the off\sphinxhyphen{}diagonal rows
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{the\_denser\_parts} (\sphinxstyleemphasis{numpy.ndarray | None}) \textendash{} A (somewhat denser) subsampled by that matrix
+Set to \sphinxtitleref{None} if return\_subsampled\_arr is \sphinxtitleref{False}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{d\_diagonal\_only} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Sampling matrix operator for the diagonal only rows
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{isolated\_diag\_vals} (\sphinxstyleemphasis{numpy.ndarray | None}) \textendash{} Vector with diagonal values of those diagonal rows
+Set to \sphinxtitleref{None} if return\_subsampled\_arr is \sphinxtitleref{False}
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{remove\_diag\_only\_rows() (in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal)@\spxentry{remove\_diag\_only\_rows()}\spxextra{in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.cov_diagonal.remove_diag_only_rows}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.cov\_diagonal.}}\sphinxbfcode{\sphinxupquote{remove\_diag\_only\_rows}}}
+{\sphinxparam{\DUrole{n}{cov}}\sphinxparamcomma \sphinxparam{\DUrole{n}{zero\_threshold}\DUrole{o}{=}\DUrole{default_value}{1e\sphinxhyphen{}06}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Subsampled the covariance matrix by the removal of
+diagonal\sphinxhyphen{}only elements. “Diagonal\sphinxhyphen{}only” elements are
+defined according to the zero\_threshold
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} covariance matrix with possible diagonal only elements
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{zero\_threshold}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The near\sphinxhyphen{}zero threshold
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{new\_cov\_arr} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} A new covariance without those diagonal\sphinxhyphen{}only elements
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{D} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} The subsampling matrix that generates new\_cor\_arr
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{restore\_diag\_only\_rows() (in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal)@\spxentry{restore\_diag\_only\_rows()}\spxextra{in module glomar\_gridding.autoregressive\_kalman.cov\_diagonal}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autoregressive_kalman.cov_diagonal.restore_diag_only_rows}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autoregressive\_kalman.cov\_diagonal.}}\sphinxbfcode{\sphinxupquote{restore\_diag\_only\_rows}}}
+{\sphinxparam{\DUrole{n}{trimmed\_cov\_arr}}\sphinxparamcomma \sphinxparam{\DUrole{n}{D}}\sphinxparamcomma \sphinxparam{\DUrole{n}{diag\_fill\_value}\DUrole{o}{=}\DUrole{default_value}{1.2}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Re\sphinxhyphen{}expanding subsampled covariance matrix prior to
+the removal of diagonal\sphinxhyphen{}only elements. Diagonal elements are
+filled with \sphinxtitleref{diag\_fill\_value}.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{trimmed\_cov\_arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} A trimmed numpy array that needs expanded
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{D}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{sparray}}}) \textendash{} The subsampling array that did the original purge
+(see remove\_diag\_only\_rows); there should only be a
+single 1 or \sphinxtitleref{True} per row (axis=0)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{diag\_fill\_value}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The diagonal fill value for restored rows and columns
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{atol}} (\sphinxstyleliteralemphasis{\sphinxupquote{float}}) \textendash{} Instead of checking for exact 0s, this is the threshold
+to decide diag\_fill\_value replacement will occur
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{new\_cov\_arr} \textendash{} A larger (restored) covariance array
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
+\section{\sphinxtitleref{autocorrelation}}
+\label{\detokenize{kalman:module-glomar_gridding.autocorrelation.compute_autocorrelation}}\label{\detokenize{kalman:autocorrelation}}\index{module@\spxentry{module}!glomar\_gridding.autocorrelation.compute\_autocorrelation@\spxentry{glomar\_gridding.autocorrelation.compute\_autocorrelation}}\index{glomar\_gridding.autocorrelation.compute\_autocorrelation@\spxentry{glomar\_gridding.autocorrelation.compute\_autocorrelation}!module@\spxentry{module}}
+\sphinxAtStartPar
+Compute lagged (lag\sphinxhyphen{}1) correlations
+
+\sphinxAtStartPar
+Estimation of lag\sphinxhyphen{}1 autocorrelation and other metrics
+for a single time series
+
+\sphinxAtStartPar
+Outputs can be organised to be used \sphinxtitleref{Autoregressive1ForecastUncorr}
+in \sphinxtitleref{forecast\_linear\_ar1}. It is not the most sophisticated and fancy
+computation (in a matter of fact very elementary).
+
+\sphinxAtStartPar
+Uses numpy.vectorize to extend the computation to multiple time series,
+but each time series are treated separately (i.e. no correlation
+between time series). Function applied along each row.
+
+\sphinxAtStartPar
+get\_anomalies: n \sphinxhyphen{}\textgreater{} n:
+vectorize for an array with m rows n columns gives m rows and n columns
+
+\sphinxAtStartPar
+get\_obs\_variance etc: n \sphinxhyphen{}\textgreater{} scalar:
+vectorize for an array with m rows give m scalars.
+
+\sphinxAtStartPar
+The same behavior can be gotten using np.apply\_along\_axis
+\index{compute\_lag\_ts\_metrics\_from\_da() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{compute\_lag\_ts\_metrics\_from\_da()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.compute_lag_ts_metrics_from_da}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{compute\_lag\_ts\_metrics\_from\_da}}}
+{\sphinxparam{\DUrole{n}{da}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lag}\DUrole{o}{=}\DUrole{default_value}{1}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute the following (local) time series metrics
+\sphinxhyphen{} nth\sphinxhyphen{}lagged autocorrelation
+\sphinxhyphen{} sample variance
+
+\sphinxAtStartPar
+For lag \textgreater{} 1, the autoregressive regression coefficient
+depends on lagged correlation for shorter lags.
+See Yule\sphinxhyphen{}Walker equations for details.
+
+\sphinxAtStartPar
+This computation ignores spatial correlation. Time series metrics
+are local.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{da}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}) \textendash{} A 2+\sphinxhyphen{}dimension data array that presumes time is on axis\sphinxhyphen{}0;
+by climate data conventions, usually only ensemble number/realization
+should have axis number lower than time.
+e.g. Ens, time, z, y, x … etc.
+Reorder your dimensions first!
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} The lagged autocorrelation needed;
+if lag \textgreater{} 1, then your autoregressive model coefficients are
+different, see Yule\sphinxhyphen{}Walker equations for details.
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{DataArray}}, \sphinxcode{\sphinxupquote{DataArray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{ar} (\sphinxstyleemphasis{xarray.DataArray}) \textendash{} Data array with lagged autoregression
+Unit is always \sphinxtitleref{1}
+For \sphinxtitleref{da} with dimensions (t, x\_1, …, x\_n)
+\sphinxtitleref{ar} will have shape (x\_1, …, x\_n)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{variance} (\sphinxstyleemphasis{xarray.DataArray}) \textendash{} Data array with sample variance
+Unit is \sphinxtitleref{(unit\_of\_da)**2} (variance, not standard deviation)
+Same shape as \sphinxtitleref{ar}
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_anomalies() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_anomalies()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_anomalies}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_anomalies}}}
+{\sphinxparam{\DUrole{n}{vec}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute anomalies, 0\sphinxhyphen{}mean centering data samples.
+
+\sphinxAtStartPar
+Samples are NOT standardized by their standard deviation.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{vec}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array that needs be 0\sphinxhyphen{}averaged
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{anomalies} \textendash{} 0\sphinxhyphen{}mean\sphinxhyphen{}ed values
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_anomalies\_vectorize() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_anomalies\_vectorize()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_anomalies_vectorize}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_anomalies\_vectorize}}}
+{\sphinxparam{\DUrole{n}{arr}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Vectorised \sphinxtitleref{get\_anomalies}
+
+\sphinxAtStartPar
+Similar precautions with \sphinxtitleref{get\_obs\_variance\_vectorize}:
+this assumes the convention used in climate data,
+\sphinxtitleref{scikit\sphinxhyphen{}learn}, multivariate random num generator etc.
+(transpose arr automatically so it works properly with \sphinxtitleref{np.vectorize}).
+See \sphinxtitleref{get\_obs\_variance\_vectorize} docstring
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array that needs be 0\sphinxhyphen{}averaged for each ROW;
+shape \sphinxtitleref{(N, M)} (N samples, M features/independent variable)
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{anomalies} \textendash{} 0\sphinxhyphen{}averaged values along each ROW;
+shape \sphinxtitleref{(N, M)} (N samples for M features)
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_auto\_corr() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_auto\_corr()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_auto_corr}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_auto\_corr}}}
+{\sphinxparam{\DUrole{n}{vec}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lag}\DUrole{o}{=}\DUrole{default_value}{1}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute lag\sphinxhyphen{}n autocorrelation
+
+\sphinxAtStartPar
+This is the “weight” for spatially uncorrelated autoregressive model.
+
+\sphinxAtStartPar
+Degrees of freedom:
+\sphinxhyphen{} This should be n minus lag minus 1
+\sphinxhyphen{} For lag\sphinxhyphen{}1, there are n \sphinxhyphen{} 1 samples
+with an additional \sphinxhyphen{}1 from Bessel’s correction
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{vec}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector that needs autoregression correlation
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} order (lag) of AR
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}, \sphinxcode{\sphinxupquote{float}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{ar\_lag} (\sphinxstyleemphasis{float}) \textendash{} The \sphinxtitleref{lag}\sphinxhyphen{}th lagged correlation; this is
+autocovariance\_n divided by (non\sphinxhyphen{}lagged) variance
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{autocovariance\_lag} (\sphinxstyleemphasis{float}) \textendash{} Same as in \sphinxtitleref{ar\_lag} but not normalised
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{variance} (\sphinxstyleemphasis{float}) \textendash{} Standard deviation squared
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{sigma2\_eps} (\sphinxstyleemphasis{float}) \textendash{} Standard error of the autoregressive model associated with
+the same autocorrelation
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_auto\_corr\_vectorize() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_auto\_corr\_vectorize()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_auto_corr_vectorize}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_auto\_corr\_vectorize}}}
+{\sphinxparam{\DUrole{n}{arr}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lag}\DUrole{o}{=}\DUrole{default_value}{1}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Vectorised get\_auto\_corr
+
+\sphinxAtStartPar
+Similar precautions with \sphinxtitleref{get\_obs\_variance\_vectorize}:
+this assumes the convention used in climate data,
+scikit\sphinxhyphen{}learn, multivariate random num generator etc.
+(transpose arr automatically so it works properly with np.vectorize);
+see \sphinxtitleref{get\_obs\_variance\_vectorize} docstring.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} A multi\sphinxhyphen{}dimension array that needs autoregression correlation;
+shape \sphinxtitleref{(N, M)} (N samples, M features/independent variable)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lag}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} order (lag) of AR
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{ar\_lag} (\sphinxstyleemphasis{float}) \textendash{} The n\sphinxhyphen{}th lagged correlation; this is
+autocovariance\_n divided by (non\sphinxhyphen{}lagged) variance;
+shape \sphinxtitleref{(M,)} (M features)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{autocovariance\_lag} (\sphinxstyleemphasis{float}) \textendash{} Same as in ar\_lag but not standardised;
+shape \sphinxtitleref{(M,)} (M features)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{variance} (\sphinxstyleemphasis{float}) \textendash{} Standard deviation squared;
+shape \sphinxtitleref{(M,)} (M features)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{sigma2\_eps} (\sphinxstyleemphasis{float}) \textendash{} Standard error of the autoregressive model associated with
+the same autocorrelation;
+shape \sphinxtitleref{(M,)} (M features)
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_obs\_variance() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_obs\_variance()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_obs_variance}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_obs\_variance}}}
+{\sphinxparam{\DUrole{n}{vec}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ddof}\DUrole{o}{=}\DUrole{default_value}{1}}\sphinxparamcomma \sphinxparam{\DUrole{n}{compute\_anomalies}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Compute observed variance (standard deviation squared).
+Bessel correction applied by default.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{vec}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} 1D vector that needs observed variance
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{ddof}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} Degrees of freedom correction, default 1 (Bessel’s correction);
+this is the similar to kwargs used in \sphinxtitleref{numpy.cov} (\sphinxtitleref{bias} and
+\sphinxtitleref{ddof})
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{compute\_anomalies}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} If \sphinxtitleref{True}, the mean will be removed from vec
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{variance} \textendash{} standard deviation squared
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{get\_obs\_variance\_vectorize() (in module glomar\_gridding.autocorrelation.compute\_autocorrelation)@\spxentry{get\_obs\_variance\_vectorize()}\spxextra{in module glomar\_gridding.autocorrelation.compute\_autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.compute_autocorrelation.get_obs_variance_vectorize}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.compute\_autocorrelation.}}\sphinxbfcode{\sphinxupquote{get\_obs\_variance\_vectorize}}}
+{\sphinxparam{\DUrole{n}{arr}}\sphinxparamcomma \sphinxparam{\DUrole{n}{ddof}\DUrole{o}{=}\DUrole{default_value}{1}}\sphinxparamcomma \sphinxparam{\DUrole{n}{compute\_anomalies}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Running get\_obs\_variance for a multi\sphinxhyphen{}dimension array
+
+\sphinxAtStartPar
+Warning: naive \sphinxtitleref{np.vectorize} may result operations on WRONG axis.
+
+\sphinxAtStartPar
+Nearly all climate data, functions like \sphinxtitleref{scipy.stats.multivariate\_norm}
+(aka scikit\sphinxhyphen{}learn convention) will need to be TRANSPOSED for the function
+to work as normally intended, which is automatically performed here.
+(aka (N, M) \textendash{} N samples, M features/independent variable); this function
+(and its companion ones) ASSUMES this will be the shape of \sphinxtitleref{arr}.
+
+\sphinxAtStartPar
+Try this function with 1D vector:
+
+\sphinxAtStartPar
+\sphinxtitleref{vec.reshape(\sphinxhyphen{}1, 1)}
+(scikit\sphinxhyphen{}learn convention for single feature)
+gives (sample\_size, 1) and WORKS
+
+\sphinxAtStartPar
+\sphinxtitleref{vec.reshape(1, \sphinxhyphen{}1)}
+(scikit\sphinxhyphen{}learn convention for single sample)
+gives (1, sample\_size) and DOES NOT WORK
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} A multidimensional array that needs a vector of variance for
+each COLUMN;
+shape \sphinxtitleref{(N, M)} (N samples, M features/independent variable)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{ddof}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{int}}}) \textendash{} Degrees of freedom correction, default 1 (Bessel’s correction);
+this is the similar to kwargs used in \sphinxtitleref{numpy.cov} (\sphinxtitleref{bias} and
+\sphinxtitleref{ddof}); this is the same keyword for \sphinxtitleref{get\_obs\_variance}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{compute\_anomalies}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} If \sphinxtitleref{True}, the mean will be removed from vec; this is the same
+keyword for \sphinxtitleref{get\_obs\_variance}
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{variance} \textendash{} standard deviation squared;
+shape (M,) (M features)
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{LassoEstimate\_AR1 (class in glomar\_gridding.autocorrelation)@\spxentry{LassoEstimate\_AR1}\spxextra{class in glomar\_gridding.autocorrelation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{class}\DUrole{w}{ }}}\sphinxcode{\sphinxupquote{glomar\_gridding.autocorrelation.}}\sphinxbfcode{\sphinxupquote{LassoEstimate\_AR1}}}
+{\sphinxparam{\DUrole{n}{data\_sample}}\sphinxparamcomma \sphinxparam{\DUrole{n}{standardise}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lam}\DUrole{o}{=}\DUrole{default_value}{0.01}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lasso\_selection}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}random\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{out\_of\_sample\_residues}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{hold\_out\_ratio}\DUrole{o}{=}\DUrole{default_value}{0.5}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dtype}\DUrole{o}{=}\DUrole{default_value}{\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lasso\_kws}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+A method to estimate of weights for Autoregressive1ForecastVector
+using regularized line\sphinxhyphen{}by\sphinxhyphen{}line / grid point\sphinxhyphen{}by\sphinxhyphen{}grid point (aka seemingly
+(un)related regression SUR) Lasso regression.
+
+\sphinxAtStartPar
+This method is significantly slower than using compute\_autocorrelation,
+but handle spatial autocorrelation more properly.
+
+\sphinxAtStartPar
+This method is not directly compatible with covariance estimated
+using the ellipse method. No correlation\sphinxhyphen{}must\sphinxhyphen{}decrease\sphinxhyphen{}with\sphinxhyphen{}distance
+constrains when estimating the Lasso weights.
+
+\sphinxAtStartPar
+See:
+\sphinxurl{https://scikit-learn.org/stable/modules/generated/sklearn.linear\_model.Lasso.html}
+as well. This is just a wrapper for that but will loop through
+data\_sample over many rows.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{data\_sample}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} A 2D data sample array;
+different columns for different time;
+different rows for different grid points/locations;
+dtype \sphinxtitleref{float};
+shape \sphinxtitleref{(T, N)} following netCDF/GRIB convention
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{standardise}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Should data\_sample be standardised automatically
+(i.e. \sphinxtitleref{A* = A \sphinxhyphen{} E(A) / sigma(A)} )? Standardise if \sphinxtitleref{True}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lam}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The lambda hyperparameter for Lasso regression;
+it is called \sphinxtitleref{alpha} in \sphinxtitleref{scikit\sphinxhyphen{}learn}, but it is more common
+to be called it \sphinxtitleref{lambda} in the literature.
+Tuning of it is usually done by orders of magnitude
+0.0001, 0.001, 0.01, 0.1, 1… etc (default of sklearn is 1)
+If lam=0, it becomes OLS; scikit\sphinxhyphen{}learn will probably raise
+warnings if one does that.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lasso\_selection}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{Literal}}{[}\sphinxcode{\sphinxupquote{\textquotesingle{}cyclic\textquotesingle{}}}, \sphinxcode{\sphinxupquote{\textquotesingle{}random\textquotesingle{}}}{]}}) \textendash{} \sphinxtitleref{selection} in \sphinxtitleref{scikit\sphinxhyphen{}learn} \sphinxtitleref{lasso} class,
+see \sphinxtitleref{scikit\sphinxhyphen{}learn} documentation
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{out\_of\_sample\_residues}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Should the residues of the fit be estimated out of sample
+When set to \sphinxtitleref{True}, data\_sample is split by hold\_out\_ratio
+and data not used for training will be used to estimate
+the residues. Otherwise, residues are estimated in\sphinxhyphen{}sample.
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{hold\_out\_ratio}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The ratio of data be used that is withheld for
+cross\sphinxhyphen{}validation. It is only used if \sphinxtitleref{out\_of\_sample\_residues}
+is \sphinxtitleref{True}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{dtype}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{type}}}) \textendash{} \sphinxtitleref{numpy} or python native float types that are used
+to store the outputs
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lasso\_kws}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{dict}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Dict with (other) keyword arguments for \sphinxtitleref{sklearn.linear\_model.Lasso};
+Do not include \sphinxtitleref{alpha} or \sphinxtitleref{selection} in lasso\_kws; use
+\sphinxtitleref{lasso\_selection} and \sphinxtitleref{lam} instead. If \sphinxtitleref{alpha} or \sphinxtitleref{selection} are
+in lasso\_kws, they will be removed.
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{estimate\_errcov() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{estimate\_errcov()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.estimate_errcov}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{estimate\_errcov}}}
+{\sphinxparam{\DUrole{n}{dof\_adj}\DUrole{o}{=}\DUrole{default_value}{0}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Estimate error covariance
+\begin{equation*}
+\begin{split}E = R @ R^{T} / (T^{*} - dof_adj)\end{split}
+\end{equation*}\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{dof\_adj}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{int}}}) \textendash{} Additional degree of freedom adjustment
+for each line of seeming\sphinxhyphen{}unrelated regression
+
+\end{description}\end{quote}
+\index{errcov (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute)@\spxentry{errcov}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.errcov}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{errcov}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Error covariance for the regression
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+np.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{expand\_coefficients() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{expand\_coefficients()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.expand_coefficients}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{expand\_coefficients}}}
+{\sphinxparam{\DUrole{n}{D}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dtype}\DUrole{o}{=}\DUrole{default_value}{\textless{}class \textquotesingle{}numpy.float32\textquotesingle{}\textgreater{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{fill\_value\_w}\DUrole{o}{=}\DUrole{default_value}{0.6}}\sphinxparamcomma \sphinxparam{\DUrole{n}{fill\_value\_errcov}\DUrole{o}{=}\DUrole{default_value}{0.36}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Expands coefficients according to the subsampling
+matrix D. D should be array of integers of 0s and 1s,
+and will be converted to sparse if not sparse already.
+
+\sphinxAtStartPar
+self.coefficient matrix will be converted to sparse
+if it has not been converted.
+
+\sphinxAtStartPar
+Sets attribute \sphinxtitleref{expanded} to \sphinxtitleref{True}.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{D}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{sparray}}}) \textendash{} A 2D array indicating unmasked location, should normally be sparse;
+If not an instance \sphinxtitleref{sp.sparse.sparray}, it will converted to one;
+dtype \sphinxtitleref{uint8} or \sphinxtitleref{bool};
+shape \sphinxtitleref{(N, M)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{dtype}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{type}}}) \textendash{} \sphinxtitleref{numpy} or python native \sphinxtitleref{float} types that are used for
+expanded array. Given the nature of this type of analysis
+double precision floats (float64) are overkill. Defaults
+to single precision floats (float32).
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{fill\_value\_w}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} The diagonal fill value for the weights; default 0.6
+
+\end{itemize}
+
+\end{description}\end{quote}
+\index{D (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute)@\spxentry{D}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.D}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{D}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Adds \sphinxtitleref{D} as an attribute,
+store in sparse if not already sparse
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+scipy.sparse.sparray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{fit() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{fit()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.fit}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{fit}}}
+{\sphinxparam{\DUrole{n}{convert\_to\_sparse}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Fit the Lasso regression
+
+\sphinxAtStartPar
+The complete fitting procedure following line\sphinxhyphen{}by\sphinxhyphen{}line estimate
+of the regression coefficients based on seemingly (un)related
+regression approach
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{convert\_to\_sparse}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} If True, runs make\_coeff\_sparse automatically,
+which converts coefficients to a scipy sparse
+matrix. Default False.
+
+\end{description}\end{quote}
+\index{coefficients (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute)@\spxentry{coefficients}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.coefficients}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{coefficients}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+The weights of the fits;
+shape \sphinxtitleref{(N, N)}
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{residues (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute)@\spxentry{residues}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.residues}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{residues}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+The residues of the fit;
+length of residue time series depends on
+\sphinxtitleref{out\_of\_sample\_residues} and \sphinxtitleref{hold\_out\_ratio};
+shape \sphinxtitleref{(N, T*)} in which \sphinxtitleref{T*} \textless{}= \sphinxtitleref{T}
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{expanded (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute)@\spxentry{expanded}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 attribute}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.expanded}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{expanded}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+A bool flag that indicates if coefficients
+have been expanded by the expand\_coefficients method
+Set to \sphinxtitleref{False}; it will only be set to \sphinxtitleref{True} if
+method \sphinxtitleref{expand\_coefficients} is called later.
+\begin{quote}\begin{description}
+\sphinxlineitem{Type}
+\sphinxAtStartPar
+bool
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+\index{make\_coeff\_sparse() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{make\_coeff\_sparse()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.make_coeff_sparse}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{make\_coeff\_sparse}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Convert the weights to scipy sparse format
+
+\end{fulllineitems}
+
+\index{split\_holdout() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{split\_holdout()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.split_holdout}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{split\_holdout}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Split data into training part and holdout cross\sphinxhyphen{}validation bits
+if \sphinxtitleref{self.out\_of\_sample\_residues} is \sphinxtitleref{False}, no split will be used,
+and the full obs dataset will be used for training and residue
+estimation.
+
+\end{fulllineitems}
+
+\index{to\_xarray\_da\_coefficients() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{to\_xarray\_da\_coefficients()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.to_xarray_da_coefficients}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{to\_xarray\_da\_coefficients}}}
+{\sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{name}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}weights\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{attrs}\DUrole{o}{=}\DUrole{default_value}{\{\textquotesingle{}description\textquotesingle{}: \textquotesingle{}weights\textquotesingle{}, \textquotesingle{}units\textquotesingle{}: \textquotesingle{}1\textquotesingle{}\}}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Convert expanded coefficients into a xarray DataArray instance
+
+\sphinxAtStartPar
+Example attrs for netCDF:
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array of latitude values, such as \sphinxtitleref{np.linspace(\sphinxhyphen{}19.5, 19.5, 40)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array of longitude values, such as \sphinxtitleref{np.linspace(\sphinxhyphen{}179.5, 179.5, 360)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{name}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Name of the variable
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{attrs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{dict}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Attributes to be added the \sphinxtitleref{xarray.DataArray}
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{da} \textendash{} self.coefficients as a DataArray that has metadata and
+written easily to netCDF file
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{DataArray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{to\_xarray\_da\_errcov() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{to\_xarray\_da\_errcov()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.to_xarray_da_errcov}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{to\_xarray\_da\_errcov}}}
+{\sphinxparam{\DUrole{n}{lats}}\sphinxparamcomma \sphinxparam{\DUrole{n}{lons}}\sphinxparamcomma \sphinxparam{\DUrole{n}{name}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}error\_covariance\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{attrs}\DUrole{o}{=}\DUrole{default_value}{None}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Convert estimated error covariance into a xarray DataArray instance
+
+\sphinxAtStartPar
+Example attrs:
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lats}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array of latitude values, such as \sphinxtitleref{np.linspace(\sphinxhyphen{}19.5, 19.5, 40)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{lons}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Array of longitude values, such as \sphinxtitleref{np.linspace(\sphinxhyphen{}179.5, 179.5, 360)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{name}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{str}}}) \textendash{} Name of the variable
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{attrs}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{dict}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Attributes to be added the \sphinxtitleref{xarray.DataArray}
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{da} \textendash{} errcov as a DataArray that has metadata and written easily to netCDF
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+xarray.DataArray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{unexpand\_coefficients() (glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method)@\spxentry{unexpand\_coefficients()}\spxextra{glomar\_gridding.autocorrelation.LassoEstimate\_AR1 method}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{kalman:glomar_gridding.autocorrelation.LassoEstimate_AR1.unexpand_coefficients}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxbfcode{\sphinxupquote{unexpand\_coefficients}}}
+{}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Reverses expand\_coefficients, by the
+subsampling matrix D. Removes the D attribute.
 
 \end{fulllineitems}
 
@@ -8857,6 +10908,48 @@ Check that all columns in a list of columns are in a DataFrame.
 
 \end{fulllineitems}
 
+\index{check\_shape() (in module glomar\_gridding.utils)@\spxentry{check\_shape()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.utils.check_shape}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{check\_shape}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{dim}\DUrole{o}{=}\DUrole{default_value}{2}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Check X to be 2D
+This should follow the convention that
+Each column represent different xy grid points
+Each row represents another time
+Proper netCDF files should have the correct order of the dimensions:
+(E), T, (Z), Y, X
+So reshaping (T, Y, X) \textgreater{}\textgreater{} T, YX will be sufficient
+
+\end{fulllineitems}
+
+\index{check\_sq\_matrix() (in module glomar\_gridding.utils)@\spxentry{check\_sq\_matrix()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.utils.check_sq_matrix}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{check\_sq\_matrix}}}
+{\sphinxparam{\DUrole{n}{arr}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Check if arr is 2D and square
+\begin{quote}\begin{description}
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 \index{cor\_2\_cov() (in module glomar\_gridding.utils)@\spxentry{cor\_2\_cov()}\spxextra{in module glomar\_gridding.utils}}
 
 \begin{fulllineitems}
@@ -9452,6 +11545,78 @@ The meridonal difference in degrees
 
 \end{fulllineitems}
 
+\index{make\_diag() (in module glomar\_gridding.utils)@\spxentry{make\_diag()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.utils.make_diag}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{make\_diag}}}
+{\sphinxparam{\DUrole{n}{arr}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Check arr if it is 1D or 2D square.
+If 1D, returns itself.
+If 2D\sphinxhyphen{}square, returns diagonal (i.e. vector).
+Anything else (2D non\sphinxhyphen{}square or 3+D), raise exception.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} An array to be checked if it is 1D, 2D or some other dimensions
+Some classes like numpy.ma.MaskedArray, scipy.sparse.sparray and even
+pandas.DataFrame and polars.DataFrame also have the shape attribute,
+and would work. Shape should be (N, ) or (N, N); otherwise, exception
+will be raised.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A 1D vector of shape (N,).
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{make\_square() (in module glomar\_gridding.utils)@\spxentry{make\_square()}\spxextra{in module glomar\_gridding.utils}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.utils.make_square}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.utils.}}\sphinxbfcode{\sphinxupquote{make\_square}}}
+{\sphinxparam{\DUrole{n}{arr}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Check arr if it is 1D or 2D square.
+If 1D, returns np.diag of it (i.e. square matrix).
+If 2D square, returns itself.
+Anything else (2D non\sphinxhyphen{}square or 3+D), raise exception.
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{arr}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} An array to be checked if it is 1D, 2D or some other dimension.
+Some classes like numpy.ma.MaskedArray, scipy.sparse.sparray and even
+pandas.DataFrame and polars.DataFrame also have the shape attribute,
+and would work. Shape should be (N, ) or (N, N); otherwise, exception
+will be raised.
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+A 2D array of shape (N, N).
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
 \index{mask\_array() (in module glomar\_gridding.utils)@\spxentry{mask\_array()}\spxextra{in module glomar\_gridding.utils}}
 
 \begin{fulllineitems}
@@ -9632,6 +11797,178 @@ uncompressed result.
 \end{fulllineitems}
 
 
+
+\section{Variable Transformation}
+\label{\detokenize{misc:module-glomar_gridding.transformation}}\label{\detokenize{misc:variable-transformation}}\index{module@\spxentry{module}!glomar\_gridding.transformation@\spxentry{glomar\_gridding.transformation}}\index{glomar\_gridding.transformation@\spxentry{glomar\_gridding.transformation}!module@\spxentry{module}}
+\sphinxAtStartPar
+Transformation of variables including to approximately normal
+\index{inv\_weibull\_to\_normality() (in module glomar\_gridding.transformation)@\spxentry{inv\_weibull\_to\_normality()}\spxextra{in module glomar\_gridding.transformation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.transformation.inv_weibull_to_normality}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.transformation.}}\sphinxbfcode{\sphinxupquote{inv\_weibull\_to\_normality}}}
+{\sphinxparam{\DUrole{n}{x\_hat}}\sphinxparamcomma \sphinxparam{\DUrole{n}{c}}\sphinxparamcomma \sphinxparam{\DUrole{n}{use\_kp11}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+The inverse of weibull\_to\_normality
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{x\_hat}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Variable that have been transformed
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{c}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Weibull shape parameter
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{use\_kp11}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Use the approximation described in Kulkarni and Powar 2011
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{x} \textendash{} Inverse\sphinxhyphen{}transformed x\_hat
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{standardise\_data() (in module glomar\_gridding.transformation)@\spxentry{standardise\_data()}\spxextra{in module glomar\_gridding.transformation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.transformation.standardise_data}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.transformation.}}\sphinxbfcode{\sphinxupquote{standardise\_data}}}
+{\sphinxparam{\DUrole{n}{X}}\sphinxparamcomma \sphinxparam{\DUrole{n}{normalise}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{axis}\DUrole{o}{=}\DUrole{default_value}{0}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Standardise the data samples by
+1) subtracting the mean
+2) divide by standard deviation
+\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{X}} (\sphinxstyleliteralemphasis{\sphinxupquote{np.ndarray}}) \textendash{} As in \sphinxtitleref{data\_sample} in \sphinxtitleref{LassoEstimate\_AR1} class;
+shape (N, M)
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{normalise}} (\sphinxstyleliteralemphasis{\sphinxupquote{bool}}) \textendash{} If set to \sphinxtitleref{True}, divide by sample standard deviation
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{axis}} (\sphinxstyleliteralemphasis{\sphinxupquote{int}}) \textendash{} The axis that the standardisation is applied.
+\sphinxtitleref{axis=0} follows the convention that each column
+is a separate time series, which is the
+standard for netCDF and GRIB files (i.e. time is usually
+the 1st dimension unless there is an ensemble dimension;
+spatial dimensions follow time dimension, aka the
+(T, YX…) convention).
+
+\end{itemize}
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{tuple}}{[}\sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}, \sphinxcode{\sphinxupquote{ndarray}}{]}}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{X\_standardised} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Standardised or zero\sphinxhyphen{}mean sample;
+shape \sphinxtitleref{(N, M)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{sample\_mean} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} Sample mean of X computed along axis;
+shape \sphinxtitleref{(N,)}
+
+\item {}
+\sphinxAtStartPar
+\sphinxstylestrong{X\_std} (\sphinxstyleemphasis{numpy.ndarray}) \textendash{} The normalisation for \sphinxtitleref{X\_standardised};
+if standardise is \sphinxtitleref{True}, this is a vector of standard deviations;
+otherwise it a vector of 1s;
+shape \sphinxtitleref{(N,)}
+
+\end{itemize}
+
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+\index{weibull\_to\_normality() (in module glomar\_gridding.transformation)@\spxentry{weibull\_to\_normality()}\spxextra{in module glomar\_gridding.transformation}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{misc:glomar_gridding.transformation.weibull_to_normality}}
+\pysigstartsignatures
+\pysiglinewithargsret
+{\sphinxcode{\sphinxupquote{glomar\_gridding.transformation.}}\sphinxbfcode{\sphinxupquote{weibull\_to\_normality}}}
+{\sphinxparam{\DUrole{n}{x}}\sphinxparamcomma \sphinxparam{\DUrole{n}{c}}\sphinxparamcomma \sphinxparam{\DUrole{n}{use\_kp11}\DUrole{o}{=}\DUrole{default_value}{False}}}
+{}
+\pysigstopsignatures
+\sphinxAtStartPar
+Box Cox transform to make Weibull\sphinxhyphen{}distributed variable to near normal.
+This includes wind speeds, which is often modelled with Weibull.
+The transformation lambda parameter depends on the shape parameter.
+
+\sphinxAtStartPar
+Reference: \sphinxurl{https://doi.org/10.2307/2287172}
+\begin{equation*}
+\begin{split}\hat{x} = \frac{x^{\lambda} - 1}{\lambda}\end{split}
+\end{equation*}\begin{equation*}
+\begin{split}\lambda \approx 0.2654 \times \text{shape}
+\text{, if } x \sim \text{Weibull}(\text{shape}, \text{scale})\end{split}
+\end{equation*}
+\sphinxAtStartPar
+A variation to the above is proposed by Kulkarni and Powar 2011:
+\sphinxurl{https://doi.org/10.1155/2011/863274}
+\begin{equation*}
+\begin{split}\hat{x} = x^{\lambda}\end{split}
+\end{equation*}\begin{equation*}
+\begin{split}\lambda \approx 0.2776 \times \text{shape}\end{split}
+\end{equation*}\begin{quote}\begin{description}
+\sphinxlineitem{Parameters}\begin{itemize}
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{x}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}}}) \textendash{} Variable that needs transformation
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{c}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}}}) \textendash{} Weibull shape parameter
+
+\item {}
+\sphinxAtStartPar
+\sphinxstyleliteralstrong{\sphinxupquote{use\_kp11}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{bool}}}) \textendash{} Use the approximation described in Kulkarni and Powar 2011
+
+\end{itemize}
+
+\sphinxlineitem{Returns}
+\sphinxAtStartPar
+\sphinxstylestrong{x\_hat} \textendash{} Approximate normal transformed x
+
+\sphinxlineitem{Return type}
+\sphinxAtStartPar
+numpy.ndarray
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
 \begin{sphinxthebibliography}{Higham\_b}
 \bibitem[Bun]{index:bun}
 \sphinxAtStartPar
@@ -9703,6 +12040,9 @@ Scientific and Statistical Computing, 2(1), 5\sphinxhyphen{}16, \sphinxurl{https
 \bibitem[Wilks]{index:wilks}
 \sphinxAtStartPar
 Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006
+\bibitem[Tibshirani\_Lasso]{index:tibshirani-lasso}
+\sphinxAtStartPar
+Tibshirani, Robert. 1996. Regression Shrinkage and Selection Via the Lasso. Journal of the Royal Statistical Society Series B: Statistical Methodology 58(1):267\textendash{}88. doi:10.1111/j.2517\sphinxhyphen{}6161.1996.tb02080.x.
 \end{sphinxthebibliography}
 
 
@@ -9710,6 +12050,8 @@ Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2
 \begin{sphinxtheindex}
 \let\bigletter\sphinxstyleindexlettergroup
 \bigletter{g}
+\item\relax\sphinxstyleindexentry{glomar\_gridding.autocorrelation.compute\_autocorrelation}\sphinxstyleindexpageref{kalman:\detokenize{module-glomar_gridding.autocorrelation.compute_autocorrelation}}
+\item\relax\sphinxstyleindexentry{glomar\_gridding.autoregressive\_kalman.cov\_diagonal}\sphinxstyleindexpageref{kalman:\detokenize{module-glomar_gridding.autoregressive_kalman.cov_diagonal}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.climatology}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.climatology}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.covariance\_tools}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.covariance_tools}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.distances}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.distances}}
@@ -9717,6 +12059,7 @@ Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2
 \item\relax\sphinxstyleindexentry{glomar\_gridding.interpolation\_covariance}\sphinxstyleindexpageref{covariance:\detokenize{module-glomar_gridding.interpolation_covariance}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.io}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.io}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.mask}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.mask}}
+\item\relax\sphinxstyleindexentry{glomar\_gridding.transformation}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.transformation}}
 \item\relax\sphinxstyleindexentry{glomar\_gridding.utils}\sphinxstyleindexpageref{misc:\detokenize{module-glomar_gridding.utils}}
 \end{sphinxtheindex}
 
