@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 (Unreleased)
+## 1.2.0 (2026-07-30)
 
 Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan (@SCChan21).
 
@@ -8,21 +8,19 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 
 * Approximate normality transformation using the Box-Cox transformation, with
   function specifically for Weibull-distributed variables (such as wind speeds) (#138).
-
-### New features and enhancements
-
 * Add `spline` module for Spline-based interpolation, e.g. `glomar_gridding.spline.ThinPlateSpline`
   and spline interpolator for spherical geometry (`glomar_gridding.spline.SphericalThinPlateSpline`)
   (#40).
+* Add parallel option to estimate ellipse parameters using `itertools.batched` and
+  `joblib.parallel`. `ellipse.estimate.get_ellipse_params` (#91).
+* Adds basic Kalman Filtering for temporal smoothing as an inline or post-processing step (#108).
+* Add option to set `idx` and `obs` values to the `Grid` class when mapping observations with
+  `Grid.map_observations` (#117).
 
 ### Breaking Changes
 
-* Raise `NotImplementedError` for `ellipse.EllipseModel` if `unit_sigma=False` (#91)
-
-### New Features
-
-* Add parallel option to estimate ellipse parameters using `itertools.batched` and
-  `joblib.parallel`. `ellipse.estimate.get_ellipse_params` (#91)
+* Raise `NotImplementedError` for `ellipse.EllipseModel` if `unit_sigma=False` (#91).
+* Raise `ValueError` for `Kriging` classes if duplicate positions (indices) are detected (#117).
 
 ### Bug Fixes
 
@@ -31,6 +29,8 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 * Correct attribute set by `grid.Grid.set_covariance` to `covariance` (#143).
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
   `grid.map_to_grid`, dynamically set the name using the `grid_prefix` argument (#105).
+* Swap variable names `bound` and `variable` in internals in `utils.select_bounds` (#117).
+
 
 ### Documentation
 

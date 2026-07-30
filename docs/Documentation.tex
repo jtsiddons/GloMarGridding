@@ -66,7 +66,7 @@
 
 \title{GloMarGridding}
 \date{Jul 30, 2026}
-\release{1.1.0}
+\release{1.2.0}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -6261,6 +6261,19 @@ Grid coordinates
 
 \end{fulllineitems}
 
+\index{covariance (glomar\_gridding.grid.Grid property)@\spxentry{covariance}\spxextra{glomar\_gridding.grid.Grid property}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{grid:glomar_gridding.grid.Grid.covariance}}
+\pysigstartsignatures
+\pysigline
+{\sphinxbfcode{\sphinxupquote{\DUrole{k}{property}\DUrole{w}{ }}}\sphinxbfcode{\sphinxupquote{covariance}}\sphinxbfcode{\sphinxupquote{\DUrole{p}{:}\DUrole{w}{ }ndarray\DUrole{w}{ }\DUrole{p}{|}\DUrole{w}{ }DataArray}}}
+\pysigstopsignatures
+\sphinxAtStartPar
+Spatial Covariance matrix
+
+\end{fulllineitems}
+
 \index{covariance\_matrix() (glomar\_gridding.grid.Grid method)@\spxentry{covariance\_matrix()}\spxextra{glomar\_gridding.grid.Grid method}}
 
 \begin{fulllineitems}
@@ -6560,7 +6573,7 @@ effect to the observation points (as well as over the infilling).
 \pysigstartsignatures
 \pysiglinewithargsret
 {\sphinxbfcode{\sphinxupquote{map\_observations}}}
-{\sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_col}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sort}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{add\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}grid\_\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{apply\_mask}\DUrole{o}{=}\DUrole{default_value}{True}}}
+{\sphinxparam{\DUrole{n}{obs}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_coords}\DUrole{o}{=}\DUrole{default_value}{{[}\textquotesingle{}lat\textquotesingle{}, \textquotesingle{}lon\textquotesingle{}{]}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{sort}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{bounds}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{add\_grid\_pts}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{grid\_prefix}\DUrole{o}{=}\DUrole{default_value}{\textquotesingle{}grid\_\textquotesingle{}}}\sphinxparamcomma \sphinxparam{\DUrole{n}{apply\_mask}\DUrole{o}{=}\DUrole{default_value}{True}}\sphinxparamcomma \sphinxparam{\DUrole{n}{obs\_col}\DUrole{o}{=}\DUrole{default_value}{None}}\sphinxparamcomma \sphinxparam{\DUrole{n}{set\_vals}\DUrole{o}{=}\DUrole{default_value}{True}}}
 {}
 \pysigstopsignatures
 \sphinxAtStartPar
