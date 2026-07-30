@@ -15,6 +15,7 @@
 """Functions for creating grids and mapping observations to a grid"""
 
 from collections.abc import Callable, Iterable
+import logging
 from types import NoneType
 from typing import Any, Literal
 
@@ -603,8 +604,19 @@ class Grid:
         """Get the mapping between mask and grid indices"""
         df = pl.DataFrame({"grid_idx": self.grid_idx})
         if self.is_masked and hasattr(self, "mask"):
-            df = df.remove(self.mask.flatten().mask)
+            df = df.remove(self.mask.flatten().mask)  # type: ignore
         return df.with_row_index(name="mask_idx")
+
+    @property
+    def covariance(self) -> np.ndarray | xr.DataArray:
+        """Spatial Covariance matrix"""
+        if hasattr(self, "_covariance"):
+            return self._covariance
+        raise AttributeError("covariance value has not been set or computed")
+
+    @covariance.setter
+    def covariance(self, value: np.ndarray | xr.DataArray):
+        self._covariance = self.prep_covariance(value)
 
     def select_bounds(
         self,
@@ -963,7 +975,7 @@ class Grid:
                 )
 
         # Distance matrix is an xarray.DataArray so covariance is too.
-        self.covariance: xr.DataArray = variogram_to_covariance(  # type: ignore
+        self.covariance = variogram_to_covariance(  # type: ignore
             self.variogram.fit(self.dist),
             variance=self.variogram.psill,
         )
@@ -984,8 +996,7 @@ class Grid:
         covariance_matrix : numpy.ndarray | xarray.DataArray
             The covariance matrix for the full (unmasked) grid.
         """
-        self.cov = self.prep_covariance(covariance_matrix)
-        return None
+        self.covariance = covariance_matrix
 
     def _cross_coords(self) -> xr.Coordinates:
         """
@@ -1028,7 +1039,7 @@ class Grid:
         coord_df = self.coord_df
 
         if self.is_masked and hasattr(self, "mask"):
-            coord_df = coord_df.remove(self.mask.flatten().mask)
+            coord_df = coord_df.remove(self.mask.flatten().mask)  # type: ignore
 
         n = coord_df.height
         cross_coords: dict[str, Any] = {
@@ -1092,11 +1103,17 @@ class Grid:
         covariance_matrix : numpy.ndarray | xarray.DataArray
             The covariance matrix.
         """
-        if covariance_matrix.shape[0] == self.index_map.height:
-            print(
-                "Size of input Covariance Matrix already matches "
-                + "the (masked) grid"
+        if not isinstance(covariance_matrix, (np.ndarray, xr.DataArray)):
+            raise TypeError(
+                "Unexpected matrix type, expected a numpy ndarray or xarray "
+                + f"DataArray, got {type(covariance_matrix)}"
             )
+        if covariance_matrix.shape[0] == self.index_map.height:
+            if self.is_masked:
+                logging.info(
+                    "Size of input Covariance Matrix already matches "
+                    + "the (masked) grid"
+                )
             return covariance_matrix
 
         if covariance_matrix.shape[0] != self.size:
@@ -1147,18 +1164,23 @@ class Grid:
         if isinstance(error_cov, xr.DataArray):
             error_cov = error_cov.values
 
+        if isinstance(self.covariance, xr.DataArray):
+            spatial_cov = self.covariance.data
+        else:
+            spatial_cov = self.covariance
+
         # Take observations as dataframe?
         match kriging_method:
             case "simple":
                 self.krige = SimpleKriging(
-                    covariance=self.covariance.values,
+                    covariance=spatial_cov,
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,
                 )
             case "ordinary":
                 self.krige = OrdinaryKriging(
-                    covariance=self.covariance.values,
+                    covariance=spatial_cov,
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,
@@ -1169,7 +1191,7 @@ class Grid:
                         "Error Covariance is required for StochasticKriging"
                     )
                 self.krige = StochasticKriging(
-                    covariance=self.covariance.values,
+                    covariance=spatial_cov,
                     idx=self.idx,
                     obs=self.obs,
                     error_cov=error_cov,

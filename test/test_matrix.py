@@ -54,7 +54,7 @@ def test_det_multi():
 
 
 @pytest.mark.parametrize(
-    "angle,",
+    "angle",
     [
         np.pi / 2,
         0.123,

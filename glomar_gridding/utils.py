@@ -791,3 +791,114 @@ def get_spatial_mean(
     invcov = ones.T @ np.linalg.inv(covx)
 
     return float(1 / (invcov @ ones) * (invcov @ grid_obs))
+
+
+def check_sq_matrix(arr: np.ndarray) -> bool:
+    """Check if arr is 2D and square"""
+    return (len(arr.shape) == 2) and (arr.shape[0] == arr.shape[1])
+
+
+def _vec_or_sq_matrix_check(arr: np.ndarray):
+    """
+    Check if arr is 1D (returns True), 2D square (returns False),
+    or something else
+
+    Exception raises if arr is neither 1D nor 2D square array
+    (aka something else)
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        An array to be checked if it is 1D, 2D or some other dimensions
+
+    Returns
+    -------
+    check: bool
+        True means 1D.
+        False means 2D square.
+        Anything else throws an exception.
+    """
+    if len(arr.shape) == 1:
+        return True
+    elif len(arr.shape) == 2:
+        if arr.shape[0] == arr.shape[1]:
+            return False
+        else:
+            raise ValueError("arr is 2D but not square")
+    else:
+        raise ValueError("arr is not 1 or 2D")
+
+
+def check_shape(X, dim: int = 2):
+    """
+    Check X to be 2D
+    This should follow the convention that
+    Each column represent different xy grid points
+    Each row represents another time
+    Proper netCDF files should have the correct order of the dimensions:
+    (E), T, (Z), Y, X
+    So reshaping (T, Y, X) >> T, YX will be sufficient
+    """
+    if len(X.shape) != dim:
+        raise ValueError(f"Unexpected shape: {X.shape = } != {dim}")
+
+
+def make_square(arr: np.ndarray) -> np.ndarray:
+    """
+    Check arr if it is 1D or 2D square.
+    If 1D, returns np.diag of it (i.e. square matrix).
+    If 2D square, returns itself.
+    Anything else (2D non-square or 3+D), raise exception.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        An array to be checked if it is 1D, 2D or some other dimension.
+        Some classes like numpy.ma.MaskedArray, scipy.sparse.sparray and even
+        pandas.DataFrame and polars.DataFrame also have the shape attribute,
+        and would work. Shape should be (N, ) or (N, N); otherwise, exception
+        will be raised.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 2D array of shape (N, N).
+    """
+    if len(arr.shape) == 1:
+        # Convert 1D vector to square diagonal matrix
+        return np.diag(arr)
+    if check_sq_matrix(arr):
+        # Returns itself if arr is 2D square matrix
+        return arr
+    raise ValueError("arr is not 1D or 2D square")
+
+
+def make_diag(arr: np.ndarray) -> np.ndarray:
+    """
+    Check arr if it is 1D or 2D square.
+    If 1D, returns itself.
+    If 2D-square, returns diagonal (i.e. vector).
+    Anything else (2D non-square or 3+D), raise exception.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        An array to be checked if it is 1D, 2D or some other dimensions
+        Some classes like numpy.ma.MaskedArray, scipy.sparse.sparray and even
+        pandas.DataFrame and polars.DataFrame also have the shape attribute,
+        and would work. Shape should be (N, ) or (N, N); otherwise, exception
+        will be raised.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D vector of shape (N,).
+    """
+    if len(arr.shape) == 1:
+        # Returns itself if 1D vector
+        return arr
+    if check_sq_matrix(arr):
+        # Take the diagonal to become a vector
+        # if arr is square matrix
+        return np.diag(arr)
+    raise ValueError("arr is not 1D or 2D square")

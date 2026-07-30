@@ -152,7 +152,9 @@ class StochasticKriging(Kriging):
 
         Sets the `kriging_weights` and `simple_kriging_weights` attributes.
         """
-        obs_obs_cov = self.covariance[self.idx[:, None], self.idx[None, :]]
+        obs_obs_cov = self.covariance[
+            self.idx[:, None], self.idx[None, :]
+        ].copy()
 
         # Add error covariance
         if self.error_cov is not None:
@@ -206,7 +208,7 @@ class StochasticKriging(Kriging):
             raise ValueError(
                 "inv must be square with side length == len(self.idx)"
             )
-        obs_grid_cov = self.covariance[self.idx, :]
+        obs_grid_cov = self.covariance[self.idx, :].copy()
         M = self.covariance.shape[0]
 
         self.simple_kriging_weights = (inv @ obs_grid_cov).T
