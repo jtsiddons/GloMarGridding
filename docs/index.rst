@@ -18,6 +18,7 @@ Welcome to GloMarGridding's documentation!
    error_covariance
    kriging
    grid
+   kalman
    misc
 
 ..
@@ -67,3 +68,5 @@ Welcome to GloMarGridding's documentation!
 .. [Thorne] Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper-air temperature records, Bull. Am. Meteorol. Soc., 86, 1437–1442, https://doi.org/10.1175/BAMS-86-10-1437, 2005
 
 .. [Wilks] Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006
+
+.. [Tibshirani_Lasso] Tibshirani, Robert. 1996. Regression Shrinkage and Selection Via the Lasso. Journal of the Royal Statistical Society Series B: Statistical Methodology 58(1):267–88. doi:10.1111/j.2517-6161.1996.tb02080.x.

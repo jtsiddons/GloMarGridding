@@ -84,3 +84,56 @@ def inv_weibull_to_normality(
     lam = 0.2654 * c
     x = special.inv_boxcox(x_hat, lam)
     return x
+
+
+def standardise_data(
+    X,
+    normalise=True,
+    axis=0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Standardise the data samples by
+    1) subtracting the mean
+    2) divide by standard deviation
+
+    Parameters
+    ----------
+    X: np.ndarray
+        As in `data_sample` in `LassoEstimate_AR1` class;
+        shape (N, M)
+    normalise: bool
+        If set to `True`, divide by sample standard deviation
+    axis: int
+        The axis that the standardisation is applied.
+        `axis=0` follows the convention that each column
+        is a separate time series, which is the
+        standard for netCDF and GRIB files (i.e. time is usually
+        the 1st dimension unless there is an ensemble dimension;
+        spatial dimensions follow time dimension, aka the
+        (T, YX...) convention).
+
+    Returns
+    -------
+    X_standardised: numpy.ndarray
+        Standardised or zero-mean sample;
+        shape `(N, M)`
+    sample_mean: numpy.ndarray
+        Sample mean of X computed along axis;
+        shape `(N,)`
+    X_std: numpy.ndarray
+        The normalisation for `X_standardised`;
+        if standardise is `True`, this is a vector of standard deviations;
+        otherwise it a vector of 1s;
+        shape `(N,)`
+    """
+    X_bar = np.mean(X, axis=axis)
+    if normalise:
+        X_std = np.std(X, axis=axis)
+    else:
+        X_std = np.ones_like(X_bar)
+    X_standardised = (X - X_bar) / X_std
+    return (
+        X_standardised,
+        X_bar,
+        X_std,
+    )
