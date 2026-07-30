@@ -238,7 +238,7 @@ def select_bounds(
         The input data filtered by the bounds.
     """
     bnd_map: dict[str, slice] = {
-        b: slice(*v) for b, v in zip(variables, bounds)
+        variable: slice(*bound) for variable, bound in zip(variables, bounds)
     }
     return x.sel(bnd_map)
 
