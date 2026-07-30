@@ -24,8 +24,10 @@ Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcor
 * Add parallel option to estimate ellipse parameters using `itertools.batched` and
   `joblib.parallel`. `ellipse.estimate.get_ellipse_params` (#91)
 
-### Bug fixes
+### Bug Fixes
 
+* `kriging.Kriging.get_kriging_weights` methods now create a copy when subsetting from the
+  covariance matrix for safety to ensure no changes are made to the covariance (#103).
 * Correct attribute set by `grid.Grid.set_covariance` to `covariance` (#143).
 * Remove hard-coding of grid index name ("grid_idx") in `grid.Grid.map_observations` and
   `grid.map_to_grid`, dynamically set the name using the `grid_prefix` argument (#105).
