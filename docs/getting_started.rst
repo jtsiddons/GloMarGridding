@@ -3,10 +3,10 @@ Getting Started
 ===============
 
 Installation
-============
+------------
 
 Via Pip
--------
+=======
 
 GloMarGridding is available on `PyPI <https://pypi.org/project/glomar_gridding/>`_, and can be
 installed with `pip` or `uv <https://docs.astral.sh/uv/>`_:
@@ -20,7 +20,7 @@ installed with `pip` or `uv <https://docs.astral.sh/uv/>`_:
    uv add glomar_gridding
 
 From Source
------------
+===========
 
 Alternatively, you can clone the repository and install using pip (or uv if preferred).
 
