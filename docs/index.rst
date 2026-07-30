@@ -17,7 +17,9 @@ Welcome to GloMarGridding's documentation!
    ellipse
    error_covariance
    kriging
+   splines
    grid
+   kalman
    misc
 
 ..
@@ -34,11 +36,15 @@ Welcome to GloMarGridding's documentation!
 
 .. [Cressie] Cressie, N. A. C.: Statistics for Spatial Data, Wiley Series in Probability and Statistics, Wiley, 1 edn., ISBN 978-0-471-00255-0 978-1-119-11515-1, https://doi.org/10.1002/9781119115151, 1993.
 
+.. [Nychka]  Nychka, D., Furrer, R., Paige, J. and Sain, S.: Package 'fields', http://cran.r-project.org/web/packages/fields/fields.pdf, 2015.
+
 .. [Higham] Higham, N. J., Strabi´c, N., and Šego, V.: Restoring Definiteness via Shrinking, with an Application to Correlation Matrices with a Fixed255 Block, SIAM Review, 58, 245–263, https://www.jstor.org/stable/24778894, 2016.
 
 .. [Higham_blog_nearest] https://nhigham.com/2021/01/26/what-is-the-nearest-positive-semidefinite-matrix/
 
 .. [Huang] Huang, B., Yin, X., Menne, M. J., Vose, R., and Zhang, H.-M.: Improvements to the Land Surface Air Temperature Reconstruction in NOAAGlobalTemp: An Artificial Neural Network Approach, Artificial Intelligence for the Earth Systems, 1, e220 032, https://doi.org/10.1175/AIES-D-22-0032.1, 2022.
+
+.. [Hutchinson] Hutchinson, M. F., and  Gessler, P. E.: Splines - more than just a smooth interpolator, Geoderma, 62(1-3), 45-67, https://doi.org/10.1016/0016-7061(94)90027-2, 1994.
 
 .. [IPCC] Intergovernmental Panel On Climate Change: Climate Change 2021 – The Physical Science Basis: Working Group I Contribution to the Sixth Assessment Report of the Intergovernmental Panel on Climate Change, Cambridge University Press, 1 edn., ISBN 978-1-00-915789-6, https://doi.org/10.1017/9781009157896, 2021.
 
@@ -66,4 +72,9 @@ Welcome to GloMarGridding's documentation!
 
 .. [Thorne] Thorne, P. W., D. E. Parker, J. R. Christy, and C. A. Mears: Uncertainties in climate trends: Lessons from upper-air temperature records, Bull. Am. Meteorol. Soc., 86, 1437–1442, https://doi.org/10.1175/BAMS-86-10-1437, 2005
 
+.. [Wahba_Sphere] Wahba, G: Spline Interpolation and Smoothing on the Sphere, SIAM Journal on
+   Scientific and Statistical Computing, 2(1), 5-16, https://doi.org/10.1137/0902002, 1981
+
 .. [Wilks] Wilks, D.: Statistical Methods in Atmospheric Sciences, 2nd Edition, Elsevier, 2006
+
+.. [Tibshirani_Lasso] Tibshirani, Robert. 1996. Regression Shrinkage and Selection Via the Lasso. Journal of the Royal Statistical Society Series B: Statistical Methodology 58(1):267–88. doi:10.1111/j.2517-6161.1996.tb02080.x.

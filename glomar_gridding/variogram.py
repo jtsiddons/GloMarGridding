@@ -467,12 +467,12 @@ class MaternVariogram(Variogram):
             )
             + self.nugget
         )
-        # Matern is undefined at 0 distance, so replace nan on diagnonal
+        # Matern is undefined at 0 distance, so replace nan where that happens
         if isinstance(out, xr.DataArray):
-            np.fill_diagonal(out.values, self.nugget)
+            out.values[distance_matrix == 0] = self.nugget
             out.name = "variogram"
         else:
-            np.fill_diagonal(out, self.nugget)
+            out[distance_matrix == 0] = self.nugget
         return out
 
 

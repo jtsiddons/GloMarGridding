@@ -24,6 +24,7 @@ Ordinary Kriging.
 ################
 
 from abc import ABC, abstractmethod
+from types import NoneType
 from typing import Literal
 from warnings import warn
 
@@ -62,7 +63,7 @@ class Kriging(ABC):
         The observation values. If there are multiple observations in any
         grid box then these values need to be averaged into one value per
         grid box.
-    error_cov : numpy.ndarray | None
+    error_cov : numpy.ndarray | NoneType
         Optionally add error covariance values to the covariance between
         observation grid points.
     """
@@ -72,8 +73,8 @@ class Kriging(ABC):
         covariance: np.ndarray,
         idx: np.ndarray,
         obs: np.ndarray,
-        error_cov: np.ndarray | None = None,
-    ) -> None:
+        error_cov: np.ndarray | NoneType = None,
+    ) -> NoneType:
         if not hasattr(self, "method"):
             raise NotImplementedError(
                 "Do not use the generic class directly, "
@@ -86,7 +87,7 @@ class Kriging(ABC):
 
         self.subset_error_covariance()
 
-    def subset_error_covariance(self) -> None:
+    def subset_error_covariance(self) -> NoneType:
         """
         Adjust the error covariance matrix to the grid size, check for nans or
         zeros on the diagonal.
@@ -120,7 +121,7 @@ class Kriging(ABC):
             self.error_cov[np.isnan(self.error_cov)] = 0.0
         return None
 
-    def set_kriging_weights(self, kriging_weights: np.ndarray) -> None:
+    def set_kriging_weights(self, kriging_weights: np.ndarray) -> NoneType:
         """
         Set Kriging Weights.
 
@@ -135,7 +136,7 @@ class Kriging(ABC):
         return None
 
     @abstractmethod
-    def get_kriging_weights(self) -> None:
+    def get_kriging_weights(self) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation. Optionally add an error covariance to the
@@ -162,7 +163,7 @@ class Kriging(ABC):
     def kriging_weights_from_inverse(
         self,
         inv: np.ndarray,
-    ) -> None:
+    ) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation, using a pre-computed inverse of the covariance
@@ -313,14 +314,14 @@ class SimpleKriging(Kriging):
         The observation values. If there are multiple observations in any
         grid box then these values need to be averaged into one value per
         grid box.
-    error_cov : numpy.ndarray | None
+    error_cov : numpy.ndarray | NoneType
         Optionally add error covariance values to the covariance between
         observation grid points.
     """
 
     method: str = "simple"
 
-    def get_kriging_weights(self) -> None:
+    def get_kriging_weights(self) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation. Optionally add an error covariance to the
@@ -354,7 +355,7 @@ class SimpleKriging(Kriging):
     def kriging_weights_from_inverse(
         self,
         inv: np.ndarray,
-    ) -> None:
+    ) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation, using a pre-computed inverse of the covariance
@@ -546,14 +547,14 @@ class OrdinaryKriging(Kriging):
         The observation values. If there are multiple observations in any
         grid box then these values need to be averaged into one value per
         grid box.
-    error_cov : numpy.ndarray | None
+    error_cov : numpy.ndarray | NoneType
         Optionally add error covariance values to the covariance between
         observation grid points.
     """
 
     method: str = "ordinary"
 
-    def get_kriging_weights(self) -> None:
+    def get_kriging_weights(self) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation. Optionally add an error covariance to the
@@ -608,7 +609,7 @@ class OrdinaryKriging(Kriging):
     def kriging_weights_from_inverse(
         self,
         inv: np.ndarray,
-    ) -> None:
+    ) -> NoneType:
         r"""
         Compute the Kriging weights from the flattened grid indices where
         there is an observation, using a pre-computed inverse of the covariance
@@ -734,7 +735,7 @@ class OrdinaryKriging(Kriging):
 
     def constraint_mask(
         self,
-        simple_kriging_weights: np.ndarray | None = None,
+        simple_kriging_weights: np.ndarray | NoneType = None,
     ) -> np.ndarray:
         r"""
         Compute the observational constraint mask (A14 in [Morice_2021]_) to
@@ -771,7 +772,7 @@ class OrdinaryKriging(Kriging):
 
         Parameters
         ----------
-        simple_kriging_weights : numpy.ndarray | None,
+        simple_kriging_weights : numpy.ndarray | NoneType,
             The Kriging weights for the equivalent simple Kriging system.
             error covariance.
 
@@ -864,8 +865,8 @@ def prep_obs_for_kriging(
     weights: np.ndarray,
     obs: np.ndarray,
     remove_obs_mean: int = 0,
-    obs_bias: np.ndarray | None = None,
-    error_cov: np.ndarray | None = None,
+    obs_bias: np.ndarray | NoneType = None,
+    error_cov: np.ndarray | NoneType = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Prep masked observations for Kriging. Combines observations in the same
@@ -891,7 +892,7 @@ def prep_obs_for_kriging(
             - 3 = the spatial meam os removed
 
         Note that the mean will need to be reapplied to the Kriging result.
-    obs_bias : np.ndarray[float] | None
+    obs_bias : np.ndarray[float] | NoneType
         Bias of all measurement points for a chosen date (corresponds to x_obs).
 
     Returns
