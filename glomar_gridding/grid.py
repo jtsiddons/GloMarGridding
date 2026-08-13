@@ -601,7 +601,7 @@ class Grid:
 
     @property
     def index_map(self) -> pl.DataFrame:
-        """Get the mapping between mask and grid indices"""
+        """The mapping between mask and grid indices"""
         df = pl.DataFrame({"grid_idx": self.grid_idx})
         if self.is_masked and hasattr(self, "mask"):
             df = df.remove(self.mask.flatten().mask)  # type: ignore
@@ -1153,13 +1153,21 @@ class Grid:
             raise AttributeError(
                 "Missing observational data, use `map_observations` method."
             )
+        n_obs = len(self.obs)
 
         # Handle Error Covariance shape
         if error_cov is not None and error_cov.shape[0] == self.size:
             error_cov = self.prep_covariance(error_cov)
-        if error_cov is not None and error_cov.shape != self.covariance.shape:
+        if error_cov is not None and not (
+            error_cov.shape == self.covariance.shape
+            or error_cov.shape == (n_obs, n_obs)
+        ):
             raise ValueError(
-                "Mismatch between Covariance and Error Covariance Shapes"
+                "Incorrect error covariance shape, expected to be one of:\n"
+                + f"- grid size * grid size: {(self.size, self.size)}\n"
+                + "- masked grid size * masked grid size: "
+                + f"{self.covariance.shape}\n"
+                + f"- number of obs * number of obs: {(n_obs, n_obs)}"
             )
         if isinstance(error_cov, xr.DataArray):
             error_cov = error_cov.values
