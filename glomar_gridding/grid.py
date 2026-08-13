@@ -1131,7 +1131,7 @@ class Grid:
         kriging_method: Literal["simple", "ordinary", "stochastic"],
         error_cov: np.ndarray | xr.DataArray | None = None,
     ) -> NoneType:
-        """
+        r"""
         Add a Kriging class object to the grid. Allowing for easy Kriging over
         a masked grid.
 
@@ -1147,6 +1147,11 @@ class Grid:
         error_cov : numpy.ndarray | xarray.DataArray | None
             Optional error covariance matrix. This will apply a smoothing
             effect to the observation points (as well as over the infilling).
+            This can have one of the following sizes:
+
+            - grid size (unmasked) \times grid size (unmasked)
+            - grid size (masked) \times grid size (masked)
+            - number of observations \times number of observations
         """
         # Check we have data to use!
         if not hasattr(self, "obs") or not hasattr(self, "idx"):
