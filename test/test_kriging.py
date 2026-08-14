@@ -240,12 +240,12 @@ def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
 
     covariance: xr.DataArray = variogram.fit(dist)  # type: ignore
 
-    err_cov = np.full(covariance.shape, np.nan)
-    err_cov_vals = np.random.rand(3, 3)
-    err_cov_vals = np.dot(err_cov_vals, err_cov_vals.T)
+    err_cov_big = np.full(covariance.shape, np.nan)
+    err_cov = np.random.rand(obs.height, obs.height)
+    err_cov = np.dot(err_cov, err_cov.T)
     idx = list(product(grid_idx, grid_idx))
-    for i, val in zip(idx, err_cov_vals.flatten()):
-        err_cov[*i] = val
+    for i, val in zip(idx, err_cov.flatten()):
+        err_cov_big[*i] = val
 
     OKrige = OrdinaryKriging(
         covariance=covariance.values.copy(),
@@ -261,13 +261,47 @@ def test_ordinary_kriging_class_methods() -> None:  # noqa: D103
 
     assert k.shape == a.shape == u.shape
 
-    S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov_vals
+    S = covariance.values[grid_idx[:, None], grid_idx[None, :]] + err_cov
     SS = covariance.values[grid_idx, :]
     k2, u2 = kriging_ordinary(S, SS, obs_vals, covariance.values)
 
-    assert np.allclose(k2, k)
+    assert np.allclose(k2, k), "Fail OrdinaryKriging class, small error cov"
+    assert np.allclose(u2, u), "Fail OrdinaryKriging class, small error cov"
 
-    assert np.allclose(u2, u)
+    # With full error covariance
+    OKrige3 = OrdinaryKriging(
+        covariance=covariance.values.copy(),
+        idx=grid_idx,
+        obs=obs_vals,
+        error_cov=err_cov_big,
+    )
+    k3 = OKrige3.solve()
+    u3 = OKrige3.get_uncertainty()
+    a3 = OKrige3.constraint_mask()
+
+    assert np.allclose(k2, k3), "Fail OrdinaryKriging class, big error cov"
+    assert np.allclose(u2, u3), "Fail OrdinaryKriging class, big error cov"
+    assert np.allclose(a, a3), "Fail OrdinaryKriging class, big error cov"
+
+    grid2 = Grid.from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    grid2.set_covariance(covariance)
+    grid2.map_observations(obs, obs_col="val")
+
+    grid2.kriging(kriging_method="ordinary", error_cov=err_cov)
+    k4 = grid2.krige.solve()
+    u4 = grid2.krige.get_uncertainty()
+    assert np.allclose(k2, k4), "Fail Grid class, small error cov"
+    assert np.allclose(u2, u4), "Fail Grid class, small error cov"
+
+    grid3 = Grid.from_resolution(1, [(1, 21), (1, 21)], ["lat", "lon"])
+    grid3.set_covariance(covariance)
+    grid3.map_observations(obs, obs_col="val")
+
+    grid3.kriging(kriging_method="ordinary", error_cov=err_cov_big)
+    k5 = grid3.krige.solve()
+    u5 = grid3.krige.get_uncertainty()
+    assert np.allclose(k2, k5), "Fail Grid class, small error cov"
+    assert np.allclose(u2, u5), "Fail Grid class, small error cov"
 
     return None
 

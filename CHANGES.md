@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons).
+
+### Bug Fixes
+
+* Add missing check allowing error covariance with dimensions `(num_obs, num_obs)` in
+  `grid.Grid.kriging` (#162).
+
 ## 1.2.0 (2026-07-30)
 
 Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan (@SCChan21).
