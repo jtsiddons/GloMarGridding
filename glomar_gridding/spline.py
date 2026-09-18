@@ -20,6 +20,7 @@ import logging
 from math import exp, factorial, floor, gamma, pi
 from types import NoneType
 from typing import Protocol
+from warnings import warn
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize_scalar
@@ -507,8 +508,22 @@ class Spline(_Interpolator):
 
         temp1 = result.sigma2 * np.sum(A * K.T, axis=0)
         temp2 = np.sum(Cov_y @ A * A, axis=0)
+        std_err_sq = temp2 - 2 * temp1
 
-        return np.sqrt(temp2 - 2 * temp1)
+        if np.any(
+            adj := np.logical_and(np.abs(std_err_sq) < 1e-8, std_err_sq < 0)
+        ):
+            logging.debug(
+                "Adjusting small negative values of standard error of "
+                + "prediction squared to 0 : "
+                + f"{np.sum(adj)} values, {std_err_sq[adj]}"
+            )
+            std_err_sq[adj] = 0.0
+
+        if np.any(std_err_sq < 0):
+            warn("Have standard error of prediction values ** 3 < 0")
+
+        return np.sqrt(std_err_sq)
 
     def _predict(
         self,
