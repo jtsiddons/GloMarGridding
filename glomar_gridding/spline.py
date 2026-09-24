@@ -175,8 +175,11 @@ class Spline(_Interpolator):
     y : numpy.ndarray
         The training data values. Expected to have the same `num points` values.
     error_cov : numpy.ndarray | None
-        An optional error covariance. If unset then the default error covariance
-        matrix is used - in most cases this will be the identity matrix.
+        An optional error covariance. If unset then the default error
+        covariance matrix is used - in most cases this will be the identity
+        matrix. If using a custom error covariance it is recommended not to set
+        `lam = 0` when fitting, as this represents an exact interpolator, so
+        the error covariance structure will not be used.
     """
 
     def __init__(
@@ -200,6 +203,7 @@ class Spline(_Interpolator):
 
         self.X = X
         self.y = y
+        self._custom_error_cov = error_cov is not None
         self.error_cov = error_cov
         self.K = self.get_K()
 
@@ -351,8 +355,9 @@ class Spline(_Interpolator):
         ----------
         lam : float | None
             Optional smoothing parameter. If set to 0 the interpolation will be
-            an **exact** interpolator. If unset, the value will be estimated
-            using a GCV method.
+            an **exact** interpolator, it is recommended not to set an error
+            covariance in this case, as it will not be used. If unset, the
+            value will be estimated using a GCV method.
         set_results : bool
             Assign the results to the `result` attribute and set the `fitted`
             attribute to True. This is generally advised.
@@ -375,6 +380,13 @@ class Spline(_Interpolator):
         scipy.optimize.minimize_scalar
             For optimisation options.
         """
+        if self._custom_error_cov and lam == 0:
+            warn(
+                "It is recommended that lam is not zero when using a "
+                + "custom error covariance. The error covariance will not be "
+                + "used in the procedure if lam == 0, since this "
+                + "represents an exact interpolator."
+            )
         if lam is None:
             logging.debug("Estimating Lambda Using GCV")
             lam = self.estimate_lambda_gcv(**kwargs)
@@ -709,7 +721,10 @@ class ThinPlateSpline(Spline):
         The training data values. Expected to have the same `num points` values.
     error_cov : numpy.ndarray | None
         An optional error covariance. If unset then the default error covariance
-        matrix is used - in most cases this will be the identity matrix.
+        matrix is used - in most cases this will be the identity matrix. If
+        using a custom error covariance it is recommended not to set `lam = 0`
+        when fitting, as this represents an exact interpolator, so the error
+        covariance structure will not be used.
     use_radbas_const : bool
         Use the Radial Basis constant to scale the computed kernel. This value
         will scale the kernel to match that computed by the R fields package
@@ -953,7 +968,9 @@ class SphericalThinPlateSpline(Spline):
     error_cov : numpy.ndarray | None
         An optional error covariance. If unset then the default error covariance
         matrix is used - in this case n * identity matrix, where n is the number
-        of positions in `X`.
+        of positions in `X`. If using a custom error covariance it is
+        recommended not to set `lam = 0` when fitting, as this represents an
+        exact interpolator, so the error covariance structure will not be used.
 
     References
     ----------
