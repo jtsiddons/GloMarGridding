@@ -522,15 +522,13 @@ class Spline(_Interpolator):
         temp2 = np.sum(Cov_y @ A * A, axis=0)
         std_err_sq = temp2 - 2 * temp1
 
-        if np.any(
-            adj := np.logical_and(np.abs(std_err_sq) < 1e-8, std_err_sq < 0)
-        ):
+        if np.any(adj_idx := (np.abs(std_err_sq) < 1e-8)):
             logging.debug(
-                "Adjusting small negative values of standard error of "
-                + "prediction squared to 0 : "
-                + f"{np.sum(adj)} values, {std_err_sq[adj]}."
+                "Adjusting small values of standard error of "
+                + "prediction squared (absolute value < 1e-8) to 0 : "
+                + f"{np.sum(adj_idx)} values, {std_err_sq[adj_idx]}."
             )
-            std_err_sq[adj] = 0.0
+            std_err_sq[adj_idx] = 0.0
 
         if np.any(std_err_sq < 0):
             warn("Have standard error of prediction values ** 2 < 0.")
