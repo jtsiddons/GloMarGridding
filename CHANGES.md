@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 (Unreleased)
+
+### Announcements
+
+* Now supports python 3.15 (#174).
+
 ## 1.2.1 (2026-08-14)
 
 Contributors to this version: Joseph Siddons (@jtsiddons).
