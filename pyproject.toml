@@ -62,7 +62,7 @@ docs = [
   "sphinx-autodoc-typehints>=3.1.0",
   "sphinx-rtd-theme>=3.0.2",
 ]
-test = ["pytest>=8.3.4", "pytest-cov>=6.1.1"]
+test = ["pytest>=8.3.4", "pytest-cov>=6.1.1", "gstools>=1.7.0", "pykrige>=1.7.3"]
 all = [
   "ipykernel",
   "sphinx>=8.2.0",
@@ -130,7 +130,7 @@ netCDF4 = "nc"
 Repository = "https://github.com/NOCSurfaceProcesses/GloMarGridding"
 
 [dependency-groups]
-dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1", "gstools>=1.7.0", "pykrige>=1.7.3"]
+dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1"]
 
 [tool.hatch.build.targets.sdist]
 include = [
