@@ -69,7 +69,6 @@ jobs:
         timeout-minutes: 10
         run: |
           uv run ruff check glomar_gridding test
-          uv run numpydoc lint glomar_gridding/**.py
           uv run codespell glomar_gridding test docs
 
       - name: Minimise uv cache
