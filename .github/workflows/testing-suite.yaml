@@ -17,21 +17,29 @@ permissions:
 
 jobs:
   test:
-    name: py${{ matrix.python-version }}
+    name: Test py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash -l {0}
     strategy:
-      fail-fast: false
+      fail-fast: true # If one fails early then all fail
       matrix:
         os: ["ubuntu-latest"]
-        # Bookend python versions
+        # Bookend supported python versions
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          disable-sudo: true
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1 # Fetch only current version
+
       - name: Set environment variables
         run: |
           echo "UV_ENV_FILE=pyproject.toml" >> $GITHUB_ENV
@@ -68,7 +76,7 @@ jobs:
           uv run python -c "import glomar_gridding"
 
       - name: Run tests
-        timeout-minutes: 10
+        timeout-minutes: 5
         run: uv run pytest test
           --cov=glomar_gridding
           --cov-report=xml
