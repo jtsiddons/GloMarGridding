@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 (Unreleased)
+
+Contributors to this version: Joseph Siddons (@jtsiddons).
+
+### Internal changes
+
+* Makefile added (#175).
+
 ## 1.2.1 (2026-08-14)
 
 Contributors to this version: Joseph Siddons (@jtsiddons).
