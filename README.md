@@ -28,23 +28,13 @@ Clone the repository
 git clone https://github.com/NOCSurfaceProcesses/GloMarGridding.git /path/to/glomar_gridding
 ```
 
-Create virtual environment and install dependencies. We recommend using
-[uv](https://docs.astral.sh/uv/) for python as an alternative to `pip`.
+Create virtual environment and install dependencies.ernative to `pip`.
 
 ```bash
 cd /path/to/glomar_gridding
-uv sync --all-extras --python 3.11  # Install dependencies, recommended python version
-```
-
-#### `pip` instructions
-
-For development:
-
-```bash
-cd /path/to/glomar_gridding
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+python -m venv .venv  # create virtual environment
+source .venv/bin/activate  # load virtual environment
+make install  # install dependencies into the environment
 ```
 
 ## Documentation
