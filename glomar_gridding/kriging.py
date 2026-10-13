@@ -1080,7 +1080,7 @@ def kriging_ordinary(
     obs_grid_cov = np.concatenate((obs_grid_cov, np.ones((1, M))), axis=0)
     grid_obs = np.append(grid_obs, 0)
 
-    # kriging_weights includes the Lagrange multiplier as its last elemen, so
+    # kriging_weights includes the Lagrange multiplier as its last element, so
     # the product already contains the multiplier term.
 
     kriging_weights = np.linalg.solve(obs_obs_cov, obs_grid_cov).T

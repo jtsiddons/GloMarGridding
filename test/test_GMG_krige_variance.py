@@ -21,15 +21,15 @@ error variance
 
 import warnings
 
+import gstools as gs
 import numpy as np
 import pytest
+from pykrige import ok as pykrige_ok
 
 from glomar_gridding.kriging import OrdinaryKriging
 
-gs = pytest.importorskip("gstools")
-
-rtol = 1e-7
-atol = 1e-9
+RTOL = 1e-7
+ATOL = 1e-9
 
 
 def _grid(nx: int = 12, ny: int = 9) -> tuple[np.ndarray, np.ndarray]:
@@ -62,9 +62,9 @@ def _glomar_ok(cov, idx, obs, error_cov=None):
     error = None if error_cov is None else error_cov.copy()
     ok = OrdinaryKriging(cov, idx, obs, error_cov=error)
     ok.get_kriging_weights()
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        var = ok.get_uncertainty() ** 2
+
+    warnings.simplefilter("ignore")
+    var = ok.get_uncertainty() ** 2
     return ok.solve(), var
 
 
@@ -85,22 +85,33 @@ def test_ok_vs_gstools_noerr(model_name, seed):
     _, x, y, model, cov, idx, obs = _setup(model_name, seed)
     est, var = _glomar_ok(cov, idx, obs)
     ref_est, ref_var = _gstools_ok(model, x, y, idx, obs, exact=True)
-    np.testing.assert_allclose(est, ref_est, rtol=rtol, atol=atol)
-    np.testing.assert_allclose(var, ref_var, rtol=rtol, atol=atol)
+    assert np.allclose(est, ref_est, rtol=RTOL, atol=ATOL), (
+        "Gstools comparison on estimated values fail"
+    )
+    assert np.allclose(var, ref_var, rtol=RTOL, atol=ATOL), (
+        "Gstools comparison on variance values fail"
+    )
 
 
 @pytest.mark.parametrize("model_name", list(MODELS))
 @pytest.mark.parametrize("seed", [0, 1, 2])
 def test_ok_vs_gstools_err(model_name, seed):
-    """Test GMO Kriging output (value and uncertainty) against GStools with an uncorrelated observation uncertainty supplied"""
+    """
+    Test GMO Kriging output (value and uncertainty) against
+    GStools with an uncorrelated observation uncertainty supplied
+    """
     rng, x, y, model, cov, idx, obs = _setup(model_name, seed)
     err_var = rng.uniform(0.05, 0.3, idx.size)
     est, var = _glomar_ok(cov, idx, obs, error_cov=np.diag(err_var))
     ref_est, ref_var = _gstools_ok(
         model, x, y, idx, obs, exact=False, cond_err=err_var
     )
-    np.testing.assert_allclose(est, ref_est, rtol=rtol, atol=atol)
-    np.testing.assert_allclose(var, ref_var, rtol=rtol, atol=atol)
+    assert np.allclose(est, ref_est, rtol=RTOL, atol=ATOL), (
+        "Gstools comparison w/ nugget on estimated values fail"
+    )
+    assert np.allclose(var, ref_var, rtol=RTOL, atol=ATOL), (
+        "Gstools comparison w/ nugget on variance values fail"
+    )
 
 
 # PyKrige
@@ -108,7 +119,6 @@ def test_ok_vs_gstools_err(model_name, seed):
 @pytest.mark.parametrize("seed", [0, 1, 2])
 def test_ok_vs_pykrige_noerr(seed):
     """Test GMO Kriging output (value and uncertainty) against PyKrige"""
-    pykrige_ok = pytest.importorskip("pykrige.ok")
     _, x, y, model, cov, idx, obs = _setup("exponential", seed)
     est, var = _glomar_ok(cov, idx, obs)
     pk = pykrige_ok.OrdinaryKriging(
@@ -124,5 +134,9 @@ def test_ok_vs_pykrige_noerr(seed):
         exact_values=True,
     )
     ref_est, ref_var = pk.execute("points", x, y)
-    np.testing.assert_allclose(est, np.asarray(ref_est), rtol=rtol, atol=atol)
-    np.testing.assert_allclose(var, np.asarray(ref_var), rtol=rtol, atol=atol)
+    assert np.allclose(est, np.asarray(ref_est), rtol=RTOL, atol=ATOL), (
+        "Pykrige comparison on estimated values fail"
+    )
+    assert np.allclose(var, np.asarray(ref_var), rtol=RTOL, atol=ATOL), (
+        "Pykrige comparison on variance values fail"
+    )
