@@ -54,22 +54,32 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
-[project.optional-dependencies]
-extra = ["ipykernel"]
-notebooks = ["matplotlib", "Cartopy"]
+
+[dependency-groups]
+notebooks = ["ipykernel", "matplotlib", "Cartopy"]
 docs = [
   "sphinx>=8.2.0",
   "sphinx-autodoc-typehints>=3.1.0",
   "sphinx-rtd-theme>=3.0.2",
 ]
-test = ["pytest>=8.3.4", "pytest-cov>=6.1.1"]
-all = [
-  "ipykernel",
-  "sphinx>=8.2.0",
-  "sphinx-autodoc-typehints>=3.1.0",
-  "sphinx-rtd-theme>=3.0.2",
-  "matplotlib",
-  "Cartopy",
+test = [
+  "coverage[toml] >=7.13.4",
+  "pytest >=9.0.2",
+  "pytest-cov >=7.0.0",
+  "pytest-env >=1.1.5",
+]
+lint = [
+  # Linting tools
+  "codespell >=2.4.2",
+  "ruff >=0.15.11",
+]
+dev = [
+  # Development and testing tools
+  "pre-commit",
+  { include-group = "docs" },
+  { include-group = "notebooks" },
+  { include-group = "lint" },
+  { include-group = "test" },
 ]
 
 [tool.ruff]
@@ -96,7 +106,7 @@ select = [
   "F",    # pyflakes
   "ICN",  # Flake8 Import Conventions
   "N802", # invalid-function-name
-  "S",    # bandit
+  "S",    # bandit (security)
   "W",    # pycodestyle warnings
 ]
 
@@ -128,9 +138,6 @@ netCDF4 = "nc"
 
 [project.urls]
 Repository = "https://github.com/NOCSurfaceProcesses/GloMarGridding"
-
-[dependency-groups]
-dev = ["ipykernel>=6.29.5", "pytest>=8.3.4", "pytest-cov>=6.1.1"]
 
 [tool.hatch.build.targets.sdist]
 include = [
