@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.2 (Unreleased)
+## 1.2.2 (2026-10-15)
 
 Contributors to this version: Richard Cornes (@rcornes), Joseph Siddons (@jtsiddons).
 

@@ -65,8 +65,8 @@
 
 
 \title{GloMarGridding}
-\date{Aug 14, 2026}
-\release{1.2.1}
+\date{Oct 15, 2026}
+\release{1.2.2}
 \author{NOC Surface Processes}
 \newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
@@ -155,7 +155,7 @@ git\PYG{+w}{ }clone\PYG{+w}{ }https://github.com/NOCSurfaceProcesses/GloMarGridd
 \PYG{n+nb}{cd}\PYG{+w}{ }GloMarGridding
 python\PYG{+w}{ }\PYGZhy{}m\PYG{+w}{ }venv\PYG{+w}{ }venv
 \PYG{n+nb}{source}\PYG{+w}{ }venv/bin/activate
-pip\PYG{+w}{ }install\PYG{+w}{ }\PYGZhy{}e\PYG{+w}{ }.
+make\PYG{+w}{ }install
 \end{sphinxVerbatim}
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
@@ -4710,8 +4710,11 @@ Must be unique positions.
 
 \item {}
 \sphinxAtStartPar
-\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
-matrix is used \sphinxhyphen{} in most cases this will be the identity matrix.
+\sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error
+covariance matrix is used \sphinxhyphen{} in most cases this will be the identity
+matrix. If using a custom error covariance it is recommended not to set
+\sphinxtitleref{lam = 0} when fitting, as this represents an exact interpolator, so
+the error covariance structure will not be used.
 
 \end{itemize}
 
@@ -4877,8 +4880,9 @@ Fit the Spline. With optional smoothing. Optionally save the results.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{lam}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{float}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} Optional smoothing parameter. If set to 0 the interpolation will be
-an \sphinxstylestrong{exact} interpolator. If unset, the value will be estimated
-using a GCV method.
+an \sphinxstylestrong{exact} interpolator, it is recommended not to set an error
+covariance in this case, as it will not be used. If unset, the
+value will be estimated using a GCV method.
 
 \item {}
 \sphinxAtStartPar
@@ -5202,7 +5206,10 @@ the positions have been scaled appropriately.
 \item {}
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
-matrix is used \sphinxhyphen{} in most cases this will be the identity matrix.
+matrix is used \sphinxhyphen{} in most cases this will be the identity matrix. If
+using a custom error covariance it is recommended not to set \sphinxtitleref{lam = 0}
+when fitting, as this represents an exact interpolator, so the error
+covariance structure will not be used.
 
 \item {}
 \sphinxAtStartPar
@@ -5556,7 +5563,9 @@ input positions must be unique. Expected shape \sphinxtitleref{{[}num points, 2{
 \sphinxAtStartPar
 \sphinxstyleliteralstrong{\sphinxupquote{error\_cov}} (\DUrole{sphinx_autodoc_typehints-type}{\sphinxcode{\sphinxupquote{ndarray}} | \sphinxcode{\sphinxupquote{None}}}) \textendash{} An optional error covariance. If unset then the default error covariance
 matrix is used \sphinxhyphen{} in this case n * identity matrix, where n is the number
-of positions in \sphinxtitleref{X}.
+of positions in \sphinxtitleref{X}. If using a custom error covariance it is
+recommended not to set \sphinxtitleref{lam = 0} when fitting, as this represents an
+exact interpolator, so the error covariance structure will not be used.
 
 \end{itemize}
 
