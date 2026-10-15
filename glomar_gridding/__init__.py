@@ -44,7 +44,7 @@ __all__ = [
     "uncorrelated_components",
 ]
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 __citation__ = """
 Cornes, R. C., S. C.Chan, A.Cable, et al. 2026. “GloMarGridding: A Python
