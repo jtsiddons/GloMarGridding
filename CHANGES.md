@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2
+
+Contributors to this version: Richard Cornes (@rcornes), Joseph Siddons (@jtsiddons).
+
+### Bug Fixes
+
+* Remove erroneous additional alpha parameter subtraction in `kriging.OrdinaryKriging.get_uncertainty` (#173).
+
 ## 1.2.1 (2026-08-14)
 
 Contributors to this version: Joseph Siddons (@jtsiddons).
