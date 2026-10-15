@@ -4,6 +4,10 @@
 
 Contributors to this version: Richard Cornes (@rcornes), Joseph Siddons (@jtsiddons).
 
+### Announcements
+
+* Now supports python 3.15 (#174).
+
 ### Bug Fixes
 
 * Remove erroneous additional alpha parameter subtraction in `kriging.OrdinaryKriging.get_uncertainty` (#173).
