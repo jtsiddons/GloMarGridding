@@ -10,9 +10,14 @@ Contributors to this version: Richard Cornes (@rcornes), Joseph Siddons (@jtsidd
 
 ### Bug Fixes
 
-* Remove erroneous additional alpha parameter subtraction in `kriging.OrdinaryKriging.get_uncertainty` (#173).
+* Remove erroneous additional alpha parameter subtraction in
+  `kriging.OrdinaryKriging.get_uncertainty` (#173).
 * Adjust small negative values in Spline standard error calculation to zero before square root
   (#169).
+
+### Internal changes
+
+* Makefile added (#175).
 
 ## 1.2.1 (2026-08-14)
 
@@ -25,7 +30,8 @@ Contributors to this version: Joseph Siddons (@jtsiddons).
 
 ## 1.2.0 (2026-07-30)
 
-Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan (@SCChan21).
+Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan
+(@SCChan21).
 
 ### New features and enhancements
 

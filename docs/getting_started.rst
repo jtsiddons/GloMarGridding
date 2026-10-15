@@ -30,7 +30,7 @@ Alternatively, you can clone the repository and install using pip (or uv if pref
    cd GloMarGridding
    python -m venv venv
    source venv/bin/activate
-   pip install -e .
+   make install
 
 .. code-block:: bash
 

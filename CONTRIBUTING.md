@@ -8,8 +8,8 @@ what you are working on. If you are working on an issue please reference the iss
 branch name and associated Merge request. It is generally easier to make a merge request and create
 a branch from the issue.
 
-If you wish to merge to `main` please create a merge request and assign it to `agfaul`, `josidd`,
-and/or `ricorne` - either to perform the merge and/or review/approve the request. Please provide a
+If you wish to merge to `main` please create a merge request and assign it to `jtsiddons`, `rcornes`,
+and/or `SCChan21` - either to perform the merge and/or review/approve the request. Please provide a
 summary of the main changes that you have made so that there is context for us to review the
 changes.
 
@@ -27,8 +27,6 @@ similar.
 
 ## Development Instructions
 
-We recommend [uv](https://docs.astral.sh/uv/) for development purposes.
-
 Clone the repository and create your development branch
 
 ```bash
@@ -40,28 +38,30 @@ git checkout -b new-branch-name  # if not a new branch exclude the '-b'
 Create a virtual environment and install the dependencies
 
 ```bash
-uv venv --python 3.11  # recommended version >= 3.11 is supported
+python -m venv .venv  # Create virtual environment
 source .venv/bin/activate  # assuming bash or zsh
 ```
 
 To install the dependencies run:
 
 ```bash
-uv sync
+make install
 ```
 
+Or to install and set-up development mode, this includes all the dependencies for testing,
+notebooks, documentation, and linting.
+
 ```bash
-uv sync --extra all
+make dev
 ```
 
 ## Standards
 
-We recommend the use of [ruff](https://docs.astral.sh/ruff/) as a linter/formatter. The
-`pyproject.toml` file includes all the settings for `ruff` for `GloMarGridding`.
+To run the linting and check code standards, using `ruff`, run the following, within your virtual
+environment:
 
 ```bash
-uvx ruff check
-uvx ruff check --fix
+make lint
 ```
 
 ## Tests
@@ -81,8 +81,6 @@ the `test` directory and filenames must be prefixed with `test_`.
 
 To perform tests you will need to have the environment set-up and active. Then run:
 
+```bash
+make test
 ```
-uv run pytest test/test_*.py
-```
-
-from the main/top directory for the repository.
