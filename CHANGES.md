@@ -2,7 +2,18 @@
 
 ## 1.2.2 (Unreleased)
 
-Contributors to this version: Joseph Siddons (@jtsiddons).
+Contributors to this version: Richard Cornes (@rcornes), Joseph Siddons (@jtsiddons).
+
+### Announcements
+
+* Now supports python 3.15 (#174).
+
+### Bug Fixes
+
+* Remove erroneous additional alpha parameter subtraction in
+  `kriging.OrdinaryKriging.get_uncertainty` (#173).
+* Adjust small negative values in Spline standard error calculation to zero before square root
+  (#169).
 
 ### Internal changes
 
@@ -19,7 +30,8 @@ Contributors to this version: Joseph Siddons (@jtsiddons).
 
 ## 1.2.0 (2026-07-30)
 
-Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan (@SCChan21).
+Contributors to this version: Joseph Siddons (@jtsiddons), Richard Cornes (@rcornes), Steven Chan
+(@SCChan21).
 
 ### New features and enhancements
 
